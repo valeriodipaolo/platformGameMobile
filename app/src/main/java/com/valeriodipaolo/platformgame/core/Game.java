@@ -45,7 +45,10 @@ public final class Game {
     public int state, score, lives, hp;
     /** Pezzi di gemma presi in questa partita, e quanti ce ne sono in tutto (monete sparse più casse bonus). */
     public int gems, gemTotal;
-    /** Collezionabili già ottenuti (anche in partite precedenti). */
+    /**
+     * Collezionabili ottenuti in questa partita: si azzerano quando si ricomincia il livello (non quando si perde una vita
+     * e si riparte dal punto sicuro). Il record di quelli mai ottenuti resta in {@link #save}.
+     */
     public boolean batteryOwned, secretOwned, gemOwned;
     public String toast;
     public float toastTime;
@@ -89,9 +92,7 @@ public final class Game {
             for (int x = 0; x < level.w; x++) if (level.get(x, y) == Level.BONUS) gemTotal++;
         }
         battery = level.battery == null ? null : new float[] {level.battery[0], level.battery[1]};
-        batteryOwned = save.has(level.id + "_battery");
-        secretOwned = save.has(level.id + "_secret");
-        gemOwned = save.has(level.id + "_gem");
+        batteryOwned = secretOwned = gemOwned = false;      // ricominciando il livello si riparte da zero
         pops.clear();
         toast = null;
         toastTime = 0;

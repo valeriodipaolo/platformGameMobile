@@ -148,12 +148,19 @@ public class Check {
         for (int y = 0; y < gm.level.h; y++) for (int x = 0; x < gm.level.w; x++) if (gm.level.get(x, y) == Level.BONUS) gm.hitBlock(x, y);
         ok(gm.gemOwned && gm.gems == gm.gemTotal, "con anche le casse bonus si ottiene la gemma completa");
 
-        // salvataggio: i collezionabili restano nelle partite successive
+        // ricominciando il livello i collezionabili ripartono da zero; il record resta salvato
         MemorySave ms = new MemorySave();
         Game s1 = new Game(ms);
         s1.hitBlock(sx, sy);
+        s1.player.x = s1.battery[0]; s1.player.y = s1.battery[1] - 0.3f;
+        s1.update(1f / 60f);
+        ok(s1.secretOwned && s1.batteryOwned && ms.has("l1_secret") && ms.has("l1_battery"), "chip e cella ottenuti e registrati");
+        s1.newGame();
+        ok(!s1.secretOwned && !s1.batteryOwned && !s1.gemOwned && s1.gems == 0, "ricominciando il livello i collezionabili sono azzerati");
+        ok(s1.battery != null && s1.level.get(sx, sy) == Level.SECRET, "e la cella e il mattoncino segreto sono di nuovo al loro posto");
+        ok(ms.has("l1_secret"), "il record dei collezionabili mai ottenuti resta salvato");
         Game s2 = new Game(ms);
-        ok(s2.secretOwned && !s2.batteryOwned && !s2.gemOwned, "il chip trovato resta salvato nella partita successiva");
+        ok(!s2.secretOwned && !s2.batteryOwned, "anche riaprendo il gioco si riparte da zero");
 
         // trottola: travolge i nemici senza perdere punti vita, poi ha un tempo di ricarica
         Game sp = fresh();
@@ -267,6 +274,11 @@ public class Check {
         ok(Controls.zone(500, 900, 2400, 1080) == Controls.RIGHT, "zona destra");
         ok(Controls.zone(Controls.jumpX(2400, 1080) + 100, 900, 2400, 1080) == Controls.JUMP, "zona salto");
         ok(Controls.zone(Controls.spinX(2400, 1080) + 100, 900, 2400, 1080) == Controls.SPIN, "zona trottola");
+        float sz = Controls.size(2400, 1080), spx = Controls.spinX(2400, 1080), jpx = Controls.jumpX(2400, 1080);
+        ok(Controls.zone(spx - 0.3f * sz, 900, 2400, 1080) == Controls.SPIN, "un tocco 0,3 pulsanti a sinistra della giravolta vale ancora giravolta");
+        ok(Controls.zone(spx + 1.05f * sz, 900, 2400, 1080) == Controls.SPIN, "e anche appena a destra, nello spazio tra giravolta e salto");
+        ok(Controls.zone(jpx - 0.05f * sz, 900, 2400, 1080) == Controls.JUMP, "il bordo sinistro del salto vale salto");
+        ok(Controls.zone(2399, 1079, 2400, 1080) == Controls.JUMP && Controls.zone(spx + 0.5f * sz, 5, 2400, 1080) == Controls.SPIN, "vale sull'intera altezza, anche in alto e agli angoli");
         ok(Controls.zone(1300, 300, 2400, 1080) == Controls.JUMP, "il salto resta valido su tutta la metà destra tranne la fascia della trottola");
 
         System.out.println(fails == 0 ? "TUTTO OK" : fails + " controlli falliti");
