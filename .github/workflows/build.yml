@@ -1,0 +1,48 @@
+name: Build APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 8.11.1
+
+      - name: Compila l'APK
+        run: gradle --no-daemon assembleRelease
+
+      - name: Prepara l'APK
+        run: cp app/build/outputs/apk/release/app-release.apk platformGame.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: platformGame-apk
+          path: platformGame.apk
+
+      # Release "latest" sempre aggiornata: il link per scaricare l'APK resta lo stesso.
+      - name: Pubblica l'APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          NOTES="Build ${GITHUB_RUN_NUMBER} (${GITHUB_SHA::7})"
+          if gh release view latest >/dev/null 2>&1; then
+            gh release upload latest platformGame.apk --clobber
+            gh release edit latest --notes "$NOTES"
+          else
+            gh release create latest platformGame.apk --title "Ultima versione" --notes "$NOTES"
+          fi

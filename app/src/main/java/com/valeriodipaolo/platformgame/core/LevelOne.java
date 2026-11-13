@@ -1,0 +1,112 @@
+package com.valeriodipaolo.platformgame.core;
+
+/** Primo livello. Il terreno occupa le righe 10 e 11; il giocatore cammina sulla riga 10. */
+public final class LevelOne {
+    private LevelOne() {}
+
+    private static final int H = 12, GROUND_Y = 10;
+
+    public static Level build() {
+        Level lv = new Level(212, H);
+        ground(lv, 0, 61);
+        ground(lv, 65, 103);
+        ground(lv, 107, 140);
+        ground(lv, 144, 211);
+        lv.startX = 3;
+        lv.startY = GROUND_Y - 1.2f;
+
+        // --- primo tratto: monete, casse e primo nemico
+        coins(lv, 9, 8, 4);
+        row(lv, 17, 6, "?");
+        row(lv, 22, 6, "B?B?B");
+        row(lv, 24, 2, "?");
+        enemy(lv, 27);
+        column(lv, 33, 2);
+        enemy(lv, 37);
+        column(lv, 41, 3);
+        coins(lv, 44, 8, 3);
+        enemy(lv, 46);
+        enemy(lv, 47.5f);
+        column(lv, 50, 3);
+        coins(lv, 51, 5, 1);
+        row(lv, 55, 6, "BB?");
+
+        // --- primo burrone, con un arco di monete
+        coin(lv, 62, 6); coin(lv, 63, 5.5f); coin(lv, 64, 6);
+
+        // --- secondo tratto
+        row(lv, 70, 6, "?B?");
+        enemy(lv, 75);
+        enemy(lv, 77);
+        row(lv, 82, 6, "BBBBBBBB");
+        coins(lv, 83, 5, 6);
+        row(lv, 91, 2, "BB?B");
+        enemy(lv, 93);
+        stairsUp(lv, 100, 4);                 // scalinata, burrone, scalinata
+        stairsDown(lv, 107, 4);
+
+        // --- terzo tratto
+        row(lv, 116, 6, "?");
+        row(lv, 119, 6, "?");
+        row(lv, 122, 6, "?");
+        row(lv, 119, 2, "?");
+        enemy(lv, 121);
+        enemy(lv, 126);
+        enemy(lv, 128);
+        column(lv, 132, 2);
+        coins(lv, 134, 8, 4);
+        enemy(lv, 137);
+        coin(lv, 141, 5); coin(lv, 142, 4.6f); coin(lv, 143, 5);
+
+        // --- ultimo tratto
+        row(lv, 149, 6, "B?B");
+        enemy(lv, 153);
+        row(lv, 158, 6, "BBB?BBB");
+        row(lv, 160, 2, "???");
+        enemy(lv, 164);
+        enemy(lv, 166);
+        column(lv, 171, 2);
+        coins(lv, 174, 8, 4);
+        stairsUp(lv, 181, 7);
+        column(lv, 188, 7);
+
+        // --- traguardo
+        lv.flagX = 198;
+        lv.flagBaseY = GROUND_Y;
+        return lv;
+    }
+
+    private static void ground(Level lv, int x0, int x1) {
+        for (int x = x0; x <= x1; x++) {
+            for (int y = GROUND_Y; y < H; y++) lv.set(x, y, Level.GROUND);
+        }
+    }
+
+    private static void row(Level lv, int x, int y, String s) {
+        for (int i = 0; i < s.length(); i++) lv.set(x + i, y, s.charAt(i));
+    }
+
+    private static void column(Level lv, int x, int height) {
+        for (int i = 1; i <= height; i++) lv.set(x, GROUND_Y - i, Level.STONE);
+    }
+
+    private static void stairsUp(Level lv, int x, int steps) {
+        for (int i = 0; i < steps; i++) column(lv, x + i, i + 1);
+    }
+
+    private static void stairsDown(Level lv, int x, int steps) {
+        for (int i = 0; i < steps; i++) column(lv, x + i, steps - i);
+    }
+
+    private static void coin(Level lv, float x, float y) {
+        lv.coins.add(new float[] {x, y});
+    }
+
+    private static void coins(Level lv, int x, int y, int n) {
+        for (int i = 0; i < n; i++) coin(lv, x + i, y);
+    }
+
+    private static void enemy(Level lv, float x) {
+        lv.enemies.add(new float[] {x, GROUND_Y - 1});
+    }
+}

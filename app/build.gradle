@@ -1,0 +1,46 @@
+plugins {
+    id 'com.android.application'
+}
+
+// Ogni build su GitHub ha un numero progressivo: lo uso come versione, così l'APK nuovo aggiorna quello installato.
+def buildNumber = (System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInteger()
+
+android {
+    namespace 'com.valeriodipaolo.platformgame'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'com.valeriodipaolo.platformgame'
+        minSdk 24
+        targetSdk 35
+        versionCode buildNumber
+        versionName "0.1.${buildNumber}"
+    }
+
+    signingConfigs {
+        release {
+            // Chiave fissa nel repository (privato): serve perché ogni APK abbia la stessa firma e si aggiorni senza disinstallare.
+            storeFile rootProject.file('keystore/release.jks')
+            storePassword 'platformgame'
+            keyAlias 'platformgame'
+            keyPassword 'platformgame'
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+
+    lint {
+        checkReleaseBuilds false
+        abortOnError false
+    }
+}
