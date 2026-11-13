@@ -9,16 +9,25 @@ public final class Game {
 
     private static final float STEP = 1f / 120f;
     // Comandi: accelerazione e frenata molto rapide, così il personaggio parte e si ferma quando lo vuoi tu.
-    private static final float MAX_SPEED = 8f, ACCEL = 110f, AIR_ACCEL = 80f, FRICTION = 110f, AIR_FRICTION = 30f;
+    private static final float MAX_SPEED = 8f, ACCEL = 110f, FRICTION = 110f;
+    // In aria lo spostamento è molto più limitato: si conserva lo slancio e si corregge poco.
+    private static final float AIR_ACCEL = 30f, AIR_FRICTION = 4f;
     // Salto: tenendo premuto sale a circa 5 caselle, con un tocco breve a circa 2,5.
     private static final float JUMP_V = 19.5f, GRAVITY = 75f, GRAVITY_HOLD = 38f, MAX_FALL = 22f;
+    // Doppio salto: una seconda pressione mentre si sale; anch'esso più alto tenendo premuto.
+    private static final float AIR_JUMP_V = 17.5f;
+    // Planata: con la giravolta in aria si scende lentamente.
+    private static final float GLIDE_FALL = 2.5f;
     public static final int MAX_HP = 3;
     private static final float INVULN = 2f;
     private static final float ENEMY_SPEED = 2.0f;
     public static final float BUMP_TIME = 0.18f;
-    /** Trottola: dura mezzo secondo e mezzo, poi serve mezzo secondo prima di rifarla. Si può usare anche in aria. */
-    public static final float SPIN_TIME = 0.6f, SPIN_COOLDOWN = 0.5f;
-    private static final float SPIN_SPEED = 1.35f, SPIN_REACH = 0.3f;
+    /**
+     * Giravolta: un tocco dura almeno SPIN_MIN secondi, tenendo premuto continua fino a SPIN_MAX; poi serve
+     * SPIN_COOLDOWN prima di rifarla. In aria fa planare.
+     */
+    public static final float SPIN_MIN = 0.4f, SPIN_MAX = 1.3f, SPIN_COOLDOWN = 0.4f;
+    private static final float SPIN_SPEED = 1.35f, SPIN_REACH = 0.3f, SPIN_RATE = 19f;
 
     public final Save save;
     public Level level;
@@ -42,12 +51,16 @@ public final class Game {
     public float toastTime;
     /** Secondi di invulnerabilità rimasti dopo un colpo (o dopo la ricomparsa). */
     public float invuln;
-    public float stateTime, time, camX, runPhase, spinTime, spinCool, spinAngle;
+    public float stateTime, time, camX, runPhase, spinT, spinCool, spinAngle;
+    /** Ultimo doppio salto: posizione dei piedi e secondi rimasti per l'effetto grafico. */
+    public float djX, djY, djTime;
     public float viewW = 20;
     public int facing = 1;
 
     private boolean left, right, jump, jumpWas, spin, spinWas;
     private float jumpBuffer, coyote, acc, checkpointX;
+    private boolean spinActive;
+    private int airJumps;
 
     public Game() {
         this(new MemorySave());
@@ -100,7 +113,10 @@ public final class Game {
         state = PLAYING;
         stateTime = 0;
         jumpBuffer = coyote = 0;
-        spinTime = spinCool = 0;
+        spinActive = false;
+        spinT = spinCool = 0;
+        airJumps = 1;
+        djTime = 0;
         camX = Math.max(0, Math.min(x - viewW * 0.4f, level.w - viewW));
     }
 
@@ -128,7 +144,7 @@ public final class Game {
     }
 
     public boolean spinning() {
-        return spinTime > 0;
+        return spinActive;
     }
 
     public void update(float dt) {
@@ -143,6 +159,7 @@ public final class Game {
         time += dt;
         stateTime += dt;
         if (toastTime > 0) toastTime -= dt;
+        if (djTime > 0) djTime -= dt;
         if (invuln > 0) invuln -= dt;
         if (bumpTx >= 0) {
             bumpAge += dt;
@@ -189,25 +206,29 @@ public final class Game {
     private void stepPlayer(float dt) {
         Body p = player;
 
-        if (spin && !spinWas && spinTime <= 0 && spinCool <= 0) spinTime = SPIN_TIME;
-        if (spinTime > 0) {
-            spinTime -= dt;
-            spinAngle += 26f * dt;
-            if (spinTime <= 0) {
-                spinTime = 0;
+        // giravolta: parte con un tocco, dura almeno SPIN_MIN e continua finché si tiene premuto (al massimo SPIN_MAX)
+        if (spinActive) {
+            spinT += dt;
+            spinAngle += SPIN_RATE * dt;
+            if (spinT >= SPIN_MAX || (spinT >= SPIN_MIN && !spin)) {
+                spinActive = false;
                 spinCool = SPIN_COOLDOWN;
             }
         } else if (spinCool > 0) {
             spinCool -= dt;
+        } else if (spin && !spinWas) {
+            spinActive = true;
+            spinT = 0;
+            spinAngle = 0;
         }
-        float maxSpeed = spinTime > 0 ? MAX_SPEED * SPIN_SPEED : MAX_SPEED;
+        float maxSpeed = spinActive ? MAX_SPEED * SPIN_SPEED : MAX_SPEED;
 
         float dir = (right ? 1 : 0) - (left ? 1 : 0);
         if (dir != 0) {
             float a = p.onGround ? ACCEL : AIR_ACCEL;
-            if (dir * p.vx < 0) a *= 2;                    // inversione più reattiva
+            if (dir * p.vx < 0) a *= p.onGround ? 2f : 1.5f;      // inversione più reattiva
             p.vx += dir * a * dt;
-            facing = dir > 0 ? 1 : -1;
+            if (p.onGround) facing = dir > 0 ? 1 : -1;            // in aria il personaggio non si volta
         } else {
             float f = (p.onGround ? FRICTION : AIR_FRICTION) * dt;
             if (Math.abs(p.vx) <= f) p.vx = 0; else p.vx -= Math.signum(p.vx) * f;
@@ -215,14 +236,30 @@ public final class Game {
         p.vx = Math.max(-maxSpeed, Math.min(maxSpeed, p.vx));
 
         // salto: un po' di tolleranza se si preme poco prima di toccare terra o poco dopo il bordo
-        jumpBuffer = (jump && !jumpWas) ? 0.2f : jumpBuffer - dt;
+        boolean press = jump && !jumpWas;
+        jumpBuffer = press ? 0.2f : jumpBuffer - dt;
         coyote = p.onGround ? 0.14f : coyote - dt;
+        if (p.onGround) airJumps = 1;
         if (jumpBuffer > 0 && coyote > 0) {
             p.vy = -JUMP_V;
             jumpBuffer = coyote = 0;
+        } else if (press && !p.onGround && airJumps > 0 && p.vy < 1f) {
+            // doppio salto: vale solo in salita (o proprio sulla cima), non quando si sta già scendendo
+            p.vy = -AIR_JUMP_V;
+            airJumps--;
+            jumpBuffer = 0;
+            djX = p.x + p.w / 2;
+            djY = p.y + p.h;
+            djTime = 0.3f;
         }
-        // tenendo premuto si sale più in alto
-        p.vy = Math.min(MAX_FALL, p.vy + ((p.vy < 0 && jump) ? GRAVITY_HOLD : GRAVITY) * dt);
+
+        if (spinActive && !p.onGround && p.vy >= 0) {              // planata
+            if (p.vy > GLIDE_FALL) p.vy = Math.max(GLIDE_FALL, p.vy - 60f * dt);
+            else p.vy = Math.min(GLIDE_FALL, p.vy + GRAVITY * dt);
+        } else {
+            // tenendo premuto si sale più in alto
+            p.vy = Math.min(MAX_FALL, p.vy + ((p.vy < 0 && jump) ? GRAVITY_HOLD : GRAVITY) * dt);
+        }
 
         p.move(level, dt);
         if (p.headTx >= 0) hitBlock(p.headTx, p.headTy);
@@ -314,7 +351,7 @@ public final class Game {
             if (e.y > level.h + 2) { e.dead = true; continue; }
 
             if (state != PLAYING) continue;
-            if (spinTime > 0 && touches(player, e, SPIN_REACH)) {      // la trottola travolge i nemici
+            if (spinActive && touches(player, e, SPIN_REACH)) {      // la trottola travolge i nemici
                 e.flung = true;
                 e.vy = -11f;
                 e.vx = facing * 5f;
@@ -323,6 +360,7 @@ public final class Game {
                 if (player.vy > 0 && player.y + player.h - e.y < 0.75f) {
                     e.flatTime = 0.45f;
                     player.vy = jump ? -15f : -10f;
+                    airJumps = 1;                       // rimbalzando su un nemico si può rifare il doppio salto
                     score += 100;
                 } else {
                     hurt();

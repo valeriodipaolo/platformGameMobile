@@ -100,17 +100,21 @@ public final class Renderer {
         float cx = (pl.x + pl.w / 2 - cam) * s, by = (pl.y + pl.h + 0.03f) * s;
         float al = (g.state == Game.PLAYING && g.invuln > 0 && ((int) (g.time * 14f) % 2 == 0)) ? 0.35f : 1f;
         boolean flip = g.facing < 0;
-        if (g.spinning()) {                         // trottola: il robot ruota attorno al proprio asse
-            img = Img.HERO_IDLE;
-            float c = (float) Math.cos(g.spinAngle);
-            hw *= Math.max(0.3f, Math.abs(c));
-            flip = c < 0;
+        if (g.spinning()) {                         // giravolta: il robot ruota attorno al proprio asse
+            float ang = g.spinAngle + (g.facing < 0 ? (float) Math.PI : 0f);
+            int pose = (int) Math.floor(ang / (2 * Math.PI) * Img.SPIN_POSES) % Img.SPIN_POSES;
+            img = Img.HERO_SPIN + pose;
+            flip = false;
             al = 1f;
         }
         p.image(img, cx - hw / 2, by - hh, hw, hh, flip, al);
         if (g.spinning()) {
             float k = 1.9f * s * (1f + 0.08f * (float) Math.sin(g.time * 40f));
-            p.image(Img.SPIN_FX, cx - k / 2, by - hh / 2 - k / 2, k, k, false, 0.85f);
+            p.image(Img.SPIN_FX, cx - k / 2, by - 0.55f * s - k / 2, k, k, false, 0.8f);
+        }
+        if (g.djTime > 0) {                         // anello sotto i piedi dopo il doppio salto
+            float f = g.djTime / 0.3f, w = (2.2f - 1.2f * f) * s, h = 0.55f * s;
+            p.image(Img.SPIN_FX, (g.djX - cam) * s - w / 2, g.djY * s - h / 2, w, h, false, f * 0.9f);
         }
 
         // ---- punteggio e collezionabili
@@ -143,7 +147,7 @@ public final class Renderer {
         p.image(Img.BTN_LEFT, Controls.leftX(sw, sh), bty, bs, bs, false, 1);
         p.image(Img.BTN_RIGHT, Controls.rightX(sw, sh), bty, bs, bs, false, 1);
         p.image(Img.BTN_JUMP, Controls.jumpX(sw, sh), bty, bs, bs, false, 1);
-        p.image(Img.BTN_SPIN, Controls.spinX(sw, sh), bty, bs, bs, false, g.spinTime > 0 || g.spinCool > 0 ? 0.45f : 1f);
+        p.image(Img.BTN_SPIN, Controls.spinX(sw, sh), bty, bs, bs, false, g.spinning() || g.spinCool > 0 ? 0.45f : 1f);
 
         // ---- fine partita
         if (g.state == Game.GAME_OVER || (g.state == Game.WON && g.stateTime > 1.4f)) {

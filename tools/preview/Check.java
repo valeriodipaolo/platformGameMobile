@@ -6,32 +6,53 @@ public class Check {
     static void ok(boolean c, String m) { System.out.println((c ? "OK   " : "FALLITO ") + m); if (!c) fails++; }
 
     static Game fresh() { Game g = new Game(); g.viewW = 22; return g; }
+    static void runS(Game g, float sec, boolean l, boolean r, boolean j, boolean sp) {
+        g.setInput(l, r, j, sp);
+        for (float t = 0; t < sec; t += 1f / 60f) g.update(1f / 60f);
+    }
     static void run(Game g, float sec, boolean l, boolean r, boolean j) {
         g.setInput(l, r, j);
         for (float t = 0; t < sec; t += 1f / 60f) g.update(1f / 60f);
     }
 
-    /** Prova stacchi diversi: corre a destra, salta, in volo lascia la direzione e vede se atterra sul blocco. */
+    /** Prova stacchi e rincorse diversi: salta, in volo lascia la direzione e vede se atterra sul blocco. */
     static boolean landsOn(float blockX, int blockY) {
-        for (float start = blockX - 6; start <= blockX; start += 0.25f) {
-            for (float release = 0.15f; release <= 0.6f; release += 0.05f) {
-                Game g = fresh();
-                g.player.x = start - 3; g.player.y = 8.8f;
-                run(g, 0.6f, false, false, false);
-                g.player.x = start - 3;
-                boolean jumped = false; float tj = 0;
-                for (int i = 0; i < 60 * 4; i++) {
-                    boolean jump = false, right = true;
-                    if (!jumped && g.player.x >= start && g.player.onGround) { jumped = true; tj = 0; }
-                    if (jumped) { tj += 1f / 60f; jump = tj < 0.5f; right = tj < release; }
-                    g.setInput(false, right, jump);
-                    g.update(1f / 60f);
-                    if (jumped && g.player.onGround && Math.abs(g.player.y + g.player.h - blockY) < 0.01f) return true;
-                    if (jumped && tj > 1.8f) break;
+        for (float runup : new float[] {0f, 1.5f, 3f}) {
+            for (float start = blockX - 6; start <= blockX; start += 0.25f) {
+                for (float release = 0.1f; release <= 0.7f; release += 0.05f) {
+                    Game g = fresh();
+                    g.player.x = start - runup; g.player.y = 8.8f;
+                    run(g, 0.3f, false, false, false);
+                    g.player.x = start - runup;
+                    boolean jumped = false; float tj = 0;
+                    for (int i = 0; i < 60 * 4; i++) {
+                        boolean jump = false, right = true;
+                        if (!jumped && g.player.x >= start && g.player.onGround) { jumped = true; tj = 0; }
+                        if (jumped) { tj += 1f / 60f; jump = tj < 0.5f; right = tj < release; }
+                        g.setInput(false, right, jump);
+                        g.update(1f / 60f);
+                        if (jumped && g.player.onGround && Math.abs(g.player.y + g.player.h - blockY) < 0.01f) return true;
+                        if (jumped && tj > 1.8f) break;
+                    }
                 }
             }
         }
         return false;
+    }
+
+    /** Segue un salto con la sequenza di pressioni indicata: ogni coppia {da, a} in secondi è una pressione. */
+    static float maxRise(float[][] presses, boolean spinHold) {
+        Game g = fresh();
+        run(g, 0.5f, false, false, false);
+        float y0 = g.player.y, top = y0;
+        for (float t = 0; t < 2.5f; t += 1f / 60f) {
+            boolean j = false;
+            for (float[] pr : presses) if (t >= pr[0] && t < pr[1]) j = true;
+            g.setInput(false, false, j, spinHold && t > 0.6f);
+            g.update(1f / 60f);
+            top = Math.min(top, g.player.y);
+        }
+        return y0 - top;
     }
 
     public static void main(String[] a) {
@@ -157,6 +178,89 @@ public class Check {
         sp.setInput(false, false, false, true);
         sp.update(1f / 60f);
         ok(sp.spinning(), "dopo la ricarica si può rifare");
+
+        // ---- doppio salto
+        float single = maxRise(new float[][] {{0, 2}}, false);
+        float dbl = maxRise(new float[][] {{0, 0.1f}, {0.2f, 2}}, false);
+        ok(dbl > single + 1.5f, String.format("doppio salto in salita: %.2f caselle contro %.2f del salto singolo", dbl, single));
+        float tooLate = maxRise(new float[][] {{0, 0.45f}, {0.7f, 2}}, false);
+        float onlyFirst = maxRise(new float[][] {{0, 0.45f}}, false);
+        ok(Math.abs(tooLate - onlyFirst) < 0.05f, String.format("seconda pressione in discesa: nessun doppio salto (%.2f = %.2f)", tooLate, onlyFirst));
+        float triple = maxRise(new float[][] {{0, 0.1f}, {0.2f, 0.3f}, {0.4f, 2}}, false);
+        float twice = maxRise(new float[][] {{0, 0.1f}, {0.2f, 0.3f}}, false);
+        ok(Math.abs(triple - twice) < 0.6f, "non esiste il triplo salto");
+        float dblShort = maxRise(new float[][] {{0, 0.1f}, {0.2f, 0.25f}}, false);
+        ok(dblShort < dbl - 0.8f, String.format("anche il secondo salto è più alto tenendo premuto: %.2f contro %.2f", dbl, dblShort));
+        // doppio salto appena dopo essere scesi da un bordo (tolleranza) e dopo aver rimbalzato su un nemico
+        Game ds = fresh();
+        run(ds, 0.5f, false, false, false);
+        ds.setInput(false, false, true); ds.update(1f / 60f);
+        ds.setInput(false, false, false); run(ds, 0.05f, false, false, false);
+        float vyBefore = ds.player.vy;
+        ds.setInput(false, false, true); ds.update(1f / 60f);
+        ok(vyBefore < 0 && ds.player.vy < -15f, "seconda pressione mentre sale: la velocità verso l'alto riparte (vy=" + ds.player.vy + ")");
+
+        // ---- direzione bloccata in aria e movimento limitato
+        Game fc = fresh();
+        run(fc, 0.3f, false, true, false);
+        ok(fc.facing == 1, "a terra va a destra, guarda a destra");
+        fc.setInput(false, true, true); fc.update(1f / 60f);
+        for (int i = 0; i < 30; i++) { fc.setInput(true, false, true); fc.update(1f / 60f); }
+        ok(!fc.player.onGround && fc.facing == 1, "in salto, premendo indietro il personaggio non si volta");
+        run(fc, 3f, false, false, false);
+        run(fc, 0.3f, true, false, false);
+        ok(fc.facing == -1, "a terra si volta normalmente");
+
+        Game ga = fresh();
+        run(ga, 0.5f, false, false, false);
+        run(ga, 0.1f, false, true, false);
+        float groundV = ga.player.vx;
+        Game gb = fresh();
+        run(gb, 0.5f, false, false, false);
+        gb.setInput(false, false, true); gb.update(1f / 60f);
+        runS(gb, 0.1f, false, true, true, false);
+        ok(gb.player.vx < groundV * 0.6f, String.format("in aria si accelera molto meno: %.1f contro %.1f a terra", gb.player.vx, groundV));
+        Game gc = fresh();
+        run(gc, 0.5f, false, true, false);
+        gc.setInput(false, true, true); gc.update(1f / 60f);
+        float airV = gc.player.vx;
+        run(gc, 0.3f, false, false, true);
+        ok(gc.player.vx > airV * 0.7f, "in aria lasciando la direzione si conserva lo slancio");
+
+        // ---- giravolta: tenendo premuto dura di più; in aria fa planare
+        Game sh = fresh();
+        run(sh, 0.5f, false, false, false);
+        sh.setInput(false, false, false, true); sh.update(1f / 60f);
+        runS(sh, 0.3f, false, false, false, true);
+        ok(sh.spinning(), "giravolta tenuta premuta: dopo 0,3 s gira ancora");
+        runS(sh, 0.6f, false, false, false, true);
+        ok(sh.spinning(), "giravolta tenuta premuta: dopo 0,9 s gira ancora");
+        runS(sh, 0.6f, false, false, false, true);
+        ok(!sh.spinning(), "giravolta tenuta premuta: dopo 1,5 s è finita comunque");
+        Game st = fresh();
+        run(st, 0.5f, false, false, false);
+        st.setInput(false, false, false, true); st.update(1f / 60f);
+        run(st, 0.2f, false, false, false);
+        ok(st.spinning(), "giravolta con un tocco: dopo 0,2 s gira ancora (durata minima)");
+        run(st, 0.35f, false, false, false);
+        ok(!st.spinning(), "giravolta con un tocco: dopo 0,55 s è finita");
+
+        Game gl = fresh();
+        run(gl, 0.5f, false, false, false);
+        runS(gl, 0.45f, false, false, true, false);              // salto tenuto premuto fino quasi alla cima
+        Game gf = fresh();
+        run(gf, 0.5f, false, false, false);
+        runS(gf, 0.45f, false, false, true, false);
+        runS(gf, 0.3f, false, false, false, false);
+        float fallFree = gf.player.vy;
+        runS(gl, 0.3f, false, false, false, true);               // in cima: giravolta tenuta premuta
+        ok(gl.spinning() && !gl.player.onGround && gl.player.vy > 0 && gl.player.vy <= 2.6f && fallFree > 8f,
+           String.format("giravolta in aria: plana a %.1f caselle/s invece di %.1f", gl.player.vy, fallFree));
+        float yGl = gl.player.y;
+        runS(gl, 0.3f, false, false, false, true);
+        ok(gl.player.y - yGl < 1.0f, String.format("durante la planata scende di %.2f caselle in 0,3 s", gl.player.y - yGl));
+        runS(gl, 1.0f, false, false, false, false);
+        ok(gl.player.onGround, "finita la giravolta il robot torna a cadere normalmente e atterra");
 
         // zone dei pulsanti su uno schermo largo 2400x1080
         ok(Controls.zone(100, 900, 2400, 1080) == Controls.LEFT, "zona sinistra");

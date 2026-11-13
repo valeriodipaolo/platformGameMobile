@@ -581,6 +581,99 @@ def gen_hero():
     return hero(7, -7, 10, -10)
 
 
+SPIN_FRAMES = 12
+
+
+def hero_spin(phi):
+    """Robot che ruota attorno all'asse verticale. phi=0: di profilo verso destra; 90 gradi: di fronte; 180: verso sinistra."""
+    W, H = 112, 144
+    cv = Cv(W, H, 3)
+    graphite, white, orange = (64, 68, 78), (234, 236, 240), (238, 118, 28)
+    cx, dy = 56, -2
+    c, sn = math.cos(phi), math.sin(phi)          # sn > 0: la faccia guarda verso chi gioca
+
+    def proj(rx, rz):                              # mezza larghezza vista di una sezione ellittica
+        return math.sqrt((rx * c) ** 2 + (rz * sn) ** 2)
+
+    def px(u, v):                                  # x e profondità di un punto (u avanti, v lateralmente)
+        return cx + u * c - v * sn, u * sn + v * c
+
+    hipy, shy = 100 + dy, 74 + dy
+    behind, front = [], []
+
+    def put(z, fn):
+        (behind if z < -0.5 else front).append((z, fn))
+
+    for v in (-9, 9):                              # gambe
+        x, z = px(0, v)
+        def leg(x=x, v=v):
+            cv.add(cv.capsule(x, hipy, x, hipy + 24, 6), graphite, ao=0.35, bevel=6, spec=0.5)
+            bx = proj(13, 8)
+            fx = x + 5 * c
+            cv.add(cv.rrect(fx - bx, hipy + 20, fx + bx, hipy + 34, 5.5), orange, ao=0.35, bevel=6, spec=0.5)
+        put(z, leg)
+
+    for v in (-1, 1):                              # braccia aperte come una trottola
+        x0, z0 = px(0, v * 20)
+        x1, z1 = px(0, v * 46)
+        def arm(x0=x0, x1=x1):
+            cv.add(cv.capsule(x0, shy, x1, shy - 7, 5.2), graphite, ao=0.35, bevel=5.2, spec=0.5)
+            cv.add(cv.ell(x1, shy - 7, 7, 7), white, ao=0.3, bevel=7, spec=0.6)
+        put((z0 + z1) / 2, arm)
+
+    bx, bz = px(-24, 0)                            # zaino
+    def pack():
+        hwp = proj(9, 17)
+        cv.add(cv.rrect(bx - hwp, 66 + dy, bx + hwp, 102 + dy, min(7, hwp - 0.5)), (196, 92, 22), ao=0.3, bevel=7, spec=0.3)
+    put(bz, pack)
+
+    for z, fn in sorted(behind, key=lambda t: t[0]):
+        fn()
+    ht = proj(19, 23)                              # busto
+    cv.add(cv.rrect(cx - ht, 60 + dy, cx + ht, 108 + dy, min(13, ht - 0.5)), white, ao=0.4, bevel=13, spec=0.6, shin=30)
+    cv.add(cv.rrect(cx - ht, 92 + dy, cx + ht, 98 + dy, 2), orange, bevel=2, spec=0.3)
+    for z, fn in sorted(front, key=lambda t: t[0]):
+        fn()
+    if sn > -0.2:                                  # lampada sul petto
+        lx = cx + 17 * c
+        lw = 7 * (0.4 + 0.6 * abs(sn))
+        lamp = cv.rrect(lx - lw, 74 + dy, lx + lw, 84 + dy, 3)
+        cv.add(lamp, (40, 190, 230), bevel=3, spec=0.8)
+        cv.glow(lamp, (60, 210, 255), radius=3, strength=0.3)
+
+    hh = proj(30, 27)                              # testa
+    cv.add(cv.rrect(cx - hh, 18 + dy, cx + hh, 62 + dy, min(19, hh - 0.5)), white, ao=0.45, bevel=19, spec=0.7, shin=34)
+    if sn > -0.25:
+        vw = min(12 + 9 * abs(sn), hh - 4)
+        vx = min(cx + 16 * c, cx + hh - vw - 3) if c > 0 else max(cx + 16 * c, cx - hh + vw + 3)
+        cv.add(cv.rrect(vx - vw, 27 + dy, vx + vw, 52 + dy, 10), (18, 24, 38), ao=0.3, bevel=9, spec=0.95, shin=40)
+        e = 7 * (0.3 + 0.7 * abs(sn))
+        ew = 3.8 * (0.55 + 0.45 * abs(sn))
+        if abs(sn) < 0.4:                          # di profilo si vede un occhio solo
+            eyes = cv.ell(vx + 5 * c, 40 + dy, 3.4, 6.2)
+        else:
+            eyes = cv.ell(vx - e, 40 + dy, ew, 6.2) | cv.ell(vx + e, 40 + dy, ew, 6.2)
+        cv.add(eyes, (120, 236, 255), bevel=3, spec=0.5)
+        cv.glow(eyes, (80, 220, 255), radius=3.5, strength=0.55)
+    else:                                          # visto da dietro: pannello con prese d'aria
+        pxc = cx - 12 * c
+        pw = min(15, hh - 5)
+        cv.add(cv.rrect(pxc - pw, 28 + dy, pxc + pw, 52 + dy, 6), (48, 52, 62), ao=0.3, bevel=6, spec=0.5)
+        for k in range(3):
+            cv.add(cv.rrect(pxc - pw + 4, 33 + dy + k * 6, pxc + pw - 4, 35.5 + dy + k * 6, 1), (96, 102, 114), bevel=1, spec=0.3)
+    ax = cx - 12 * c                               # antenna
+    cv.add(cv.capsule(ax, 20 + dy, ax - 1, 8 + dy, 1.6), (150, 154, 164), bevel=1.6, spec=0.6)
+    ball = cv.ell(ax - 1, 7 + dy, 4.2, 4.2)
+    cv.add(ball, (232, 48, 48), bevel=4.2, spec=0.9)
+    cv.glow(ball, (255, 60, 60), radius=3, strength=0.3)
+    return cv.result()
+
+
+def gen_spin_hero():
+    for i in range(SPIN_FRAMES):
+        save("hero_spin_%d" % i, hero_spin(2 * math.pi * i / SPIN_FRAMES))
+
+
 def beetle(step):
     """Scarabeo corazzato, rivolto a sinistra."""
     W, H = 104, 84
@@ -710,6 +803,7 @@ if __name__ == "__main__":
         gen_chip()
         gen_spinfx()
     if want("hero"): gen_icon(gen_hero())
+    if want("spin"): gen_spin_hero()
     if want("enemy"): gen_enemy()
     if want("flag"): gen_flag()
     if want("buttons"): gen_buttons()

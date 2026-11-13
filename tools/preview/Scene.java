@@ -39,6 +39,21 @@ public class Scene {
         run(g, 0.2f, true, false, true);
         shot(g, "s_spin.png", out);
 
+        Game gl = new Game();
+        gl.viewW = 2400 / (1080 / 12f);
+        gl.player.x = 30; gl.player.y = 8.8f; gl.camX = 26;
+        run(gl, 0.3f, false, false, false);
+        gl.setInput(false, true, true, false);
+        for (int i = 0; i < 30; i++) gl.update(1f / 60f);
+        gl.setInput(false, true, false, false);
+        gl.update(1f / 60f);
+        gl.setInput(false, true, true, false);
+        for (int i = 0; i < 6; i++) gl.update(1f / 60f);
+        shot(gl, "s_double.png", out);
+        gl.setInput(false, true, true, true);
+        for (int i = 0; i < 40; i++) gl.update(1f / 60f);
+        shot(gl, "s_glide.png", out);
+
         Game h = new Game();
         h.viewW = 2400 / (1080 / 12f);
         h.player.x = 84.5f; h.player.y = 8.8f; h.camX = 78;
