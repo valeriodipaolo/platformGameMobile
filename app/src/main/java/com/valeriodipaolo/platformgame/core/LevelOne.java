@@ -16,57 +16,57 @@ public final class LevelOne {
         lv.startY = GROUND_Y - 1.2f;
 
         // --- primo tratto: monete, casse e primo nemico
-        coins(lv, 9, 8, 4);
-        row(lv, 17, 6, "?");
-        row(lv, 22, 6, "B?B?B");
-        row(lv, 24, 2, "?");
+        coins(lv, 9, 9, 4);
+        row(lv, 17, 7, "?");
+        row(lv, 22, 7, "B?B?B");
+        row(lv, 24, 4, "?");
         enemy(lv, 27);
         column(lv, 33, 2);
         enemy(lv, 37);
         column(lv, 41, 3);
-        coins(lv, 44, 8, 3);
+        coins(lv, 44, 9, 3);
         enemy(lv, 46);
         enemy(lv, 47.5f);
         column(lv, 50, 3);
-        coins(lv, 51, 5, 1);
-        row(lv, 55, 6, "BB?");
+        coins(lv, 51, 6, 1);
+        row(lv, 55, 7, "BB?");
 
         // --- primo burrone, con un arco di monete
         coin(lv, 62, 6); coin(lv, 63, 5.5f); coin(lv, 64, 6);
 
         // --- secondo tratto
-        row(lv, 70, 6, "?B?");
+        row(lv, 70, 7, "?B?");
         enemy(lv, 75);
         enemy(lv, 77);
-        row(lv, 82, 6, "BBBBBBBB");
-        coins(lv, 83, 5, 6);
-        row(lv, 91, 2, "BB?B");
+        row(lv, 82, 7, "BBBBBBBB");
+        coins(lv, 83, 6, 6);
+        row(lv, 91, 4, "BB?B");
         enemy(lv, 93);
         stairsUp(lv, 100, 4);                 // scalinata, burrone, scalinata
         stairsDown(lv, 107, 4);
 
         // --- terzo tratto
-        row(lv, 116, 6, "?");
-        row(lv, 119, 6, "?");
-        row(lv, 122, 6, "?");
-        row(lv, 119, 2, "?");
+        row(lv, 116, 7, "?");
+        row(lv, 119, 7, "?");
+        row(lv, 122, 7, "?");
+        row(lv, 119, 4, "?");
         enemy(lv, 121);
         enemy(lv, 126);
         enemy(lv, 128);
         column(lv, 132, 2);
-        coins(lv, 134, 8, 4);
+        coins(lv, 134, 9, 4);
         enemy(lv, 137);
         coin(lv, 141, 5); coin(lv, 142, 4.6f); coin(lv, 143, 5);
 
         // --- ultimo tratto
-        row(lv, 149, 6, "B?B");
+        row(lv, 149, 7, "B?B");
         enemy(lv, 153);
-        row(lv, 158, 6, "BBB?BBB");
-        row(lv, 160, 2, "???");
+        row(lv, 158, 7, "BBB?BBB");
+        row(lv, 160, 4, "???");
         enemy(lv, 164);
         enemy(lv, 166);
         column(lv, 171, 2);
-        coins(lv, 174, 8, 4);
+        coins(lv, 174, 9, 4);
         stairsUp(lv, 181, 7);
         column(lv, 188, 7);
 

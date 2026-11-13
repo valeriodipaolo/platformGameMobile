@@ -8,8 +8,12 @@ public final class Game {
     public static final int PLAYING = 0, DYING = 1, WON = 2, GAME_OVER = 3;
 
     private static final float STEP = 1f / 120f;
-    private static final float MAX_SPEED = 7.5f, ACCEL = 42f, AIR_ACCEL = 30f, FRICTION = 38f, AIR_FRICTION = 6f;
-    private static final float JUMP_V = 17.5f, GRAVITY = 75f, GRAVITY_HOLD = 38f, MAX_FALL = 22f;
+    // Comandi: accelerazione e frenata molto rapide, così il personaggio parte e si ferma quando lo vuoi tu.
+    private static final float MAX_SPEED = 8f, ACCEL = 110f, AIR_ACCEL = 80f, FRICTION = 110f, AIR_FRICTION = 30f;
+    // Salto: tenendo premuto sale a circa 5 caselle, con un tocco breve a circa 2,5.
+    private static final float JUMP_V = 19.5f, GRAVITY = 75f, GRAVITY_HOLD = 38f, MAX_FALL = 22f;
+    public static final int MAX_HP = 3;
+    private static final float INVULN = 2f;
     private static final float ENEMY_SPEED = 2.0f;
     public static final float BUMP_TIME = 0.18f;
 
@@ -23,7 +27,10 @@ public final class Game {
     public int bumpTx = -1, bumpTy = -1;
     public float bumpAge;
 
-    public int state, coinCount, score, lives;
+    public int state, coinCount, score, lives, hp;
+    /** Secondi di invulnerabilità rimasti dopo un colpo (o dopo la ricomparsa). */
+    public float invuln;
+    private float checkpointX;
     public float stateTime, time, camX, runPhase;
     public float viewW = 20;
     public int facing = 1;
@@ -52,15 +59,29 @@ public final class Game {
         bumpTx = bumpTy = -1;
         player.w = 0.62f;
         player.h = 1.2f;
-        player.x = level.startX;
+        checkpointX = level.startX;
+        place(level.startX);
+        hp = MAX_HP;
+        invuln = 0;
+    }
+
+    private void place(float x) {
+        player.x = x;
         player.y = level.startY;
         player.vx = player.vy = 0;
         player.onGround = false;
         facing = 1;
         state = PLAYING;
         stateTime = 0;
-        camX = 0;
         jumpBuffer = coyote = 0;
+        camX = Math.max(0, Math.min(x - viewW * 0.4f, level.w - viewW));
+    }
+
+    /** Dopo aver perso una vita si riparte dall'ultimo punto sicuro, tenendo monete e nemici già eliminati. */
+    private void respawn() {
+        hp = MAX_HP;
+        place(checkpointX);
+        invuln = 2.5f;
     }
 
     public void setInput(boolean left, boolean right, boolean jump) {
@@ -97,8 +118,10 @@ public final class Game {
             if (p[3] > 0.5f) pops.remove(i);
         }
 
+        if (invuln > 0) invuln -= dt;
         if (state == PLAYING) {
             stepPlayer(dt);
+            updateCheckpoint();
             stepEnemies(dt);
             pickCoins();
             if (state == PLAYING && player.x + player.w >= level.flagX + 0.45f) win();
@@ -108,7 +131,7 @@ public final class Game {
             stepEnemies(dt);
             if (stateTime > 1.8f) {
                 if (lives > 0) {
-                    loadLevel();
+                    respawn();
                 } else {
                     state = GAME_OVER;
                     stateTime = 0;
@@ -140,8 +163,8 @@ public final class Game {
         p.vx = Math.max(-MAX_SPEED, Math.min(MAX_SPEED, p.vx));
 
         // salto: un po' di tolleranza se si preme poco prima di toccare terra o poco dopo il bordo
-        jumpBuffer = (jump && !jumpWas) ? 0.12f : jumpBuffer - dt;
-        coyote = p.onGround ? 0.08f : coyote - dt;
+        jumpBuffer = (jump && !jumpWas) ? 0.2f : jumpBuffer - dt;
+        coyote = p.onGround ? 0.14f : coyote - dt;
         if (jumpBuffer > 0 && coyote > 0) {
             p.vy = -JUMP_V;
             jumpBuffer = coyote = 0;
@@ -153,6 +176,30 @@ public final class Game {
         if (p.headTx >= 0) hitBlock(p.headTx, p.headTy);
         if (p.onGround && Math.abs(p.vx) > 0.3f) runPhase += Math.abs(p.vx) * dt * 1.6f;
         if (p.y > level.h + 1) die();
+    }
+
+    /** Ricorda l'ultimo punto di terreno solido e largo, lontano dai burroni, da cui ripartire. */
+    private void updateCheckpoint() {
+        Body p = player;
+        if (!p.onGround || p.x <= checkpointX + 2f) return;
+        int fx = (int) Math.floor(p.x + p.w / 2), row = (int) Math.floor(p.y + p.h + 0.01f);
+        for (int dx = -2; dx <= 2; dx++) {
+            if (!level.solid(fx + dx, row) || level.solid(fx + dx, row - 1)) return;
+        }
+        checkpointX = p.x;
+    }
+
+    /** Colpo subito da un nemico: toglie un punto vita; a zero si perde una vita. */
+    private void hurt() {
+        if (invuln > 0 || state != PLAYING) return;
+        hp--;
+        if (hp <= 0) {
+            die();
+        } else {
+            invuln = INVULN;
+            player.vy = -10f;
+            player.vx = -facing * 5f;
+        }
     }
 
     private void hitBlock(int tx, int ty) {
@@ -204,12 +251,12 @@ public final class Game {
             if (e.y > level.h + 2) { e.dead = true; continue; }
 
             if (state == PLAYING && player.overlaps(e)) {
-                if (player.vy > 0 && player.y + player.h - e.y < 0.5f) {
+                if (player.vy > 0 && player.y + player.h - e.y < 0.75f) {
                     e.flatTime = 0.45f;
                     player.vy = jump ? -15f : -10f;
                     score += 100;
                 } else {
-                    die();
+                    hurt();
                 }
             }
         }
@@ -231,6 +278,7 @@ public final class Game {
         if (state != PLAYING) return;
         state = DYING;
         stateTime = 0;
+        hp = 0;
         lives--;
         player.vx = 0;
         player.vy = -15f;

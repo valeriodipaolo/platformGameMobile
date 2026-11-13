@@ -86,7 +86,8 @@ public final class Renderer {
         else if (Math.abs(pl.vx) > 0.3f) img = Img.HERO_RUN + ((int) g.runPhase % 4);
         else img = Img.HERO_IDLE;
         float hw = 1.167f * s, hh = 1.5f * s;
-        p.image(img, (pl.x + pl.w / 2 - cam) * s - hw / 2, (pl.y + pl.h + 0.03f) * s - hh, hw, hh, g.facing < 0, 1);
+        float al = (g.state == Game.PLAYING && g.invuln > 0 && ((int) (g.time * 14f) % 2 == 0)) ? 0.35f : 1f;
+        p.image(img, (pl.x + pl.w / 2 - cam) * s - hw / 2, (pl.y + pl.h + 0.03f) * s - hh, hw, hh, g.facing < 0, al);
 
         // ---- punteggio
         float m = 0.06f * sw, ts = 0.5f * s, base = 0.95f * s;
@@ -94,6 +95,12 @@ public final class Renderer {
         p.text("× " + g.coinCount, m + 0.8f * s, base, ts, Painter.ALIGN_LEFT, WHITE);
         p.text("PUNTI " + g.score, sw / 2, base, ts, Painter.ALIGN_CENTER, WHITE);
         p.text("VITE " + g.lives, sw - m, base, ts, Painter.ALIGN_RIGHT, WHITE);
+        float pip = 0.36f * s, gap = 0.12f * s, py = base + 0.22f * s;
+        for (int i = 0; i < Game.MAX_HP; i++) {
+            float px = sw - m - (Game.MAX_HP - i) * pip - (Game.MAX_HP - 1 - i) * gap;
+            p.rect(px - 0.04f * s, py - 0.04f * s, pip + 0.08f * s, pip + 0.08f * s, 0xB0000000);
+            p.rect(px, py, pip, pip, i < g.hp ? 0xFFE53935 : 0xFF4A4A4A);
+        }
 
         // ---- pulsanti
         float bs = Controls.size(sw, sh), by = Controls.btnY(sw, sh);

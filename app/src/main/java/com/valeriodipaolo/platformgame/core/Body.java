@@ -48,7 +48,17 @@ public class Body {
                     if (d < best) { best = d; headTx = tx; headTy = ty; }
                 }
             }
-            if (headTx >= 0) { y = ty + 1; vy = 0; }
+            if (headTx >= 0) {
+                int hits = 0;
+                for (int tx = x0; tx <= x1; tx++) if (lv.solid(tx, ty)) hits++;
+                // spigolo: se tocca solo per un soffio, scivola di lato e continua a salire
+                float ov = Math.min(x + w, headTx + 1) - Math.max(x, headTx);
+                if (hits == 1 && ov < 0.28f && x1 > x0) {
+                    if (headTx == x0) { x = headTx + 1 + EPS; headTx = headTy = -1; }
+                    else if (headTx == x1) { x = headTx - w - EPS; headTx = headTy = -1; }
+                }
+                if (headTx >= 0) { y = ty + 1; vy = 0; }
+            }
         }
     }
 }
