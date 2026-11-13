@@ -167,7 +167,7 @@ public final class Renderer {
                 }
             }
             if (g.stateTime > 1.2f) {
-                p.text("Tocca lo schermo per rigiocare", sw / 2, 9.4f * s, 0.5f * s, Painter.ALIGN_CENTER, 0xFFFFE082);
+                p.text(won ? "Tocca lo schermo per il livello 2" : "Tocca lo schermo per riprovare", sw / 2, 9.4f * s, 0.5f * s, Painter.ALIGN_CENTER, 0xFFFFE082);
             }
         }
     }

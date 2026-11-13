@@ -18,7 +18,8 @@ public final class Img {
     public static final int BATTERY = 32, CHIP = 33, GEM_FULL = 34, SPIN_FX = 35;
     public static final int HERO_SPIN = 36;     // 12 pose della giravolta: HERO_SPIN .. HERO_SPIN+11
     public static final int SPIN_POSES = 12;
-    public static final int COUNT = 48;
+    public static final int TEX_GRASS = 48, SHADOW = 49, JOY_BASE = 50, JOY_KNOB = 51;
+    public static final int COUNT = 52;
 
     public static final String[] NAMES = {
         "bg_sky", "bg_mountains", "bg_hills",
@@ -31,5 +32,6 @@ public final class Img {
         "battery", "chip", "gem_full", "spin_fx",
         "hero_spin_0", "hero_spin_1", "hero_spin_2", "hero_spin_3", "hero_spin_4", "hero_spin_5",
         "hero_spin_6", "hero_spin_7", "hero_spin_8", "hero_spin_9", "hero_spin_10", "hero_spin_11",
+        "tex_grass", "shadow", "joy_base", "joy_knob",
     };
 }

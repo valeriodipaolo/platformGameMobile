@@ -6,8 +6,11 @@ import android.os.Bundle;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.FrameLayout;
 
 public class MainActivity extends Activity {
+    private FrameLayout root;
+    private View current;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -19,8 +22,63 @@ public class MainActivity extends Activity {
             lp.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
             w.setAttributes(lp);
         }
-        setContentView(new GameView(this));
+        root = new FrameLayout(this);
+        setContentView(root);
+        showMenu();
+    }
+
+    private void show(View v) {
+        root.removeAllViews();
+        current = v;
+        root.addView(v, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
         hideSystemBars();
+    }
+
+    private void showMenu() {
+        show(new MenuView(this, new MenuView.Listener() {
+            @Override
+            public void onLevel(int level) {
+                startLevel(level);
+            }
+        }));
+    }
+
+    private void startLevel(int level) {
+        if (level == 1) {
+            show(new GameView(this, new Runnable() {          // finito il livello 1 si passa al 2
+                @Override
+                public void run() {
+                    startLevel(2);
+                }
+            }));
+        } else {
+            show(new Level3DView(this, new Runnable() {       // finito il livello 2 si torna al menu
+                @Override
+                public void run() {
+                    showMenu();
+                }
+            }));
+        }
+    }
+
+    /** Il tasto indietro riporta al menu; dal menu chiude il gioco. */
+    @Override
+    @SuppressWarnings("deprecation")
+    public void onBackPressed() {
+        if (current instanceof MenuView) super.onBackPressed();
+        else showMenu();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (current instanceof Level3DView) ((Level3DView) current).pause();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (current instanceof Level3DView) ((Level3DView) current).resume();
     }
 
     @Override

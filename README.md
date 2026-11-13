@@ -2,8 +2,9 @@
 
 Gioco platform 2D a scorrimento per Android (nome provvisorio: **Robo Jump**), scritto in Java nativo senza librerie esterne.
 
-- Un livello: monete, casse bonus, nemici da schiacciare, burroni, traguardo con bandiera.
-- Comandi a schermo: frecce a sinistra, salto a destra (tenendo premuto si salta più in alto).
+- Livello 1 (2D): prato a scorrimento con gemme, casse bonus, nemici, burroni e traguardo.
+- Livello 2 (3D, OpenGL ES 2.0): corridoio nel bosco visto da dietro le spalle, con joystick.
+- Mosse: salto (più alto tenendo premuto), doppio salto, giravolta, planata.
 
 ## Struttura
 
@@ -11,7 +12,10 @@ Gioco platform 2D a scorrimento per Android (nome provvisorio: **Robo Jump**), s
 - `app/src/main/java/...` — parte Android: `MainActivity`, `GameView` (ciclo di gioco e tocchi), `AndroidPainter`.
 - `app/src/main/res/drawable-nodpi` — grafica in PNG, generata da `tools/gen_assets.py`.
   Per usare una foto o un disegno al posto di un'immagine basta sostituire il PNG con lo stesso nome.
-- `tools/preview/run.sh` — sul PC fa giocare il livello a un bot e salva delle schermate in `build/preview`.
+- `app/src/main/java/.../core3d` — livello 3D: regole (`World3D`), modelli e scena (`Scene3D`), matrici (Java puro).
+- `GlRenderer`, `Level3DView` — disegno OpenGL e joystick del livello 3D; `MenuView` — scelta del livello.
+- `tools/preview/check.sh` — controlli automatici sulla logica dei due livelli (compresi i bot che li completano).
+- `tools/preview/scenes.sh` — salva schermate dei due livelli in `build/preview` (il 3D con un renderer software).
 
 ## Build
 

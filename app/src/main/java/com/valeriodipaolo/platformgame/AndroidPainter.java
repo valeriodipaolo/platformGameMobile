@@ -14,7 +14,8 @@ import com.valeriodipaolo.platformgame.core.Painter;
 
 /** Disegna le immagini del gioco su un Canvas Android. */
 final class AndroidPainter implements Painter {
-    private final Bitmap[] bitmaps = new Bitmap[Img.COUNT];
+    private static Bitmap[] shared;
+    private final Bitmap[] bitmaps;
     private final Paint imagePaint = new Paint(Paint.FILTER_BITMAP_FLAG);
     private final Paint fillPaint = new Paint();
     private final Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -22,15 +23,25 @@ final class AndroidPainter implements Painter {
     private Canvas canvas;
 
     AndroidPainter(Context ctx) {
-        Resources res = ctx.getResources();
-        BitmapFactory.Options opts = new BitmapFactory.Options();
-        opts.inScaled = false;
-        for (int i = 0; i < Img.COUNT; i++) {
-            int id = res.getIdentifier(Img.NAMES[i], "drawable", ctx.getPackageName());
-            bitmaps[i] = BitmapFactory.decodeResource(res, id, opts);
-            if (bitmaps[i] == null) throw new IllegalStateException("Immagine mancante: " + Img.NAMES[i]);
-        }
+        bitmaps = bitmaps(ctx);
         textPaint.setTypeface(Typeface.DEFAULT_BOLD);
+    }
+
+    /** Le immagini del gioco, caricate una volta sola e condivise tra le schermate. */
+    static synchronized Bitmap[] bitmaps(Context ctx) {
+        if (shared == null) {
+            Resources res = ctx.getResources();
+            BitmapFactory.Options opts = new BitmapFactory.Options();
+            opts.inScaled = false;
+            Bitmap[] all = new Bitmap[Img.COUNT];
+            for (int i = 0; i < Img.COUNT; i++) {
+                int id = res.getIdentifier(Img.NAMES[i], "drawable", ctx.getPackageName());
+                all[i] = BitmapFactory.decodeResource(res, id, opts);
+                if (all[i] == null) throw new IllegalStateException("Immagine mancante: " + Img.NAMES[i]);
+            }
+            shared = all;
+        }
+        return shared;
     }
 
     void begin(Canvas c) {

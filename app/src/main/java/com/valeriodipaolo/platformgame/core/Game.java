@@ -139,9 +139,9 @@ public final class Game {
         this.spin = spin;
     }
 
-    /** Tocco sullo schermo: serve a ricominciare a fine partita. */
+    /** Tocco sullo schermo: dopo la sconfitta ricomincia il livello (a livello completato decide chi ospita il gioco). */
     public void tap() {
-        if ((state == WON || state == GAME_OVER) && stateTime > 1.2f) newGame();
+        if (state == GAME_OVER && stateTime > 1.2f) newGame();
     }
 
     public boolean spinning() {

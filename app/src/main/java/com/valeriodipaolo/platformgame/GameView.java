@@ -31,8 +31,13 @@ final class GameView extends SurfaceView implements SurfaceHolder.Callback, Runn
     private boolean prevJump, prevSpin;
     private boolean hardwareCanvas = Build.VERSION.SDK_INT >= 26;
 
-    GameView(Context ctx) {
+    private final Runnable onLevelComplete;
+    private boolean completed;
+
+    /** onLevelComplete: chiamato (sul thread dell'interfaccia) quando si tocca lo schermo a livello completato. */
+    GameView(Context ctx, Runnable onLevelComplete) {
         super(ctx);
+        this.onLevelComplete = onLevelComplete;
         game = new Game(new AndroidSave(ctx));
         painter = new AndroidPainter(ctx);
         getHolder().addCallback(this);
@@ -98,7 +103,14 @@ final class GameView extends SurfaceView implements SurfaceHolder.Callback, Runn
 
                 if (tapped) {
                     tapped = false;
-                    game.tap();
+                    if (game.state == Game.WON && game.stateTime > 1.6f) {
+                        if (!completed) {
+                            completed = true;
+                            post(onLevelComplete);
+                        }
+                    } else {
+                        game.tap();
+                    }
                 }
                 boolean pressedJump = latchJump.getAndSet(false), pressedSpin = latchSpin.getAndSet(false);
                 game.setInput(inLeft, inRight, inJump || pressedJump, inSpin || pressedSpin);

@@ -1,8 +1,10 @@
 #!/bin/sh
-# Controlli automatici sulla logica di gioco (salto, blocchi, monete, punti vita).
+# Controlli automatici sulla logica di gioco dei due livelli (salto, blocchi, gemme, punti vita, corridoio 3D).
 set -e
 cd "$(dirname "$0")/../.."
 OUT=build/preview
 mkdir -p "$OUT/classes"
-javac -nowarn -d "$OUT/classes" app/src/main/java/com/valeriodipaolo/platformgame/core/*.java tools/preview/Check.java
+javac -nowarn -d "$OUT/classes" app/src/main/java/com/valeriodipaolo/platformgame/core/*.java \
+    app/src/main/java/com/valeriodipaolo/platformgame/core3d/*.java tools/preview/Check.java tools/preview/Check3.java
 java -cp "$OUT/classes" Check
+java -cp "$OUT/classes" Check3

@@ -1,0 +1,80 @@
+package com.valeriodipaolo.platformgame.core3d;
+
+import com.valeriodipaolo.platformgame.core.Controls;
+import com.valeriodipaolo.platformgame.core.Img;
+import com.valeriodipaolo.platformgame.core.Painter;
+
+/** Scritte, pulsanti e joystick sopra la scena 3D. */
+public final class Hud3D {
+    private static final int WHITE = 0xFFFFFFFF;
+
+    /** Raggio del joystick in pixel. */
+    public static float joyRadius(float sw, float sh) { return 0.17f * sh; }
+    public static float joyHomeX(float sw, float sh) { return 0.05f * sw + joyRadius(sw, sh); }
+    public static float joyHomeY(float sw, float sh) { return sh - 0.07f * sh - joyRadius(sw, sh); }
+
+    /**
+     * joyActive: un dito sta usando il joystick, con centro (joyCx, joyCy) e spostamento (joyDx, joyDy) da -1 a 1.
+     * error: messaggio da mostrare se la grafica 3D non parte.
+     */
+    public void draw(World3D w, Painter p, float sw, float sh, boolean joyActive, float joyCx, float joyCy,
+                     float joyDx, float joyDy, String error) {
+        float s = sh / 12f;
+        float m = 0.06f * sw, ts = 0.5f * s, base = 0.95f * s;
+        p.image(Img.GEM + 3, m, 0.34f * s, 0.78f * s, 0.78f * s, false, 1);
+        p.text(w.gems + "/" + w.gemTotal, m + 0.9f * s, base, ts, Painter.ALIGN_LEFT, WHITE);
+        float ix = m, iy = 1.3f * s, isz = 0.85f * s;
+        p.image(Img.BATTERY, ix, iy, isz, isz, false, w.batteryOwned ? 1f : 0.4f);
+        p.image(Img.GEM_FULL, ix + isz * 1.25f, iy, isz, isz, false, w.gemOwned ? 1f : 0.4f);
+        p.text("PUNTI " + w.score, sw / 2, base, ts, Painter.ALIGN_CENTER, WHITE);
+        p.text("VITE " + w.lives, sw - m, base, ts, Painter.ALIGN_RIGHT, WHITE);
+        float pip = 0.36f * s, gap = 0.12f * s, py = base + 0.22f * s;
+        for (int i = 0; i < World3D.MAX_HP; i++) {
+            float px = sw - m - (World3D.MAX_HP - i) * pip - (World3D.MAX_HP - 1 - i) * gap;
+            p.rect(px - 0.04f * s, py - 0.04f * s, pip + 0.08f * s, pip + 0.08f * s, 0xB0000000);
+            p.rect(px, py, pip, pip, i < w.hp ? 0xFFE53935 : 0xFF4A4A4A);
+        }
+        if (w.toast != null && w.toastTime > 0) {
+            int a = (int) (255 * Math.min(1f, w.toastTime * 2.5f));
+            p.text(w.toast, sw / 2, 2.6f * s, 0.7f * s, Painter.ALIGN_CENTER, (a << 24) | 0xFFE082);
+        }
+
+        // joystick: compare dove si appoggia il dito, altrimenti resta nella posizione di riposo
+        float jr = joyRadius(sw, sh);
+        float cx = joyActive ? joyCx : joyHomeX(sw, sh), cy = joyActive ? joyCy : joyHomeY(sw, sh);
+        p.image(Img.JOY_BASE, cx - jr, cy - jr, 2 * jr, 2 * jr, false, joyActive ? 1f : 0.7f);
+        float kr = jr * 0.46f;
+        p.image(Img.JOY_KNOB, cx + (joyActive ? joyDx : 0) * jr * 0.75f - kr, cy + (joyActive ? joyDy : 0) * jr * 0.75f - kr,
+                2 * kr, 2 * kr, false, 1);
+
+        float bs = Controls.size(sw, sh), bty = Controls.btnY(sw, sh);
+        p.image(Img.BTN_JUMP, Controls.jumpX(sw, sh), bty, bs, bs, false, 1);
+        p.image(Img.BTN_SPIN, Controls.spinX(sw, sh), bty, bs, bs, false, w.spinning() || w.spinCool > 0 ? 0.45f : 1f);
+
+        if (w.state == World3D.GAME_OVER || (w.state == World3D.WON && w.stateTime > 1.4f)) {
+            p.rect(0, 0, sw, sh, 0x99000000);
+            boolean won = w.state == World3D.WON;
+            p.text(won ? "LIVELLO COMPLETATO!" : "PARTITA FINITA", sw / 2, 3.3f * s, 1.1f * s, Painter.ALIGN_CENTER, WHITE);
+            p.text("Punti: " + w.score + "   Gemme: " + w.gems + "/" + w.gemTotal, sw / 2, 4.6f * s, 0.6f * s, Painter.ALIGN_CENTER, WHITE);
+            if (won) {
+                float sz = 1.1f * s, step = 3.6f * s, y0 = 5.3f * s;
+                int[] icons = {Img.BATTERY, Img.GEM_FULL};
+                boolean[] owned = {w.batteryOwned, w.gemOwned};
+                String[] names = {"Cella", "Gemma " + w.gems + "/" + w.gemTotal};
+                for (int i = 0; i < 2; i++) {
+                    float x = sw / 2 + (i - 0.5f) * step;
+                    p.image(icons[i], x - sz / 2, y0, sz, sz, false, owned[i] ? 1f : 0.25f);
+                    p.text(names[i], x, y0 + sz + 0.55f * s, 0.4f * s, Painter.ALIGN_CENTER, owned[i] ? WHITE : 0xFF9E9E9E);
+                }
+            }
+            if (w.stateTime > 1.2f) {
+                p.text(won ? "Tocca lo schermo per tornare al menu" : "Tocca lo schermo per riprovare",
+                        sw / 2, 9.4f * s, 0.5f * s, Painter.ALIGN_CENTER, 0xFFFFE082);
+            }
+        }
+        if (error != null) {
+            p.rect(0, sh * 0.4f, sw, sh * 0.2f, 0xCC000000);
+            p.text(error, sw / 2, sh * 0.52f, 0.4f * s, Painter.ALIGN_CENTER, 0xFFFF8A80);
+        }
+    }
+}

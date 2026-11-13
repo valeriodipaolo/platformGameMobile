@@ -737,6 +737,42 @@ def gen_flag():
     save("flag", cv.result())
 
 
+def gen_3d():
+    """Texture per il livello 3D: erba vista dall'alto, ombra, joystick."""
+    n = 256
+    streak = fbm(n, n, beta=1.5, seed=101)
+    fine = fbm(n, n, beta=0.7, seed=102)
+    low = fbm(n, n, beta=2.4, seed=103)
+    diff, _ = lit_from_height(streak * 22 + fine * 8, wrap=True)
+    g_dark = np.array([44, 100, 30]) / 255.0
+    g_light = np.array([126, 180, 60]) / 255.0
+    t = np.clip(0.1 + 0.75 * streak + 0.45 * (fine - 0.5) + 0.35 * (low - 0.5), 0, 1)
+    rgb = lerp(g_dark, g_light, t[..., None]) * (0.62 + 0.6 * diff)[..., None]
+    save("tex_grass", down(np.clip(rgb, 0, 1), 2))
+
+    y, x = np.mgrid[0:64, 0:64]
+    d = np.sqrt((x - 31.5) ** 2 + (y - 31.5) ** 2) / 31.5
+    a = np.clip((1 - d) * 2.4, 0, 1) * 0.58
+    save("shadow", np.dstack([np.zeros((64, 64, 3)), a]))
+
+    S, ss = 256, 3
+    im = Image.new("RGBA", (S * ss, S * ss), (0, 0, 0, 0))
+    d2 = ImageDraw.Draw(im)
+    c, r = S * ss / 2, 120 * ss
+    d2.ellipse([c - r, c - r, c + r, c + r], fill=(255, 255, 255, 34), outline=(255, 255, 255, 140), width=5 * ss)
+    for ang in (0, 90, 180, 270):
+        ca, sa = math.cos(math.radians(ang)), math.sin(math.radians(ang))
+        tip = (c + ca * 104 * ss, c + sa * 104 * ss)
+        b1 = (c + ca * 86 * ss - sa * 13 * ss, c + sa * 86 * ss + ca * 13 * ss)
+        b2 = (c + ca * 86 * ss + sa * 13 * ss, c + sa * 86 * ss - ca * 13 * ss)
+        d2.polygon([tip, b1, b2], fill=(255, 255, 255, 150))
+    im.resize((S, S), Image.LANCZOS).save(os.path.join(OUT, "joy_base.png"), optimize=True)
+    im = Image.new("RGBA", (128 * ss, 128 * ss), (0, 0, 0, 0))
+    d2 = ImageDraw.Draw(im)
+    d2.ellipse([6 * ss, 6 * ss, 122 * ss, 122 * ss], fill=(255, 255, 255, 120), outline=(255, 255, 255, 220), width=4 * ss)
+    im.resize((128, 128), Image.LANCZOS).save(os.path.join(OUT, "joy_knob.png"), optimize=True)
+
+
 def gen_buttons():
     S, ss = 192, 3
     for name in ("left", "right", "jump", "spin"):
@@ -807,4 +843,5 @@ if __name__ == "__main__":
     if want("enemy"): gen_enemy()
     if want("flag"): gen_flag()
     if want("buttons"): gen_buttons()
+    if want("3d"): gen_3d()
     print("ok")
