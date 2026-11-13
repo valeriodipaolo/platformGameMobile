@@ -37,7 +37,8 @@ public final class Renderer {
                 int img;
                 switch (c) {
                     case Level.GROUND: img = lv.get(tx, ty - 1) == Level.GROUND ? Img.DIRT : Img.GRASS; break;
-                    case Level.BRICK: img = Img.BRICK; break;
+                    case Level.BRICK:
+                    case Level.SECRET: img = Img.BRICK; break;
                     case Level.BONUS: img = Img.BONUS; break;
                     case Level.USED: img = Img.USED; break;
                     default: img = Img.STONE; break;
@@ -55,18 +56,28 @@ public final class Renderer {
             }
         }
 
-        // ---- monete
-        int frame = (int) (g.time * 10f) % 6;
-        for (float[] c : g.coins) {
+        // ---- pezzi di gemma e cella energetica
+        int frame = (int) (g.time * 9f) % 6;
+        for (float[] c : g.shards) {
             float x = (c[0] - cam) * s;
             if (x < -s || x > sw) continue;
-            float bob = (float) Math.sin(g.time * 3f + c[0]) * 0.05f;
-            p.image(Img.COIN + frame, x + 0.19f * s, (c[1] + 0.19f + bob) * s, 0.62f * s, 0.62f * s, false, 1);
+            float bob = (float) Math.sin(g.time * 3f + c[0]) * 0.06f;
+            p.image(Img.GEM + (frame + (int) c[0]) % 6, x + 0.14f * s, (c[1] + 0.1f + bob) * s, 0.72f * s, 0.72f * s, false, 1);
+        }
+        if (g.battery != null) {
+            float x = (g.battery[0] - cam) * s;
+            if (x > -s && x < sw) {
+                float bob = (float) Math.sin(g.time * 3f) * 0.07f;
+                p.image(Img.BATTERY, x, (g.battery[1] + bob) * s, 0.9f * s, 0.9f * s, false, 1);
+            }
         }
         for (float[] c : g.pops) {
-            int f = (int) (c[3] * 30f) % 6;
-            float a = Math.min(1f, (0.5f - c[3]) * 6f);
-            p.image(Img.COIN + f, (c[0] - cam + 0.19f) * s, (c[1] + 0.19f) * s, 0.62f * s, 0.62f * s, false, a);
+            float a = Math.min(1f, ((c[4] == 1 ? 0.8f : 0.5f) - c[3]) * 6f);
+            if (c[4] == 1) {
+                p.image(Img.CHIP, (c[0] - cam + 0.05f) * s, (c[1] + 0.05f) * s, 0.9f * s, 0.9f * s, false, a);
+            } else {
+                p.image(Img.GEM + (int) (c[3] * 24f) % 6, (c[0] - cam + 0.14f) * s, (c[1] + 0.1f) * s, 0.72f * s, 0.72f * s, false, a);
+            }
         }
 
         // ---- nemici
@@ -86,13 +97,34 @@ public final class Renderer {
         else if (Math.abs(pl.vx) > 0.3f) img = Img.HERO_RUN + ((int) g.runPhase % 4);
         else img = Img.HERO_IDLE;
         float hw = 1.167f * s, hh = 1.5f * s;
+        float cx = (pl.x + pl.w / 2 - cam) * s, by = (pl.y + pl.h + 0.03f) * s;
         float al = (g.state == Game.PLAYING && g.invuln > 0 && ((int) (g.time * 14f) % 2 == 0)) ? 0.35f : 1f;
-        p.image(img, (pl.x + pl.w / 2 - cam) * s - hw / 2, (pl.y + pl.h + 0.03f) * s - hh, hw, hh, g.facing < 0, al);
+        boolean flip = g.facing < 0;
+        if (g.spinning()) {                         // trottola: il robot ruota attorno al proprio asse
+            img = Img.HERO_IDLE;
+            float c = (float) Math.cos(g.spinAngle);
+            hw *= Math.max(0.3f, Math.abs(c));
+            flip = c < 0;
+            al = 1f;
+        }
+        p.image(img, cx - hw / 2, by - hh, hw, hh, flip, al);
+        if (g.spinning()) {
+            float k = 1.9f * s * (1f + 0.08f * (float) Math.sin(g.time * 40f));
+            p.image(Img.SPIN_FX, cx - k / 2, by - hh / 2 - k / 2, k, k, false, 0.85f);
+        }
 
-        // ---- punteggio
+        // ---- punteggio e collezionabili
         float m = 0.06f * sw, ts = 0.5f * s, base = 0.95f * s;
-        p.image(Img.COIN, m, 0.42f * s, 0.62f * s, 0.62f * s, false, 1);
-        p.text("× " + g.coinCount, m + 0.8f * s, base, ts, Painter.ALIGN_LEFT, WHITE);
+        p.image(Img.GEM + 3, m, 0.34f * s, 0.78f * s, 0.78f * s, false, 1);
+        p.text(g.gems + "/" + g.gemTotal, m + 0.9f * s, base, ts, Painter.ALIGN_LEFT, WHITE);
+        float ix = m, iy = 1.3f * s, isz = 0.85f * s;
+        p.image(Img.BATTERY, ix, iy, isz, isz, false, g.batteryOwned ? 1f : 0.4f);
+        ix += isz * 1.25f;
+        if (g.secretOwned) {
+            p.image(Img.CHIP, ix, iy, isz, isz, false, 1);
+            ix += isz * 1.25f;
+        }
+        p.image(Img.GEM_FULL, ix, iy, isz, isz, false, g.gemOwned ? 1f : 0.4f);
         p.text("PUNTI " + g.score, sw / 2, base, ts, Painter.ALIGN_CENTER, WHITE);
         p.text("VITE " + g.lives, sw - m, base, ts, Painter.ALIGN_RIGHT, WHITE);
         float pip = 0.36f * s, gap = 0.12f * s, py = base + 0.22f * s;
@@ -101,21 +133,37 @@ public final class Renderer {
             p.rect(px - 0.04f * s, py - 0.04f * s, pip + 0.08f * s, pip + 0.08f * s, 0xB0000000);
             p.rect(px, py, pip, pip, i < g.hp ? 0xFFE53935 : 0xFF4A4A4A);
         }
+        if (g.toast != null && g.toastTime > 0) {
+            int a = (int) (255 * Math.min(1f, g.toastTime * 2.5f));
+            p.text(g.toast, sw / 2, 2.6f * s, 0.7f * s, Painter.ALIGN_CENTER, (a << 24) | 0xFFE082);
+        }
 
         // ---- pulsanti
-        float bs = Controls.size(sw, sh), by = Controls.btnY(sw, sh);
-        p.image(Img.BTN_LEFT, Controls.leftX(sw, sh), by, bs, bs, false, 1);
-        p.image(Img.BTN_RIGHT, Controls.rightX(sw, sh), by, bs, bs, false, 1);
-        p.image(Img.BTN_JUMP, Controls.jumpX(sw, sh), by, bs, bs, false, 1);
+        float bs = Controls.size(sw, sh), bty = Controls.btnY(sw, sh);
+        p.image(Img.BTN_LEFT, Controls.leftX(sw, sh), bty, bs, bs, false, 1);
+        p.image(Img.BTN_RIGHT, Controls.rightX(sw, sh), bty, bs, bs, false, 1);
+        p.image(Img.BTN_JUMP, Controls.jumpX(sw, sh), bty, bs, bs, false, 1);
+        p.image(Img.BTN_SPIN, Controls.spinX(sw, sh), bty, bs, bs, false, g.spinTime > 0 || g.spinCool > 0 ? 0.45f : 1f);
 
         // ---- fine partita
         if (g.state == Game.GAME_OVER || (g.state == Game.WON && g.stateTime > 1.4f)) {
             p.rect(0, 0, sw, sh, 0x99000000);
-            String title = g.state == Game.WON ? "LIVELLO COMPLETATO!" : "PARTITA FINITA";
-            p.text(title, sw / 2, 5.0f * s, 1.1f * s, Painter.ALIGN_CENTER, WHITE);
-            p.text("Punti: " + g.score + "   Monete: " + g.coinCount, sw / 2, 6.4f * s, 0.6f * s, Painter.ALIGN_CENTER, WHITE);
+            boolean won = g.state == Game.WON;
+            p.text(won ? "LIVELLO COMPLETATO!" : "PARTITA FINITA", sw / 2, 3.3f * s, 1.1f * s, Painter.ALIGN_CENTER, WHITE);
+            p.text("Punti: " + g.score + "   Gemme: " + g.gems + "/" + g.gemTotal, sw / 2, 4.6f * s, 0.6f * s, Painter.ALIGN_CENTER, WHITE);
+            if (won) {
+                float sz = 1.1f * s, step = 3.6f * s, x0 = sw / 2 - step, y0 = 5.3f * s;
+                int[] icons = {Img.BATTERY, Img.CHIP, Img.GEM_FULL};
+                boolean[] owned = {g.batteryOwned, g.secretOwned, g.gemOwned};
+                String[] names = {"Cella", "Chip segreto", "Gemma " + g.gems + "/" + g.gemTotal};
+                for (int i = 0; i < 3; i++) {
+                    float ix2 = x0 + i * step;
+                    p.image(icons[i], ix2 - sz / 2, y0, sz, sz, false, owned[i] ? 1f : 0.25f);
+                    p.text(names[i], ix2, y0 + sz + 0.55f * s, 0.4f * s, Painter.ALIGN_CENTER, owned[i] ? WHITE : 0xFF9E9E9E);
+                }
+            }
             if (g.stateTime > 1.2f) {
-                p.text("Tocca lo schermo per rigiocare", sw / 2, 7.6f * s, 0.5f * s, Painter.ALIGN_CENTER, 0xFFFFE082);
+                p.text("Tocca lo schermo per rigiocare", sw / 2, 9.4f * s, 0.5f * s, Painter.ALIGN_CENTER, 0xFFFFE082);
             }
         }
     }

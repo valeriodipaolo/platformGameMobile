@@ -65,14 +65,14 @@ public class Check {
 
         // le monete a terra si prendono camminando
         int high = 0;
-        for (float[] c : lv.coins) {
+        for (float[] c : lv.shards) {
             boolean overGround = lv.solid((int) c[0], 10);
             if (overGround && c[1] >= 8 && c[1] < 9) high++;
         }
         ok(high == 0, "nessuna moneta a livello della testa sopra il terreno, irraggiungibile camminando");
         Game w = fresh();
         run(w, 1.4f, false, true, false);
-        ok(w.coinCount >= 2, "camminando all'inizio si prendono monete: " + w.coinCount);
+        ok(w.gems >= 2, "camminando all'inizio si prendono pezzi di gemma: " + w.gems);
 
         // si può salire sopra il blocco singolo (17,7) e sopra la fila di mattoni (82..89,7)
         ok(landsOn(17, 7), "si riesce a salire sopra il blocco a (17,7)");
@@ -95,6 +95,76 @@ public class Check {
         }
         run(d, 2.5f, false, false, false);
         ok(d.state == Game.PLAYING && d.hp == 3 && d.invuln > 0, "dopo la morte si riparte con 3 punti vita e invulnerabilità");
+        // cella energetica: in vista sul terreno, si prende camminando
+        Game b = fresh();
+        ok(b.battery != null && b.level.solid((int) b.battery[0], 10) && b.battery[1] > 8.5f, "la cella energetica è sul terreno, a portata di cammino");
+        b.player.x = b.battery[0] - 2; b.player.y = 8.8f;
+        run(b, 1.2f, false, true, false);
+        ok(b.batteryOwned && b.battery == null, "camminando si prende la cella energetica");
+
+        // oggetto segreto: solo colpendo da sotto il mattoncino giusto
+        Game sg = fresh();
+        int secrets = 0, sx = -1, sy = -1;
+        for (int y = 0; y < sg.level.h; y++) for (int x = 0; x < sg.level.w; x++) if (sg.level.get(x, y) == Level.SECRET) { secrets++; sx = x; sy = y; }
+        ok(secrets == 1, "nel livello c'è un solo mattoncino segreto: (" + sx + "," + sy + ")");
+        for (int y = 0; y < sg.level.h; y++) for (int x = 0; x < sg.level.w; x++) {
+            if (sg.level.get(x, y) == Level.BRICK) sg.hitBlock(x, y);
+        }
+        ok(!sg.secretOwned, "colpire gli altri mattoncini non dà il chip");
+        sg.player.x = sx + 0.19f; sg.player.y = sy + 1.0f; sg.player.vy = -8f;       // testa sotto il mattoncino, in salita
+        for (int i = 0; i < 30; i++) { sg.setInput(false, false, true); sg.update(1f / 60f); }
+        ok(sg.secretOwned && sg.level.get(sx, sy) == Level.USED, "dando la capocciata al mattoncino segreto si ottiene il chip");
+
+        // gemma completa: tutti i pezzi sparsi più le casse bonus
+        Game gm = fresh();
+        ok(gm.gemTotal > gm.shards.size(), "il totale delle gemme comprende anche le casse bonus: " + gm.gemTotal);
+        java.util.List<float[]> all = new java.util.ArrayList<float[]>(gm.shards);
+        for (float[] c : all) {
+            gm.player.x = c[0]; gm.player.y = c[1]; gm.player.vy = 0;
+            gm.update(1f / 120f);
+        }
+        ok(gm.shards.isEmpty() && !gm.gemOwned, "presi tutti i pezzi sparsi ma non le casse, la gemma non è ancora completa");
+        for (int y = 0; y < gm.level.h; y++) for (int x = 0; x < gm.level.w; x++) if (gm.level.get(x, y) == Level.BONUS) gm.hitBlock(x, y);
+        ok(gm.gemOwned && gm.gems == gm.gemTotal, "con anche le casse bonus si ottiene la gemma completa");
+
+        // salvataggio: i collezionabili restano nelle partite successive
+        MemorySave ms = new MemorySave();
+        Game s1 = new Game(ms);
+        s1.hitBlock(sx, sy);
+        Game s2 = new Game(ms);
+        ok(s2.secretOwned && !s2.batteryOwned && !s2.gemOwned, "il chip trovato resta salvato nella partita successiva");
+
+        // trottola: travolge i nemici senza perdere punti vita, poi ha un tempo di ricarica
+        Game sp = fresh();
+        sp.enemies.clear();
+        Enemy en = new Enemy(20, 9); en.active = true;
+        sp.enemies.add(en);
+        sp.player.x = 3; sp.player.y = 8.8f;
+        run(sp, 0.3f, false, false, false);
+        sp.setInput(false, false, false, true);
+        sp.update(1f / 60f);
+        ok(sp.spinning(), "premendo la trottola il robot gira");
+        en.x = sp.player.x + 0.5f; en.y = 10 - en.h; en.dead = false; en.flung = false;
+        for (int i = 0; i < 10; i++) { sp.setInput(false, false, false, true); sp.update(1f / 60f); }
+        ok(en.flung && sp.hp == 3, "la trottola travolge il nemico senza fare danno: hp=" + sp.hp);
+        run(sp, 0.9f, false, false, false);
+        ok(!sp.spinning(), "la trottola finisce dopo meno di un secondo");
+        sp.setInput(false, false, false, true);
+        sp.update(1f / 60f);
+        ok(!sp.spinning() || sp.spinCool <= 0, "senza rilasciare il pulsante non riparte di continuo");
+        run(sp, 0.1f, false, false, false);
+        run(sp, 0.8f, false, false, false);
+        sp.setInput(false, false, false, true);
+        sp.update(1f / 60f);
+        ok(sp.spinning(), "dopo la ricarica si può rifare");
+
+        // zone dei pulsanti su uno schermo largo 2400x1080
+        ok(Controls.zone(100, 900, 2400, 1080) == Controls.LEFT, "zona sinistra");
+        ok(Controls.zone(500, 900, 2400, 1080) == Controls.RIGHT, "zona destra");
+        ok(Controls.zone(Controls.jumpX(2400, 1080) + 100, 900, 2400, 1080) == Controls.JUMP, "zona salto");
+        ok(Controls.zone(Controls.spinX(2400, 1080) + 100, 900, 2400, 1080) == Controls.SPIN, "zona trottola");
+        ok(Controls.zone(1300, 300, 2400, 1080) == Controls.JUMP, "il salto resta valido su tutta la metà destra tranne la fascia della trottola");
+
         System.out.println(fails == 0 ? "TUTTO OK" : fails + " controlli falliti");
         System.exit(fails == 0 ? 0 : 1);
     }

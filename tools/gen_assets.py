@@ -442,16 +442,90 @@ def gen_blocks():
 
 
 # ---------------------------------------------------------------- oggetti
-def gen_coin():
-    for i, k in enumerate([1.0, 0.82, 0.48, 0.14, 0.48, 0.82]):
-        cv = Cv(64, 64, 3)
-        if k < 0.2:
-            cv.add(cv.rrect(32 - 4, 6, 32 + 4, 58, 3.5), (232, 176, 36), ao=0.4, bevel=4, spec=0.9, shin=12)
-        else:
-            cv.add(cv.ell(32, 32, 26 * k, 26), (236, 182, 38), ao=0.4, bevel=5, spec=0.9, shin=14)
-            cv.add(cv.ell(32, 32, 19.5 * k, 19.5), (250, 208, 70), bevel=2.5, spec=0.7, shin=10)
-            cv.add(cv.poly(star_pts(32, 33, 12, 5.2, k)), (206, 144, 22), bevel=3, spec=0.8, shin=12)
-        save("coin_%d" % i, cv.result())
+def sparkle(cv, cx, cy, k):
+    if k <= 0.05:
+        return
+    R, r = 13 * k, 2.6 * k
+    pts = [(cx, cy - R), (cx + r, cy - r), (cx + R, cy), (cx + r, cy + r),
+           (cx, cy + R), (cx - r, cy + r), (cx - R, cy), (cx - r, cy - r)]
+    m = cv.poly(pts)
+    cv.glow(m, (255, 255, 255), radius=2.5, strength=0.9)
+    cv.add(m, (255, 255, 255), bevel=1, amb=1.0, dif=0.0, spec=0.0)
+
+
+def facets(cv, polys, base, mults, bevel=2.5):
+    for poly, k in zip(polys, mults):
+        col = tuple(int(max(0, min(255, c * k))) for c in base)
+        cv.add(cv.poly(poly), col, bevel=bevel, spec=0.55, shin=10, amb=0.55, dif=0.55)
+
+
+AQUA = (46, 214, 204)
+
+
+def gem_shard(phase):
+    cv = Cv(64, 64, 3)
+    P = [(32, 4), (49, 21), (45, 50), (31, 61), (17, 50), (14, 22)]
+    C = (33, 33)
+    cv.glow(cv.poly(P), (60, 240, 225), radius=5, strength=0.35)
+    polys = [[P[i], P[(i + 1) % 6], C] for i in range(6)]
+    facets(cv, [polys[5], polys[0], polys[1], polys[2], polys[3], polys[4]],
+           AQUA, [1.30, 1.08, 0.82, 0.55, 0.70, 0.96])
+    sparkle(cv, 24, 17, phase)
+    return cv.result()
+
+
+def gen_gem():
+    for i, k in enumerate([0.0, 0.35, 0.8, 1.0, 0.55, 0.15]):
+        save("gem_%d" % i, gem_shard(k))
+    cv = Cv(96, 96, 3)
+    cv.glow(cv.poly([(24, 16), (72, 16), (92, 38), (48, 90), (4, 38)]), (60, 240, 225), radius=6, strength=0.4)
+    polys = [[(24, 16), (72, 16), (62, 38), (34, 38)],
+             [(24, 16), (4, 38), (34, 38)], [(72, 16), (92, 38), (62, 38)],
+             [(4, 38), (34, 38), (48, 90)], [(34, 38), (62, 38), (48, 90)], [(62, 38), (92, 38), (48, 90)]]
+    facets(cv, polys, AQUA, [1.35, 1.05, 0.85, 0.72, 0.98, 0.55], bevel=3)
+    sparkle(cv, 30, 26, 1.1)
+    save("gem_full", cv.result())
+
+
+def gen_battery():
+    cv = Cv(64, 64, 3)
+    n = cv.w
+    cv.add(cv.rrect(18, 10, 46, 59, 7), (62, 68, 80), ao=0.45, bevel=7, spec=0.7, shin=22)
+    cv.add(cv.rrect(25, 3, 39, 12, 3), (196, 202, 212), bevel=3, spec=0.8)
+    win = cv.rrect(22, 20, 42, 49, 4.5)
+    cv.glow(win, (130, 250, 80), radius=5, strength=0.55)
+    cv.add(win, (120, 236, 66), bevel=4, spec=0.6, amb=0.8, dif=0.4)
+    bolt = cv.poly([(35, 22), (26, 37), (31, 37), (29, 47), (39, 31), (34, 31)])
+    cv.add(bolt, (255, 255, 228), bevel=1, amb=1.0, dif=0.0, spec=0.0)
+    save("battery", cv.result())
+
+
+def gen_chip():
+    cv = Cv(64, 64, 3)
+    gold = (232, 190, 62)
+    for k in range(4):
+        o = 17 + k * 9.5
+        cv.add(cv.rrect(3, o, 14, o + 4.5, 1.6), gold, bevel=1.8, spec=0.8)
+        cv.add(cv.rrect(50, o, 61, o + 4.5, 1.6), gold, bevel=1.8, spec=0.8)
+        cv.add(cv.rrect(o, 3, o + 4.5, 14, 1.6), gold, bevel=1.8, spec=0.8)
+        cv.add(cv.rrect(o, 50, o + 4.5, 61, 1.6), gold, bevel=1.8, spec=0.8)
+    cv.add(cv.rrect(11, 11, 53, 53, 6), (34, 40, 54), ao=0.45, bevel=6, spec=0.7, shin=24)
+    for (x0, y0, x1, y1) in [(17, 20, 28, 20), (28, 20, 28, 28), (47, 44, 36, 44), (36, 44, 36, 36), (17, 44, 24, 44), (47, 20, 40, 20)]:
+        cv.add(cv.capsule(x0, y0, x1, y1, 1.2), (70, 220, 250), bevel=1.2, amb=1.0, dif=0.0, spec=0.0)
+    core = cv.rrect(25, 25, 39, 39, 3)
+    cv.glow(core, (90, 230, 255), radius=4, strength=0.6)
+    cv.add(core, (96, 110, 134), bevel=3, spec=0.8)
+    cv.add(cv.ell(32, 32, 3.4, 3.4), (120, 240, 255), bevel=3, amb=1.0, dif=0.0, spec=0.0)
+    save("chip", cv.result())
+
+
+def gen_spinfx():
+    cv = Cv(128, 128, 3)
+    for (cy, rx, ry) in [(30, 50, 11), (64, 58, 14), (98, 50, 11)]:
+        ring = cv.ell(64, cy, rx, ry) & ~cv.ell(64, cy, rx - 4.5, ry - 3.2)
+        cv.glow(ring, (150, 215, 255), radius=3, strength=0.6)
+        cv.glow(ring, (235, 247, 255), radius=0.8, strength=1.4)
+    save("spin_fx", cv.result())
 
 
 def hero(a1, a2, b1, b2, dy=0, l1=0, l2=0):
@@ -572,19 +646,32 @@ def gen_flag():
 
 def gen_buttons():
     S, ss = 192, 3
-    for name in ("left", "right", "jump"):
+    for name in ("left", "right", "jump", "spin"):
         im = Image.new("RGBA", (S * ss, S * ss), (0, 0, 0, 0))
         d = ImageDraw.Draw(im)
         c, r = S * ss / 2, 88 * ss
         d.ellipse([c - r, c - r, c + r, c + r], fill=(255, 255, 255, 44), outline=(255, 255, 255, 150), width=5 * ss)
         g = (255, 255, 255, 225)
-        if name == "jump":
+        if name == "spin":
+            r0 = 38 * ss
+            d.arc([c - r0, c - r0, c + r0, c + r0], start=35, end=330, fill=g, width=15 * ss)
+            th = math.radians(330)
+            px, py = 96 + 38 * math.cos(th), 96 + 38 * math.sin(th)
+            tx, ty = -math.sin(th), math.cos(th)
+            nx, ny = math.cos(th), math.sin(th)
+            tip = (px + tx * 20, py + ty * 20)
+            b1 = (px - nx * 17, py - ny * 17)
+            b2 = (px + nx * 17, py + ny * 17)
+            d.polygon([(x * ss, y * ss) for x, y in (tip, b1, b2)], fill=g)
+            pts = []
+        elif name == "jump":
             pts = [(96, 44), (146, 104), (114, 104), (114, 148), (78, 148), (78, 104), (46, 104)]
         else:
             pts = [(50, 96), (126, 46), (126, 146)]
             if name == "right":
                 pts = [(S - x, y) for x, y in pts]
-        d.polygon([(x * ss, y * ss) for x, y in pts], fill=g)
+        if pts:
+            d.polygon([(x * ss, y * ss) for x, y in pts], fill=g)
         im = im.resize((S, S), Image.LANCZOS)
         im.save(os.path.join(OUT, "btn_%s.png" % name), optimize=True)
 
@@ -617,7 +704,11 @@ if __name__ == "__main__":
     if want("ground"): gen_ground()
     if want("brick"): gen_brick()
     if want("blocks"): gen_blocks()
-    if want("coin"): gen_coin()
+    if want("gem"): gen_gem()
+    if want("items"):
+        gen_battery()
+        gen_chip()
+        gen_spinfx()
     if want("hero"): gen_icon(gen_hero())
     if want("enemy"): gen_enemy()
     if want("flag"): gen_flag()

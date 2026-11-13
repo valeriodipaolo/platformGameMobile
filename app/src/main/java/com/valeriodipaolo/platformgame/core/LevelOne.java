@@ -12,11 +12,12 @@ public final class LevelOne {
         ground(lv, 65, 103);
         ground(lv, 107, 140);
         ground(lv, 144, 211);
+        lv.battery = new float[] {59, 9.1f};      // in bella vista sul percorso, subito prima del primo burrone
         lv.startX = 3;
         lv.startY = GROUND_Y - 1.2f;
 
         // --- primo tratto: monete, casse e primo nemico
-        coins(lv, 9, 9, 4);
+        shards(lv, 9, 9, 4);
         row(lv, 17, 7, "?");
         row(lv, 22, 7, "B?B?B");
         row(lv, 24, 4, "?");
@@ -24,22 +25,22 @@ public final class LevelOne {
         column(lv, 33, 2);
         enemy(lv, 37);
         column(lv, 41, 3);
-        coins(lv, 44, 9, 3);
+        shards(lv, 44, 9, 3);
         enemy(lv, 46);
         enemy(lv, 47.5f);
         column(lv, 50, 3);
-        coins(lv, 51, 6, 1);
+        shards(lv, 51, 6, 1);
         row(lv, 55, 7, "BB?");
 
         // --- primo burrone, con un arco di monete
-        coin(lv, 62, 6); coin(lv, 63, 5.5f); coin(lv, 64, 6);
+        shard(lv, 62, 6); shard(lv, 63, 5.5f); shard(lv, 64, 6);
 
         // --- secondo tratto
         row(lv, 70, 7, "?B?");
         enemy(lv, 75);
         enemy(lv, 77);
-        row(lv, 82, 7, "BBBBBBBB");
-        coins(lv, 83, 6, 6);
+        row(lv, 82, 7, "BBBBHBBB");          // il quinto mattoncino (colonna 86) nasconde il chip segreto
+        shards(lv, 83, 6, 6);
         row(lv, 91, 4, "BB?B");
         enemy(lv, 93);
         stairsUp(lv, 100, 4);                 // scalinata, burrone, scalinata
@@ -54,9 +55,9 @@ public final class LevelOne {
         enemy(lv, 126);
         enemy(lv, 128);
         column(lv, 132, 2);
-        coins(lv, 134, 9, 4);
+        shards(lv, 134, 9, 4);
         enemy(lv, 137);
-        coin(lv, 141, 5); coin(lv, 142, 4.6f); coin(lv, 143, 5);
+        shard(lv, 141, 5); shard(lv, 142, 4.6f); shard(lv, 143, 5);
 
         // --- ultimo tratto
         row(lv, 149, 7, "B?B");
@@ -66,7 +67,7 @@ public final class LevelOne {
         enemy(lv, 164);
         enemy(lv, 166);
         column(lv, 171, 2);
-        coins(lv, 174, 9, 4);
+        shards(lv, 174, 9, 4);
         stairsUp(lv, 181, 7);
         column(lv, 188, 7);
 
@@ -98,12 +99,12 @@ public final class LevelOne {
         for (int i = 0; i < steps; i++) column(lv, x + i, steps - i);
     }
 
-    private static void coin(Level lv, float x, float y) {
-        lv.coins.add(new float[] {x, y});
+    private static void shard(Level lv, float x, float y) {
+        lv.shards.add(new float[] {x, y});
     }
 
-    private static void coins(Level lv, int x, int y, int n) {
-        for (int i = 0; i < n; i++) coin(lv, x + i, y);
+    private static void shards(Level lv, int x, int y, int n) {
+        for (int i = 0; i < n; i++) shard(lv, x + i, y);
     }
 
     private static void enemy(Level lv, float x) {

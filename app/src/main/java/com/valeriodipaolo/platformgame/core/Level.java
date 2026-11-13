@@ -6,15 +6,21 @@ import java.util.List;
 /** Griglia di caselle del livello più le posizioni iniziali di monete e nemici. Riga 0 in alto. */
 public final class Level {
     public static final char EMPTY = '.', GROUND = '#', BRICK = 'B', BONUS = '?', USED = 'U', STONE = 'S';
+    /** Mattoncino identico agli altri, ma colpito da sotto rivela l'oggetto segreto. */
+    public static final char SECRET = 'H';
 
     public final int w, h;
     private final char[] t;
+    public String id = "l1";
     public float startX = 3, startY = 8;
+    /** Posizione della cella energetica (c'è in tutti i livelli). */
+    public float[] battery;
     /** Colonna dell'asta del traguardo. */
     public int flagX;
     /** Riga del terreno su cui poggia l'asta (l'asta non è un ostacolo). */
     public int flagBaseY;
-    public final List<float[]> coins = new ArrayList<float[]>();
+    /** Pezzi di gemma sparsi nel livello: {x, y}. */
+    public final List<float[]> shards = new ArrayList<float[]>();
     public final List<float[]> enemies = new ArrayList<float[]>();
 
     public Level(int w, int h) {

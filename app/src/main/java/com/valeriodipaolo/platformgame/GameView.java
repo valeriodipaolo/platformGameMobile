@@ -13,17 +13,18 @@ import com.valeriodipaolo.platformgame.core.Renderer;
 
 /** Superficie di gioco: un thread aggiorna la partita e la ridisegna a ogni fotogramma. */
 final class GameView extends SurfaceView implements SurfaceHolder.Callback, Runnable {
-    private final Game game = new Game();
+    private final Game game;
     private final Renderer renderer = new Renderer();
     private final AndroidPainter painter;
 
     private Thread thread;
     private volatile boolean running;
-    private volatile boolean inLeft, inRight, inJump, tapped;
+    private volatile boolean inLeft, inRight, inJump, inSpin, tapped;
     private boolean hardwareCanvas = Build.VERSION.SDK_INT >= 26;
 
     GameView(Context ctx) {
         super(ctx);
+        game = new Game(new AndroidSave(ctx));
         painter = new AndroidPainter(ctx);
         getHolder().addCallback(this);
         setKeepScreenOn(true);
@@ -74,7 +75,7 @@ final class GameView extends SurfaceView implements SurfaceHolder.Callback, Runn
                     tapped = false;
                     game.tap();
                 }
-                game.setInput(inLeft, inRight, inJump);
+                game.setInput(inLeft, inRight, inJump, inSpin);
                 game.update(dt);
                 painter.begin(c);
                 renderer.draw(game, painter, c.getWidth(), c.getHeight());
@@ -117,7 +118,7 @@ final class GameView extends SurfaceView implements SurfaceHolder.Callback, Runn
     @Override
     public boolean onTouchEvent(MotionEvent e) {
         int action = e.getActionMasked();
-        boolean l = false, r = false, j = false;
+        boolean l = false, r = false, j = false, sp = false;
         if (action != MotionEvent.ACTION_CANCEL) {
             int lifted = (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_POINTER_UP)
                     ? e.getActionIndex() : -1;
@@ -127,11 +128,13 @@ final class GameView extends SurfaceView implements SurfaceHolder.Callback, Runn
                 if (zone == Controls.LEFT) l = true;
                 else if (zone == Controls.RIGHT) r = true;
                 else if (zone == Controls.JUMP) j = true;
+                else if (zone == Controls.SPIN) sp = true;
             }
         }
         inLeft = l;
         inRight = r;
         inJump = j;
+        inSpin = sp;
         if (action == MotionEvent.ACTION_DOWN) tapped = true;
         return true;
     }

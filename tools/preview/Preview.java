@@ -11,11 +11,11 @@ import java.io.File;
  * Uso: tools/preview/run.sh
  */
 public class Preview {
-    static BufferedImage[] imgs = new BufferedImage[Img.COUNT];
+    public static BufferedImage[] imgs = new BufferedImage[Img.COUNT];
     static float FOE = 1.6f;
 
-    static class AwtPainter implements Painter {
-        Graphics2D g;
+    public static class AwtPainter implements Painter {
+        public Graphics2D g;
         public float aspect(int i) { return imgs[i].getWidth() / (float) imgs[i].getHeight(); }
         public void image(int i, float x, float y, float w, float h, boolean flip, float alpha) {
             Composite old = g.getComposite();
@@ -95,7 +95,7 @@ public class Preview {
                 if (g.state == Game.WON) shots = 99;
             }
             if (g.state == Game.WON && g.stateTime > 2f) {
-                System.out.printf("LIVELLO COMPLETATO in %.1fs, punti=%d monete=%d vite=%d%n", f * dt, g.score, g.coinCount, g.lives);
+                System.out.printf("LIVELLO COMPLETATO in %.1fs, punti=%d gemme=%d vite=%d%n", f * dt, g.score, g.gems, g.lives);
                 return;
             }
             if (g.state == Game.GAME_OVER) { System.out.println("GAME OVER (bot)"); return; }

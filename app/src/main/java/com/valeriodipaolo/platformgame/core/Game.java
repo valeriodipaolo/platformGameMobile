@@ -16,35 +16,51 @@ public final class Game {
     private static final float INVULN = 2f;
     private static final float ENEMY_SPEED = 2.0f;
     public static final float BUMP_TIME = 0.18f;
+    /** Trottola: dura mezzo secondo e mezzo, poi serve mezzo secondo prima di rifarla. Si può usare anche in aria. */
+    public static final float SPIN_TIME = 0.6f, SPIN_COOLDOWN = 0.5f;
+    private static final float SPIN_SPEED = 1.35f, SPIN_REACH = 0.3f;
 
+    public final Save save;
     public Level level;
     public final Body player = new Body();
     public final List<Enemy> enemies = new ArrayList<Enemy>();
-    /** Monete ancora da raccogliere: {x, y} della casella. */
-    public final List<float[]> coins = new ArrayList<float[]>();
-    /** Monete che schizzano fuori dalle casse: {x, y, vy, età}. */
+    /** Pezzi di gemma ancora da raccogliere: {x, y} della casella. */
+    public final List<float[]> shards = new ArrayList<float[]>();
+    /** Oggetti che schizzano fuori dalle casse: {x, y, vy, età, tipo (0 gemma, 1 chip)}. */
     public final List<float[]> pops = new ArrayList<float[]>();
+    /** Cella energetica ancora sul terreno: {x, y}, oppure null se già presa in questa partita. */
+    public float[] battery;
     public int bumpTx = -1, bumpTy = -1;
     public float bumpAge;
 
-    public int state, coinCount, score, lives, hp;
+    public int state, score, lives, hp;
+    /** Pezzi di gemma presi in questa partita, e quanti ce ne sono in tutto (monete sparse più casse bonus). */
+    public int gems, gemTotal;
+    /** Collezionabili già ottenuti (anche in partite precedenti). */
+    public boolean batteryOwned, secretOwned, gemOwned;
+    public String toast;
+    public float toastTime;
     /** Secondi di invulnerabilità rimasti dopo un colpo (o dopo la ricomparsa). */
     public float invuln;
-    private float checkpointX;
-    public float stateTime, time, camX, runPhase;
+    public float stateTime, time, camX, runPhase, spinTime, spinCool, spinAngle;
     public float viewW = 20;
     public int facing = 1;
 
-    private boolean left, right, jump, jumpWas;
-    private float jumpBuffer, coyote, acc;
+    private boolean left, right, jump, jumpWas, spin, spinWas;
+    private float jumpBuffer, coyote, acc, checkpointX;
 
     public Game() {
+        this(new MemorySave());
+    }
+
+    public Game(Save save) {
+        this.save = save;
         newGame();
     }
 
     public void newGame() {
         score = 0;
-        coinCount = 0;
+        gems = 0;
         lives = 3;
         loadLevel();
     }
@@ -53,9 +69,19 @@ public final class Game {
         level = LevelOne.build();
         enemies.clear();
         for (float[] e : level.enemies) enemies.add(new Enemy(e[0], e[1]));
-        coins.clear();
-        for (float[] c : level.coins) coins.add(new float[] {c[0], c[1]});
+        shards.clear();
+        for (float[] c : level.shards) shards.add(new float[] {c[0], c[1]});
+        gemTotal = shards.size();
+        for (int y = 0; y < level.h; y++) {
+            for (int x = 0; x < level.w; x++) if (level.get(x, y) == Level.BONUS) gemTotal++;
+        }
+        battery = level.battery == null ? null : new float[] {level.battery[0], level.battery[1]};
+        batteryOwned = save.has(level.id + "_battery");
+        secretOwned = save.has(level.id + "_secret");
+        gemOwned = save.has(level.id + "_gem");
         pops.clear();
+        toast = null;
+        toastTime = 0;
         bumpTx = bumpTy = -1;
         player.w = 0.62f;
         player.h = 1.2f;
@@ -74,10 +100,11 @@ public final class Game {
         state = PLAYING;
         stateTime = 0;
         jumpBuffer = coyote = 0;
+        spinTime = spinCool = 0;
         camX = Math.max(0, Math.min(x - viewW * 0.4f, level.w - viewW));
     }
 
-    /** Dopo aver perso una vita si riparte dall'ultimo punto sicuro, tenendo monete e nemici già eliminati. */
+    /** Dopo aver perso una vita si riparte dall'ultimo punto sicuro, tenendo gemme e nemici già eliminati. */
     private void respawn() {
         hp = MAX_HP;
         place(checkpointX);
@@ -85,14 +112,23 @@ public final class Game {
     }
 
     public void setInput(boolean left, boolean right, boolean jump) {
+        setInput(left, right, jump, false);
+    }
+
+    public void setInput(boolean left, boolean right, boolean jump, boolean spin) {
         this.left = left;
         this.right = right;
         this.jump = jump;
+        this.spin = spin;
     }
 
     /** Tocco sullo schermo: serve a ricominciare a fine partita. */
     public void tap() {
         if ((state == WON || state == GAME_OVER) && stateTime > 1.2f) newGame();
+    }
+
+    public boolean spinning() {
+        return spinTime > 0;
     }
 
     public void update(float dt) {
@@ -106,6 +142,8 @@ public final class Game {
     private void step(float dt) {
         time += dt;
         stateTime += dt;
+        if (toastTime > 0) toastTime -= dt;
+        if (invuln > 0) invuln -= dt;
         if (bumpTx >= 0) {
             bumpAge += dt;
             if (bumpAge >= BUMP_TIME) bumpTx = bumpTy = -1;
@@ -115,15 +153,14 @@ public final class Game {
             p[2] += 40f * dt;
             p[1] += p[2] * dt;
             p[3] += dt;
-            if (p[3] > 0.5f) pops.remove(i);
+            if (p[3] > (p[4] == 1 ? 0.8f : 0.5f)) pops.remove(i);
         }
 
-        if (invuln > 0) invuln -= dt;
         if (state == PLAYING) {
             stepPlayer(dt);
             updateCheckpoint();
             stepEnemies(dt);
-            pickCoins();
+            pickups();
             if (state == PLAYING && player.x + player.w >= level.flagX + 0.45f) win();
         } else if (state == DYING) {
             player.vy += 60f * dt;
@@ -142,6 +179,7 @@ public final class Game {
             if (player.y < target) player.y = Math.min(target, player.y + 6f * dt);
         }
         jumpWas = jump;
+        spinWas = spin;
 
         float target = player.x + player.w / 2 - viewW * 0.4f;
         camX += (target - camX) * Math.min(1f, 10f * dt);
@@ -150,6 +188,20 @@ public final class Game {
 
     private void stepPlayer(float dt) {
         Body p = player;
+
+        if (spin && !spinWas && spinTime <= 0 && spinCool <= 0) spinTime = SPIN_TIME;
+        if (spinTime > 0) {
+            spinTime -= dt;
+            spinAngle += 26f * dt;
+            if (spinTime <= 0) {
+                spinTime = 0;
+                spinCool = SPIN_COOLDOWN;
+            }
+        } else if (spinCool > 0) {
+            spinCool -= dt;
+        }
+        float maxSpeed = spinTime > 0 ? MAX_SPEED * SPIN_SPEED : MAX_SPEED;
+
         float dir = (right ? 1 : 0) - (left ? 1 : 0);
         if (dir != 0) {
             float a = p.onGround ? ACCEL : AIR_ACCEL;
@@ -160,7 +212,7 @@ public final class Game {
             float f = (p.onGround ? FRICTION : AIR_FRICTION) * dt;
             if (Math.abs(p.vx) <= f) p.vx = 0; else p.vx -= Math.signum(p.vx) * f;
         }
-        p.vx = Math.max(-MAX_SPEED, Math.min(MAX_SPEED, p.vx));
+        p.vx = Math.max(-maxSpeed, Math.min(maxSpeed, p.vx));
 
         // salto: un po' di tolleranza se si preme poco prima di toccare terra o poco dopo il bordo
         jumpBuffer = (jump && !jumpWas) ? 0.2f : jumpBuffer - dt;
@@ -202,17 +254,28 @@ public final class Game {
         }
     }
 
-    private void hitBlock(int tx, int ty) {
+    /** Casella colpita da sotto con la testa. */
+    public void hitBlock(int tx, int ty) {
         char c = level.get(tx, ty);
-        if (c != Level.BONUS && c != Level.BRICK) return;
+        if (c != Level.BONUS && c != Level.BRICK && c != Level.SECRET) return;
         bumpTx = tx;
         bumpTy = ty;
         bumpAge = 0;
         if (c == Level.BONUS) {
             level.set(tx, ty, Level.USED);
-            coinCount++;
+            gems++;
             score += 200;
-            pops.add(new float[] {tx, ty - 1, -13f, 0});
+            pops.add(new float[] {tx, ty - 1, -13f, 0, 0});
+            checkGem();
+        } else if (c == Level.SECRET) {
+            level.set(tx, ty, Level.USED);
+            pops.add(new float[] {tx, ty - 1, -14f, 0, 1});
+            if (!secretOwned) {
+                secretOwned = true;
+                save.set(level.id + "_secret");
+                score += 1000;
+                showToast("Chip segreto trovato!");
+            }
         }
         for (Enemy e : enemies) {                          // chi sta sopra la casella colpita vola via
             if (e.dead || e.flung || e.flatTime > 0) continue;
@@ -250,7 +313,13 @@ public final class Game {
             e.anim += dt;
             if (e.y > level.h + 2) { e.dead = true; continue; }
 
-            if (state == PLAYING && player.overlaps(e)) {
+            if (state != PLAYING) continue;
+            if (spinTime > 0 && touches(player, e, SPIN_REACH)) {      // la trottola travolge i nemici
+                e.flung = true;
+                e.vy = -11f;
+                e.vx = facing * 5f;
+                score += 100;
+            } else if (player.overlaps(e)) {
                 if (player.vy > 0 && player.y + player.h - e.y < 0.75f) {
                     e.flatTime = 0.45f;
                     player.vy = jump ? -15f : -10f;
@@ -262,16 +331,45 @@ public final class Game {
         }
     }
 
-    private void pickCoins() {
+    private static boolean touches(Body a, Body b, float m) {
+        return a.x - m < b.x + b.w && a.x + a.w + m > b.x && a.y - m < b.y + b.h && a.y + a.h + m > b.y;
+    }
+
+    private void pickups() {
         Body p = player;
-        for (int i = coins.size() - 1; i >= 0; i--) {
-            float[] c = coins.get(i);
+        for (int i = shards.size() - 1; i >= 0; i--) {
+            float[] c = shards.get(i);
             if (p.x < c[0] + 0.8f && p.x + p.w > c[0] + 0.2f && p.y < c[1] + 0.8f && p.y + p.h > c[1] + 0.2f) {
-                coins.remove(i);
-                coinCount++;
+                shards.remove(i);
+                gems++;
                 score += 50;
+                checkGem();
             }
         }
+        if (battery != null && p.x < battery[0] + 0.9f && p.x + p.w > battery[0] && p.y < battery[1] + 0.9f && p.y + p.h > battery[1]) {
+            battery = null;
+            if (!batteryOwned) {
+                batteryOwned = true;
+                save.set(level.id + "_battery");
+                score += 500;
+                showToast("Cella energetica trovata!");
+            }
+        }
+    }
+
+    /** Con l'ultimo pezzo di gemma si ottiene la gemma completa. */
+    private void checkGem() {
+        if (gems >= gemTotal && !gemOwned) {
+            gemOwned = true;
+            save.set(level.id + "_gem");
+            score += 1000;
+            showToast("Gemma completa!");
+        }
+    }
+
+    private void showToast(String s) {
+        toast = s;
+        toastTime = 2.6f;
     }
 
     private void die() {
