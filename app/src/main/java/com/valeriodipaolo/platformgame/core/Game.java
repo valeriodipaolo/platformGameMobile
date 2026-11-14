@@ -230,7 +230,7 @@ public final class Game {
         camX = Math.max(0, Math.min(camX, level.w - viewW));
     }
 
-    /** Jet attivo (acceso) al tempo t: fase 0..1 del ciclo; acceso nel primo 40%, avviso negli ultimi 0,6 s. */
+    /** Jet attivo (acceso) al tempo t: fase 0..1 del ciclo; acceso nel primo 40%, avviso negli ultimi secondi. */
     public static float jetPower(float[] j, float t) {
         float per = j[2], ph = (t + j[3]) % per, on = per * 0.4f;
         if (ph < on) return Math.min(1f, Math.min(ph / 0.12f, (on - ph) / 0.2f + 0.3f));
@@ -240,7 +240,7 @@ public final class Game {
     /** 0..1: quanto manca all'accensione (avviso con braci), solo negli ultimi 0,7 s prima. */
     public static float jetWarn(float[] j, float t) {
         float per = j[2], ph = (t + j[3]) % per, left = per - ph;
-        return left < 0.7f ? 1f - left / 0.7f : 0f;
+        return left < 1.0f ? 1f - left / 1.0f : 0f;
     }
 
     /** Muro di fuoco, getti di fiamma e piattaforme che crollano. */

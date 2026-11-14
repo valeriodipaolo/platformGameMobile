@@ -73,7 +73,7 @@ public final class LevelSeven {
         jet(lv, 160, 1.8f, 2.6f);
         lv.set(152, 8, Level.CRUMBLE); shard(lv, 152, 6);
         lv.set(155, 6, Level.CRUMBLE); shard(lv, 155, 4);
-        lv.set(158, 4, Level.CRUMBLE); lv.set(159, 4, Level.CRUMBLE); shard(lv, 158, 2); shard(lv, 159, 2);
+        lv.set(158, 4, Level.CRUMBLE); lv.set(159, 4, Level.CRUMBLE); shard(lv, 158, 2.8f); shard(lv, 159, 2.8f);
         lv.set(162, 6, Level.CRUMBLE); shard(lv, 162, 4);
         lv.set(165, 8, Level.CRUMBLE); shard(lv, 165, 6);
         enemy(lv, 167, Enemy.ACORN, 0, 0);

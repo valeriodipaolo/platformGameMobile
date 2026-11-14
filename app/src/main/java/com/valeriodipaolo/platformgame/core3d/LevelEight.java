@@ -47,7 +47,7 @@ public final class LevelEight {
         hog(w, 0, 50, false, -2f, 2f);
         jet(w, 3, 54, 2.8f, 0.7f);
         crow(w, 0, 58, false, -2f, 2f, 2.1f);
-        gem(w, 1, 0.7f, 41.5f); gem(w, -1, 0.7f, 45.5f); gem(w, 2, 0.7f, 49.5f); gem(w, -2, 0.7f, 53.5f);
+        gem(w, 2, 0.7f, 40.5f); gem(w, -2, 0.7f, 44.5f); gem(w, 1, 0.7f, 48.5f); gem(w, -1, 0.7f, 52.5f); gem(w, 2, 0.7f, 56.5f);
 
         // --- braciere: righe di getti a scacchiera, due per riga, accesi a turno
         for (int i = 0; i < 7; i++) {
@@ -95,14 +95,14 @@ public final class LevelEight {
         jet(w, 1, 162, 2.6f, 1.3f);
         log(w, 168, 2.6f, 0f);
         log(w, 171, 2.6f, 1.3f);
-        crate(w, 1, 174); crate(w, 3, 174);
+        crate(w, 1, 153); crate(w, 3, 153);
         gem(w, 0, 0.7f, 157.5f); gem(w, -2, 0.7f, 161.5f); gem(w, 2, 0.7f, 165.5f);
         w.flagZ = 175;
     }
 
-    /** Muro di tronchi bruciati alto due caselle, con un solo varco in corrispondenza della casella gap. */
+    /** Muro basso di tronchi bruciati (una casella, così non nasconde nulla alla camera), con un solo varco in corrispondenza della casella gap. */
     private static void wall(World3D w, int z, int gap) {
-        for (int x = 0; x < W; x++) set(w, x, z, x == gap ? 0 : 2);
+        for (int x = 0; x < W; x++) set(w, x, z, x == gap ? 0 : 1);
     }
 
     /** Getto di fiamma nella casella (x, z): acceso il 40% del periodo, con un breve avviso prima. */

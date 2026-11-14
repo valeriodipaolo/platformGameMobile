@@ -41,8 +41,8 @@ public final class Img {
             FR_DIRT = 138, FR_DIRT_L = 139, FR_DIRT_R = 140, FR_FRINGE = 141, FR_BRICK = 142, FR_BONUS = 143, FR_USED = 144, FR_STONE = 145;
     public static final int R3C_GRASS = 146, R3C_FOREST = 147, R3C_TUFT = 148, R3C_FLOWERS = 149, R3C_BRANCH = 150, R3C_TREE = 151,
             R3C_SKY = 152, R3C_MOUNTAINS = 153, R3C_LAVA = 154, R3C_EMBER = 155, R3C_FLAME = 156;
-    public static final int FR_CRUMBLE = 157;
-    public static final int COUNT = 158;
+    public static final int FR_CRUMBLE = 157, FR_VENT = 158, R3C_VENT = 159;
+    public static final int COUNT = 160;
 
     public static final String[] NAMES = {
         "bg_sky", "bg_mountains", "bg_hills",
@@ -71,6 +71,6 @@ public final class Img {
         "fr_sky", "fr_mountains", "fr_hills", "fr_grass", "fr_grass_l", "fr_grass_r", "fr_dirt", "fr_dirt_l", "fr_dirt_r", "fr_fringe",
         "fr_brick", "fr_bonus", "fr_used", "fr_stone",
         "r3c_grass", "r3c_forest", "r3c_tuft", "r3c_flowers", "r3c_branch", "r3c_tree", "r3c_sky", "r3c_mountains", "r3c_lava", "r3c_ember", "r3c_flame",
-        "fr_crumble",
+        "fr_crumble", "fr_vent", "r3c_vent",
     };
 }

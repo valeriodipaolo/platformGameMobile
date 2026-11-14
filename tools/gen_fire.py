@@ -294,7 +294,39 @@ def c_flame():
     G.save("r3c_flame", np.dstack([rgb, a]))
 
 
+def vent2d():
+    """Bocca di un getto di fuoco, vista di lato: griglia scura incassata con fessure incandescenti."""
+    w, h = 96, 40
+    cv = Cv(w, h, 3)
+    cv.add(cv.rrect(8, 14, w - 8, h - 2, 10), (36, 28, 28), bevel=5, spec=0.2)
+    for k in range(5):
+        x = 20 + k * 14
+        cv.glow(cv.rrect(x, 18, x + 6, h - 6, 3), (255, 110, 20), radius=6, strength=0.9)
+        cv.add(cv.rrect(x, 18, x + 6, h - 6, 3), (255, 170, 50), bevel=1, spec=0.0)
+    cv.add(cv.ell(w / 2, 14, 38, 6), (24, 18, 18), bevel=2, spec=0.1)
+    G.save("fr_vent", cv.result())
+
+
+def vent3d():
+    """Bocca di un getto vista dall'alto: anello di roccia nera e centro incandescente con raggi di brace."""
+    n = 128
+    y, x = np.mgrid[0:n, 0:n].astype(float)
+    r = np.sqrt((x - n / 2 + 0.5) ** 2 + (y - n / 2 + 0.5) ** 2) / (n / 2)
+    ang = np.arctan2(y - n / 2 + 0.5, x - n / 2 + 0.5)
+    rays = 0.5 + 0.5 * np.sin(ang * 7 + 3 * fbm(n, n, beta=1.5, seed=1041))
+    core = np.clip(1 - r / 0.45, 0, 1) ** 0.8
+    ring = np.clip(1 - np.abs(r - 0.62) / 0.16, 0, 1)
+    glow = np.clip(core + 0.5 * ring * rays + 0.35 * np.clip(1 - np.abs(r - 0.82) / 0.1, 0, 1) * rays, 0, 1)
+    rgb = np.zeros((n, n, 3))
+    rock = lerp(col((6, 4, 4)), col((26, 18, 16)), np.clip(0.5 + fbm(n, n, beta=1.6, seed=1042) - 0.5, 0, 1)[..., None])
+    hot = lerp(col((200, 36, 4)), col((255, 150, 30)), (core ** 1.5)[..., None])
+    rgb = rock * (1 - glow[..., None]) + hot * glow[..., None]
+    a = np.clip((0.97 - r) * 8, 0, 1)
+    G.save("r3c_vent", np.dstack([np.clip(rgb, 0, 1), a]))
+
+
 GENS = {
+    "vent2d": vent2d, "vent3d": vent3d,
     "fr_sky": fr_sky, "fr_mountains": fr_mountains, "fr_hills": fr_hills, "fr_ground": fr_ground, "fr_blocks": fr_blocks,
     "c_grass": c_grass, "c_forest": c_forest, "c_tuft": c_tuft, "c_flowers": c_flowers, "c_branch": c_branch, "c_tree": c_tree,
     "c_sky": c_sky, "c_mountains": c_mountains, "c_lava": c_lava, "c_ember": c_ember, "c_flame": c_flame,

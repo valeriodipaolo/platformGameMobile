@@ -237,7 +237,7 @@ public final class World3D {
 
     public static float jetWarn(float[] j, float t) {
         float per = j[2], ph = (t + j[3]) % per, left = per - ph;
-        return left < 0.7f ? 1f - left / 0.7f : 0f;
+        return left < 1.0f ? 1f - left / 1.0f : 0f;
     }
 
     /** Posizione di traverso di un tronco che rotola: attraversa il corridoio e ricompare dall'altro lato. */

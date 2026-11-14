@@ -58,7 +58,7 @@ public final class Scene3D {
     private float fogR = FOG_R, fogG = FOG_G, fogB = FOG_B;
     /** Quanto il bordo dei burroni si arrotonda verso il basso (0 = spigolo vivo). */
     private float lip;
-    private Mesh flame, ember, logMesh;
+    private Mesh flame, ember, logMesh, vent;
     private Mesh crate, gem, battery, batteryGlow, shadow, ring, gateStone, gateDoor;
     private final HeroModel hero = new HeroModel();
     private int builtFor = -1;
@@ -998,6 +998,9 @@ public final class Scene3D {
             b = new MeshBuilder().color(150, 105, 80);                 // tronco in fiamme che rotola (asse lungo z)
             b.cylinder(0, -0.65f, 0.65f, 0, 0.42f, 0.42f, 12, true, true);
             logMesh = b.build(Img.R3_BARK, false, true);
+            b = new MeshBuilder();                                     // bocca dei getti: disco piatto sul terreno
+            b.quad(-0.72f, 0, -0.72f, -0.72f, 0, 0.72f, 0.72f, 0, 0.72f, 0.72f, 0, -0.72f, 0, 1, 0, 0, 0, 1, 1);
+            vent = b.build(Img.R3C_VENT, true, true);
             logMesh.spec = 0.05f; logMesh.shine = 8f;
         }
         if (aurora) {                                                  // casse di ghiaccio con la stella luminosa
@@ -1389,6 +1392,11 @@ public final class Scene3D {
         for (float[] j : w.jets) {
             if (j[1] < near || j[1] > far) continue;
             float pw = World3D.jetPower(j, w.time), warn = World3D.jetWarn(j, w.time);
+            Mat4.setIdentity(m);                            // la bocca si vede sempre, e si accende prima del getto
+            Mat4.translate(m, j[0], groundAt(j[0], j[1]) + 0.04f, j[1]);
+            float vs = 1f + 0.1f * warn;
+            Mat4.scale(m, vs, 1, vs);
+            g.draw(vent, m, 1f, 1f - 0.2f * warn, 1f - 0.5f * warn, 1f, 0.85f + 0.15f * Math.max(warn, pw));
             float hgt = pw > 0 ? 2.5f * (0.45f + 0.55f * pw) : warn > 0 ? 0.25f + 0.45f * warn : 0f;
             if (hgt <= 0) continue;
             float gy = groundAt(j[0], j[1]);

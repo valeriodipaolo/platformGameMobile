@@ -81,6 +81,27 @@ public class CheckFire {
         int badLogs = 0;
         for (float[] x : w.logs) { float period = x[1], speed = (World3D.W + 1.8f) / period, window = period - (World3D.W + 1.8f + 1.5f) / speed * 0; if (window < 2.4f) badLogs++; }
         ok(badLogs == 0, "tutti i tronchi hanno periodo di almeno 2,4 s");
+        // nessuna gemma deve restare nascosta dai blocchi alla vista della camera (6 m dietro e 3,3 m sopra il robot)
+        for (int lvNo : new int[] {2, 4, 6, 8}) {
+            World3D v = new World3D(new MemorySave(), lvNo);
+            int hidden = 0;
+            for (float[] gm : v.gemsList) {
+                boolean seen = false;
+                for (float pz = gm[2] - 12f; pz <= gm[2] - 1.5f && !seen; pz += 0.5f) for (float pxx = -2f; pxx <= 2.01f && !seen; pxx += 1f) {
+                    float cx = pxx * 0.9f, cy = 3.3f + 0.0f, cz = pz - 6f;
+                    boolean blocked = false;
+                    for (int k = 1; k < 40 && !blocked; k++) {
+                        float t = k / 40f, x = cx + (gm[0] - cx) * t, y = cy + (gm[1] - cy) * t, z = cz + (gm[2] - cz) * t;
+                        int xi = (int) Math.floor(x + World3D.HALF), zi = (int) Math.floor(z);
+                        if (zi < 0 || zi >= v.length || xi < 0 || xi >= World3D.W) continue;
+                        if (v.cell(xi, zi) != World3D.PIT && v.cell(xi, zi) > y) blocked = true;
+                    }
+                    if (!blocked) seen = true;
+                }
+                if (!seen) { hidden++; System.out.println("  gemma nascosta liv " + lvNo + " x=" + gm[0] + " z=" + gm[2]); }
+            }
+            ok(hidden == 0, "livello " + lvNo + ": nessuna gemma nascosta dalla camera (" + hidden + ")");
+        }
         System.out.println(fails == 0 ? "TUTTO OK" : fails + " controlli falliti");
         System.exit(fails == 0 ? 0 : 1);
     }
