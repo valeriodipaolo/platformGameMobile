@@ -62,6 +62,38 @@ public final class MeshBuilder {
         quad(x0, y0, z1, x1, y0, z1, x1, y0, z0, x0, y0, z0, 0, -1, 0, 0, 0, 1, 1);   // sotto
     }
 
+    /**
+     * Cubo con gli spigoli arrotondati (raggio r). Ogni faccia è una griglia 3x3 i cui bordi si piegano sugli spigoli, con
+     * normali morbide. La texture si ripete una volta per metro.
+     */
+    public void roundBox(float cx, float cy, float cz, float sx, float sy, float sz, float r) {
+        float hx = sx / 2, hy = sy / 2, hz = sz / 2, ax = hx - r, ay = hy - r, az = hz - r;
+        float[] gx = {-hx, -ax, ax, hx}, gy = {-hy, -ay, ay, hy}, gz = {-hz, -az, az, hz};
+        for (int face = 0; face < 6; face++) {
+            int axis = face / 2;
+            float sg = (face % 2 == 0) ? 1 : -1;
+            float[] ga = axis == 0 ? gy : gx, gb = axis == 2 ? gy : gz;
+            for (int i = 0; i < 3; i++) {
+                for (int j = 0; j < 3; j++) {
+                    int[][] q = {{i, j}, {i + 1, j}, {i + 1, j + 1}, {i, j}, {i + 1, j + 1}, {i, j + 1}};
+                    for (int[] k : q) {
+                        float a = ga[k[0]], b = gb[k[1]];
+                        float px, py, pz;
+                        if (axis == 0) { px = sg * hx; py = a; pz = b; }
+                        else if (axis == 1) { px = a; py = sg * hy; pz = b; }
+                        else { px = a; py = b; pz = sg * hz; }
+                        float qx = Math.max(-ax, Math.min(ax, px)), qy = Math.max(-ay, Math.min(ay, py)), qz = Math.max(-az, Math.min(az, pz));
+                        float dx = px - qx, dy = py - qy, dz = pz - qz, l = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
+                        dx /= l; dy /= l; dz /= l;
+                        float x = qx + dx * r, y = qy + dy * r, z = qz + dz * r;
+                        float u = axis == 0 ? z : x, v = axis == 1 ? z : y;
+                        vert(cx + x, cy + y, cz + z, dx, dy, dz, u + 0.5f, v + 0.5f);
+                    }
+                }
+            }
+        }
+    }
+
     public void ellipsoid(float cx, float cy, float cz, float rx, float ry, float rz, int segs, int rings) {
         for (int i = 0; i < rings; i++) {
             double a0 = Math.PI * i / rings, a1 = Math.PI * (i + 1) / rings;

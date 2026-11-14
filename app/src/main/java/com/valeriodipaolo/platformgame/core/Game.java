@@ -30,6 +30,8 @@ public final class Game {
     private static final float SPIN_SPEED = 1.35f, SPIN_REACH = 0.3f, SPIN_RATE = 19f;
 
     public final Save save;
+    /** Numero del livello 2D in corso: 1 (prato) o 3 (autunno). */
+    public final int levelNo;
     public Level level;
     public final Body player = new Body();
     public final List<Enemy> enemies = new ArrayList<Enemy>();
@@ -66,11 +68,16 @@ public final class Game {
     private int airJumps;
 
     public Game() {
-        this(new MemorySave());
+        this(new MemorySave(), 1);
     }
 
     public Game(Save save) {
+        this(save, 1);
+    }
+
+    public Game(Save save, int levelNo) {
         this.save = save;
+        this.levelNo = levelNo;
         newGame();
     }
 
@@ -82,9 +89,11 @@ public final class Game {
     }
 
     private void loadLevel() {
-        level = LevelOne.build();
+        level = levelNo == 3 ? LevelThree.build() : LevelOne.build();
         enemies.clear();
-        for (float[] e : level.enemies) enemies.add(new Enemy(e[0], e[1]));
+        for (float[] e : level.enemies) {
+            enemies.add(e.length > 2 ? new Enemy(e[0], e[1], (int) e[2], e[3], e[4]) : new Enemy(e[0], e[1]));
+        }
         shards.clear();
         for (float[] c : level.shards) shards.add(new float[] {c[0], c[1]});
         gemTotal = shards.size();
@@ -344,12 +353,25 @@ public final class Game {
             if (!e.active) {
                 if (e.x < camX + viewW + 1.5f) e.active = true; else continue;
             }
-            e.vx = e.dir * ENEMY_SPEED;
-            e.vy = Math.min(MAX_FALL, e.vy + GRAVITY * dt);
-            e.move(level, dt);
-            if (e.hitWall) e.dir = -e.dir;
-            e.anim += dt;
-            if (e.y > level.h + 2) { e.dead = true; continue; }
+            if (e.type == Enemy.CROW) {                          // il corvo vola a onde sopra il percorso, senza urtare nulla
+                e.x += e.dir * 2.3f * dt;
+                if (e.x > e.hi) { e.x = e.hi; e.dir = -1; } else if (e.x < e.lo) { e.x = e.lo; e.dir = 1; }
+                e.y = e.baseY + (float) Math.sin(e.anim * 2.6f) * 1.15f;
+                e.anim += dt;
+            } else {
+                float speed = e.type == Enemy.HOG ? ENEMY_SPEED * 0.75f : ENEMY_SPEED;
+                e.vx = e.dir * speed;
+                if (e.type == Enemy.ACORN) {                       // la ghianda sta ferma, poi spicca un balzo in avanti
+                    e.hop -= dt;
+                    if (e.onGround && e.hop <= 0) { e.vy = -14f; e.hop = 1.5f; }
+                    e.vx = e.onGround ? 0 : e.dir * 2.6f;
+                }
+                e.vy = Math.min(MAX_FALL, e.vy + GRAVITY * dt);
+                e.move(level, dt);
+                if (e.hitWall) e.dir = -e.dir;
+                e.anim += dt;
+                if (e.y > level.h + 2) { e.dead = true; continue; }
+            }
 
             if (state != PLAYING) continue;
             if (spinActive && touches(player, e, SPIN_REACH)) {      // la trottola travolge i nemici
@@ -358,7 +380,7 @@ public final class Game {
                 e.vx = facing * 5f;
                 score += 100;
             } else if (player.overlaps(e)) {
-                if (player.vy > 0 && player.y + player.h - e.y < 0.75f) {
+                if (e.type != Enemy.HOG && player.vy > 0 && player.y + player.h - e.y < 0.75f) {
                     e.flatTime = 0.45f;
                     player.vy = jump ? -15f : -10f;
                     airJumps = 1;                       // rimbalzando su un nemico si può rifare il doppio salto

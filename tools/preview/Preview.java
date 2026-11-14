@@ -46,7 +46,8 @@ public class Preview {
         if (a.length > 2) FOE = Float.parseFloat(a[2]);
         for (int i = 0; i < Img.COUNT; i++) imgs[i] = ImageIO.read(new File(res, Img.NAMES[i] + ".png"));
         int W = 2400, H = 1080;
-        Game g = new Game();
+        int level = a.length > 3 ? Integer.parseInt(a[3]) : 1;
+        Game g = new Game(new MemorySave(), level);
         Renderer r = new Renderer();
         AwtPainter p = new AwtPainter();
         g.viewW = W / (H / 12f);
@@ -76,7 +77,12 @@ public class Preview {
                 if (pl.onGround && heldLast) jump = false;      // rilascia un attimo per poter risaltare
             }
             heldLast = jump;
-            g.setInput(false, g.state == Game.PLAYING, jump);
+            boolean spin = false;
+            for (Enemy e : g.enemies) {
+                if (!e.dead && !e.flung && e.flatTime <= 0 && e.type == Enemy.HOG && e.x > pl.x - 0.5f && e.x - (pl.x + pl.w) < 2.4f
+                        && Math.abs(e.y - pl.y) < 2f) spin = true;
+            }
+            g.setInput(false, g.state == Game.PLAYING, jump, spin && !pl.onGround ? false : spin);
             int livesBefore = g.lives;
             g.update(dt);
             if (g.lives < livesBefore) System.out.printf("morte a x=%.1f y=%.1f (t=%.1fs)%n", pl.x, pl.y, f * dt);

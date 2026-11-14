@@ -12,6 +12,8 @@ public final class Level {
     public final int w, h;
     private final char[] t;
     public String id = "l1";
+    /** 0 = prato d'estate, 1 = autunno (altre immagini, forme più morbide). */
+    public int theme;
     public float startX = 3, startY = 8;
     /** Posizione della cella energetica (c'è in tutti i livelli). */
     public float[] battery;
@@ -21,6 +23,7 @@ public final class Level {
     public int flagBaseY;
     /** Pezzi di gemma sparsi nel livello: {x, y}. */
     public final List<float[]> shards = new ArrayList<float[]>();
+    /** Nemici: {x, y} (scarabeo) oppure {x, y, tipo, da, a} con il tratto percorso. */
     public final List<float[]> enemies = new ArrayList<float[]>();
 
     public Level(int w, int h) {

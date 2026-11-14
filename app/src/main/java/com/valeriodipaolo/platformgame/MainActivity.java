@@ -43,22 +43,16 @@ public class MainActivity extends Activity {
         }));
     }
 
-    private void startLevel(int level) {
-        if (level == 1) {
-            show(new GameView(this, new Runnable() {          // finito il livello 1 si passa al 2
-                @Override
-                public void run() {
-                    startLevel(2);
-                }
-            }));
-        } else {
-            show(new Level3DView(this, new Runnable() {       // finito il livello 2 si torna al menu
-                @Override
-                public void run() {
-                    showMenu();
-                }
-            }));
-        }
+    /** Livelli 1 e 3 sono 2D, 2 e 4 sono 3D. Finito un livello si passa al successivo; dopo l'ultimo si torna al menu. */
+    private void startLevel(final int level) {
+        Runnable next = new Runnable() {
+            @Override
+            public void run() {
+                if (level < 4) startLevel(level + 1); else showMenu();
+            }
+        };
+        if (level == 1 || level == 3) show(new GameView(this, level, next));
+        else show(new Level3DView(this, level, next));
     }
 
     /** Il tasto indietro riporta al menu; dal menu chiude il gioco. */

@@ -3,6 +3,8 @@
 Gioco platform 2D a scorrimento per Android (nome provvisorio: **Robo Jump**), scritto in Java nativo senza librerie esterne.
 
 - Livello 1 (2D): prato a scorrimento con gemme, casse bonus, nemici, burroni e traguardo.
+- Livello 3 (2D, autunno): colline arrotondate, zucche al posto delle casse, massi e mattoni morbidi, burroni più larghi; nemici nuovi: riccio (spinoso, si travolge con la giravolta), corvo (vola a onde), ghianda (procede a balzi).
+- Livello 4 (3D, autunno): bosco di latifoglie rosse, arancio e gialle, sentieri stretti, un ponte di una sola casella, massi e zucche arrotondati, bordi dei burroni morbidi, foglie e vento. Stessi tre nuovi nemici.
 - Livello 2 (3D, OpenGL ES 2.0): corridoio nel bosco visto da dietro le spalle. Cinque schemi di comando, da scegliere nel menu: joystick libero, joystick fisso, entrambi anche a 4 direzioni (senza diagonali), carro armato.
 - Mosse: salto (più alto tenendo premuto), doppio salto, giravolta, planata.
 
@@ -14,6 +16,7 @@ Gioco platform 2D a scorrimento per Android (nome provvisorio: **Robo Jump**), s
   Per usare una foto o un disegno al posto di un'immagine basta sostituire il PNG con lo stesso nome.
 - `app/src/main/java/.../core3d` — livello 3D: regole (`World3D`), modelli e scena (`Scene3D`), matrici (Java puro).
 - `GlRenderer`, `Level3DView` — disegno OpenGL e joystick del livello 3D; `MenuView` — scelta del livello.
+- `tools/gen_autumn.py` — immagini dei livelli d'autunno (sfondi, terreno, blocchi, nemici, texture del bosco).
 - `tools/preview/check.sh` — controlli automatici sulla logica dei due livelli (compresi i bot che li completano).
 - `tools/preview/scenes.sh` — salva schermate dei due livelli in `build/preview` (il 3D con un renderer software).
 

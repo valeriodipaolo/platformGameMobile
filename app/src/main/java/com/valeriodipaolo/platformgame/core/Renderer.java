@@ -11,9 +11,10 @@ public final class Renderer {
         Level lv = g.level;
 
         // ---- sfondi in parallasse
-        layer(p, Img.SKY, cam * s * 0.03f, 0, sh, sw);
-        layer(p, Img.MOUNTAINS, cam * s * 0.12f, 3.9f * s, 6.6f * s, sw);
-        layer(p, Img.HILLS, cam * s * 0.35f, 6.2f * s, 5.8f * s, sw);
+        boolean au = lv.theme == 1;
+        layer(p, au ? Img.AU_SKY : Img.SKY, cam * s * 0.03f, 0, sh, sw);
+        layer(p, au ? Img.AU_MOUNTAINS : Img.MOUNTAINS, cam * s * 0.12f, 3.9f * s, 6.6f * s, sw);
+        layer(p, au ? Img.AU_HILLS : Img.HILLS, cam * s * 0.35f, 6.2f * s, 5.8f * s, sw);
 
         // ---- traguardo (dietro alle caselle)
         float poleX = (lv.flagX + 0.5f - cam) * s;
@@ -35,13 +36,24 @@ public final class Renderer {
                 char c = lv.get(tx, ty);
                 if (c == Level.EMPTY) continue;
                 int img;
+                boolean softEdge = false;
                 switch (c) {
-                    case Level.GROUND: img = lv.get(tx, ty - 1) == Level.GROUND ? Img.DIRT : Img.GRASS; break;
+                    case Level.GROUND:
+                        boolean under = lv.get(tx, ty - 1) == Level.GROUND;
+                        if (au) {      // d'autunno gli spigoli del terreno sono arrotondati dove finisce il burrone o la collina
+                            boolean el = !lv.solid(tx - 1, ty), er = !lv.solid(tx + 1, ty);
+                            img = under ? (el ? Img.AU_DIRT_L : er ? Img.AU_DIRT_R : Img.AU_DIRT)
+                                    : (el ? Img.AU_GRASS_L : er ? Img.AU_GRASS_R : Img.AU_GRASS);
+                            softEdge = el || er;
+                        } else {
+                            img = under ? Img.DIRT : Img.GRASS;
+                        }
+                        break;
                     case Level.BRICK:
-                    case Level.SECRET: img = Img.BRICK; break;
-                    case Level.BONUS: img = Img.BONUS; break;
-                    case Level.USED: img = Img.USED; break;
-                    default: img = Img.STONE; break;
+                    case Level.SECRET: img = au ? Img.AU_BRICK : Img.BRICK; break;
+                    case Level.BONUS: img = au ? Img.AU_BONUS : Img.BONUS; break;
+                    case Level.USED: img = au ? Img.AU_USED : Img.USED; break;
+                    default: img = au ? Img.AU_STONE : Img.STONE; break;
                 }
                 float off = 0;
                 if (tx == g.bumpTx && ty == g.bumpTy) {
@@ -52,6 +64,8 @@ public final class Renderer {
                 p.image(img, x0, y0 + off, x1 - x0, y1 - y0, false, 1);
                 if (img == Img.GRASS && !lv.solid(tx, ty - 1)) {
                     p.image(Img.FRINGE, x0, y0 - 0.27f * s, x1 - x0, 0.29f * s, false, 1);
+                } else if (img == Img.AU_GRASS && !lv.solid(tx, ty - 1)) {
+                    p.image(Img.AU_FRINGE, x0, y0 - 0.27f * s, x1 - x0, 0.29f * s, false, 1);
                 }
             }
         }
@@ -85,8 +99,19 @@ public final class Renderer {
             if (e.dead) continue;
             float x = (e.x + e.w / 2 - cam) * s;
             if (x < -2 * s || x > sw + 2 * s) continue;
-            int img = e.flatTime > 0 ? Img.ENEMY_FLAT : Img.ENEMY + ((int) (e.anim * 7f) % 2);
+            int fr = (int) (e.anim * (e.type == Enemy.CROW ? 9f : 7f)) % 2;
+            int img;
             float w = 1.083f * s, h = 0.875f * s;
+            switch (e.type) {
+                case Enemy.HOG: img = Img.HOG + fr; w = 1.25f * s; h = 0.85f * s; break;
+                case Enemy.CROW: img = Img.CROW + fr; w = 1.25f * s; h = 1.0f * s; break;
+                case Enemy.ACORN:
+                    img = e.flatTime > 0 ? Img.ACORN_FLAT : Img.ACORN + (e.onGround ? 0 : 1);
+                    w = 0.95f * s; h = 1.05f * s;
+                    break;
+                default: img = e.flatTime > 0 ? Img.ENEMY_FLAT : Img.ENEMY + fr; break;
+            }
+            if (e.type == Enemy.CROW && e.flatTime > 0) h *= 0.35f;      // il corvo schiacciato
             p.image(img, x - w / 2, (e.y + e.h + 0.03f) * s - h, w, h, e.dir > 0, 1);
         }
 
@@ -167,7 +192,7 @@ public final class Renderer {
                 }
             }
             if (g.stateTime > 1.2f) {
-                p.text(won ? "Tocca lo schermo per il livello 2" : "Tocca lo schermo per riprovare", sw / 2, 9.4f * s, 0.5f * s, Painter.ALIGN_CENTER, 0xFFFFE082);
+                p.text(won ? "Tocca lo schermo per il livello " + (g.levelNo + 1) : "Tocca lo schermo per riprovare", sw / 2, 9.4f * s, 0.5f * s, Painter.ALIGN_CENTER, 0xFFFFE082);
             }
         }
     }

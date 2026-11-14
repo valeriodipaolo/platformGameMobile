@@ -48,6 +48,10 @@ public class Soft3D implements Gfx3D {
         raster(m, mvp, model, mv, r, g, b, a, emissive, true, m.fog);
     }
 
+    private float gr = 1, gg = 1, gb = 1;
+
+    public void grade(float r, float g, float b) { gr = r; gg = g; gb = b; }
+
     public void time(float t) {}
 
     public void end() {}
@@ -179,9 +183,9 @@ public class Soft3D implements Gfx3D {
                 float vx = -qx / pl, vy = -qy / pl, vz = -qz / pl;
                 float nl = Math.max(0, nx * lvx + ny * lvy + nz * lvz);
                 float hemi = (nx * upx + ny * upy + nz * upz) * 0.5f + 0.5f;
-                float cr = ar * (SUN_R * nl + GND_R + (SKY_R - GND_R) * hemi);
-                float cg = ag * (SUN_G * nl + GND_G + (SKY_G - GND_G) * hemi);
-                float cb = ab * (SUN_B * nl + GND_B + (SKY_B - GND_B) * hemi);
+                float cr = ar * (SUN_R * nl + GND_R + (SKY_R - GND_R) * hemi) * gr;
+                float cg = ag * (SUN_G * nl + GND_G + (SKY_G - GND_G) * hemi) * gg;
+                float cb = ab * (SUN_B * nl + GND_B + (SKY_B - GND_B) * hemi) * gb;
                 if (spec > 0) {
                     float hx = lvx + vx, hy = lvy + vy, hz = lvz + vz;
                     float hl = (float) Math.sqrt(hx * hx + hy * hy + hz * hz);

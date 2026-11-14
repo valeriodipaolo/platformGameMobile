@@ -33,14 +33,14 @@ final class Level3DView extends FrameLayout {
     private volatile boolean inJump, inSpin, tapped, exited;
     private final AtomicBoolean latchJump = new AtomicBoolean(), latchSpin = new AtomicBoolean();
 
-    Level3DView(Context ctx, Runnable onExit) {
+    Level3DView(Context ctx, int levelNo, Runnable onExit) {
         super(ctx);
         this.onExit = onExit;
         int mode = ctx.getSharedPreferences("platformgame", Context.MODE_PRIVATE).getInt("ctrl3d", 2);
         fixedStick = mode == 2 || mode == 4 || mode == 5 || mode == 6;
         shaped = mode == 6;
         fourWay = mode == 3 || mode == 4;
-        world = new World3D(new AndroidSave(ctx));
+        world = new World3D(new AndroidSave(ctx), levelNo);
         world.tank = mode == 5;
         gl = new GLSurfaceView(ctx);
         gl.setEGLContextClientVersion(2);

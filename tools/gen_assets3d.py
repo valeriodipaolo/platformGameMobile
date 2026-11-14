@@ -534,14 +534,14 @@ def gen_wood():
     save("r3_wood", np.clip(arr, 0, 1))
 
 
-def gen_flowers():
+def gen_flowers(name="r3_flowers", kinds=None):
     """Prato fiorito: tanti fiori di colori diversi (rosso, rosa, arancio, giallo, viola, blu, bianco), con foglie e steli."""
     ss = 2
     S = 256 * ss
     r = rng(291)
     im = Image.new("RGBA", (S, S), (0, 0, 0, 0))
     d = ImageDraw.Draw(im)
-    kinds = [((236, 40, 48), (255, 214, 60)), ((255, 96, 160), (255, 236, 120)), ((255, 140, 30), (120, 60, 10)),
+    kinds = kinds or [((236, 40, 48), (255, 214, 60)), ((255, 96, 160), (255, 236, 120)), ((255, 140, 30), (120, 60, 10)),
              ((255, 218, 40), (200, 120, 10)), ((150, 70, 230), (255, 236, 130)), ((60, 120, 255), (255, 240, 150)),
              ((252, 252, 252), (255, 205, 40)), ((255, 70, 110), (90, 30, 40)), ((190, 110, 255), (255, 255, 200))]
     order = list(range(len(kinds))) * 2
@@ -564,7 +564,7 @@ def gen_flowers():
             c2 = tuple(int(min(255, v * (0.9 + 0.2 * r.random()))) for v in petal) + (255,)
             d.ellipse([cx - rad * 0.56, cy - rad * 0.56, cx + rad * 0.56, cy + rad * 0.56], fill=c2)
         d.ellipse([x + bend - rad * 0.42, top - rad * 0.42, x + bend + rad * 0.42, top + rad * 0.42], fill=center + (255,))
-    finish_card(im, "r3_flowers", ss)
+    finish_card(im, name, ss)
 
 
 def gen_ray():
@@ -579,17 +579,17 @@ def gen_ray():
 
 
 # ---------------------------------------------------------------- cielo e montagne
-def gen_sky():
+def gen_sky(name="r3_sky", pal=None, sun=(1.0, 0.86, 0.56)):
     w, h = 1024, 512
     y = np.linspace(0, 1, h)[:, None]
-    zen, mid, hor = col((38, 92, 176)), col((110, 164, 220)), col((206, 224, 238))
+    zen, mid, hor = pal or (col((38, 92, 176)), col((110, 164, 220)), col((206, 224, 238)))
     t = y ** 0.8
     grad = np.where(t[..., None] < 0.6, lerp(zen, mid, (t / 0.6)[..., None]), lerp(mid, hor, ((t - 0.6) / 0.4)[..., None]))
     sky = np.broadcast_to(grad, (h, w, 3)).copy()
     # sole: bagliore caldo in alto a destra
     yy, xx = np.mgrid[0:h, 0:w]
     sd = np.sqrt(((xx - 0.78 * w) / w) ** 2 * 1.0 + ((yy - 0.16 * h) / h) ** 2 * 1.6)
-    glow = np.exp(-sd * 7.5)[..., None] * col((1.0, 0.86, 0.56)) * 0.55 + np.exp(-sd * 22)[..., None] * col((1.0, 0.95, 0.8)) * 0.8
+    glow = np.exp(-sd * 7.5)[..., None] * np.array(sun) * 0.55 + np.exp(-sd * 22)[..., None] * col((1.0, 0.95, 0.8)) * 0.8
     sky += glow
     # nuvole: densità frattale più fitta verso l'orizzonte, illuminate dal sole
     den = fbm(h, w, beta=2.8, seed=311, ax=2.2, ay=1.0)
@@ -607,7 +607,7 @@ def gen_sky():
     # foschia all'orizzonte
     hz = smooth((y - 0.78) * 4.5)
     sky = sky * (1 - 0.65 * hz[..., None]) + hor[None, None, :] * 0.65 * hz[..., None]
-    save("r3_sky", np.clip(sky, 0, 1))
+    save(name, np.clip(sky, 0, 1))
 
 
 def ridge_profile(n, seed, base, amp, octaves=5, sharp=1.0):

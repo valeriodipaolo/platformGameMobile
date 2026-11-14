@@ -14,8 +14,13 @@ public final class Scene3D {
     // tipi di mesh a blocchi
     private static final int K_GRASS = 0, K_DIRT = 1, K_STONE = 2, K_BANK = 3, K_FOREST = 4, K_TRUNK = 5, K_CROWN = 6,
             K_TUFT = 7, K_FERN = 8, K_FLOWER = 9, K_ROCK = 10, K_RAY = 11, K_FIR = 12, K_N = 13;
-    private static final int[] K_TEX = {Img.R3_GRASS, Img.R3_DIRT, Img.R3_ROCK, Img.R3_GRASS, Img.R3_FOREST, Img.R3_BARK,
+    private static final int[] K_TEX_SUMMER = {Img.R3_GRASS, Img.R3_DIRT, Img.R3_ROCK, Img.R3_GRASS, Img.R3_FOREST, Img.R3_BARK,
             Img.R3_BRANCH, Img.R3_TUFT, Img.R3_FERN, Img.R3_FLOWERS, Img.R3_ROCK, Img.R3_RAY, Img.R3_FIRTREE};
+    private static final int[] K_TEX_AUTUMN = {Img.R3A_GRASS, Img.R3_DIRT, Img.R3_ROCK, Img.R3A_GRASS, Img.R3A_FOREST, Img.R3_BARK,
+            Img.R3A_CROWN, Img.R3A_TUFT, Img.R3_FERN, Img.R3A_FLOWERS, Img.R3_ROCK, Img.R3_RAY, Img.R3A_TREE};
+    /** Tinte delle chiome d'autunno: arancio, rosso, giallo, ruggine, verde, zucca. */
+    private static final float[][] AUTUMN_TINT = {{1.0f, 0.76f, 0.42f}, {1.0f, 0.50f, 0.38f}, {1.0f, 0.96f, 0.46f},
+            {0.96f, 0.66f, 0.36f}, {0.66f, 0.98f, 0.42f}, {1.0f, 0.60f, 0.28f}};
 
     private static final class Tree {
         float x, y, z, h, rad, tint;
@@ -33,7 +38,13 @@ public final class Scene3D {
     private World3D lvl;
     private float[] fadeG;
     private int fadeZ0, fadeNz;
-    private Mesh leaf;
+    private Mesh leaf, crateStar;
+    private Mesh hogBody, hogSpines, hogEyes, hogLeg, crowBody, crowWing, crowEyes, acornBody, acornCap, acornEyes, acornFoot;
+    private boolean autumn;
+    private int[] ktex = K_TEX_SUMMER;
+    private float fogR = FOG_R, fogG = FOG_G, fogB = FOG_B;
+    /** Quanto il bordo dei burroni si arrotonda verso il basso (0 = spigolo vivo). */
+    private float lip;
     private Mesh crate, gem, battery, batteryGlow, shadow, ring, gateStone, gateDoor;
     private Mesh robotBody, robotEyes, robotLeg, robotArm, beetleBody, beetleEyes, beetleLeg;
     private int builtFor = -1;
@@ -185,6 +196,29 @@ public final class Scene3D {
 
     /** Altezza del terreno: sentiero ondulato, sponde che salgono con una curva dolce, bosco a dossi. */
     private float groundAt(float x, float z) {
+        float y = groundBase(x, z);
+        return lip > 0 ? y - lipDrop(x, z) : y;
+    }
+
+    /** Il bordo dei burroni si piega verso il basso con un quarto di cerchio (solo estetica). */
+    private float lipDrop(float x, float z) {
+        int cx = (int) Math.floor(x + World3D.HALF), cz = (int) Math.floor(z);
+        float best = lip;
+        for (int xi = cx - 1; xi <= cx + 1; xi++) {
+            if (xi < 0 || xi >= World3D.W) continue;
+            for (int zi = cz - 1; zi <= cz + 1; zi++) {
+                if (vis(lvl, xi, zi) != World3D.PIT) continue;
+                float x0 = xi - World3D.HALF;
+                float dx = Math.max(0, Math.max(x0 - x, x - (x0 + 1))), dz = Math.max(0, Math.max(zi - z, z - (zi + 1)));
+                best = Math.min(best, (float) Math.sqrt(dx * dx + dz * dz));
+            }
+        }
+        if (best >= lip) return 0f;
+        float k = lip - best;
+        return lip - (float) Math.sqrt(Math.max(0f, lip * lip - k * k));
+    }
+
+    private float groundBase(float x, float z) {
         float d = Math.abs(x) - World3D.HALF, y = bumpAt(x, z);
         if (d <= 0) return y;
         y += sm(d / SEAM) * (1.2f + 0.7f * vnoise(x * 0.07f + 5, z * 0.07f, 21));
@@ -213,7 +247,7 @@ public final class Scene3D {
                 for (float z = z0; z < z1; z += 2.1f + row * 0.5f) {
                     Tree t = new Tree();
                     t.row = row;
-                    t.x = side * (World3D.HALF + 3.0f + row * 2.6f + r.nextFloat() * 2.0f);
+                    t.x = side * (World3D.HALF + (lvl.levelNo == 4 ? 4.4f : 3.0f) + row * 2.6f + r.nextFloat() * 2.0f);
                     t.z = z + r.nextFloat() * 1.8f;
                     t.h = 5.0f + r.nextFloat() * 4.0f + row * 0.5f;
                     t.rad = t.h * 0.25f * (0.85f + 0.3f * r.nextFloat());
@@ -232,6 +266,9 @@ public final class Scene3D {
     private void build(World3D w) {
         builtFor = w.length;
         lvl = w;
+        autumn = w.levelNo == 4;
+        ktex = autumn ? K_TEX_AUTUMN : K_TEX_SUMMER;
+        if (autumn) { fogR = 0.90f; fogG = 0.79f; fogB = 0.64f; lip = 0.5f; }
         MeshBuilder b;
         int z0 = -8, z1 = w.length + 40;
         zBase = z0;
@@ -242,11 +279,11 @@ public final class Scene3D {
 
         b = new MeshBuilder();                                         // cielo: occupa la parte alta dello schermo, con la foschia all'orizzonte
         b.quad(-1, 0.18f, 0.999f, 1, 0.18f, 0.999f, 1, 1, 0.999f, -1, 1, 0.999f, 0, 0, -1, 0, 0, 1, 1);
-        sky = b.build(Img.R3_SKY, false, false);
+        sky = b.build(autumn ? Img.R3A_SKY : Img.R3_SKY, false, false);
 
         b = new MeshBuilder();                                         // montagne lontane
         b.quad(-330, -4, 0, 330, -4, 0, 330, 78, 0, -330, 78, 0, 0, 0, -1, 0, 0, 2, 1);
-        mountains = b.build(Img.R3_MOUNTAINS, true, false);
+        mountains = b.build(autumn ? Img.R3A_MOUNTAINS : Img.R3_MOUNTAINS, true, false);
 
         int[] order = {0, 1, 2, 0, 2, 3};
         // ---- corridoio: prato ondulato a quadrati di mezzo metro, pietra e pareti di terra
@@ -257,13 +294,22 @@ public final class Scene3D {
                 if (h == World3D.PIT) continue;
                 if (h == 0) {
                     MeshBuilder g = mb(K_GRASS, z);
-                    for (int sx = 0; sx < 2; sx++) {
-                        for (int sz = 0; sz < 2; sz++) {
-                            float qx = fx + sx * 0.5f, qz = z + sz * 0.5f, e = 0.5f;
+                    boolean nearPit = false;
+                    if (lip > 0) {
+                        for (int ax = x - 1; ax <= x + 1; ax++) for (int az = z - 1; az <= z + 1; az++) {
+                            if (ax >= 0 && ax < World3D.W && vis(w, ax, az) == World3D.PIT) nearPit = true;
+                        }
+                    }
+                    int sub = nearPit ? 4 : 2;
+                    float e = 1f / sub;
+                    for (int sx = 0; sx < sub; sx++) {
+                        for (int sz = 0; sz < sub; sz++) {
+                            float qx = fx + sx * e, qz = z + sz * e;
                             float[][] c = {{qx, qz}, {qx + e, qz}, {qx + e, qz + e}, {qx, qz + e}};
                             for (int k : order) {
                                 float ex = Math.abs(c[k][0]) / World3D.HALF;
                                 float t = (1.08f - 0.10f * ex * ex) * aoAt(w, c[k][0], c[k][1]);
+                                if (lip > 0) t *= 1f - 0.7f * lipDrop(c[k][0], c[k][1]) / lip * 0.45f;
                                 ground(g, c[k][0], c[k][1], c[k][0] * 0.5f, c[k][1] * 0.5f, t, t, t);
                             }
                         }
@@ -272,7 +318,8 @@ public final class Scene3D {
                     MeshBuilder s = mb(K_STONE, z);
                     for (int k = 0; k < h; k++) {
                         s.colorf(0.96f + 0.08f * hash(x, z, k), 0.96f + 0.06f * hash(x, z, k + 7), 0.96f);
-                        s.box(fx + 0.5f, k + 0.5f, z + 0.5f, 1, 1, 1);
+                        if (autumn) s.roundBox(fx + 0.5f, k + 0.5f, z + 0.5f, 0.98f, 0.98f, 0.98f, 0.2f);
+                        else s.box(fx + 0.5f, k + 0.5f, z + 0.5f, 1, 1, 1);
                     }
                 }
                 MeshBuilder d = mb(K_DIRT, z);
@@ -294,7 +341,8 @@ public final class Scene3D {
         // ---- lati: un'unica superficie continua dal bordo del sentiero al bosco. Il prato sfuma nel sottobosco:
         //      le due texture si incontrano con lo stesso colore medio, così non si vede lo stacco.
         float[] D = {0, 0.35f, 0.75f, 1.2f, 1.7f, 2.3f, SEAM, 4.6f, 6f, 8f, 11f, 15f, 20f, 27f, 36f};
-        float[] seamG = {1.214f, 1.064f, 1.073f}, seamF = {0.850f, 0.943f, 0.936f};
+        float[] seamG = autumn ? new float[] {1f, 1f, 1f} : new float[] {1.214f, 1.064f, 1.073f};
+        float[] seamF = autumn ? new float[] {1f, 1f, 1f} : new float[] {0.850f, 0.943f, 0.936f};
         for (int z = z0; z < z1; z++) {
             for (int side = -1; side <= 1; side += 2) {
                 for (int k = 0; k + 1 < D.length; k++) {
@@ -325,7 +373,7 @@ public final class Scene3D {
         for (int k = 0; k < K_N; k++) {
             for (int c = 0; c < nChunks; c++) {
                 if (mbs[k][c] == null) continue;
-                Mesh mesh = mbs[k][c].build(K_TEX[k], k == K_RAY, true);
+                Mesh mesh = mbs[k][c].build(ktex[k], k == K_RAY, true);
                 if (k == K_CROWN || k == K_TUFT || k == K_FERN || k == K_FLOWER || k == K_FIR) mesh.cutout = true;
                 switch (k) {
                     case K_GRASS: case K_BANK: mesh.spec = 0.05f; mesh.shine = 10f; break;
@@ -434,25 +482,72 @@ public final class Scene3D {
         }
     }
 
+    /** Un cartoncino di fogliame, centrato in (x,y,z), ruotato e inclinato; più scuro in basso. */
+    private void leafCard(MeshBuilder cb, float x, float y, float z, float size, float yaw, float tilt, float[] tc, float tone, float swayK) {
+        float ca = (float) Math.cos(yaw), sa = (float) Math.sin(yaw), ct = (float) Math.cos(tilt), st = (float) Math.sin(tilt);
+        float h = size / 2;
+        // asse orizzontale del cartoncino (ca,0,sa); asse "su" inclinato di tilt verso la normale
+        float ux = -sa * st, uy = ct, uz = ca * st;
+        float[][] q = {{-h, -h}, {h, -h}, {h, h}, {-h, h}};
+        float[][] uv = {{0, 1}, {1, 1}, {1, 0}, {0, 0}};
+        int[] ord = {0, 1, 2, 0, 2, 3};
+        float nx = sa * ct, ny = st, nz = -ca * ct;
+        for (int k : ord) {
+            float a = q[k][0], b = q[k][1];
+            float low = 0.84f + 0.16f * (b + h) / size;
+            cb.colorf(tc[0] * tone * low, tc[1] * tone * low, tc[2] * tone * low);
+            cb.sway(swayK * (0.5f + 0.5f * (b + h) / size));
+            cb.vert(x + ca * a + ux * b, y + uy * b, z + sa * a + uz * b, nx, ny + 0.3f, nz, uv[k][0], uv[k][1]);
+        }
+        cb.sway(0);
+    }
+
+    /** Albero a foglie larghe d'autunno: tronco e chioma fatta di mazzi di fogliame incrociati. */
+    private void broadleaf(float x, float y0, float z, float h, float rad, float tint, int clusters, Random r) {
+        MeshBuilder tb = mb(K_TRUNK, z), cb = mb(K_CROWN, z);
+        float[] tc = AUTUMN_TINT[r.nextInt(AUTUMN_TINT.length)];
+        float k = 0.8f + 0.2f * tint;
+        tb.colorf(k, k * 0.92f, k * 0.84f);
+        float crownY = y0 + h * 0.62f, r0 = 0.1f + 0.016f * h, top = crownY + h * 0.05f;
+        tb.cylinder(x, y0 - 0.3f, y0 + 0.7f, z, r0 * 1.5f, r0 * 1.1f, 8, false, false);
+        tb.cylinder(x, y0 + 0.7f, top, z, r0 * 1.1f, r0 * 0.45f, 7, false, false);
+        float rh = rad * 1.45f + 0.3f, rv = h * 0.30f;
+        float wind = Math.min(1.5f, 0.45f + h * 0.12f);
+        for (int i = 0; i < clusters; i++) {
+            float ux, uy, uz, l;
+            do { ux = r.nextFloat() * 2 - 1; uy = r.nextFloat() * 2 - 1; uz = r.nextFloat() * 2 - 1; l = ux * ux + uy * uy + uz * uz; } while (l > 1f || l < 0.12f);
+            float cx = x + ux * rh, cy = crownY + uy * rv * 0.95f, cz = z + uz * rh;
+            float tone = (0.95f + 0.28f * (uy * 0.5f + 0.5f)) * (0.92f + 0.18f * r.nextFloat()) * (0.9f + 0.15f * tint);
+            float[] ct = {tc[0] * (0.92f + 0.16f * r.nextFloat()), tc[1] * (0.9f + 0.2f * r.nextFloat()), tc[2] * (0.9f + 0.2f * r.nextFloat())};
+            float size = (1.3f + 0.8f * r.nextFloat()) * (0.75f + 0.25f * rad / 2f);
+            float yaw = r.nextFloat() * 3.14159f;
+            leafCard(cb, cx, cy, cz, size, yaw, (r.nextFloat() - 0.5f) * 0.5f, ct, tone, wind * (0.4f + 0.6f * (uy * 0.5f + 0.5f)));
+            leafCard(cb, cx, cy, cz, size, yaw + 1.2f, (r.nextFloat() - 0.5f) * 0.5f, ct, tone, wind * 0.8f);
+            leafCard(cb, cx, cy + size * 0.1f, cz, size * 0.9f, yaw + 2.4f, 1.1f + 0.3f * r.nextFloat(), ct, tone * 1.05f, wind * 0.9f);
+        }
+    }
+
     /** Albero lontano: tre cartoncini incrociati con l'immagine di un abete intero. */
     private void impostor(float x, float y0, float z, float h, float tint, Random r) {
         MeshBuilder cb = mb(K_FIR, z);
-        float top = y0 + h * 1.04f, bot = y0 - 0.15f, hw = h * 1.04f * 0.5f * 0.92f, rot = r.nextFloat() * 3.14f;
+        float top = y0 + h * 1.04f, bot = y0 - 0.15f, hw = h * 1.04f * 0.5f * (autumn ? 0.8f : 0.92f), rot = r.nextFloat() * 3.14f;
         float t = tint * 0.95f, sw = Math.min(1.6f, 0.4f + h * 0.11f) * 0.9f;
+        float[] tc = autumn ? AUTUMN_TINT[Math.abs((int) (x * 7.3f + z * 3.1f)) % AUTUMN_TINT.length] : new float[] {1, 1, 1};
+        float cr = tc[0], cg = tc[1], cbl = tc[2];
         for (int k = 0; k < 3; k++) {
             float a = rot + k * 1.0472f, cx = (float) Math.cos(a) * hw, cz = (float) Math.sin(a) * hw;
             float nx = (float) Math.sin(a) * 0.5f, nz = -(float) Math.cos(a) * 0.5f;
-            cb.colorf(t * 0.75f, t * 0.78f, t * 0.7f);
+            cb.colorf(t * 0.75f * cr, t * 0.78f * cg, t * 0.7f * cbl);
             cb.sway(0);
             cb.vert(x - cx, bot, z - cz, nx, 0.85f, nz, 0, 1);
             cb.vert(x + cx, bot, z + cz, nx, 0.85f, nz, 1, 1);
-            cb.colorf(t, t * 1.02f, t * 0.95f);
+            cb.colorf(t * cr, t * 1.02f * cg, t * 0.95f * cbl);
             cb.sway(sw);
             cb.vert(x + cx, top, z + cz, nx, 0.85f, nz, 1, 0);
-            cb.colorf(t * 0.75f, t * 0.78f, t * 0.7f);
+            cb.colorf(t * 0.75f * cr, t * 0.78f * cg, t * 0.7f * cbl);
             cb.sway(0);
             cb.vert(x - cx, bot, z - cz, nx, 0.85f, nz, 0, 1);
-            cb.colorf(t, t * 1.02f, t * 0.95f);
+            cb.colorf(t * cr, t * 1.02f * cg, t * 0.95f * cbl);
             cb.sway(sw);
             cb.vert(x + cx, top, z + cz, nx, 0.85f, nz, 1, 0);
             cb.vert(x - cx, top, z - cz, nx, 0.85f, nz, 0, 0);
@@ -463,7 +558,11 @@ public final class Scene3D {
     private void buildTrees() {
         Random r = new Random(11);
         for (Tree t : trees) {
-            if (t.row == 0) fir(t.x, t.y, t.z, t.h, t.rad, t.tint, true, r);
+            if (autumn) {
+                if (t.row == 0) broadleaf(t.x, t.y, t.z, t.h, t.rad, t.tint, 19, r);
+                else if (t.row == 1) broadleaf(t.x, t.y, t.z, t.h, t.rad, t.tint, 9, r);
+                else impostor(t.x, t.y, t.z, t.h, t.tint, r);
+            } else if (t.row == 0) fir(t.x, t.y, t.z, t.h, t.rad, t.tint, true, r);
             else if (t.row == 1) fir(t.x, t.y, t.z, t.h, t.rad, t.tint, false, r);
             else impostor(t.x, t.y, t.z, t.h, t.tint, r);
         }
@@ -476,6 +575,7 @@ public final class Scene3D {
         MeshBuilder b = mb(K_FERN, z);
         lightAt(x, z, 1f);
         float lr = lt[0], lg = lt[1], lb = lt[2];
+        if (autumn) { lr *= 1.25f; lg *= 0.8f; lb *= 0.45f; }
         int nf = 9 + r.nextInt(4), segs = 3;
         float rot = r.nextFloat() * 6.283f;
         for (int k = 0; k < nf; k++) {
@@ -573,7 +673,8 @@ public final class Scene3D {
             // abeti giovani
             for (float z = z0; z < z1; z += 3.5f + r.nextFloat() * 5f) {
                 float d = 1.4f + r.nextFloat() * 3.2f, x = side * (World3D.HALF + d), h = 1.0f + r.nextFloat() * 1.6f;
-                fir(x, groundAt(x, z) - 0.05f, z, h, h * 0.3f, 0.95f + 0.2f * r.nextFloat(), false, r);
+                if (autumn) broadleaf(x, groundAt(x, z) - 0.05f, z, h + 0.6f, h * 0.35f, 0.95f + 0.2f * r.nextFloat(), 4, r);
+                else fir(x, groundAt(x, z) - 0.05f, z, h, h * 0.3f, 0.95f + 0.2f * r.nextFloat(), false, r);
             }
             // massi muschiati
             for (float z = z0; z < z1; z += 3.5f + r.nextFloat() * 4f) {
@@ -609,25 +710,79 @@ public final class Scene3D {
     }
 
     /** Parete di terra che scende nel vuoto e si scurisce verso il fondo. Vertici: a-b in alto, poi giù. */
-    private static void wall(MeshBuilder d, float ax, float az, float bx, float bz, float nx, float nz) {
+    private void wall(MeshBuilder d, float ax, float az, float bx, float bz, float nx, float nz) {
+        float top = -lip;
         d.colorf(1f, 0.95f, 0.9f);
-        d.vert(ax, 0, az, nx, 0, nz, 0, 0);
-        d.vert(bx, 0, bz, nx, 0, nz, 1, 0);
+        d.vert(ax, top, az, nx, 0, nz, 0, 0);
+        d.vert(bx, top, bz, nx, 0, nz, 1, 0);
         d.colorf(0.04f, 0.05f, 0.045f);
         d.vert(bx, -PIT_DEPTH, bz, nx, 0, nz, 1, PIT_DEPTH);
         d.vert(bx, -PIT_DEPTH, bz, nx, 0, nz, 1, PIT_DEPTH);
         d.vert(ax, -PIT_DEPTH, az, nx, 0, nz, 0, PIT_DEPTH);
         d.colorf(1f, 0.95f, 0.9f);
-        d.vert(ax, 0, az, nx, 0, nz, 0, 0);
+        d.vert(ax, top, az, nx, 0, nz, 0, 0);
     }
 
     /** Parete lungo x alla quota z; dir = +1 se il vuoto sta verso z minore. */
-    private static void wallZ(MeshBuilder d, float fx, float z, int dir) {
+    private void wallZ(MeshBuilder d, float fx, float z, int dir) {
         wall(d, fx, z, fx + 1, z, 0, -1);
     }
 
-    private static void wallX(MeshBuilder d, float x, float z, int dir) {
+    private void wallX(MeshBuilder d, float x, float z, int dir) {
         wall(d, x, z, x, z + 1, dir > 0 ? -1 : 1, 0);
+    }
+
+    private static void pumpVert(MeshBuilder b, double a, double ph, float rx, float ry, float cy) {
+        float ux = (float) (Math.sin(a) * Math.cos(ph)), uy = (float) Math.cos(a), uz = (float) (Math.sin(a) * Math.sin(ph));
+        float rib = 1f + 0.07f * (float) Math.cos(10 * ph);
+        float py = cy + uy * ry * (1f - 0.16f * (float) Math.pow(Math.abs(uy), 8));
+        float nx = ux / rx, ny = uy / ry, nz = uz / rx;
+        float wave = 0.7f * (float) Math.sin(10 * ph) * (float) Math.sin(a);
+        nx += -uz * wave / Math.max(0.2f, (float) Math.sin(a)) * 0.3f;
+        nz += ux * wave / Math.max(0.2f, (float) Math.sin(a)) * 0.3f;
+        float l = (float) Math.sqrt(nx * nx + ny * ny + nz * nz);
+        float k = 0.80f + 0.2f * (0.5f + 0.5f * (float) Math.cos(10 * ph)), g = 0.88f + 0.12f * uy;
+        b.colorf(0.98f * k * g, 0.54f * k * g, 0.15f * k * g);
+        b.vert(ux * rx * rib, py, uz * rx * rib, nx / l, ny / l, nz / l, 0.5f, 0.5f);
+    }
+
+    /** Cassa bonus d'autunno: una zucca a spicchi con una stella luminosa intagliata sui quattro lati. */
+    private void buildPumpkin() {
+        MeshBuilder b = new MeshBuilder();
+        int segs = 30, rings = 14;
+        float rx = 0.5f, ry = 0.45f, cy = 0.46f;
+        for (int i = 0; i < rings; i++) {
+            double a0 = Math.PI * i / rings, a1 = Math.PI * (i + 1) / rings;
+            for (int j = 0; j < segs; j++) {
+                double p0 = 2 * Math.PI * j / segs, p1 = 2 * Math.PI * (j + 1) / segs;
+                pumpVert(b, a0, p0, rx, ry, cy); pumpVert(b, a1, p0, rx, ry, cy); pumpVert(b, a1, p1, rx, ry, cy);
+                pumpVert(b, a0, p0, rx, ry, cy); pumpVert(b, a1, p1, rx, ry, cy); pumpVert(b, a0, p1, rx, ry, cy);
+            }
+        }
+        b.colorf(0.40f, 0.52f, 0.18f);
+        b.cylinder(0.02f, cy + ry * 0.82f, cy + ry + 0.2f, 0, 0.075f, 0.05f, 7, true, false);
+        crate = b.build(-1, false, true);
+        crate.spec = 0.3f; crate.shine = 26f;
+        MeshBuilder st = new MeshBuilder();
+        for (int f = 0; f < 4; f++) {
+            float ph = f * (float) Math.PI / 2, dx = (float) Math.cos(ph), dz = (float) Math.sin(ph), tx = -dz, tz = dx;
+            float[][] pts = new float[10][2];
+            for (int i = 0; i < 10; i++) {
+                float ang = (float) (-Math.PI / 2 + i * Math.PI / 5), rr = i % 2 == 0 ? 0.2f : 0.085f;
+                pts[i][0] = (float) Math.cos(ang) * rr;
+                pts[i][1] = (float) Math.sin(ang) * rr;
+            }
+            st.colorf(1f, 0.88f, 0.32f);
+            for (int i = 0; i < 10; i++) {
+                float[][] tri = {{0, 0}, pts[i], pts[(i + 1) % 10]};
+                for (float[] v : tri) {
+                    float t = v[0], hgt = v[1];
+                    float out = rx * (float) Math.sqrt(Math.max(0.02f, 1 - (t / rx) * (t / rx) - (hgt / ry) * (hgt / ry))) * (1f + 0.07f * (float) Math.cos(10 * ph)) + 0.02f;
+                    st.vert(dx * out + tx * t, cy + hgt, dz * out + tz * t, dx, 0, dz, 0.5f, 0.5f);
+                }
+            }
+        }
+        crateStar = st.build(-1, false, true);
     }
 
     private void buildObjects() {
@@ -640,6 +795,7 @@ public final class Scene3D {
         b.box(0, 0.5f, 0, 0.96f, 0.96f, 0.96f);
         crate = b.build(Img.BONUS, false, true);
         crate.spec = 0.1f; crate.shine = 20f;
+        if (autumn) buildPumpkin();
 
         b = new MeshBuilder().color(46, 214, 204);
         b.bipyramid(0, 0, 0, 0.2f, 0.36f, 6);
@@ -746,6 +902,143 @@ public final class Scene3D {
         b = new MeshBuilder().color(30, 22, 34);
         b.box(0, -0.12f, 0, 0.05f, 0.24f, 0.05f);
         beetleLeg = b.build(-1, false, true);
+        buildFoes();
+    }
+
+    /** Punta a tre facce: base centrata in P, direzione D, lunghezza len, mezza larghezza w. */
+    private static void spike(MeshBuilder b, float px, float py, float pz, float dx, float dy, float dz, float len, float w) {
+        float l = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
+        dx /= l; dy /= l; dz /= l;
+        // due assi perpendicolari a D
+        float ax = Math.abs(dy) < 0.9f ? 0 : 1, ay = Math.abs(dy) < 0.9f ? 1 : 0;
+        float e1x = dy * 0 - dz * ay, e1y = dz * ax - dx * 0, e1z = dx * ay - dy * ax;
+        float el = (float) Math.sqrt(e1x * e1x + e1y * e1y + e1z * e1z);
+        e1x /= el; e1y /= el; e1z /= el;
+        float e2x = dy * e1z - dz * e1y, e2y = dz * e1x - dx * e1z, e2z = dx * e1y - dy * e1x;
+        float[][] base = new float[3][3];
+        for (int i = 0; i < 3; i++) {
+            float a = i * 2.0944f, c = (float) Math.cos(a) * w, s2 = (float) Math.sin(a) * w;
+            base[i][0] = px + e1x * c + e2x * s2; base[i][1] = py + e1y * c + e2y * s2; base[i][2] = pz + e1z * c + e2z * s2;
+        }
+        float tx = px + dx * len, ty = py + dy * len, tz = pz + dz * len;
+        for (int i = 0; i < 3; i++) {
+            float[] a = base[i], c = base[(i + 1) % 3];
+            float ux = c[0] - a[0], uy = c[1] - a[1], uz = c[2] - a[2], vx = tx - a[0], vy = ty - a[1], vz = tz - a[2];
+            float nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx, nl = (float) Math.sqrt(nx * nx + ny * ny + nz * nz);
+            nx /= nl; ny /= nl; nz /= nl;
+            float mx = (a[0] + c[0]) / 2 - px, my = (a[1] + c[1]) / 2 - py, mz = (a[2] + c[2]) / 2 - pz;
+            if (nx * mx + ny * my + nz * mz < 0) { nx = -nx; ny = -ny; nz = -nz; }
+            b.vert(a[0], a[1], a[2], nx, ny, nz, 0.5f, 0.5f);
+            b.vert(c[0], c[1], c[2], nx, ny, nz, 0.5f, 0.5f);
+            b.vert(tx, ty, tz, nx, ny, nz, 0.5f, 0.5f);
+        }
+    }
+
+    /** Nemici d'autunno: riccio (guarda verso z positivo), corvo e ghianda. */
+    private void buildFoes() {
+        Random r = new Random(77);
+        MeshBuilder b = new MeshBuilder().color(106, 72, 46);
+        b.ellipsoid(0, 0.34f, -0.06f, 0.40f, 0.30f, 0.50f, 16, 9);
+        b.color(226, 190, 150);
+        b.ellipsoid(0, 0.2f, 0.46f, 0.17f, 0.15f, 0.2f, 12, 7);
+        hogBody = b.build(-1, false, true);
+        hogBody.spec = 0.2f; hogBody.shine = 18f;
+        b = new MeshBuilder();
+        for (int i = 0; i < 70; i++) {                                   // aculei: sulla metà alta e posteriore del corpo
+            float a = r.nextFloat() * 6.283f, el = 0.15f + r.nextFloat() * 1.25f;
+            float ux = (float) (Math.cos(a) * Math.cos(el)), uy = (float) Math.sin(el), uz = (float) (Math.sin(a) * Math.cos(el));
+            if (uz > 0.55f) uz *= 0.3f;
+            float px = ux * 0.38f, py = 0.34f + uy * 0.3f, pz = -0.06f + uz * 0.48f;
+            float tone = 0.8f + 0.4f * r.nextFloat();
+            b.colorf(0.34f * tone, 0.22f * tone, 0.14f * tone);
+            spike(b, px, py, pz, ux * 0.9f, uy + 0.2f, uz * 0.9f - 0.45f, 0.30f + 0.12f * r.nextFloat(), 0.045f);
+        }
+        hogSpines = b.build(-1, false, true);
+        hogSpines.spec = 0.25f; hogSpines.shine = 16f;
+        b = new MeshBuilder().color(20, 14, 12);
+        b.ellipsoid(0, 0.19f, 0.65f, 0.045f, 0.04f, 0.04f, 8, 5);
+        b.ellipsoid(-0.09f, 0.28f, 0.56f, 0.035f, 0.04f, 0.03f, 8, 5);
+        b.ellipsoid(0.09f, 0.28f, 0.56f, 0.035f, 0.04f, 0.03f, 8, 5);
+        hogEyes = b.build(-1, false, true);
+        b = new MeshBuilder().color(206, 168, 128);
+        b.box(0, -0.1f, 0, 0.07f, 0.2f, 0.07f);
+        hogLeg = b.build(-1, false, true);
+
+        b = new MeshBuilder().color(38, 36, 62);
+        b.ellipsoid(0, 0, 0, 0.22f, 0.2f, 0.36f, 14, 8);
+        b.ellipsoid(0, 0.14f, 0.36f, 0.14f, 0.14f, 0.14f, 10, 6);
+        b.box(0, 0.0f, -0.46f, 0.2f, 0.03f, 0.34f);
+        b.color(244, 176, 44);
+        spike(b, 0, 0.12f, 0.48f, 0, -0.1f, 1, 0.2f, 0.05f);
+        crowBody = b.build(-1, false, true);
+        crowBody.spec = 0.7f; crowBody.shine = 30f;
+        b = new MeshBuilder().color(54, 52, 90);
+        b.box(0.3f, 0, 0, 0.6f, 0.03f, 0.36f);
+        crowWing = b.build(-1, false, true);
+        crowWing.spec = 0.5f; crowWing.shine = 20f;
+        b = new MeshBuilder().color(252, 220, 70);
+        b.ellipsoid(-0.07f, 0.2f, 0.45f, 0.03f, 0.03f, 0.03f, 6, 4);
+        b.ellipsoid(0.07f, 0.2f, 0.45f, 0.03f, 0.03f, 0.03f, 6, 4);
+        crowEyes = b.build(-1, false, true);
+
+        b = new MeshBuilder().color(206, 148, 66);
+        b.ellipsoid(0, 0.34f, 0, 0.3f, 0.34f, 0.3f, 14, 8);
+        acornBody = b.build(-1, false, true);
+        acornBody.spec = 0.4f; acornBody.shine = 22f;
+        b = new MeshBuilder().color(126, 80, 44);
+        b.ellipsoid(0, 0.56f, 0, 0.35f, 0.2f, 0.35f, 14, 7);
+        b.color(88, 58, 34);
+        b.cylinder(0, 0.7f, 0.9f, 0, 0.05f, 0.035f, 6, true, false);
+        acornCap = b.build(-1, false, true);
+        acornCap.spec = 0.2f; acornCap.shine = 14f;
+        b = new MeshBuilder().color(250, 246, 236);
+        b.ellipsoid(-0.1f, 0.4f, 0.26f, 0.065f, 0.075f, 0.04f, 8, 5);
+        b.ellipsoid(0.1f, 0.4f, 0.26f, 0.065f, 0.075f, 0.04f, 8, 5);
+        b.color(22, 14, 10);
+        b.ellipsoid(-0.09f, 0.39f, 0.3f, 0.03f, 0.04f, 0.02f, 6, 4);
+        b.ellipsoid(0.09f, 0.39f, 0.3f, 0.03f, 0.04f, 0.02f, 6, 4);
+        acornEyes = b.build(-1, false, true);
+        b = new MeshBuilder().color(74, 48, 30);
+        b.ellipsoid(0, 0.05f, 0.04f, 0.1f, 0.06f, 0.14f, 8, 5);
+        acornFoot = b.build(-1, false, true);
+    }
+
+    /** Disegna un nemico d'autunno; m è già posizionata e orientata. */
+    private void drawFoe(Gfx3D g, Enemy3 e) {
+        switch (e.type) {
+            case Enemy3.HOG:
+                g.draw(hogBody, m, 1, 1, 1, 1, 0);
+                g.draw(hogSpines, m, 1, 1, 1, 1, 0);
+                g.draw(hogEyes, m, 1, 1, 1, 1, 0.2f);
+                for (int i = 0; i < 4; i++) {
+                    System.arraycopy(m, 0, m2, 0, 16);
+                    Mat4.translate(m2, (i % 2 == 0 ? -1 : 1) * 0.2f, 0.15f, i < 2 ? -0.18f : 0.22f);
+                    Mat4.rotateX(m2, (float) Math.sin(e.anim * 10f + i * 1.7f) * 0.6f);
+                    g.draw(hogLeg, m2, 1, 1, 1, 1, 0);
+                }
+                break;
+            case Enemy3.CROW:
+                g.draw(crowBody, m, 1, 1, 1, 1, 0);
+                g.draw(crowEyes, m, 1, 1, 1, 1, 0.9f);
+                for (int side = -1; side <= 1; side += 2) {
+                    System.arraycopy(m, 0, m2, 0, 16);
+                    Mat4.translate(m2, side * 0.16f, 0.06f, 0.02f);
+                    if (side < 0) Mat4.rotateY(m2, (float) Math.PI);
+                    Mat4.rotateZ(m2, (float) Math.sin(e.anim * 13f) * 0.95f * (side < 0 ? -1 : 1) * (side < 0 ? -1 : 1) + 0.15f);
+                    g.draw(crowWing, m2, 1, 1, 1, 1, 0);
+                }
+                break;
+            default:
+                g.draw(acornBody, m, 1, 1, 1, 1, 0);
+                g.draw(acornCap, m, 1, 1, 1, 1, 0);
+                g.draw(acornEyes, m, 1, 1, 1, 1, 0.1f);
+                for (int i = -1; i <= 1; i += 2) {
+                    System.arraycopy(m, 0, m2, 0, 16);
+                    Mat4.translate(m2, i * 0.14f, e.y > e.baseY + 0.05f ? 0.12f : 0f, 0);
+                    g.draw(acornFoot, m2, 1, 1, 1, 1, 0);
+                }
+                break;
+        }
     }
 
     // ------------------------------------------------------------------ fotogramma
@@ -762,7 +1055,8 @@ public final class Scene3D {
         float lift = Math.max(0, w.py - camY) * 0.35f;
         Mat4.lookAt(view, camX, camY + 3.3f + lift, camZ - 6.0f, camX * 0.9f, camY + 1.0f + lift, camZ + 5f);
         Mat4.perspective(proj, 58f, aspect, 0.3f, 400f);
-        g.begin(view, proj, FOG_R, FOG_G, FOG_B, 30f, 115f, 0.9f);
+        g.begin(view, proj, fogR, fogG, fogB, 30f, 115f, 0.9f);
+        if (autumn) g.grade(1.07f, 0.96f, 0.82f);
         g.time(w.time);
 
         g.backdrop(sky);
@@ -787,7 +1081,8 @@ public final class Scene3D {
                 if (!w.crate[z * World3D.W + x]) continue;
                 Mat4.setIdentity(m);
                 Mat4.translate(m, x - World3D.HALF + 0.5f, bumpAt(x - World3D.HALF + 0.5f, z + 0.5f) - 0.03f, z + 0.5f);
-                g.draw(crate, m, 1, 1, 1, 1, 0.15f);
+                g.draw(crate, m, 1, 1, 1, 1, autumn ? 0 : 0.15f);
+                if (crateStar != null) g.draw(crateStar, m, 1, 1, 1, 1, 0.92f);
             }
         }
 
@@ -837,6 +1132,7 @@ public final class Scene3D {
             Mat4.rotateY(m, yawE);
             if (e.flung) Mat4.rotateX(m, e.anim * 3f);
             if (e.flatTime > 0) Mat4.scale(m, 1.15f, 0.22f, 1.15f);
+            if (e.type != Enemy3.BEETLE) { drawFoe(g, e); continue; }
             g.draw(beetleBody, m, 1, 1, 1, 1, 0);
             g.draw(beetleEyes, m, 1, 1, 1, 1, 0.9f);
             for (int i = 0; i < 6; i++) {
@@ -862,8 +1158,10 @@ public final class Scene3D {
         for (Enemy3 e : w.enemies) {
             if (e.dead || e.flung || e.z < near || e.z > far) continue;
             Mat4.setIdentity(m);
-            Mat4.translate(m, e.x, e.y + bumpAt(e.x, e.z) + 0.03f, e.z);
-            Mat4.scale(m, 1.5f, 1, 1.5f);
+            float sy = e.type == Enemy3.CROW ? 0 : e.type == Enemy3.ACORN ? e.baseY : e.y;
+            float ss = 1.5f * (e.type == Enemy3.ACORN || e.type == Enemy3.CROW ? Math.max(0.5f, 1f - (e.y - sy) * 0.2f) : 1f);
+            Mat4.translate(m, e.x, sy + bumpAt(e.x, e.z) + 0.03f, e.z);
+            Mat4.scale(m, ss, 1, ss);
             g.draw(shadow, m, 1, 1, 1, 0.8f, 1);
         }
         for (int c = 0; c < nChunks; c++) {
@@ -893,7 +1191,7 @@ public final class Scene3D {
 
     /** Foglie che cadono dagli alberi, portate dal vento: si ripetono ogni 34 m attorno al giocatore. */
     private void drawLeaves(World3D w, Gfx3D g) {
-        final int n = 90;
+        final int n = autumn ? 190 : 90;
         final float span = 34f;
         for (int i = 0; i < n; i++) {
             float hx = hash(i, 1, 101), hy = hash(i, 2, 102), hz = hash(i, 3, 103), hs = hash(i, 4, 104), hv = hash(i, 5, 105);

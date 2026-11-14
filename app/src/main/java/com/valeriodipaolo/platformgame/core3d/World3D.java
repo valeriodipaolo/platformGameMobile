@@ -25,7 +25,9 @@ public final class World3D {
     private static final float SPIN_RATE = 19f, SPIN_REACH = 0.4f, ENEMY_SPEED = 1.6f, INVULN = 2f;
 
     public final Save save;
-    public final String id = "l2";
+    /** 2 = bosco d'estate, 4 = bosco d'autunno. */
+    public final int levelNo;
+    public final String id;
     public int length;
     /** Altezza di ogni colonna [z * W + x]: PIT = vuoto, 0 = prato, 1 o più = blocchi di pietra impilati. */
     public int[] height;
@@ -55,7 +57,13 @@ public final class World3D {
     private int airJumps;
 
     public World3D(Save save) {
+        this(save, 2);
+    }
+
+    public World3D(Save save, int levelNo) {
         this.save = save;
+        this.levelNo = levelNo;
+        this.id = "l" + levelNo;
         newGame();
     }
 
@@ -63,7 +71,7 @@ public final class World3D {
         score = 0;
         gems = 0;
         lives = 3;
-        LevelTwo.build(this);
+        if (levelNo == 4) LevelFour.build(this); else LevelTwo.build(this);
         gemTotal = gemsList.size();
         for (boolean c : crate) if (c) gemTotal++;
         batteryOwned = gemOwned = false;
@@ -326,11 +334,26 @@ public final class World3D {
             }
             if (Math.abs(e.z - pz) > 45) continue;
             e.anim += dt;
+            float speed = e.type == Enemy3.HOG ? ENEMY_SPEED * 0.8f : e.type == Enemy3.CROW ? ENEMY_SPEED * 1.5f : ENEMY_SPEED;
+            if (e.type == Enemy3.ACORN) {                       // la ghianda aspetta ferma, poi balza in avanti
+                e.hopT += dt;
+                float t = e.hopT % 1.7f;
+                if (t < 0.9f) {
+                    e.y = e.baseY;
+                    speed = 0;
+                } else {
+                    float u = (t - 0.9f) / 0.8f;
+                    e.y = e.baseY + 1.5f * 4f * u * (1f - u);
+                    speed = ENEMY_SPEED * 1.7f;
+                }
+            } else if (e.type == Enemy3.CROW) {
+                e.y = e.baseY + 0.45f * (float) Math.sin(e.anim * 2.4f);
+            }
             if (e.alongZ) {
-                e.z += e.dir * ENEMY_SPEED * dt;
+                e.z += e.dir * speed * dt;
                 if (e.z > e.hi) { e.z = e.hi; e.dir = -1; } else if (e.z < e.lo) { e.z = e.lo; e.dir = 1; }
             } else {
-                e.x += e.dir * ENEMY_SPEED * dt;
+                e.x += e.dir * speed * dt;
                 if (e.x > e.hi) { e.x = e.hi; e.dir = -1; } else if (e.x < e.lo) { e.x = e.lo; e.dir = 1; }
             }
             if (state != PLAYING) continue;
@@ -344,7 +367,7 @@ public final class World3D {
                 e.vy = 8f;
                 score += 100;
             } else if (ax < 0.75f && az < 0.75f && vertical) {
-                if (vy < 0 && py > e.y + 0.25f) {     // schiacciato dall'alto
+                if (e.type != Enemy3.HOG && vy < 0 && py > e.y + 0.25f) {     // schiacciato dall'alto (il riccio punge)
                     e.flatTime = 0.45f;
                     vy = jump ? 9f : 6.5f;
                     airJumps = 1;

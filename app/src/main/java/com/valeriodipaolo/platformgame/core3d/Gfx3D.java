@@ -21,5 +21,8 @@ public interface Gfx3D {
     /** Tempo di gioco in secondi: serve al vento che muove l'erba e le foglie. */
     void time(float t);
 
+    /** Colore con cui si moltiplica la luce di tutto il paesaggio (1,1,1 = nessuna correzione). */
+    void grade(float r, float g, float b);
+
     void end();
 }

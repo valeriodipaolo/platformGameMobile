@@ -35,10 +35,10 @@ final class GameView extends SurfaceView implements SurfaceHolder.Callback, Runn
     private boolean completed;
 
     /** onLevelComplete: chiamato (sul thread dell'interfaccia) quando si tocca lo schermo a livello completato. */
-    GameView(Context ctx, Runnable onLevelComplete) {
+    GameView(Context ctx, int levelNo, Runnable onLevelComplete) {
         super(ctx);
         this.onLevelComplete = onLevelComplete;
-        game = new Game(new AndroidSave(ctx));
+        game = new Game(new AndroidSave(ctx), levelNo);
         painter = new AndroidPainter(ctx);
         getHolder().addCallback(this);
         setKeepScreenOn(true);

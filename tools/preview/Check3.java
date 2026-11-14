@@ -5,7 +5,7 @@ import com.valeriodipaolo.platformgame.core3d.*;
 public class Check3 {
     static int fails = 0;
     static void ok(boolean c, String m) { System.out.println((c ? "OK   " : "FALLITO ") + m); if (!c) fails++; }
-    static World3D fresh() { return new World3D(new MemorySave()); }
+    static World3D fresh() { return new World3D(new MemorySave(), Integer.getInteger("lv", 2)); }
     static void run(World3D w, float sec, float jx, float jy, boolean j, boolean s) {
         w.setInput(jx, jy, j, s);
         for (float t = 0; t < sec; t += 1f / 60f) w.update(1f / 60f);

@@ -69,7 +69,7 @@ public final class Hud3D {
                 }
             }
             if (w.stateTime > 1.2f) {
-                p.text(won ? "Tocca lo schermo per tornare al menu" : "Tocca lo schermo per riprovare",
+                p.text(won ? (w.levelNo < 4 ? "Tocca lo schermo per il livello " + (w.levelNo + 1) : "Tocca lo schermo per tornare al menu") : "Tocca lo schermo per riprovare",
                         sw / 2, 9.4f * s, 0.5f * s, Painter.ALIGN_CENTER, 0xFFFFE082);
             }
         }

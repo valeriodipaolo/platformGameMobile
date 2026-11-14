@@ -66,6 +66,7 @@ final class GlRenderer implements GLSurfaceView.Renderer, Gfx3D {
             + "uniform float uCut;\n"
             + "uniform float uEmissive;\n"
             + "uniform float uAlpha;\n"
+            + "uniform vec3 uGrade;\n"
             + "varying vec2 vUV;\n"
             + "varying vec3 vCol;\n"
             + "varying vec3 vN;\n"
@@ -91,7 +92,7 @@ final class GlRenderer implements GLSurfaceView.Renderer, Gfx3D {
             + "  float hemi = dot(n, uUpV) * 0.5 + 0.5;\n"
             + "  vec3 amb = mix(vec3(" + GND_R + ", " + GND_G + ", " + GND_B + "), vec3(" + SKY_R + ", " + SKY_G + ", " + SKY_B + "), hemi);\n"
             + "  vec3 sun = vec3(" + SUN_R + ", " + SUN_G + ", " + SUN_B + ");\n"
-            + "  vec3 c = alb * (sun * nl + amb);\n"
+            + "  vec3 c = alb * (sun * nl + amb) * uGrade;\n"
             + "  if (uSpec.x > 0.0) {\n"
             + "    vec3 h = normalize(uLightV + v);\n"
             + "    float fres = pow(1.0 - max(dot(n, v), 0.0), 3.0);\n"
@@ -113,7 +114,7 @@ final class GlRenderer implements GLSurfaceView.Renderer, Gfx3D {
     private final Scene3D scene = new Scene3D();
 
     private int program, generation, whiteTex;
-    private int aPos, aNormal, aUV, aColor, aSway, uTime;
+    private int aPos, aNormal, aUV, aColor, aSway, uTime, uGrade;
     private int uMVP, uMV, uTint, uAlpha, uEmissive, uFog, uFogColor, uOpaque, uCut, uTex, uLightV, uUpV, uSpec;
     private final int[] textures = new int[Img.COUNT];
     private final float[] view = new float[16], vp = new float[16], mvp = new float[16], mv = new float[16], ident = Mat4.identity();
@@ -173,6 +174,7 @@ final class GlRenderer implements GLSurfaceView.Renderer, Gfx3D {
                 view[1] * LX + view[5] * LY + view[9] * LZ, view[2] * LX + view[6] * LY + view[10] * LZ);
         GLES20.glUniform3f(uUpV, view[4], view[5], view[6]);
         GLES20.glUniform3f(uFogColor, fogR, fogG, fogB);
+        GLES20.glUniform3f(uGrade, 1f, 1f, 1f);
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
         GLES20.glUniform1i(uTex, 0);
         GLES20.glEnableVertexAttribArray(aPos);
@@ -208,6 +210,11 @@ final class GlRenderer implements GLSurfaceView.Renderer, Gfx3D {
             GLES20.glDisable(GLES20.GL_BLEND);
             GLES20.glDepthMask(true);
         }
+    }
+
+    @Override
+    public void grade(float r, float g, float b) {
+        GLES20.glUniform3f(uGrade, r, g, b);
     }
 
     @Override
@@ -332,6 +339,7 @@ final class GlRenderer implements GLSurfaceView.Renderer, Gfx3D {
         aColor = GLES20.glGetAttribLocation(p, "aColor");
         aSway = GLES20.glGetAttribLocation(p, "aSway");
         uTime = GLES20.glGetUniformLocation(p, "uTime");
+        uGrade = GLES20.glGetUniformLocation(p, "uGrade");
         uMVP = GLES20.glGetUniformLocation(p, "uMVP");
         uMV = GLES20.glGetUniformLocation(p, "uMV");
         uLightV = GLES20.glGetUniformLocation(p, "uLightV");

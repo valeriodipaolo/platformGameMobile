@@ -34,10 +34,12 @@ final class MenuView extends View {
         painter = new AndroidPainter(ctx);
     }
 
-    private float btnW() { return getWidth() * 0.34f; }
+    private static final int LEVELS = 4;
+
+    private float btnW() { return getWidth() * 0.215f; }
     private float btnH() { return getHeight() * 0.3f; }
     private float btnY() { return getHeight() * 0.5f; }
-    private float btnX(int i) { return getWidth() * 0.5f + (i == 0 ? -btnW() - getWidth() * 0.03f : getWidth() * 0.03f); }
+    private float btnX(int i) { return getWidth() * 0.5f + (i - LEVELS / 2f) * (btnW() + getWidth() * 0.016f) + getWidth() * 0.008f; }
 
     private float chipW() { return getHeight() * 0.1f; }
     private float chipX(int i) { return getWidth() * 0.5f + (i - 2.5f) * chipW() * 1.25f; }
@@ -54,15 +56,16 @@ final class MenuView extends View {
         painter.rect(0, 0, w, h, 0x55000000);
         painter.image(Img.HERO_SPIN + 3, w / 2 - 1.4f * s, 0.5f * s, 2.8f * s, 3.6f * s, false, 1);
         painter.text("ROBO JUMP", w / 2, 5.3f * s, 1.3f * s, Painter.ALIGN_CENTER, 0xFFFFFFFF);
-        String[] title = {"LIVELLO 1", "LIVELLO 2"}, sub = {"Il prato", "Il corridoio nel bosco (3D)"};
-        for (int i = 0; i < 2; i++) {
+        String[] title = {"LIVELLO 1", "LIVELLO 2", "LIVELLO 3", "LIVELLO 4"};
+        String[] sub = {"Il prato", "Il bosco (3D)", "Il prato d'autunno", "Il bosco d'autunno (3D)"};
+        for (int i = 0; i < LEVELS; i++) {
             float x = btnX(i), y = btnY();
             painter.rect(x, y, btnW(), btnH(), 0xCC14324A);
             painter.rect(x, y, btnW(), 0.08f * s, 0xFF4FC3F7);
-            painter.text(title[i], x + btnW() / 2, y + btnH() * 0.5f, 0.9f * s, Painter.ALIGN_CENTER, 0xFFFFFFFF);
-            painter.text(sub[i], x + btnW() / 2, y + btnH() * 0.78f, 0.42f * s, Painter.ALIGN_CENTER, 0xFFB3E5FC);
+            painter.text(title[i], x + btnW() / 2, y + btnH() * 0.5f, 0.62f * s, Painter.ALIGN_CENTER, 0xFFFFFFFF);
+            painter.text(sub[i], x + btnW() / 2, y + btnH() * 0.78f, 0.3f * s, Painter.ALIGN_CENTER, 0xFFB3E5FC);
         }
-        painter.text("Comandi del livello 2: " + CTRL_TEXT[ctrl - 1], w / 2, h * 0.855f, 0.38f * s, Painter.ALIGN_CENTER, 0xFFFFFFFF);
+        painter.text("Comandi dei livelli 3D: " + CTRL_TEXT[ctrl - 1], w / 2, h * 0.855f, 0.38f * s, Painter.ALIGN_CENTER, 0xFFFFFFFF);
         for (int i = 0; i < 6; i++) {
             boolean on = i + 1 == ctrl;
             painter.rect(chipX(i), chipY(), chipW(), chipW(), on ? 0xFF4FC3F7 : 0xCC14324A);
@@ -83,7 +86,7 @@ final class MenuView extends View {
                     return true;
                 }
             }
-            for (int i = 0; i < 2; i++) {
+            for (int i = 0; i < LEVELS; i++) {
                 if (e.getX() >= btnX(i) && e.getX() <= btnX(i) + btnW() && e.getY() >= btnY() && e.getY() <= btnY() + btnH()) {
                     listener.onLevel(i + 1);
                 }
