@@ -27,8 +27,12 @@ public final class Img {
     public static final int AU_SKY = 67, AU_MOUNTAINS = 68, AU_HILLS = 69, AU_GRASS = 70, AU_GRASS_L = 71, AU_GRASS_R = 72;
     public static final int AU_DIRT = 73, AU_DIRT_L = 74, AU_DIRT_R = 75, AU_FRINGE = 76, AU_BRICK = 77, AU_BONUS = 78, AU_USED = 79, AU_STONE = 80;
     public static final int HOG = 81, CROW = 83, ACORN = 85, ACORN_FLAT = 87;      // ricci, corvo e ghianda: 2 fotogrammi ciascuno
-    public static final int R3A_GRASS = 88, R3A_FOREST = 89, R3A_TUFT = 90, R3A_FLOWERS = 91, R3A_CROWN = 92, R3A_SKY = 93, R3A_MOUNTAINS = 94, R3A_TREE = 95, R3A_FOLIAGE = 96;
-    public static final int COUNT = 97;
+    public static final int R3A_GRASS = 88, R3A_FOREST = 89, R3A_TUFT = 90, R3A_FLOWERS = 91, R3A_CROWN = 92, R3A_SKY = 93, R3A_MOUNTAINS = 94, R3A_TREE = 95, R3A_FOLIAGE = 96, GATE = 97, GATE_DOOR = 98;
+    public static final int AR_SKY = 99, AR_MOUNTAINS = 100, AR_HILLS = 101, AR_GRASS = 102, AR_GRASS_L = 103, AR_GRASS_R = 104,
+            AR_DIRT = 105, AR_DIRT_L = 106, AR_DIRT_R = 107, AR_FRINGE = 108, AR_BRICK = 109, AR_BONUS = 110, AR_USED = 111, AR_STONE = 112;
+    public static final int R3B_GRASS = 113, R3B_FOREST = 114, R3B_TUFT = 115, R3B_FLOWERS = 116, R3B_BRANCH = 117, R3B_TREE = 118,
+            R3B_SKY = 119, R3B_MOUNTAINS = 120, R3B_AURORA = 121, R3B_FLAKE = 122, R3B_ICE = 123;
+    public static final int COUNT = 124;
 
     public static final String[] NAMES = {
         "bg_sky", "bg_mountains", "bg_hills",
@@ -48,6 +52,9 @@ public final class Img {
         "au_sky", "au_mountains", "au_hills", "au_grass", "au_grass_l", "au_grass_r", "au_dirt", "au_dirt_l", "au_dirt_r",
         "au_fringe", "au_brick", "au_bonus", "au_used", "au_stone",
         "hog_0", "hog_1", "crow_0", "crow_1", "acorn_0", "acorn_1", "acorn_flat",
-        "r3a_grass", "r3a_forest", "r3a_tuft", "r3a_flowers", "r3a_crown", "r3a_sky", "r3a_mountains", "r3a_tree", "r3a_foliage",
+        "r3a_grass", "r3a_forest", "r3a_tuft", "r3a_flowers", "r3a_crown", "r3a_sky", "r3a_mountains", "r3a_tree", "r3a_foliage", "gate", "gate_door",
+        "ar_sky", "ar_mountains", "ar_hills", "ar_grass", "ar_grass_l", "ar_grass_r", "ar_dirt", "ar_dirt_l", "ar_dirt_r", "ar_fringe",
+        "ar_brick", "ar_bonus", "ar_used", "ar_stone",
+        "r3b_grass", "r3b_forest", "r3b_tuft", "r3b_flowers", "r3b_branch", "r3b_tree", "r3b_sky", "r3b_mountains", "r3b_aurora", "r3b_flake", "r3b_ice",
     };
 }

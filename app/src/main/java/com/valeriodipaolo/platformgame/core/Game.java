@@ -89,7 +89,7 @@ public final class Game {
     }
 
     private void loadLevel() {
-        level = levelNo == 3 ? LevelThree.build() : LevelOne.build();
+        level = levelNo == 5 ? LevelFive.build() : levelNo == 3 ? LevelThree.build() : LevelOne.build();
         enemies.clear();
         for (float[] e : level.enemies) {
             enemies.add(e.length > 2 ? new Enemy(e[0], e[1], (int) e[2], e[3], e[4]) : new Enemy(e[0], e[1]));
@@ -188,7 +188,7 @@ public final class Game {
             updateCheckpoint();
             stepEnemies(dt);
             pickups();
-            if (state == PLAYING && player.x + player.w >= level.flagX + 0.45f) win();
+            if (state == PLAYING && player.x + player.w >= level.flagX - 0.45f) win();
         } else if (state == DYING) {
             player.vy += 60f * dt;
             player.y += player.vy * dt;
@@ -204,6 +204,8 @@ public final class Game {
         } else if (state == WON) {
             float target = level.flagBaseY - player.h;
             if (player.y < target) player.y = Math.min(target, player.y + 6f * dt);
+            float door = level.flagX + 0.5f - player.w / 2;          // il robot entra nel portone che si apre
+            if (stateTime > 0.5f && player.x < door) player.x = Math.min(door, player.x + 2.2f * dt);
         }
         jumpWas = jump;
         spinWas = spin;
@@ -446,10 +448,8 @@ public final class Game {
     private void win() {
         state = WON;
         stateTime = 0;
-        float height = Math.max(0, level.flagBaseY - (player.y + player.h));
-        score += 500 + (int) height * 200;
+        score += 1000;
         player.vx = player.vy = 0;
-        player.x = level.flagX + 0.45f - player.w;
         facing = 1;
     }
 }

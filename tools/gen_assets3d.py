@@ -534,7 +534,7 @@ def gen_wood():
     save("r3_wood", np.clip(arr, 0, 1))
 
 
-def gen_flowers(name="r3_flowers", kinds=None):
+def gen_flowers(name="r3_flowers", kinds=None, stem=(48, 128, 40, 255), leaf=(60, 150, 44, 255)):
     """Prato fiorito: tanti fiori di colori diversi (rosso, rosa, arancio, giallo, viola, blu, bianco), con foglie e steli."""
     ss = 2
     S = 256 * ss
@@ -551,10 +551,10 @@ def gen_flowers(name="r3_flowers", kinds=None):
         top = r.uniform(0.12, 0.62) * S
         bend = r.uniform(-16, 16) * ss
         pts = [(x, S - 2), (x + bend * 0.5, (S + top) / 2), (x + bend, top)]
-        d.line(pts, fill=(48, 128, 40, 255), width=max(2, int(2.4 * ss)))
+        d.line(pts, fill=stem, width=max(2, int(2.4 * ss)))
         ly = S - r.uniform(14, 70) * ss
         for sg in (-1, 1):
-            d.polygon([(x, ly), (x + sg * 24 * ss, ly - 16 * ss), (x + sg * 6 * ss, ly - 2 * ss)], fill=(60, 150, 44, 255))
+            d.polygon([(x, ly), (x + sg * 24 * ss, ly - 16 * ss), (x + sg * 6 * ss, ly - 2 * ss)], fill=leaf)
         petal, center = kinds[k]
         rad = r.uniform(10, 17) * ss
         np_ = r.choice([5, 6, 8])

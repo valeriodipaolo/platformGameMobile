@@ -43,15 +43,15 @@ public class MainActivity extends Activity {
         }));
     }
 
-    /** Livelli 1 e 3 sono 2D, 2 e 4 sono 3D. Finito un livello si passa al successivo; dopo l'ultimo si torna al menu. */
+    /** Livelli 1, 3 e 5 sono 2D, 2, 4 e 6 sono 3D. Finito un livello si passa al successivo; dopo l'ultimo si torna al menu. */
     private void startLevel(final int level) {
         Runnable next = new Runnable() {
             @Override
             public void run() {
-                if (level < 4) startLevel(level + 1); else showMenu();
+                if (level < 6) startLevel(level + 1); else showMenu();
             }
         };
-        if (level == 1 || level == 3) show(new GameView(this, level, next));
+        if (level % 2 == 1) show(new GameView(this, level, next));
         else show(new Level3DView(this, level, next));
     }
 

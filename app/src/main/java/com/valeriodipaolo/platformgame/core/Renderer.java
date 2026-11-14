@@ -11,21 +11,20 @@ public final class Renderer {
         Level lv = g.level;
 
         // ---- sfondi in parallasse
-        boolean au = lv.theme == 1;
-        layer(p, au ? Img.AU_SKY : Img.SKY, cam * s * 0.03f, 0, sh, sw);
-        layer(p, au ? Img.AU_MOUNTAINS : Img.MOUNTAINS, cam * s * 0.12f, 3.9f * s, 6.6f * s, sw);
-        layer(p, au ? Img.AU_HILLS : Img.HILLS, cam * s * 0.35f, 6.2f * s, 5.8f * s, sw);
+        int th = lv.theme;                          // 0 estate, 1 autunno, 2 aurora boreale
+        boolean au = th >= 1;
+        layer(p, th == 2 ? Img.AR_SKY : th == 1 ? Img.AU_SKY : Img.SKY, cam * s * 0.03f, 0, sh, sw);
+        layer(p, th == 2 ? Img.AR_MOUNTAINS : th == 1 ? Img.AU_MOUNTAINS : Img.MOUNTAINS, cam * s * 0.12f, 3.9f * s, 6.6f * s, sw);
+        layer(p, th == 2 ? Img.AR_HILLS : th == 1 ? Img.AU_HILLS : Img.HILLS, cam * s * 0.35f, 6.2f * s, 5.8f * s, sw);
 
-        // ---- traguardo (dietro alle caselle)
-        float poleX = (lv.flagX + 0.5f - cam) * s;
-        if (poleX > -2 * s && poleX < sw + 2 * s) {
-            for (int ty = 2; ty < lv.flagBaseY; ty++) {
-                p.image(Img.POLE, poleX - 0.105f * s, Math.round(ty * s), 0.21f * s, s + 1, false, 1);
-            }
-            p.image(Img.POLE_TOP, poleX - 0.21f * s, 1.66f * s, 0.42f * s, 0.42f * s, false, 1);
-            float t = g.state == Game.WON ? Math.min(1f, g.stateTime / 1.0f) : 0;
-            float fy = 2.15f + t * (lv.flagBaseY - 1.3f - 2.15f);
-            p.image(Img.FLAG, poleX + 0.06f * s, fy * s, 1.33f * s, 0.875f * s, false, 1);
+        // ---- traguardo: portone di pietra (dietro alle caselle); i battenti si aprono quando il livello è finito
+        float gx = (lv.flagX + 0.5f - 1.5f - cam) * s, gy = (lv.flagBaseY - 4f) * s;
+        if (gx > -3.5f * s && gx < sw + 0.5f * s) {
+            p.image(Img.GATE, gx, gy, 3f * s, 4f * s, false, 1);
+            float t = g.state == Game.WON ? Math.max(0f, Math.min(1f, (g.stateTime - 0.1f) / 1.0f)) : 0f;
+            float lw = 0.95f * s * (1f - 0.88f * t * t * (3f - 2f * t)), ly = (lv.flagBaseY - 3.05f) * s;
+            p.image(Img.GATE_DOOR, gx + 0.55f * s, ly, lw, 3.05f * s, false, 1);
+            p.image(Img.GATE_DOOR, gx + 2.45f * s - lw, ly, lw, 3.05f * s, true, 1);
         }
 
         // ---- caselle
@@ -44,16 +43,18 @@ public final class Renderer {
                             boolean el = !lv.solid(tx - 1, ty), er = !lv.solid(tx + 1, ty);
                             img = under ? (el ? Img.AU_DIRT_L : er ? Img.AU_DIRT_R : Img.AU_DIRT)
                                     : (el ? Img.AU_GRASS_L : er ? Img.AU_GRASS_R : Img.AU_GRASS);
+                            if (th == 2) img = img == Img.AU_DIRT_L ? Img.AR_DIRT_L : img == Img.AU_DIRT_R ? Img.AR_DIRT_R : img == Img.AU_DIRT ? Img.AR_DIRT
+                                    : img == Img.AU_GRASS_L ? Img.AR_GRASS_L : img == Img.AU_GRASS_R ? Img.AR_GRASS_R : Img.AR_GRASS;
                             softEdge = el || er;
                         } else {
                             img = under ? Img.DIRT : Img.GRASS;
                         }
                         break;
                     case Level.BRICK:
-                    case Level.SECRET: img = au ? Img.AU_BRICK : Img.BRICK; break;
-                    case Level.BONUS: img = au ? Img.AU_BONUS : Img.BONUS; break;
-                    case Level.USED: img = au ? Img.AU_USED : Img.USED; break;
-                    default: img = au ? Img.AU_STONE : Img.STONE; break;
+                    case Level.SECRET: img = th == 2 ? Img.AR_BRICK : au ? Img.AU_BRICK : Img.BRICK; break;
+                    case Level.BONUS: img = th == 2 ? Img.AR_BONUS : au ? Img.AU_BONUS : Img.BONUS; break;
+                    case Level.USED: img = th == 2 ? Img.AR_USED : au ? Img.AU_USED : Img.USED; break;
+                    default: img = th == 2 ? Img.AR_STONE : au ? Img.AU_STONE : Img.STONE; break;
                 }
                 float off = 0;
                 if (tx == g.bumpTx && ty == g.bumpTy) {
@@ -64,8 +65,8 @@ public final class Renderer {
                 p.image(img, x0, y0 + off, x1 - x0, y1 - y0, false, 1);
                 if (img == Img.GRASS && !lv.solid(tx, ty - 1)) {
                     p.image(Img.FRINGE, x0, y0 - 0.27f * s, x1 - x0, 0.29f * s, false, 1);
-                } else if (img == Img.AU_GRASS && !lv.solid(tx, ty - 1)) {
-                    p.image(Img.AU_FRINGE, x0, y0 - 0.27f * s, x1 - x0, 0.29f * s, false, 1);
+                } else if ((img == Img.AU_GRASS || img == Img.AR_GRASS) && !lv.solid(tx, ty - 1)) {
+                    p.image(th == 2 ? Img.AR_FRINGE : Img.AU_FRINGE, x0, y0 - 0.27f * s, x1 - x0, 0.29f * s, false, 1);
                 }
             }
         }
