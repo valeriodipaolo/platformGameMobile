@@ -16,6 +16,8 @@ public final class Enemy3 {
     public float dir = 1, anim;
     public boolean dead, flung;
     public float flatTime, vx, vy, vz;
+    /** Quota del suolo su cui cammina (fissata alla prima mossa): niente salti nel vuoto né attraversamenti di blocchi. */
+    public float floor = Float.NaN;
 
     public Enemy3(float x, float z, boolean alongZ, float lo, float hi) {
         this.x = x;

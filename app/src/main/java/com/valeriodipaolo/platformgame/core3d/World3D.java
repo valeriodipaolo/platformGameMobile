@@ -316,6 +316,34 @@ public final class World3D {
         cpZ = pz;
     }
 
+    public static final float ENEMY_R = 0.42f;
+
+    /**
+     * true se il nemico, spostato in (x, z), entrerebbe in un blocco, in una cassa o nel muro laterale, oppure (se cammina)
+     * resterebbe senza terra sotto i piedi. Il corvo vola: lo ostacola solo ciò che è più alto della sua quota più bassa.
+     */
+    public boolean enemyBlocked(Enemy3 e, float x, float z) {
+        float floor = Float.isNaN(e.floor) ? (e.type == Enemy3.ACORN ? e.baseY : e.y) : e.floor;
+        float feet = e.type == Enemy3.CROW ? e.baseY - 0.75f : floor;
+        for (int cz = zi(z - ENEMY_R); cz <= zi(z + ENEMY_R); cz++) {
+            for (int cx = xi(x - ENEMY_R); cx <= xi(x + ENEMY_R); cx++) {
+                int h = cell(cx, cz);
+                if (h == 99) return true;
+                if (h != PIT && h > feet + 0.05f) return true;
+            }
+        }
+        if (e.type != Enemy3.CROW) {
+            int hc = cell(xi(x), zi(z));
+            if (hc == PIT || hc < floor - 0.05f) return true;
+        }
+        return false;
+    }
+
+    /** Fa avanzare solo i nemici (serve ai controlli automatici). */
+    public void advanceEnemies(float dt) {
+        stepEnemies(dt);
+    }
+
     private void stepEnemies(float dt) {
         for (Enemy3 e : enemies) {
             if (e.dead) continue;
@@ -350,11 +378,18 @@ public final class World3D {
             } else if (e.type == Enemy3.CROW) {
                 e.y = e.baseY + 0.45f * (float) Math.sin(e.anim * 2.4f);
             }
+            if (Float.isNaN(e.floor)) e.floor = e.type == Enemy3.ACORN ? e.baseY : e.y;
+            float nx = e.x, nz = e.z;
+            if (e.alongZ) nz += e.dir * speed * dt; else nx += e.dir * speed * dt;
+            if (enemyBlocked(e, nx, nz)) {
+                e.dir = -e.dir;                                 // un blocco, una cassa, un muro o il bordo di un burrone: fa dietrofront
+            } else {
+                e.x = nx;
+                e.z = nz;
+            }
             if (e.alongZ) {
-                e.z += e.dir * speed * dt;
                 if (e.z > e.hi) { e.z = e.hi; e.dir = -1; } else if (e.z < e.lo) { e.z = e.lo; e.dir = 1; }
             } else {
-                e.x += e.dir * speed * dt;
                 if (e.x > e.hi) { e.x = e.hi; e.dir = -1; } else if (e.x < e.lo) { e.x = e.lo; e.dir = 1; }
             }
             if (state != PLAYING) continue;

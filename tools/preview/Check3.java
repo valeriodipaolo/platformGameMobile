@@ -24,6 +24,37 @@ public class Check3 {
         return top;
     }
 
+    /** Ogni nemico parte in un punto libero, non resta bloccato e in 40 secondi di ronda non entra mai in un blocco, in una cassa o nel vuoto. */
+    static void enemyChecks() {
+        int n = fresh().enemies.size();
+        for (int i = 0; i < n; i++) {
+            World3D w = fresh();
+            Enemy3 e = w.enemies.get(i);
+            String id = "nemico " + i + " (tipo " + e.type + ", x=" + e.x + " z=" + e.z + ")";
+            ok(!w.enemyBlocked(e, e.x, e.z), id + " parte in un punto libero");
+            w.state = World3D.WON;                          // niente colpi al giocatore durante la prova
+            float x0 = e.x, z0 = e.z, minA = 1e9f, maxA = -1e9f;
+            boolean clip = false;
+            for (int f = 0; f < 60 * 40; f++) {
+                w.pz = e.z;
+                w.advanceEnemies(1f / 60f);
+                float a = e.alongZ ? e.z : e.x;
+                minA = Math.min(minA, a); maxA = Math.max(maxA, a);
+                float floor = e.floor, hw = 0.3f;
+                for (float dx = -hw; dx <= hw && !clip; dx += hw)
+                    for (float dz = -hw; dz <= hw; dz += hw) {
+                        int h = w.cell((int) Math.floor(e.x + dx + World3D.HALF), (int) Math.floor(e.z + dz));
+                        float feet = e.type == Enemy3.CROW ? e.baseY - 0.75f : floor;
+                        if (h == 99 || (h != World3D.PIT && h > feet + 0.05f)) { clip = true; break; }
+                    }
+                int hc = w.cell((int) Math.floor(e.x + World3D.HALF), (int) Math.floor(e.z));
+                if (e.type != Enemy3.CROW && (hc == World3D.PIT || hc < e.floor - 0.05f)) clip = true;
+            }
+            ok(!clip, id + " non attraversa blocchi, casse o burroni");
+            ok(maxA - minA > 0.8f, id + " si muove (percorso " + (maxA - minA) + " m)");
+        }
+    }
+
     /** Bot: va avanti scegliendo una colonna percorribile, salta burroni e gradini, usa la giravolta sui nemici e sulle casse. */
     static boolean bot(boolean verbose) {
         World3D w = fresh();
@@ -77,6 +108,7 @@ public class Check3 {
     }
 
     public static void main(String[] a) {
+        if (System.getProperty("only") != null) { enemyChecks(); System.out.println(fails == 0 ? "NEMICI OK" : fails + " controlli falliti"); System.exit(fails == 0 ? 0 : 1); }
         float hold = rise(new float[][] {{0, 2}}), tap = rise(new float[][] {{0, 0.05f}});
         ok(hold > 2.1f && hold < 2.6f, String.format("salto tenuto premuto: %.2f caselle", hold));
         ok(tap > 0.9f && tap < 1.6f, String.format("salto breve: %.2f caselle", tap));
@@ -194,6 +226,7 @@ public class Check3 {
         }
         ok(true, "tutte le gemme sono a un'altezza raggiungibile");
 
+        enemyChecks();
         ok(bot(true), "il bot percorre tutto il corridoio fino al traguardo");
         System.out.println(fails == 0 ? "TUTTO OK" : fails + " controlli falliti");
         System.exit(fails == 0 ? 0 : 1);

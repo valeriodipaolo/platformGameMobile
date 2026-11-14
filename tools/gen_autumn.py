@@ -316,6 +316,8 @@ def hog(step):
     cv.add(eye, (22, 16, 14), bevel=4, spec=0.9)
     cv.add(cv.ell(22.6, 57.2, 1.5, 1.7), (255, 255, 255), bevel=1, spec=0.0)
     cv.add(cv.capsule(16, 50, 30, 55, 1.7), (64, 40, 26), bevel=1.7, spec=0.1)          # sopracciglio arrabbiato
+    for wy, ty in ((68, 62), (70, 70), (72, 77)):                                       # baffi
+        cv.add(cv.capsule(9, wy, 0.5, ty, 0.6), (246, 240, 232), bevel=0.6, spec=0.1)
     return cv.result()
 
 
@@ -347,6 +349,10 @@ def crow(frame):
     cv.add(cv.ell(38, 43, 14, 13), (30, 34, 64), ao=0.4, bevel=13, spec=0.8, shin=30)
     cv.add(cv.poly([(26, 38), (4, 41), (26, 45)]), (250, 178, 44), bevel=4, spec=0.5)       # becco superiore
     cv.add(cv.poly([(26, 46), (9, 50), (26, 51)]), (218, 124, 28), bevel=3, spec=0.4)       # becco inferiore
+    cv.add(cv.poly([(7, 40.5), (3.6, 47.5), (9.5, 43.5)]), (250, 178, 44), bevel=1.5, spec=0.5)    # punta uncinata
+    cv.add(cv.ell(16, 48.6, 5.5, 1.5), (238, 120, 132), bevel=1.2, spec=0.3)                # lingua
+    cv.add(cv.capsule(40, 31, 44, 25, 1.2), (60, 66, 128), bevel=1.2, spec=0.3)            # ciuffo sul capo
+    cv.add(cv.capsule(36, 32, 38, 24, 1.2), (60, 66, 128), bevel=1.2, spec=0.3)
     cv.add(cv.ell(21, 41.5, 1.1, 0.9), (110, 60, 16), bevel=1, spec=0.0)
     eye = cv.ell(33, 39, 4.8, 5.0)
     cv.add(eye, (252, 214, 64), bevel=4, spec=0.7)
@@ -373,8 +379,12 @@ def acorn(frame):
             tone = r.uniform(0.85, 1.18)
             cv.add(m, tuple(min(255, int(c * tone)) for c in (146, 98, 56)), ao=0.3, bevel=3.5, spec=0.3)
     cv.add(cv.ell(48, 53, 36, 4.5), (70, 44, 24), ao=0.4, bevel=4, spec=0.25)                 # bordo
+    for i in range(11):                                           # fila di perline sul bordo del cappello
+        t = i / 10.0
+        cv.add(cv.ell(13 + 70 * t, 54 + 2.2 * math.sin(math.pi * t), 3.3, 3.0), (176, 124, 70), ao=0.2, bevel=3, spec=0.5)
     cv.add(cv.capsule(48, 26, 53, 11, 3.8), (88, 58, 34), bevel=3.8, spec=0.3)
     cv.add(cv.ell(54, 10, 4.2, 3.2), (130, 92, 50), bevel=3, spec=0.3)
+    cv.add(cv.poly([(55, 11), (68, 4), (62, 13)]), (242, 202, 72), bevel=2, spec=0.4)                # foglia sul picciolo
     for ex in (37, 60):
         cv.add(cv.ell(ex, 63, 7.2, 8.4), (250, 246, 236), bevel=5, spec=0.6)
         cv.add(cv.ell(ex + (1.6 if ex < 48 else -1.6), 64.5, 3.4, 4.4), (22, 14, 10), bevel=2, spec=0.4)
@@ -384,6 +394,8 @@ def acorn(frame):
     cv.add(cv.ell(28, 75, 5.5, 3.6), (236, 120, 110), bevel=3, spec=0.15)                      # guance
     cv.add(cv.ell(68, 75, 5.5, 3.6), (236, 120, 110), bevel=3, spec=0.15)
     cv.add(cv.ell(48, 80, 7, 3.4), (96, 30, 30), bevel=2.5, spec=0.3)                          # bocca
+    cv.add(cv.poly([(42, 78.5), (46, 78.5), (44, 85)]), (252, 250, 244), bevel=1.5, spec=0.5)         # zanne
+    cv.add(cv.poly([(50, 78.5), (54, 78.5), (52, 85)]), (252, 250, 244), bevel=1.5, spec=0.5)
     return cv.result()
 
 

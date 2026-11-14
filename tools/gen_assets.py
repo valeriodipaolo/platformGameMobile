@@ -528,56 +528,158 @@ def gen_spinfx():
     save("spin_fx", cv.result())
 
 
-def hero(a1, a2, b1, b2, dy=0, l1=0, l2=0):
-    """Robot esploratore, rivolto a destra. Angoli in gradi dalla verticale (positivo = avanti)."""
+# colori del viandante: gli stessi del modello 3D
+WHITE_C, GRAPHITE, ORANGE_C, METAL = (248, 248, 252), (64, 68, 78), (238, 118, 28), (150, 156, 168)
+GOLD, BLUE_C, LINING = (238, 184, 62), (62, 112, 190), (92, 142, 218)
+HIDE, HIDE_LT, HIDE_DK = (156, 96, 48), (206, 148, 90), (112, 66, 34)
+BLANKET, BLANKET_LT = (52, 104, 176), (112, 162, 222)
+
+
+def cloth_tex(cv, ang, period, ph, amp=0.12):
+    """Pieghe di stoffa: bande chiare e scure perpendicolari alla direzione ang (radianti)."""
+    yy, xx = np.mgrid[0:cv.h, 0:cv.w]
+    d = (xx * -math.sin(ang) + yy * math.cos(ang)) / cv.ss
+    return 1.0 - amp * (0.5 + 0.5 * np.sin(d * 2 * math.pi / period + ph))
+
+
+def pleat_tex(cv, period, ph=0.0, amp=0.16):
+    xx = np.arange(cv.w)[None, :] / cv.ss
+    return np.broadcast_to(1.0 - amp * (0.5 + 0.5 * np.cos(xx * 2 * math.pi / period + ph)), (cv.h, cv.w)).copy()
+
+
+def cape(cv, A, B, T1, T2, sag, ph, wave=2.4):
+    """Mantello: striscia di stoffa dal colletto (A) e dalla vita (B) fino alle due punte libere (T1 in alto, T2 in basso)."""
+    def curve(P, Q, bend, rip, n=14):
+        dx, dy = Q[0] - P[0], Q[1] - P[1]
+        L = math.hypot(dx, dy) or 1.0
+        nx, ny = -dy / L, dx / L
+        pts = []
+        for i in range(n + 1):
+            t = i / n
+            off = math.sin(math.pi * t) * bend + rip * math.sin(t * math.pi * 3 + ph) * math.sin(math.pi * t)
+            pts.append((P[0] + dx * t + nx * off, P[1] + dy * t + ny * off))
+        return pts
+    top = curve(A, T1, sag, wave)
+    free = curve(T1, T2, -sag * 0.5, wave * 1.5)
+    bot = curve(T2, B, -sag * 0.6, wave)
+    poly = top + free[1:] + bot[1:]
+    cv.add(cv.poly([(x - 2.5, y + 3.2) for x, y in poly]), LINING, bevel=3, spec=0.2)               # fodera azzurra
+    ang = math.atan2(T1[1] - A[1], T1[0] - A[0])
+    cv.add(cv.poly(poly), WHITE_C, ao=0.35, bevel=5, spec=0.18, shin=18, tex=cloth_tex(cv, ang, 9, ph))
+    for (x0, y0), (x1, y1) in zip(free[:-1], free[1:]):                                                # orlo dorato
+        cv.add(cv.capsule(x0, y0, x1, y1, 1.7), GOLD, bevel=1.7, spec=0.5)
+
+
+def backpack(cv, dy):
+    """Zaino di cuoio con patta, cinghie e fibbie, tasca, coperta arrotolata in cima e lanterna appesa."""
+    cv.add(cv.rrect(21, 63 + dy, 45, 106 + dy, 8), HIDE, ao=0.35, bevel=8, spec=0.25)
+    cv.add(cv.rrect(21, 63 + dy, 45, 81 + dy, 7), HIDE_DK, bevel=6, spec=0.2)
+    for x in (28, 38):
+        cv.add(cv.rrect(x - 1.6, 66 + dy, x + 1.6, 93 + dy, 1), HIDE_LT, bevel=1.5, spec=0.2)
+        cv.add(cv.rrect(x - 3, 82 + dy, x + 3, 88 + dy, 2), GOLD, bevel=2, spec=0.7)
+    cv.add(cv.rrect(26, 90 + dy, 41, 105 + dy, 4.5), HIDE_DK, ao=0.3, bevel=4.5, spec=0.2)           # tasca
+    cv.add(cv.ell(33.5, 94 + dy, 2.2, 2.2), GOLD, bevel=2, spec=0.7)
+    roll = cv.ell(33, 63 + dy, 10.5, 9.2)
+    cv.add(roll, BLANKET, ao=0.35, bevel=9, spec=0.35)                                                # coperta arrotolata
+    cv.add(cv.ell(33, 63 + dy, 6, 5.2), BLANKET_LT, bevel=5, spec=0.2)
+    cv.add(cv.ell(33, 63 + dy, 2.4, 2.0), BLANKET, bevel=2, spec=0.1)
+    cv.add(cv.capsule(19, 92 + dy, 19, 98 + dy, 0.9), METAL, bevel=1, spec=0.4)
+    cv.add(cv.rrect(14, 98 + dy, 24, 111 + dy, 2.5), (46, 50, 60), ao=0.25, bevel=2.5, spec=0.4)    # lanterna
+    glass = cv.rrect(16, 100.5 + dy, 22, 109 + dy, 1.5)
+    cv.add(glass, (255, 214, 110), bevel=1.5, spec=0.3)
+    cv.glow(glass, (255, 200, 90), radius=3, strength=0.5)
+
+
+def robe(cv, dy):
+    """Veste bianca: gonna a pieghe con l'orlo blu e oro, busto, cintura con fibbia e borsello, colletto, gemma sul petto."""
+    pts = [(41, 88 + dy), (75, 88 + dy), (79, 108 + dy), (83, 117 + dy), (33, 116 + dy), (37, 108 + dy)]
+    sk = cv.poly(pts)
+    cv.add(sk, WHITE_C, ao=0.4, bevel=7, spec=0.2, tex=pleat_tex(cv, 7.5))
+    cv.add(cv.poly([(33.4, 112.6 + dy), (83.2, 113.4 + dy), (83.6, 117.4 + dy), (33, 116.6 + dy)]) & sk, GOLD, bevel=2, spec=0.6)
+    cv.add(cv.poly([(34, 110 + dy), (82.6, 110.8 + dy), (83, 112.8 + dy), (33.6, 112 + dy)]) & sk, BLUE_C, bevel=1.5, spec=0.3)
+    cv.add(cv.rrect(37, 58 + dy, 76, 99 + dy, 13), WHITE_C, ao=0.4, bevel=13, spec=0.5, shin=30)
+    cv.add(cv.rrect(37, 89 + dy, 76, 97 + dy, 2.5), HIDE, ao=0.2, bevel=3, spec=0.3)
+    cv.add(cv.rrect(64, 88.4 + dy, 73.5, 97.6 + dy, 2), GOLD, bevel=2.5, spec=0.8)
+    cv.add(cv.rrect(45, 95 + dy, 57, 108 + dy, 3.5), HIDE_DK, ao=0.3, bevel=4, spec=0.2)
+    cv.add(cv.ell(56, 59 + dy, 17.5, 6.6), (238, 242, 250), ao=0.3, bevel=6, spec=0.4)
+    gem = cv.poly([(65, 67 + dy), (69.6, 73 + dy), (65, 79.5 + dy), (60.4, 73 + dy)])
+    cv.add(gem, (60, 214, 240), ao=0.2, bevel=3, spec=0.9)
+    cv.glow(gem, (80, 225, 255), radius=3, strength=0.4)
+    cv.add(cv.capsule(41, 65 + dy, 53, 62.5 + dy, 2.2), HIDE_LT, bevel=2.2, spec=0.3)               # spallaccio dello zaino
+    cv.add(cv.capsule(53, 62.5 + dy, 63, 86 + dy, 2.2), HIDE_LT, bevel=2.2, spec=0.3)
+
+
+def sleeve_arm(cv, shx, shy, ang):
+    a = math.radians(ang)
+    sx, sy = math.sin(a), math.cos(a)
+    ex, ey = shx + sx * 15, shy + sy * 15
+    cv.add(cv.capsule(shx, shy, ex, ey, 6.8), WHITE_C, ao=0.35, bevel=6.8, spec=0.4)               # manica
+    cv.add(cv.capsule(ex - sx, ey - sy, ex + sx * 2.5, ey + sy * 2.5, 7.4), GOLD, bevel=3, spec=0.7)  # polsino
+    fx, fy = ex + sx * 10, ey + sy * 10
+    cv.add(cv.capsule(ex, ey, fx, fy, 3.8), GRAPHITE, bevel=3.8, spec=0.5)
+    cv.add(cv.ell(fx + sx * 3, fy + sy * 3, 5.6, 5.6), (216, 220, 230), bevel=5.6, spec=0.6)
+
+
+def boot_leg(cv, hipx, hipy, ang, lift):
+    a = math.radians(ang)
+    ln = 29 - lift
+    fx, fy = hipx + math.sin(a) * ln, hipy + math.cos(a) * ln
+    cv.add(cv.capsule(hipx, hipy, fx, fy - 7, 4.8), GRAPHITE, ao=0.35, bevel=4.8, spec=0.5)
+    cv.add(cv.rrect(fx - 8, fy - 2, fx + 15, fy + 9.5, 5), HIDE, ao=0.35, bevel=5, spec=0.3)         # stivale
+    cv.add(cv.rrect(fx - 7.5, fy - 9, fx + 7.5, fy - 1, 3), HIDE_LT, bevel=3, spec=0.3)             # risvolto
+    cv.add(cv.rrect(fx - 8.5, fy + 8, fx + 15.5, fy + 11.5, 2), (44, 36, 30), bevel=2, spec=0.2)    # suola
+
+
+CAPES = {
+    "idle": ((10, 98), (19, 129), 3.0, 0.0, 1.0),
+    "run0": ((0, 64), (1, 106), -5.0, 0.5, 3.0),
+    "run1": ((1, 74), (3, 114), 4.0, 1.8, 3.0),
+    "run2": ((0, 62), (1, 103), -4.0, 3.1, 3.0),
+    "run3": ((1, 76), (4, 116), 5.0, 4.4, 3.0),
+    "jump": ((2, 40), (0, 90), 6.0, 2.2, 3.4),
+    "icon": ((0, 58), (1, 112), 6.0, 0.9, 3.0),
+}
+
+
+def hero(a1, a2, b1, b2, dy=0, l1=0, l2=0, cp="idle"):
+    """Viandante robot, rivolto a destra: veste bianca, zaino di cuoio, mantello che fluttua. Angoli in gradi dalla verticale."""
     W, H = 112, 144
     cv = Cv(W, H, 3)
-    graphite, white, orange = (64, 68, 78), (234, 236, 240), (238, 118, 28)
-    hipx, hipy = 55, 102 + dy
-    shx, shy = 55, 72 + dy
+    hipx, hipy, shx, shy = 56, 101 + dy, 56, 73 + dy
+    t1, t2, sag, ph, wv = CAPES[cp]
+    cape(cv, (48, 64 + dy), (42, 100 + dy), (t1[0], t1[1] + dy), (t2[0], t2[1] + dy), sag, ph, wv)
+    sleeve_arm(cv, shx, shy, b2)
+    boot_leg(cv, hipx, hipy, a2, l2)
+    backpack(cv, dy)
+    boot_leg(cv, hipx, hipy, a1, l1)
+    robe(cv, dy)
+    sleeve_arm(cv, shx, shy, b1)
+    head(cv, dy)
+    return cv.result()
 
-    def leg(ang, lift):
-        ln = 28 - lift
-        fx = hipx + math.sin(math.radians(ang)) * ln
-        fy = hipy + math.cos(math.radians(ang)) * ln
-        cv.add(cv.capsule(hipx, hipy, fx, fy, 6), graphite, ao=0.35, bevel=6, spec=0.5)
-        cv.add(cv.rrect(fx - 9, fy - 3, fx + 15, fy + 11, 5.5), orange, ao=0.35, bevel=6, spec=0.5)
 
-    def arm(ang):
-        hx = shx + math.sin(math.radians(ang)) * 25
-        hy = shy + math.cos(math.radians(ang)) * 25
-        cv.add(cv.capsule(shx, shy, hx, hy, 5.2), graphite, ao=0.35, bevel=5.2, spec=0.5)
-        cv.add(cv.ell(hx, hy, 6.8, 6.8), white, ao=0.3, bevel=6.8, spec=0.6)
-
-    arm(b2)
-    leg(a2, l2)
-    cv.add(cv.rrect(24, 64 + dy, 42, 100 + dy, 7), (196, 92, 22), ao=0.3, bevel=7, spec=0.3)   # zaino
-    cv.add(cv.rrect(36, 60 + dy, 74, 108 + dy, 13), white, ao=0.4, bevel=13, spec=0.6, shin=30)  # busto
-    cv.add(cv.rrect(36, 92 + dy, 74, 98 + dy, 2), orange, bevel=2, spec=0.3)
-    lamp = cv.rrect(52, 74 + dy, 66, 84 + dy, 3)
-    cv.add(lamp, (40, 190, 230), bevel=3, spec=0.8)
-    cv.glow(lamp, (60, 210, 255), radius=3, strength=0.35)
-    leg(a1, l1)
-    cv.add(cv.capsule(48, 20 + dy, 44, 8 + dy, 1.6), (150, 154, 164), bevel=1.6, spec=0.6)  # antenna
-    ball = cv.ell(44, 7 + dy, 4.2, 4.2)
+def head(cv, dy, ax=46, ay=20):
+    cv.add(cv.capsule(ax + 2, ay + dy, ax - 2, 8 + dy, 1.6), METAL, bevel=1.6, spec=0.6)             # antenna
+    ball = cv.ell(ax - 2, 7 + dy, 4.2, 4.2)
     cv.add(ball, (232, 48, 48), bevel=4.2, spec=0.9)
     cv.glow(ball, (255, 60, 60), radius=3, strength=0.3)
-    cv.add(cv.rrect(28, 18 + dy, 88, 62 + dy, 19), white, ao=0.45, bevel=19, spec=0.7, shin=34)  # testa
-    cv.add(cv.rrect(46, 27 + dy, 86, 52 + dy, 11), (18, 24, 38), ao=0.3, bevel=9, spec=0.95, shin=40)  # visiera
-    eyes = cv.ell(63, 40 + dy, 3.8, 6.2) | cv.ell(77, 40 + dy, 3.8, 6.2)
+    cv.add(cv.rrect(28, 18 + dy, 88, 62 + dy, 19), WHITE_C, ao=0.45, bevel=19, spec=0.7, shin=34)    # casco
+    cv.add(cv.capsule(44, 20.5 + dy, 68, 20 + dy, 1.5), ORANGE_C, bevel=1.5, spec=0.4)               # cresta
+    cv.add(cv.rrect(54, 27 + dy, 86, 52 + dy, 10), (18, 24, 38), ao=0.3, bevel=9, spec=0.95, shin=40)  # visiera
+    eyes = cv.ell(67, 40 + dy, 3.6, 6.2) | cv.ell(79, 40 + dy, 3.6, 6.2)
     cv.add(eyes, (120, 236, 255), bevel=3, spec=0.5)
     cv.glow(eyes, (80, 220, 255), radius=3.5, strength=0.55)
-    arm(b1)
-    return cv.result()
+    cv.add(cv.ell(47, 47 + dy, 6.6, 7.4), ORANGE_C, ao=0.3, bevel=6, spec=0.5)                       # auricolare
+    cv.add(cv.ell(47, 47 + dy, 3, 3.4), METAL, bevel=3, spec=0.8)
 
 
 def gen_hero():
     save("hero_idle", hero(7, -7, 10, -10))
-    save("hero_run_0", hero(38, -34, -42, 42))
-    save("hero_run_1", hero(12, -10, -10, 12, dy=-3, l2=8))
-    save("hero_run_2", hero(-34, 38, 42, -42))
-    save("hero_run_3", hero(-10, 12, 12, -10, dy=-3, l1=8))
-    save("hero_jump", hero(52, -42, 150, -62, dy=-2, l1=7))
+    save("hero_run_0", hero(38, -34, -42, 42, cp="run0"))
+    save("hero_run_1", hero(12, -10, -10, 12, dy=-3, l2=8, cp="run1"))
+    save("hero_run_2", hero(-34, 38, 42, -42, cp="run2"))
+    save("hero_run_3", hero(-10, 12, 12, -10, dy=-3, l1=8, cp="run3"))
+    save("hero_jump", hero(52, -42, 150, -62, dy=-2, l1=7, cp="jump"))
     return hero(7, -7, 10, -10)
 
 
@@ -585,10 +687,9 @@ SPIN_FRAMES = 12
 
 
 def hero_spin(phi):
-    """Robot che ruota attorno all'asse verticale. phi=0: di profilo verso destra; 90 gradi: di fronte; 180: verso sinistra."""
+    """Robot che ruota attorno all'asse verticale, con il mantello aperto a campana. phi=0: di profilo verso destra; 90 gradi: di fronte."""
     W, H = 112, 144
     cv = Cv(W, H, 3)
-    graphite, white, orange = (64, 68, 78), (234, 236, 240), (238, 118, 28)
     cx, dy = 56, -2
     c, sn = math.cos(phi), math.sin(phi)          # sn > 0: la faccia guarda verso chi gioca
 
@@ -598,51 +699,84 @@ def hero_spin(phi):
     def px(u, v):                                  # x e profondità di un punto (u avanti, v lateralmente)
         return cx + u * c - v * sn, u * sn + v * c
 
-    hipy, shy = 100 + dy, 74 + dy
+    shy = 74 + dy
+    # mantello: campana bianca dietro a tutto, con la fodera azzurra e l'orlo dorato
+    hem = 37
+    wtop = proj(13, 17)
+    bell = [(cx - wtop, 66 + dy), (cx + wtop, 66 + dy), (cx + hem, 111 + dy), (cx + hem * 0.62, 121 + dy), (cx - hem * 0.62, 121 + dy), (cx - hem, 111 + dy)]
+    cv.add(cv.poly([(x, y + 3.5) for x, y in bell]), LINING, bevel=3, spec=0.2)
+    cv.add(cv.poly(bell), WHITE_C, ao=0.3, bevel=6, spec=0.15, tex=cloth_tex(cv, math.pi / 2, 11, phi * 2))
+    for (x0, y0), (x1, y1) in zip(bell[2:5], bell[3:6]):
+        cv.add(cv.capsule(x0, y0, x1, y1, 1.8), GOLD, bevel=1.8, spec=0.5)
     behind, front = [], []
 
     def put(z, fn):
         (behind if z < -0.5 else front).append((z, fn))
 
-    for v in (-9, 9):                              # gambe
+    for v in (-9, 9):                              # stivali
         x, z = px(0, v)
-        def leg(x=x, v=v):
-            cv.add(cv.capsule(x, hipy, x, hipy + 24, 6), graphite, ao=0.35, bevel=6, spec=0.5)
-            bx = proj(13, 8)
+        def leg(x=x):
+            cv.add(cv.capsule(x, 115, x, 125, 4.8), GRAPHITE, ao=0.35, bevel=4.8, spec=0.5)
+            bw = proj(12, 8)
             fx = x + 5 * c
-            cv.add(cv.rrect(fx - bx, hipy + 20, fx + bx, hipy + 34, 5.5), orange, ao=0.35, bevel=6, spec=0.5)
+            cv.add(cv.rrect(fx - bw, 121, fx + bw, 134, 5), HIDE, ao=0.35, bevel=5, spec=0.3)
+            cv.add(cv.rrect(fx - bw * 0.62, 117, fx + bw * 0.62, 123, 2.5), HIDE_LT, bevel=3, spec=0.3)
         put(z, leg)
 
     for v in (-1, 1):                              # braccia aperte come una trottola
         x0, z0 = px(0, v * 20)
-        x1, z1 = px(0, v * 46)
+        x1, z1 = px(0, v * 47)
         def arm(x0=x0, x1=x1):
-            cv.add(cv.capsule(x0, shy, x1, shy - 7, 5.2), graphite, ao=0.35, bevel=5.2, spec=0.5)
-            cv.add(cv.ell(x1, shy - 7, 7, 7), white, ao=0.3, bevel=7, spec=0.6)
+            xm = x0 + (x1 - x0) * 0.55
+            ym = shy - 7 * 0.55
+            cv.add(cv.capsule(x0, shy, xm, ym, 6.2), WHITE_C, ao=0.35, bevel=6.2, spec=0.4)
+            cv.add(cv.ell(xm, ym, 5.0, 7.2), GOLD, bevel=3, spec=0.7)
+            cv.add(cv.capsule(xm, ym, x1, shy - 7, 3.6), GRAPHITE, bevel=3.6, spec=0.5)
+            cv.add(cv.ell(x1, shy - 7, 6, 6), (216, 220, 230), bevel=6, spec=0.6)
         put((z0 + z1) / 2, arm)
 
-    bx, bz = px(-24, 0)                            # zaino
+    bx, bz = px(-25, 0)                            # zaino con la coperta in cima
     def pack():
-        hwp = proj(9, 17)
-        cv.add(cv.rrect(bx - hwp, 66 + dy, bx + hwp, 102 + dy, min(7, hwp - 0.5)), (196, 92, 22), ao=0.3, bevel=7, spec=0.3)
+        hwp = proj(10, 18)
+        cv.add(cv.rrect(bx - hwp, 64 + dy, bx + hwp, 104 + dy, min(8, hwp - 0.5)), HIDE, ao=0.3, bevel=7, spec=0.25)
+        cv.add(cv.rrect(bx - hwp, 64 + dy, bx + hwp, 80 + dy, min(7, hwp - 0.5)), HIDE_DK, bevel=6, spec=0.2)
+        rw = proj(11, 22)
+        cv.add(cv.rrect(bx - rw, 54 + dy, bx + rw, 70 + dy, 7.5), BLANKET, ao=0.3, bevel=7.5, spec=0.35)
+        cv.add(cv.rrect(bx - rw * 0.7, 58 + dy, bx + rw * 0.7, 66 + dy, 4), BLANKET_LT, bevel=4, spec=0.2)
     put(bz, pack)
 
     for z, fn in sorted(behind, key=lambda t: t[0]):
         fn()
-    ht = proj(19, 23)                              # busto
-    cv.add(cv.rrect(cx - ht, 60 + dy, cx + ht, 108 + dy, min(13, ht - 0.5)), white, ao=0.4, bevel=13, spec=0.6, shin=30)
-    cv.add(cv.rrect(cx - ht, 92 + dy, cx + ht, 98 + dy, 2), orange, bevel=2, spec=0.3)
+    ht = proj(19, 23)                              # veste: gonna a pieghe, busto, cintura
+    skw = ht * 1.22
+    sk = cv.poly([(cx - ht * 0.95, 88 + dy), (cx + ht * 0.95, 88 + dy), (cx + skw, 117 + dy), (cx - skw, 117 + dy)])
+    cv.add(sk, WHITE_C, ao=0.4, bevel=7, spec=0.2, tex=pleat_tex(cv, 7.5, phi * 3))
+    cv.add(cv.poly([(cx - skw - 0.2, 112.6 + dy), (cx + skw + 0.2, 112.6 + dy), (cx + skw + 0.4, 117.4 + dy), (cx - skw - 0.4, 117.4 + dy)]) & sk, GOLD, bevel=2, spec=0.6)
+    cv.add(cv.rrect(cx - ht, 58 + dy, cx + ht, 99 + dy, min(13, ht - 0.5)), WHITE_C, ao=0.4, bevel=13, spec=0.5, shin=30)
+    cv.add(cv.rrect(cx - ht, 89 + dy, cx + ht, 97 + dy, 2.5), HIDE, ao=0.2, bevel=3, spec=0.3)
     for z, fn in sorted(front, key=lambda t: t[0]):
         fn()
-    if sn > -0.2:                                  # lampada sul petto
-        lx = cx + 17 * c
-        lw = 7 * (0.4 + 0.6 * abs(sn))
-        lamp = cv.rrect(lx - lw, 74 + dy, lx + lw, 84 + dy, 3)
-        cv.add(lamp, (40, 190, 230), bevel=3, spec=0.8)
-        cv.glow(lamp, (60, 210, 255), radius=3, strength=0.3)
+    if sn > -0.2:                                  # fibbia e gemma sul petto
+        lx = cx + 18 * c
+        lw = 6 * (0.4 + 0.6 * abs(sn))
+        cv.add(cv.rrect(lx - lw, 88.4 + dy, lx + lw, 97.6 + dy, 2), GOLD, bevel=2.5, spec=0.8)
+        gem = cv.poly([(lx, 67 + dy), (lx + lw * 0.8, 73 + dy), (lx, 79.5 + dy), (lx - lw * 0.8, 73 + dy)])
+        cv.add(gem, (60, 214, 240), bevel=3, spec=0.9)
+        cv.glow(gem, (80, 225, 255), radius=3, strength=0.3)
+    cv.add(cv.ell(cx, 59 + dy, max(8, ht * 0.95), 6.4), (238, 242, 250), ao=0.3, bevel=6, spec=0.4)   # colletto
 
     hh = proj(30, 27)                              # testa
-    cv.add(cv.rrect(cx - hh, 18 + dy, cx + hh, 62 + dy, min(19, hh - 0.5)), white, ao=0.45, bevel=19, spec=0.7, shin=34)
+    ears = []
+    for v in (-25, 25):
+        ex, ez = px(0, v)
+        ears.append((ez, ex))
+    def ear(ex, ez):
+        k = 0.4 + 0.6 * abs(c)
+        cv.add(cv.ell(ex, 47 + dy, 6.6 * k + 1.4, 7.4), ORANGE_C, ao=0.3, bevel=5, spec=0.5)
+        cv.add(cv.ell(ex + (2 if ez > 0 else -2) * 0, 47 + dy, 3 * k + 0.6, 3.4), METAL, bevel=2.5, spec=0.8)
+    for ez, ex in ears:
+        if ez < 0: ear(ex, ez)
+    cv.add(cv.rrect(cx - hh, 18 + dy, cx + hh, 62 + dy, min(19, hh - 0.5)), WHITE_C, ao=0.45, bevel=19, spec=0.7, shin=34)
     if sn > -0.25:
         vw = min(12 + 9 * abs(sn), hh - 4)
         vx = min(cx + 16 * c, cx + hh - vw - 3) if c > 0 else max(cx + 16 * c, cx - hh + vw + 3)
@@ -661,8 +795,10 @@ def hero_spin(phi):
         cv.add(cv.rrect(pxc - pw, 28 + dy, pxc + pw, 52 + dy, 6), (48, 52, 62), ao=0.3, bevel=6, spec=0.5)
         for k in range(3):
             cv.add(cv.rrect(pxc - pw + 4, 33 + dy + k * 6, pxc + pw - 4, 35.5 + dy + k * 6, 1), (96, 102, 114), bevel=1, spec=0.3)
+    for ez, ex in ears:
+        if ez >= 0: ear(ex, ez)
     ax = cx - 12 * c                               # antenna
-    cv.add(cv.capsule(ax, 20 + dy, ax - 1, 8 + dy, 1.6), (150, 154, 164), bevel=1.6, spec=0.6)
+    cv.add(cv.capsule(ax, 20 + dy, ax - 1, 8 + dy, 1.6), METAL, bevel=1.6, spec=0.6)
     ball = cv.ell(ax - 1, 7 + dy, 4.2, 4.2)
     cv.add(ball, (232, 48, 48), bevel=4.2, spec=0.9)
     cv.glow(ball, (255, 60, 60), radius=3, strength=0.3)
@@ -674,27 +810,86 @@ def gen_spin_hero():
         save("hero_spin_%d" % i, hero_spin(2 * math.pi * i / SPIN_FRAMES))
 
 
+def shell_field(cv, mask_bbox, top, mid, low):
+    """Campo di colore (h, w, 3) che sfuma dall'alto al basso: l'iridescenza della corazza."""
+    y0, y1 = mask_bbox
+    yy = (np.arange(cv.h)[:, None] / cv.ss - y0) / max(1e-6, (y1 - y0))
+    t = np.clip(yy, 0, 1)
+    top, mid, low = (np.array(c, dtype=float) / 255.0 for c in (top, mid, low))
+    col = np.where(t[..., None] < 0.55, lerp(top, mid, np.clip(t / 0.55, 0, 1)[..., None]), lerp(mid, low, np.clip((t - 0.55) / 0.45, 0, 1)[..., None]))
+    return np.broadcast_to(col, (cv.h, cv.w, 3)).copy()
+
+
+def add_field(cv, mask, field, **kw):
+    """Come cv.add, ma con un colore diverso in ogni punto."""
+    kw["bevel"] = kw.get("bevel", 8.0) * cv.ss
+    ao = kw.pop("ao", 0.0)
+    if ao > 0:
+        sh = ndi.gaussian_filter(mask.astype(float), 2.0 * cv.ss) * ao
+        cv.over(np.dstack([np.zeros(mask.shape + (3,)), sh]))
+    res = shade(mask, (255, 255, 255), **kw)
+    res[..., :3] = np.clip(res[..., :3] * field, 0, 1)
+    cv.over(res)
+
+
 def beetle(step):
-    """Scarabeo corazzato, rivolto a sinistra."""
+    """Cervo volante corazzato, rivolto a sinistra: corazza striata e cangiante con l'orlo dorato, grandi mandibole, antenne, sei zampe."""
     W, H = 104, 84
     cv = Cv(W, H, 3)
-    n = cv.w
-    for i, bx in enumerate((32, 54, 76)):
-        dx = (6 if (i + step) % 2 == 0 else -6)
-        cv.add(cv.capsule(bx, 62, bx + dx, 80, 3.2), (30, 22, 34), ao=0.3, bevel=3.2, spec=0.4)
-        cv.add(cv.ell(bx + dx - 1.5, 80.5, 5, 2.8), (30, 22, 34), bevel=2.8, spec=0.4)
-    cv.add(cv.ell(19, 58, 14, 13), (52, 38, 62), ao=0.4, bevel=13, spec=0.6)          # testa
-    cv.add(cv.capsule(9, 64, 2, 57, 2.4), (30, 22, 34), bevel=2.4, spec=0.5)           # tenaglia
-    cv.add(cv.capsule(12, 68, 4, 66, 2.2), (30, 22, 34), bevel=2.2, spec=0.5)
-    tex = 0.9 + 0.2 * fbm(cv.h, cv.w, beta=1.6, seed=81)
-    shell = cv.ell(57, 46, 38, 30) & cv.rrect(0, 0, W, 70, 0)
-    cv.add(shell, (86, 44, 132), ao=0.5, bevel=30, spec=0.95, shin=36, tex=tex)        # corazza
-    cv.add(cv.capsule(30, 68, 90, 68, 2.5), (40, 24, 60), bevel=2.5, spec=0.3)
-    cv.add(cv.capsule(57, 17, 57, 66, 1.0), (40, 20, 66), bevel=1, spec=0.2)
-    eye = cv.ell(12, 53, 4.6, 5.2)
-    cv.add(eye, (250, 214, 60), bevel=4.6, spec=0.9)
+    LEG, LEG_DK = (86, 52, 130), (52, 32, 82)
+    # zampe: tre paia, in tre tratti (coscia, tibia con spine, piede); quelle dall'altra parte del corpo sono più scure
+    def leg(bx, far, flip):
+        k = (-1 if (flip % 2) else 1)
+        dx = 7 * k
+        col = LEG_DK if far else LEG
+        x0, y0 = bx + (6 if far else 0), 60
+        kx, ky = x0 + dx * 0.55 - 6, 70
+        ax, ay = x0 + dx - 9, 82
+        cv.add(cv.capsule(x0, y0, kx, ky, 3.6), col, ao=0.3, bevel=3.4, spec=0.5)
+        cv.add(cv.ell(kx, ky, 3.6, 3.6), col, bevel=3.4, spec=0.6)
+        cv.add(cv.capsule(kx, ky, ax, ay - 2, 2.5), col, ao=0.2, bevel=2.4, spec=0.5)
+        for t in (0.3, 0.6):
+            sx, sy = kx + (ax - kx) * t, ky + (ay - ky) * t
+            cv.add(cv.poly([(sx + 1, sy - 1.2), (sx + 4.2, sy - 0.2), (sx + 1, sy + 1.2)]), (40, 26, 60), bevel=1, spec=0.3)
+        cv.add(cv.ell(ax - 1, ay - 0.4, 4.2, 2.2), (34, 24, 46), bevel=2.2, spec=0.3)
+    for i, bx in enumerate((56, 76, 94)):
+        leg(bx - 18, True, i + step + 1)
+    # testa e mandibole (quelle lontane prima, scure)
+    def mandible(dx, dy, base, tip):
+        pts = [(15, 63), (8, 65), (3, 62), (0.8, 55), (3.5, 48)]
+        rad = [4.6, 4.0, 3.3, 2.6, 1.5]
+        for (x0, y0), (x1, y1), r0, r1 in zip(pts[:-1], pts[1:], rad[:-1], rad[1:]):
+            m = cv.capsule(x0 + dx, y0 + dy, x1 + dx, y1 + dy, (r0 + r1) / 2)
+            cv.add(m, tip if y1 < 56 else base, ao=0.2, bevel=(r0 + r1) / 2, spec=0.6, shin=18)
+        cv.add(cv.poly([(5.2 + dx, 58 + dy), (10 + dx, 56 + dy), (7.5 + dx, 61.5 + dy)]), tip, bevel=1.4, spec=0.4)
+    mandible(2, -7, (92, 48, 32), (140, 86, 58))
+    cv.add(cv.ell(18, 62, 11, 9.5), (46, 34, 66), ao=0.4, bevel=9, spec=0.6)
+    mandible(0, 0, (122, 64, 40), (184, 116, 76))
+    # corazza: cupola bluviola con strisce longitudinali, riflesso e orlo dorato
+    cx, cy, rx, ry = 66, 45, 33, 27
+    shell = cv.ell(cx, cy, rx, ry) & cv.rrect(0, 0, W, 69, 0)
+    field = shell_field(cv, (cy - ry, 69), (70, 104, 214), (122, 54, 182), (206, 98, 112))
+    yy = np.arange(cv.h)[:, None] / cv.ss
+    stripes = 0.84 + 0.16 * np.cos((yy - cy) * 2 * math.pi / 5.2)
+    tex_noise = 0.92 + 0.14 * fbm(cv.h, cv.w, beta=1.6, seed=81)
+    add_field(cv, shell, field * (stripes * tex_noise)[..., None], ao=0.5, bevel=28, spec=0.95, shin=36)
+    rim = shell & ~(cv.ell(cx, cy - 2.4, rx, ry))
+    cv.add(rim, (240, 190, 70), bevel=1.6, spec=0.7)
+    cv.add(cv.capsule(cx + 2, cy - ry + 3, cx + 2, 66, 0.9), (44, 22, 74), bevel=1, spec=0.2)          # linea tra le elitre
+    # torace: cupola più piccola e più scura davanti alla corazza
+    thorax = cv.ell(35, 49, 17, 15) & cv.rrect(0, 0, W, 66, 0)
+    add_field(cv, thorax, shell_field(cv, (34, 66), (58, 70, 190), (82, 48, 168), (140, 80, 150)) * (0.94 + 0.1 * fbm(cv.h, cv.w, beta=1.2, seed=83))[..., None],
+              ao=0.45, bevel=15, spec=0.9, shin=30)
+    # antenne con la clava e occhio giallo
+    cv.add(cv.capsule(21, 53, 23, 41, 1.0), (60, 40, 40), bevel=1, spec=0.3)
+    cv.add(cv.capsule(23, 41, 29, 36, 1.0), (60, 40, 40), bevel=1, spec=0.3)
+    cv.add(cv.ell(30, 35, 3.6, 2.6), (222, 150, 58), bevel=2.6, spec=0.5)
+    eye = cv.ell(15, 57, 4.4, 4.8)
+    cv.add(eye, (252, 214, 60), bevel=4.4, spec=0.9)
     cv.glow(eye, (255, 220, 80), radius=3, strength=0.3)
-    cv.add(cv.ell(10.5, 54, 1.8, 2.6), (20, 14, 10), bevel=1.5, spec=0.2)
+    cv.add(cv.ell(14, 57.6, 1.7, 2.4), (20, 14, 10), bevel=1.5, spec=0.2)
+    for i, bx in enumerate((56, 76, 94)):                   # zampe vicine, davanti al corpo
+        leg(bx - 18, False, i + step)
     return cv.result()
 
 
@@ -838,7 +1033,9 @@ if __name__ == "__main__":
         gen_battery()
         gen_chip()
         gen_spinfx()
-    if want("hero"): gen_icon(gen_hero())
+    if want("hero"):
+        gen_hero()
+        gen_icon(hero(7, -7, 10, -10, cp="icon"))
     if want("spin"): gen_spin_hero()
     if want("enemy"): gen_enemy()
     if want("flag"): gen_flag()

@@ -120,6 +120,9 @@ final class Decor {
     /** Tronco caduto: corteccia con muschio sul dorso, tagli chiari con gli anelli alle due estremità, un mozzicone di ramo. */
     private void log(float x, float z, float len, float rad, float ang, Random r) {
         float dx = (float) Math.cos(ang), dz = (float) Math.sin(ang);
+        float reach = len / 2 * Math.abs(dx) + rad * 1.3f + 0.15f;           // il tronco non entra nel sentiero percorribile
+        float edge = Math.abs(x) - World3D.HALF;
+        if (edge < reach) x = Math.signum(x) * (World3D.HALF + reach);
         float ax = x - dx * len / 2, az = z - dz * len / 2, bx = x + dx * len / 2, bz = z + dz * len / 2;
         float ya = rest(ax, az, rad) + rad * 0.72f, yb = rest(bx, bz, rad) + rad * 0.72f;
         float ym = Math.max((ya + yb) / 2, rest(x, z, rad) + rad * 0.72f);
@@ -162,6 +165,8 @@ final class Decor {
 
     /** Ceppo: base che si allarga nelle radici, taglio in cima con gli anelli. */
     private void stump(float x, float z, float rad, float h, Random r) {
+        float need = rad * 1.8f + 0.1f;
+        if (Math.abs(x) - World3D.HALF < need) x = Math.signum(x) * (World3D.HALF + need);
         float y = rest(x, z, rad * 1.5f);
         light(x, z);
         final float[] bark = lit(250, 236, 220, 0.95f), dark = lit(170, 150, 130, 0.7f);
@@ -201,6 +206,8 @@ final class Decor {
 
     /** Cespuglio basso con bacche. */
     private void bush(float x, float z, float size, Random r) {
+        float need = size * 1.5f + 0.1f;                                      // lobi compresi, restano fuori dal sentiero
+        if (Math.abs(x) - World3D.HALF < need) x = Math.signum(x) * (World3D.HALF + need);
         float y = s.meshAt(x, z);
         light(x, z);
         MeshBuilder bb = s.mb(Scene3D.K_BLOB, z), pb = s.mb(Scene3D.K_PROP, z);

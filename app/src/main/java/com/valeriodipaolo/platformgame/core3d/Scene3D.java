@@ -834,8 +834,9 @@ public final class Scene3D {
             // massi muschiati: appoggiati sulla quota più bassa della maglia di terreno sotto di loro e affondati
             for (float z = z0; z < z1; z += 3.5f + r.nextFloat() * 4f) {
                 float d = 0.3f + r.nextFloat() * 3.5f, rad = 0.3f + r.nextFloat() * 0.5f;
-                float x = side * (World3D.HALF + d);
                 float rx = rad * 1.25f, ry = rad * 1.0f, rz = rad * 1.1f;
+                d = Math.max(d, rx * 1.32f + 0.08f);                   // il masso (con le sue gobbe) resta fuori dal sentiero percorribile
+                float x = side * (World3D.HALF + d);
                 float low = meshAt(x, z);
                 for (int k = 0; k < 12; k++) {
                     double a = k * Math.PI / 6;

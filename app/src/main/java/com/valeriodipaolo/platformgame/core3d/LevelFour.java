@@ -67,7 +67,7 @@ public final class LevelFour {
         pit(w, 91, 94, 0, 1);
         w.battery = new float[] {-2, 2.7f, 88.5f};
         crate(w, 3, 88);
-        hog(w, 3, 92, true, 86, 96.5f);
+        hog(w, 1f, 92, true, 86, 96.5f);
 
         // --- il ponte: una sola casella, con una ghianda che balza in mezzo
         pit(w, 98, 111, 0, 1);

@@ -25,6 +25,7 @@ Gioco platform 2D a scorrimento per Android (nome provvisorio: **Robo Jump**), s
 - `tools/gen_foes.py` — texture dei nemici 3D (pelo, piume, guscio, scaglie, corazza); i modelli sono in `core3d/FoeModels.java`.
 - `tools/preview/FoeShot.java` — primi piani dei nemici 3D per controllarli al PC.
 - `core3d/Decor.java`: dettagli dei livelli 3D (funghi, tronchi caduti, ceppi, radici, cespugli, sassolini, neve, cristalli); `core3d/HeroModel.java`: il protagonista con zaino, veste bianca e mantello di stoffa ricalcolato a ogni fotogramma. Texture: `python3 tools/gen_decor.py`. Primi piani del protagonista: `tools/preview/HeroShot.java` (scrive `build/preview/hero.png`).
+- Collisioni 3D: `World3D.enemyBlocked` fa dietrofront ai nemici davanti a blocchi, casse, muro laterale e burroni; `tools/preview/Check3.java` lo verifica per ogni nemico dei livelli 2, 4 e 6 (`java -Dlv=4 -Donly=1 -cp build/preview/classes Check3`). Sprite 2D del robot, dello scarabeo e degli altri nemici: `tools/gen_assets.py hero spin enemy` e `tools/gen_autumn.py au_enemies` (rigenerano anche l'icona dell'app).
 - `tools/preview/check.sh` — controlli automatici sulla logica dei due livelli (compresi i bot che li completano).
 - `tools/preview/scenes.sh` — salva schermate dei due livelli in `build/preview` (il 3D con un renderer software).
 
