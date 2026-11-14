@@ -23,7 +23,10 @@ final class Level3DView extends FrameLayout {
     private final GlRenderer renderer;
     private final Runnable onExit;
     /** Schema di movimento (1..5, vedi MenuView): fisso = joystick sempre nello stesso punto; 4 direzioni = niente diagonali. */
-    private final boolean fixedStick, fourWay;
+    private final boolean fixedStick, fourWay, shaped;
+
+    // schema 6: angolo entro cui si blocca sull'asse, guadagno sulle diagonali, corsa del joystick per la piena velocità
+    private static final float SNAP_DEG = 20f, DIAG_GAIN = 0.6f, FULL_X = 0.7f, FULL_Y = 0.5f;
 
     // comandi: scritti dal thread dei tocchi, letti dal thread grafico
     private volatile float joyX, joyY;
@@ -33,8 +36,9 @@ final class Level3DView extends FrameLayout {
     Level3DView(Context ctx, Runnable onExit) {
         super(ctx);
         this.onExit = onExit;
-        int mode = ctx.getSharedPreferences("platformgame", Context.MODE_PRIVATE).getInt("ctrl3d", 1);
-        fixedStick = mode == 2 || mode == 4 || mode == 5;
+        int mode = ctx.getSharedPreferences("platformgame", Context.MODE_PRIVATE).getInt("ctrl3d", 2);
+        fixedStick = mode == 2 || mode == 4 || mode == 5 || mode == 6;
+        shaped = mode == 6;
         fourWay = mode == 3 || mode == 4;
         world = new World3D(new AndroidSave(ctx));
         world.tank = mode == 5;
@@ -183,6 +187,20 @@ final class Level3DView extends FrameLayout {
             // zona morta piccola e piena velocità già a poco più di metà corsa: risposta pronta
             if (len < 0.12f) {
                 joyX = joyY = 0;
+            } else if (shaped) {
+                // schema 6: gli assi principali si "calamitano" e vanno a piena velocità; le diagonali sono più dolci.
+                // Il verticale arriva al massimo con poca corsa, l'orizzontale ne chiede di più (movimento laterale più fine).
+                float ax = Math.abs(dx), ay = Math.abs(dy);
+                float minor = Math.min(ax, ay), major = Math.max(ax, ay);
+                float angle = (float) Math.toDegrees(Math.atan2(minor, major));      // 0 = asse puro, 45 = diagonale
+                if (angle < SNAP_DEG) {
+                    if (ax >= ay) dy = 0; else dx = 0;
+                }
+                float diag = angle < SNAP_DEG ? 1f : 1f - (1f - DIAG_GAIN) * Math.min(1f, (angle - SNAP_DEG) / (45f - SNAP_DEG));
+                joyX = Math.signum(dx) * Math.min(1f, Math.abs(dx) / FULL_X) * diag;
+                joyY = -Math.signum(dy) * Math.min(1f, Math.abs(dy) / FULL_Y) * diag;
+                joyDx = dx;
+                joyDy = dy;
             } else {
                 float k = Math.min(1f, len / 0.6f) / len;
                 joyX = dx * k;
