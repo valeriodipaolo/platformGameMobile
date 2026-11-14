@@ -11,11 +11,11 @@ public final class Renderer {
         Level lv = g.level;
 
         // ---- sfondi in parallasse
-        int th = lv.theme;                          // 0 estate, 1 autunno, 2 aurora boreale
+        int th = lv.theme;                          // 0 estate, 1 autunno, 2 aurora boreale, 3 incendio
         boolean au = th >= 1;
-        layer(p, th == 2 ? Img.AR_SKY : th == 1 ? Img.AU_SKY : Img.SKY, cam * s * 0.03f, 0, sh, sw);
-        layer(p, th == 2 ? Img.AR_MOUNTAINS : th == 1 ? Img.AU_MOUNTAINS : Img.MOUNTAINS, cam * s * 0.12f, 3.9f * s, 6.6f * s, sw);
-        layer(p, th == 2 ? Img.AR_HILLS : th == 1 ? Img.AU_HILLS : Img.HILLS, cam * s * 0.35f, 6.2f * s, 5.8f * s, sw);
+        layer(p, th == 3 ? Img.FR_SKY : th == 2 ? Img.AR_SKY : th == 1 ? Img.AU_SKY : Img.SKY, cam * s * 0.03f, 0, sh, sw);
+        layer(p, th == 3 ? Img.FR_MOUNTAINS : th == 2 ? Img.AR_MOUNTAINS : th == 1 ? Img.AU_MOUNTAINS : Img.MOUNTAINS, cam * s * 0.12f, 3.9f * s, 6.6f * s, sw);
+        layer(p, th == 3 ? Img.FR_HILLS : th == 2 ? Img.AR_HILLS : th == 1 ? Img.AU_HILLS : Img.HILLS, cam * s * 0.35f, 6.2f * s, 5.8f * s, sw);
 
         // ---- traguardo: portone di pietra (dietro alle caselle); i battenti si aprono quando il livello è finito
         float gx = (lv.flagX + 0.5f - 1.5f - cam) * s, gy = (lv.flagBaseY - 4f) * s;
@@ -45,16 +45,18 @@ public final class Renderer {
                                     : (el ? Img.AU_GRASS_L : er ? Img.AU_GRASS_R : Img.AU_GRASS);
                             if (th == 2) img = img == Img.AU_DIRT_L ? Img.AR_DIRT_L : img == Img.AU_DIRT_R ? Img.AR_DIRT_R : img == Img.AU_DIRT ? Img.AR_DIRT
                                     : img == Img.AU_GRASS_L ? Img.AR_GRASS_L : img == Img.AU_GRASS_R ? Img.AR_GRASS_R : Img.AR_GRASS;
+                            if (th == 3) img = img == Img.AU_DIRT_L ? Img.FR_DIRT_L : img == Img.AU_DIRT_R ? Img.FR_DIRT_R : img == Img.AU_DIRT ? Img.FR_DIRT
+                                    : img == Img.AU_GRASS_L ? Img.FR_GRASS_L : img == Img.AU_GRASS_R ? Img.FR_GRASS_R : Img.FR_GRASS;
                             softEdge = el || er;
                         } else {
                             img = under ? Img.DIRT : Img.GRASS;
                         }
                         break;
                     case Level.BRICK:
-                    case Level.SECRET: img = th == 2 ? Img.AR_BRICK : au ? Img.AU_BRICK : Img.BRICK; break;
-                    case Level.BONUS: img = th == 2 ? Img.AR_BONUS : au ? Img.AU_BONUS : Img.BONUS; break;
-                    case Level.USED: img = th == 2 ? Img.AR_USED : au ? Img.AU_USED : Img.USED; break;
-                    default: img = th == 2 ? Img.AR_STONE : au ? Img.AU_STONE : Img.STONE; break;
+                    case Level.SECRET: img = th == 3 ? Img.FR_BRICK : th == 2 ? Img.AR_BRICK : au ? Img.AU_BRICK : Img.BRICK; break;
+                    case Level.BONUS: img = th == 3 ? Img.FR_BONUS : th == 2 ? Img.AR_BONUS : au ? Img.AU_BONUS : Img.BONUS; break;
+                    case Level.USED: img = th == 3 ? Img.FR_USED : th == 2 ? Img.AR_USED : au ? Img.AU_USED : Img.USED; break;
+                    default: img = th == 3 ? Img.FR_STONE : th == 2 ? Img.AR_STONE : au ? Img.AU_STONE : Img.STONE; break;
                 }
                 float off = 0;
                 if (tx == g.bumpTx && ty == g.bumpTy) {
@@ -65,9 +67,20 @@ public final class Renderer {
                 p.image(img, x0, y0 + off, x1 - x0, y1 - y0, false, 1);
                 if (img == Img.GRASS && !lv.solid(tx, ty - 1)) {
                     p.image(Img.FRINGE, x0, y0 - 0.27f * s, x1 - x0, 0.29f * s, false, 1);
-                } else if ((img == Img.AU_GRASS || img == Img.AR_GRASS) && !lv.solid(tx, ty - 1)) {
-                    p.image(th == 2 ? Img.AR_FRINGE : Img.AU_FRINGE, x0, y0 - 0.27f * s, x1 - x0, 0.29f * s, false, 1);
+                } else if ((img == Img.AU_GRASS || img == Img.AR_GRASS || img == Img.FR_GRASS) && !lv.solid(tx, ty - 1)) {
+                    p.image(th == 3 ? Img.FR_FRINGE : th == 2 ? Img.AR_FRINGE : Img.AU_FRINGE, x0, y0 - 0.27f * s, x1 - x0, 0.29f * s, false, 1);
                 }
+            }
+        }
+
+        // ---- braci che salgono nel livello dell'incendio
+        if (th == 3) {
+            for (int i = 0; i < 46; i++) {
+                float ph = (g.time * (0.07f + 0.05f * (i % 5)) + i * 0.137f) % 1f;
+                float ex = ((i * 97 % 211) / 211f * (g.viewW + 6f) - cam * 0.6f % (g.viewW + 6f) + (g.viewW + 6f)) % (g.viewW + 6f) - 1f;
+                float ey = (1f - ph) * 12.5f - 0.3f;
+                float sz = (0.06f + 0.04f * (i % 3)) * s;
+                p.rect((ex + 0.35f * (float) Math.sin(g.time * 1.3f + i)) * s, ey * s, sz, sz, i % 2 == 0 ? 0xFFFFA030 : 0xFFFF5A18);
             }
         }
 
@@ -193,7 +206,7 @@ public final class Renderer {
                 }
             }
             if (g.stateTime > 1.2f) {
-                p.text(won ? "Tocca lo schermo per il livello " + (g.levelNo + 1) : "Tocca lo schermo per riprovare", sw / 2, 9.4f * s, 0.5f * s, Painter.ALIGN_CENTER, 0xFFFFE082);
+                p.text(won ? (g.levelNo >= 8 ? "Tocca lo schermo per tornare al menu" : "Tocca lo schermo per il livello " + (g.levelNo + 1)) : "Tocca lo schermo per riprovare", sw / 2, 9.4f * s, 0.5f * s, Painter.ALIGN_CENTER, 0xFFFFE082);
             }
         }
     }

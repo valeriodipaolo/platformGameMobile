@@ -36,7 +36,12 @@ public final class Img {
     public static final int FOE_FUR = 124, FOE_PLUME = 125, FOE_CARD = 126, FOE_NUT = 127, FOE_CAP = 128, FOE_CHITIN = 129;
     /** Dettagli dei livelli 3D e stoffa del personaggio. */
     public static final int R3_TRAIL = 130, R3_CLOTH = 131;
-    public static final int COUNT = 132;
+    // livelli con l'incendio (tools/gen_fire.py)
+    public static final int FR_SKY = 132, FR_MOUNTAINS = 133, FR_HILLS = 134, FR_GRASS = 135, FR_GRASS_L = 136, FR_GRASS_R = 137,
+            FR_DIRT = 138, FR_DIRT_L = 139, FR_DIRT_R = 140, FR_FRINGE = 141, FR_BRICK = 142, FR_BONUS = 143, FR_USED = 144, FR_STONE = 145;
+    public static final int R3C_GRASS = 146, R3C_FOREST = 147, R3C_TUFT = 148, R3C_FLOWERS = 149, R3C_BRANCH = 150, R3C_TREE = 151,
+            R3C_SKY = 152, R3C_MOUNTAINS = 153, R3C_LAVA = 154, R3C_EMBER = 155, R3C_FLAME = 156;
+    public static final int COUNT = 157;
 
     public static final String[] NAMES = {
         "bg_sky", "bg_mountains", "bg_hills",
@@ -62,5 +67,8 @@ public final class Img {
         "r3b_grass", "r3b_forest", "r3b_tuft", "r3b_flowers", "r3b_branch", "r3b_tree", "r3b_sky", "r3b_mountains", "r3b_aurora", "r3b_flake", "r3b_ice",
         "foe_fur", "foe_plume", "foe_card", "foe_nut", "foe_cap", "foe_chitin",
         "r3_trail", "r3_cloth",
+        "fr_sky", "fr_mountains", "fr_hills", "fr_grass", "fr_grass_l", "fr_grass_r", "fr_dirt", "fr_dirt_l", "fr_dirt_r", "fr_fringe",
+        "fr_brick", "fr_bonus", "fr_used", "fr_stone",
+        "r3c_grass", "r3c_forest", "r3c_tuft", "r3c_flowers", "r3c_branch", "r3c_tree", "r3c_sky", "r3c_mountains", "r3c_lava", "r3c_ember", "r3c_flame",
     };
 }

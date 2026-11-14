@@ -26,6 +26,8 @@ public final class Scene3D {
             Img.R3A_CROWN, Img.R3A_TUFT, Img.R3_FERN, Img.R3A_FLOWERS, Img.R3_ROCK, Img.R3_RAY, Img.R3A_TREE, Img.R3A_FOLIAGE};
     private static final int[] K_TEX_AURORA = {Img.R3B_GRASS, Img.R3B_ICE, Img.R3_ROCK, Img.R3B_GRASS, Img.R3B_FOREST, Img.R3_BARK,
             Img.R3B_BRANCH, Img.R3B_TUFT, Img.R3B_TUFT, Img.R3B_FLOWERS, Img.R3_ROCK, Img.R3_RAY, Img.R3B_TREE, Img.R3B_ICE};
+    private static final int[] K_TEX_FIRE = {Img.R3C_GRASS, Img.R3C_LAVA, Img.R3_ROCK, Img.R3C_GRASS, Img.R3C_FOREST, Img.R3_BARK,
+            Img.R3C_BRANCH, Img.R3C_TUFT, Img.R3C_TUFT, Img.R3C_FLOWERS, Img.R3_ROCK, Img.R3_RAY, Img.R3C_TREE, Img.R3C_BRANCH};
     /** Tinte delle chiome d'autunno: arancio, rosso, giallo, ruggine, verde, zucca. */
     static final float[][] AUTUMN_TINT = {{1.0f, 0.76f, 0.42f}, {1.0f, 0.50f, 0.38f}, {1.0f, 0.96f, 0.46f},
             {0.96f, 0.66f, 0.36f}, {0.76f, 0.9f, 0.40f}, {1.0f, 0.60f, 0.28f}};
@@ -48,7 +50,7 @@ public final class Scene3D {
     private int fadeZ0, fadeNz;
     private Mesh leaf, crateStar;
     private final FoeModels foes = new FoeModels();
-    boolean autumn, aurora;
+    boolean autumn, aurora, fire;
     private final Decor decor = new Decor(this);
     private Mesh wing;
     private Mesh flake, curtain;
@@ -56,6 +58,7 @@ public final class Scene3D {
     private float fogR = FOG_R, fogG = FOG_G, fogB = FOG_B;
     /** Quanto il bordo dei burroni si arrotonda verso il basso (0 = spigolo vivo). */
     private float lip;
+    private Mesh flame, ember;
     private Mesh crate, gem, battery, batteryGlow, shadow, ring, gateStone, gateDoor;
     private final HeroModel hero = new HeroModel();
     private int builtFor = -1;
@@ -279,9 +282,11 @@ public final class Scene3D {
         lvl = w;
         autumn = w.levelNo == 4;
         aurora = w.levelNo == 6;
-        ktex = aurora ? K_TEX_AURORA : autumn ? K_TEX_AUTUMN : K_TEX_SUMMER;
+        fire = w.levelNo == 8;
+        ktex = fire ? K_TEX_FIRE : aurora ? K_TEX_AURORA : autumn ? K_TEX_AUTUMN : K_TEX_SUMMER;
         if (autumn) { fogR = 0.90f; fogG = 0.79f; fogB = 0.64f; lip = 0.5f; }
         if (aurora) { fogR = 0.05f; fogG = 0.10f; fogB = 0.22f; lip = 0.5f; }
+        if (fire) { fogR = 0.36f; fogG = 0.15f; fogB = 0.08f; lip = 0.5f; }
         MeshBuilder b;
         int z0 = -8, z1 = w.length + 40;
         zBase = z0;
@@ -292,11 +297,11 @@ public final class Scene3D {
 
         b = new MeshBuilder();                                         // cielo: occupa la parte alta dello schermo, con la foschia all'orizzonte
         b.quad(-1, 0.18f, 0.999f, 1, 0.18f, 0.999f, 1, 1, 0.999f, -1, 1, 0.999f, 0, 0, -1, 0, 0, 1, 1);
-        sky = b.build(aurora ? Img.R3B_SKY : autumn ? Img.R3A_SKY : Img.R3_SKY, false, false);
+        sky = b.build(fire ? Img.R3C_SKY : aurora ? Img.R3B_SKY : autumn ? Img.R3A_SKY : Img.R3_SKY, false, false);
 
         b = new MeshBuilder();                                         // montagne lontane
         b.quad(-330, -4, 0, 330, -4, 0, 330, 78, 0, -330, 78, 0, 0, 0, -1, 0, 0, 2, 1);
-        mountains = b.build(aurora ? Img.R3B_MOUNTAINS : autumn ? Img.R3A_MOUNTAINS : Img.R3_MOUNTAINS, true, false);
+        mountains = b.build(fire ? Img.R3C_MOUNTAINS : aurora ? Img.R3B_MOUNTAINS : autumn ? Img.R3A_MOUNTAINS : Img.R3_MOUNTAINS, true, false);
         b = new MeshBuilder();                                         // tenda d'aurora, molto alta e lontana
         b.quad(-350, 0, 0, 350, 0, 0, 350, 105, 0, -350, 105, 0, 0, 0, -1, 0, 0, 2.4f, 1);
         curtain = b.build(Img.R3B_AURORA, true, false);
@@ -337,8 +342,8 @@ public final class Scene3D {
                     float[][] gc = {{fx, z}, {fx + 1, z}, {fx + 1, z + 1}, {fx, z + 1}};
                     for (int k : order) ground(gs, gc[k][0], gc[k][1], gc[k][0] * 0.5f, gc[k][1] * 0.5f, 0.42f, 0.42f, 0.42f);
                     MeshBuilder s = mb(K_STONE, z);
-                    boolean round = autumn || aurora;
-                    float rr = autumn || aurora ? 0.2f : 0.11f;
+                    boolean round = autumn || aurora || fire;
+                    float rr = autumn || aurora || fire ? 0.2f : 0.11f;
                     blockTop(w, x, z, h);
                     s.colorf(0.24f, 0.23f, 0.22f);
                     s.box(fx + 0.5f, -0.2f, z + 0.5f, 0.94f, 0.7f, 0.94f);
@@ -369,7 +374,7 @@ public final class Scene3D {
             if (vis(w, World3D.W - 1, z) == World3D.PIT) wallX(d, World3D.HALF, z, -1);
         }
 
-        b = new MeshBuilder().color(10, 18, 14);                       // fondo dei burroni
+        b = fire ? new MeshBuilder().color(255, 96, 22) : new MeshBuilder().color(10, 18, 14);   // fondo dei burroni (lava nell'incendio)
         b.quad(-World3D.HALF, -PIT_DEPTH, z0, World3D.HALF, -PIT_DEPTH, z0, World3D.HALF, -PIT_DEPTH, z1, -World3D.HALF, -PIT_DEPTH, z1,
                0, 1, 0, 0.5f, 0.5f, 0.5f, 0.5f);
         pitFloor = b.build(-1, false, true);
@@ -377,8 +382,8 @@ public final class Scene3D {
         // ---- lati: un'unica superficie continua dal bordo del sentiero al bosco. Il prato sfuma nel sottobosco:
         //      le due texture si incontrano con lo stesso colore medio, così non si vede lo stacco.
         float[] D = {0, 0.35f, 0.75f, 1.2f, 1.7f, 2.3f, SEAM, 4.6f, 6f, 8f, 11f, 15f, 20f, 27f, 36f};
-        float[] seamG = autumn || aurora ? new float[] {1f, 1f, 1f} : new float[] {1.214f, 1.064f, 1.073f};
-        float[] seamF = autumn || aurora ? new float[] {1f, 1f, 1f} : new float[] {0.850f, 0.943f, 0.936f};
+        float[] seamG = autumn || aurora || fire ? new float[] {1f, 1f, 1f} : new float[] {1.214f, 1.064f, 1.073f};
+        float[] seamF = autumn || aurora || fire ? new float[] {1f, 1f, 1f} : new float[] {0.850f, 0.943f, 0.936f};
         for (int z = z0; z < z1; z++) {
             for (int side = -1; side <= 1; side += 2) {
                 for (int k = 0; k + 1 < D.length; k++) {
@@ -430,7 +435,7 @@ public final class Scene3D {
     private void trailCell(World3D w, int x, int z) {
         float fx = x - World3D.HALF;
         MeshBuilder t = mb(K_TRAIL, z);
-        float[] tint = aurora ? new float[] {1.25f, 1.7f, 2.75f} : autumn ? new float[] {0.92f, 0.82f, 0.74f} : new float[] {1f, 0.96f, 0.9f};
+        float[] tint = fire ? new float[] {0.75f, 0.6f, 0.5f} : aurora ? new float[] {1.25f, 1.7f, 2.75f} : autumn ? new float[] {0.92f, 0.82f, 0.74f} : new float[] {1f, 0.96f, 0.9f};
         int[] order = {0, 1, 2, 0, 2, 3};
         for (int sz = 0; sz < 2; sz++) {
             float za = z + sz * 0.5f, zb = za + 0.5f;
@@ -977,6 +982,20 @@ public final class Scene3D {
         crate = b.build(Img.BONUS, false, true);
         crate.spec = 0.1f; crate.shine = 20f;
         if (autumn || aurora) buildPumpkin();
+        if (fire) {                                                    // casse di roccia incandescente
+            b = new MeshBuilder();
+            b.roundBox(0, 0.5f, 0, 0.96f, 0.96f, 0.96f, 0.16f);
+            crate = b.build(Img.R3C_LAVA, false, true);
+            crate.spec = 0.2f; crate.shine = 20f;
+            b = new MeshBuilder();                                     // fiamma e brace: due piani incrociati, visibili da entrambi i lati
+            b.quad(-0.5f, 0, 0, 0.5f, 0, 0, 0.5f, 1, 0, -0.5f, 1, 0, 0, 0, 1, 0, 0, 1, 1);
+            b.quad(0.5f, 0, 0, -0.5f, 0, 0, -0.5f, 1, 0, 0.5f, 1, 0, 0, 0, -1, 0, 0, 1, 1);
+            flame = b.build(Img.R3C_FLAME, true, true);
+            b = new MeshBuilder();
+            b.quad(-0.5f, -0.5f, 0, 0.5f, -0.5f, 0, 0.5f, 0.5f, 0, -0.5f, 0.5f, 0, 0, 0, 1, 0, 0, 1, 1);
+            b.quad(0.5f, -0.5f, 0, -0.5f, -0.5f, 0, -0.5f, 0.5f, 0, 0.5f, 0.5f, 0, 0, 0, -1, 0, 0, 1, 1);
+            ember = b.build(Img.R3C_EMBER, true, true);
+        }
         if (aurora) {                                                  // casse di ghiaccio con la stella luminosa
             b = new MeshBuilder();
             b.roundBox(0, 0.5f, 0, 0.96f, 0.96f, 0.96f, 0.16f);
@@ -1147,6 +1166,7 @@ public final class Scene3D {
         g.begin(view, proj, fogR, fogG, fogB, 30f, 115f, 0.9f);
         if (autumn) g.grade(1.07f, 0.96f, 0.82f);
         if (aurora) g.grade(0.34f, 0.52f, 0.88f);
+        if (fire) g.grade(1.0f, 0.74f, 0.58f);
         g.time(w.time);
 
         g.backdrop(sky);
@@ -1174,7 +1194,7 @@ public final class Scene3D {
             boolean farChunk = cz0 > camZ + 68f;          // in lontananza erba, fiori e piccoli oggetti non si distinguono: non si disegnano
             for (int k = 0; k < K_N; k++) {
                 if (farChunk && (k == K_TUFT || k == K_FERN || k == K_FLOWER || k == K_PROP || k == K_GLOW)) continue;
-                if (k != K_RAY && k != K_TRAIL && land[k][c] != null) g.draw(land[k][c], ident, 1, 1, 1, 1, k == K_GLOW ? 0.6f : 0);
+                if (k != K_RAY && k != K_TRAIL && land[k][c] != null) g.draw(land[k][c], ident, 1, 1, 1, 1, k == K_GLOW ? 0.6f : fire && k == K_DIRT ? 0.45f : 0);
             }
         }
 
@@ -1189,7 +1209,7 @@ public final class Scene3D {
                 if (!w.crate[z * World3D.W + x]) continue;
                 Mat4.setIdentity(m);
                 Mat4.translate(m, x - World3D.HALF + 0.5f, bumpAt(x - World3D.HALF + 0.5f, z + 0.5f) - 0.03f, z + 0.5f);
-                g.draw(crate, m, 1, 1, 1, 1, autumn ? 0 : aurora ? 0.12f : 0.15f);
+                g.draw(crate, m, 1, 1, 1, 1, fire ? 0.3f : autumn ? 0 : aurora ? 0.12f : 0.15f);
                 if (crateStar != null) g.draw(crateStar, m, 1, 1, 1, 1, 0.92f);
             }
         }
@@ -1263,6 +1283,7 @@ public final class Scene3D {
             Mat4.scale(m, ss, 1, ss);
             g.draw(shadow, m, 1, 1, 1, 0.8f, 1);
         }
+        if (fire) drawTreeFlames(w, g);
         for (int c = 0; c < nChunks; c++) {
             float cz0 = zBase + c * CH;
             if (land[K_RAY][c] != null && cz0 + CH > camZ - 6f && cz0 < camZ + 60f) g.draw(land[K_RAY][c], ident, 1, 1, 1, 0.15f, 1);
@@ -1290,6 +1311,7 @@ public final class Scene3D {
 
     /** Foglie che cadono dagli alberi, portate dal vento: si ripetono ogni 34 m attorno al giocatore. */
     private void drawLeaves(World3D w, Gfx3D g) {
+        if (fire) { drawEmbers(w, g); return; }
         final int n = aurora ? 260 : autumn ? 190 : 90;
         final float span = 34f;
         for (int i = 0; i < n; i++) {
@@ -1316,6 +1338,44 @@ public final class Scene3D {
             Mat4.scale(m, sz, sz, sz);
             float[] c = LEAF_TINT[(int) (hv * 4.999f)];
             g.draw(leaf, m, c[0], c[1], c[2], 1, 0.15f);
+        }
+    }
+
+    /** Braci che salgono dal bosco in fiamme, portate dal vento: si ripetono ogni 34 m attorno al giocatore. */
+    private void drawEmbers(World3D w, Gfx3D g) {
+        final float span = 34f;
+        for (int i = 0; i < 150; i++) {
+            float hx = hash(i, 1, 201), hy = hash(i, 2, 202), hz = hash(i, 3, 203), hs = hash(i, 4, 204), hv = hash(i, 5, 205);
+            float rise = 0.8f + 0.9f * hv, cyc = 9f / rise;
+            float t = (w.time + hy * cyc * 7f) / cyc;
+            t -= (float) Math.floor(t);
+            float zr = hz * span;
+            float z = zr + span * (float) Math.floor((camZ - 4f - zr) / span + 1f);
+            float x = (hx * 2f - 1f) * 9f + 1.8f * t + 0.8f * (float) Math.sin(w.time * 1.3f + hs * 6.283f);
+            float y = groundAt(x, z) + 0.2f + 9f * t;
+            Mat4.setIdentity(m);
+            Mat4.translate(m, x, y, z);
+            Mat4.rotateY(m, w.time * 0.9f + hs * 6.283f);
+            float sz = (0.10f + 0.12f * hs) * (1f - 0.6f * t);
+            Mat4.scale(m, sz, sz, sz);
+            g.draw(ember, m, 1f, 0.75f + 0.2f * hs, 0.4f, 1f, 1f);
+        }
+    }
+
+    /** Fiamme sulle chiome degli alberi più vicini al sentiero. */
+    private void drawTreeFlames(World3D w, Gfx3D g) {
+        for (int i = 0; i < trees.length; i++) {
+            Tree t = trees[i];
+            if (t.row > 1 || t.z < w.pz - 4 || t.z > w.pz + 70 || (i * 7 + (int) t.z) % 3 != 0) continue;
+            for (int k = 0; k < 2; k++) {
+                float fl = 0.85f + 0.3f * (float) Math.sin(w.time * (7f + k * 3f) + i * 1.7f + k * 2f);
+                float h = t.h * (0.42f + 0.18f * k) * fl;
+                Mat4.setIdentity(m);
+                Mat4.translate(m, t.x + (k - 0.5f) * 0.5f, t.y + t.h * (0.35f + 0.2f * k), t.z + (0.5f - k) * 0.4f);
+                Mat4.rotateY(m, i * 0.9f + k * 1.2f + 0.15f * (float) Math.sin(w.time * 2f + i));
+                Mat4.scale(m, h * 0.62f, h, h * 0.62f);
+                g.draw(flame, m, 1f, 1f, 1f, 0.95f, 1f);
+            }
         }
     }
 
