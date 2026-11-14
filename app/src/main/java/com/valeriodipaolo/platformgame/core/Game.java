@@ -47,6 +47,11 @@ public final class Game {
     private final List<float[]> crumbling = new ArrayList<float[]>();
     private final List<int[]> collapsed = new ArrayList<int[]>();
     public static final float CRUMBLE_DELAY = 0.55f;
+    /** Lancio dei fiori a molla (caselle/s verso l'alto) e ultima molla usata, per l'animazione: posizione e secondi trascorsi. */
+    private static final float SPRING_V = 24.5f;
+    public int springTx = -1, springTy = -1;
+    public float springAge = 9f;
+    private float springBoost;
     public int bumpTx = -1, bumpTy = -1;
     public float bumpAge;
 
@@ -70,7 +75,7 @@ public final class Game {
     public int facing = 1;
 
     private boolean left, right, jump, jumpWas, spin, spinWas;
-    private float jumpBuffer, coyote, acc, checkpointX;
+    private float jumpBuffer, coyote, acc, checkpointX, checkpointY;
     private boolean spinActive;
     private int airJumps;
 
@@ -96,7 +101,7 @@ public final class Game {
     }
 
     private void loadLevel() {
-        level = levelNo == 7 ? LevelSeven.build() : levelNo == 5 ? LevelFive.build() : levelNo == 3 ? LevelThree.build() : LevelOne.build();
+        level = levelNo == 9 ? LevelNine.build() : levelNo == 7 ? LevelSeven.build() : levelNo == 5 ? LevelFive.build() : levelNo == 3 ? LevelThree.build() : LevelOne.build();
         enemies.clear();
         for (float[] e : level.enemies) {
             enemies.add(e.length > 2 ? new Enemy(e[0], e[1], (int) e[2], e[3], e[4]) : new Enemy(e[0], e[1]));
@@ -116,23 +121,27 @@ public final class Game {
         player.w = 0.62f;
         player.h = 1.2f;
         checkpointX = level.startX;
+        checkpointY = level.startY;
         fireX = level.fireStart;
         crumbling.clear();
         collapsed.clear();
-        place(level.startX);
+        springBoost = 0;
+        springAge = 9f;
+        place(level.startX, level.startY);
         hp = MAX_HP;
         invuln = 0;
     }
 
-    private void place(float x) {
+    private void place(float x, float y) {
         player.x = x;
-        player.y = level.startY;
+        player.y = y;
         player.vx = player.vy = 0;
         player.onGround = false;
         facing = 1;
         state = PLAYING;
         stateTime = 0;
         jumpBuffer = coyote = 0;
+        springBoost = 0;
         spinActive = false;
         spinT = spinCool = 0;
         airJumps = 1;
@@ -143,7 +152,7 @@ public final class Game {
     /** Dopo aver perso una vita si riparte dall'ultimo punto sicuro, tenendo gemme e nemici già eliminati. */
     private void respawn() {
         hp = MAX_HP;
-        place(checkpointX);
+        place(checkpointX, checkpointY);       // alla quota del punto sicuro, non a quella della partenza: su un rialzo si finirebbe dentro il terreno
         invuln = 2.5f;
         for (int[] c : collapsed) level.set(c[0], c[1], Level.CRUMBLE);      // i ponti crollati si ricostruiscono
         collapsed.clear();
@@ -253,6 +262,10 @@ public final class Game {
             if (gap < 1e8f) fireX = Math.max(fireX, p.x - gap);          // il fuoco non resta mai troppo indietro
             if (p.x + p.w * 0.5f < fireX) { die(); return; }
         }
+        for (float[] t : level.thorns) {                              // rovi: pungono chi li tocca
+            if (Math.abs(t[0] - p.x) > 2f) continue;
+            if (p.x + p.w > t[0] + 0.1f && p.x < t[0] + 0.9f && p.y + p.h > t[1] + 0.3f && p.y < t[1] + 1f) hurt();
+        }
         for (float[] j : level.jets) {
             if (Math.abs(j[0] - p.x) > 3f) continue;
             if (jetPower(j, time) > 0.5f && p.x + p.w > j[0] + 0.2f && p.x < j[0] + 0.8f && p.y + p.h > j[1] - 2.7f && p.y < j[1]) hurt();
@@ -339,11 +352,28 @@ public final class Game {
             else p.vy = Math.min(GLIDE_FALL, p.vy + GRAVITY * dt);
         } else {
             // tenendo premuto si sale più in alto
-            p.vy = Math.min(MAX_FALL, p.vy + ((p.vy < 0 && jump) ? GRAVITY_HOLD : GRAVITY) * dt);
+            p.vy = Math.min(MAX_FALL, p.vy + ((p.vy < 0 && (jump || springBoost > 0)) ? GRAVITY_HOLD : GRAVITY) * dt);
         }
 
         p.move(level, dt);
         if (p.headTx >= 0) hitBlock(p.headTx, p.headTy);
+        if (springBoost > 0) springBoost -= dt;
+        springAge += dt;
+        if (p.onGround) {                                           // fiore a molla: rimbalzo alto, tenendo la salita lenta come con il salto premuto
+            int fy = (int) Math.floor(p.y + p.h + 0.02f);
+            for (int tx = (int) Math.floor(p.x); tx <= (int) Math.floor(p.x + p.w - 0.001f); tx++) {
+                if (level.get(tx, fy) != Level.SPRING) continue;
+                p.vy = -SPRING_V;
+                p.onGround = false;
+                coyote = jumpBuffer = 0;
+                airJumps = 1;
+                springBoost = 1.2f;
+                springTx = tx;
+                springTy = fy;
+                springAge = 0;
+                break;
+            }
+        }
         if (p.onGround && Math.abs(p.vx) > 0.3f) runPhase += Math.abs(p.vx) * dt * 1.6f;
         if (p.y > level.h + 1) die();
     }
@@ -354,9 +384,11 @@ public final class Game {
         if (!p.onGround || p.x <= checkpointX + 2f) return;
         int fx = (int) Math.floor(p.x + p.w / 2), row = (int) Math.floor(p.y + p.h + 0.01f);
         for (int dx = -2; dx <= 2; dx++) {
-            if (!level.solid(fx + dx, row) || level.solid(fx + dx, row - 1) || level.get(fx + dx, row) == Level.CRUMBLE) return;
+            if (!level.solid(fx + dx, row) || level.solid(fx + dx, row - 1) || level.get(fx + dx, row) == Level.CRUMBLE || level.get(fx + dx, row) == Level.SPRING) return;
         }
+        for (float[] t : level.thorns) if (Math.abs(t[0] - p.x) < 3.5f) return;       // mai vicino ai rovi
         checkpointX = p.x;
+        checkpointY = p.y;
     }
 
     /** Colpo subito da un nemico: toglie un punto vita; a zero si perde una vita. */

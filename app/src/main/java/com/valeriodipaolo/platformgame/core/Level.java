@@ -10,11 +10,13 @@ public final class Level {
     public static final char SECRET = 'H';
     /** Piattaforma che crolla poco dopo essere stata toccata (livello dell'incendio). */
     public static final char CRUMBLE = 'C';
+    /** Fiore a molla: chi ci atterra sopra viene lanciato in alto (livello di primavera). */
+    public static final char SPRING = 'P';
 
     public final int w, h;
     private final char[] t;
     public String id = "l1";
-    /** 0 = prato d'estate, 1 = autunno (altre immagini, forme più morbide). */
+    /** 0 = prato d'estate, 1 = autunno, 2 = aurora boreale, 3 = incendio, 4 = primavera. */
     public int theme;
     public float startX = 3, startY = 8;
     /** Posizione della cella energetica (c'è in tutti i livelli). */
@@ -36,6 +38,8 @@ public final class Level {
     public float[][] fireZones = new float[0][];
     /** Getti di fiamma a tempo: {x, riga del terreno, periodo, fase}. Il getto è acceso il 40% del periodo, preceduto da un avviso. */
     public final List<float[]> jets = new ArrayList<float[]>();
+    /** Cespugli di rovi che pungono: {x, riga della casella libera su cui poggiano}. */
+    public final List<float[]> thorns = new ArrayList<float[]>();
 
     public Level(int w, int h) {
         this.w = w;

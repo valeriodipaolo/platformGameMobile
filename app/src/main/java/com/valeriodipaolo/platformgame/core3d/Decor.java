@@ -108,9 +108,9 @@ final class Decor {
                 cap = lit(214, 36, 30, 1.05f);
                 dots = lit(255, 250, 236, 1.1f);
             } else if (kind == 1) {
-                cap = s.autumn ? lit(226, 130, 40, 1f) : lit(150, 96, 52, 1f);
+                cap = s.spring ? lit(250, 170, 196, 1f) : s.autumn ? lit(226, 130, 40, 1f) : lit(150, 96, 52, 1f);
             } else {
-                cap = s.autumn ? lit(190, 96, 150, 1f) : lit(232, 190, 96, 1f);
+                cap = s.spring ? lit(196, 156, 255, 1f) : s.autumn ? lit(190, 96, 150, 1f) : lit(232, 190, 96, 1f);
                 dots = s.autumn ? lit(250, 226, 240, 1f) : null;
             }
             mushroom(mx, s.meshAt(mx, mz), mz, h, cr, cap, dots, r);
@@ -127,7 +127,7 @@ final class Decor {
         float ya = rest(ax, az, rad) + rad * 0.72f, yb = rest(bx, bz, rad) + rad * 0.72f;
         float ym = Math.max((ya + yb) / 2, rest(x, z, rad) + rad * 0.72f);
         light(x, z);
-        final float[] bark = lit(250, 236, 220, 0.95f), moss = s.fire ? lit(64, 46, 40, 1.0f) : s.aurora ? lit(236, 244, 255, 1.5f) : s.autumn ? lit(190, 170, 70, 1.1f) : lit(120, 190, 70, 1.2f);
+        final float[] bark = lit(250, 236, 220, 0.95f), moss = s.spring ? lit(120, 205, 80, 1.25f) : s.fire ? lit(64, 46, 40, 1.0f) : s.aurora ? lit(236, 244, 255, 1.5f) : s.autumn ? lit(190, 170, 70, 1.1f) : lit(120, 190, 70, 1.2f);
         final float[] under = lit(150, 140, 130, 0.6f);
         MeshBuilder tb = s.mb(Scene3D.K_TRUNK, z);
         int n = 6;
@@ -211,8 +211,8 @@ final class Decor {
         float y = s.meshAt(x, z);
         light(x, z);
         MeshBuilder bb = s.mb(Scene3D.K_BLOB, z), pb = s.mb(Scene3D.K_PROP, z);
-        float[] tc = s.fire ? new float[] {0.42f * l[0], 0.32f * l[1], 0.26f * l[2]} : s.autumn ? new float[] {1.0f * l[0], 0.62f * l[1], 0.32f * l[2]} : new float[] {0.62f * l[0], 1.0f * l[1], 0.5f * l[2]};
-        float[] berry = s.autumn ? lit(250, 150, 30, 1.3f) : lit(236, 40, 60, 1.3f);
+        float[] tc = s.fire ? new float[] {0.42f * l[0], 0.32f * l[1], 0.26f * l[2]} : s.spring ? new float[] {0.6f * l[0], 1.0f * l[1], 0.46f * l[2]} : s.autumn ? new float[] {1.0f * l[0], 0.62f * l[1], 0.32f * l[2]} : new float[] {0.62f * l[0], 1.0f * l[1], 0.5f * l[2]};
+        float[] berry = s.spring ? lit(255, 130, 176, 1.3f) : s.autumn ? lit(250, 150, 30, 1.3f) : lit(236, 40, 60, 1.3f);
         int lobes = 3 + r.nextInt(2);
         for (int i = 0; i < lobes; i++) {
             float a = r.nextFloat() * 6.283f, d = i == 0 ? 0 : size * (0.45f + 0.35f * r.nextFloat());
@@ -230,7 +230,7 @@ final class Decor {
     /** Mucchio di foglie (o cumulo basso) che copre il terreno. */
     private void leafPile(float x, float z, float size, Random r) {
         light(x, z);
-        float[] tc = Scene3D.AUTUMN_TINT[r.nextInt(Scene3D.AUTUMN_TINT.length)];
+        float[] tc = s.tints()[r.nextInt(s.tints().length)];
         s.foliageLobe(s.mb(Scene3D.K_BLOB, z), x, rest(x, z, size) + size * 0.05f, z, size, size * 0.24f, size * (0.7f + 0.3f * r.nextFloat()), 6, 3,
                 new float[] {tc[0] * l[0], tc[1] * l[1], tc[2] * l[2]}, 1.25f, 0f, r);
     }

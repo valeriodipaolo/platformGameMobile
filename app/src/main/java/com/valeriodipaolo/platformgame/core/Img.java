@@ -42,7 +42,13 @@ public final class Img {
     public static final int R3C_GRASS = 146, R3C_FOREST = 147, R3C_TUFT = 148, R3C_FLOWERS = 149, R3C_BRANCH = 150, R3C_TREE = 151,
             R3C_SKY = 152, R3C_MOUNTAINS = 153, R3C_LAVA = 154, R3C_EMBER = 155, R3C_FLAME = 156;
     public static final int FR_CRUMBLE = 157, FR_VENT = 158, R3C_VENT = 159;
-    public static final int COUNT = 160;
+    // livelli di primavera (tools/gen_spring.py)
+    public static final int SP_SKY = 160, SP_MOUNTAINS = 161, SP_HILLS = 162, SP_GRASS = 163, SP_GRASS_L = 164, SP_GRASS_R = 165,
+            SP_DIRT = 166, SP_DIRT_L = 167, SP_DIRT_R = 168, SP_FRINGE = 169, SP_BRICK = 170, SP_BONUS = 171, SP_USED = 172, SP_STONE = 173,
+            SP_SPRING = 174, SP_THORN = 175, SP_WATER = 176, SP_PETAL = 177;
+    public static final int R3D_GRASS = 178, R3D_FOREST = 179, R3D_TUFT = 180, R3D_FLOWERS = 181, R3D_CROWN = 182, R3D_TREE = 183,
+            R3D_FOLIAGE = 184, R3D_SKY = 185, R3D_MOUNTAINS = 186, R3D_WATER = 187, R3D_SPRING = 188;
+    public static final int COUNT = 189;
 
     public static final String[] NAMES = {
         "bg_sky", "bg_mountains", "bg_hills",
@@ -72,5 +78,8 @@ public final class Img {
         "fr_brick", "fr_bonus", "fr_used", "fr_stone",
         "r3c_grass", "r3c_forest", "r3c_tuft", "r3c_flowers", "r3c_branch", "r3c_tree", "r3c_sky", "r3c_mountains", "r3c_lava", "r3c_ember", "r3c_flame",
         "fr_crumble", "fr_vent", "r3c_vent",
+        "sp_sky", "sp_mountains", "sp_hills", "sp_grass", "sp_grass_l", "sp_grass_r", "sp_dirt", "sp_dirt_l", "sp_dirt_r", "sp_fringe",
+        "sp_brick", "sp_bonus", "sp_used", "sp_stone", "sp_spring", "sp_thorn", "sp_water", "sp_petal",
+        "r3d_grass", "r3d_forest", "r3d_tuft", "r3d_flowers", "r3d_crown", "r3d_tree", "r3d_foliage", "r3d_sky", "r3d_mountains", "r3d_water", "r3d_spring",
     };
 }

@@ -90,7 +90,7 @@ public class CheckFire {
         for (float t = 0; t < 4f; t += 0.02f) if (World3D.logPose(w.logs.get(0), t)[3] < 0.5f) vanish = true;
         ok(vanish, "il tronco scompare dopo essere caduto");
         // nessuna gemma deve restare nascosta dai blocchi alla vista della camera (6 m dietro e 3,3 m sopra il robot)
-        for (int lvNo : new int[] {2, 4, 6, 8}) {
+        for (int lvNo : new int[] {2, 4, 6, 8, 10}) {
             World3D v = new World3D(new MemorySave(), lvNo);
             int hidden = 0;
             for (float[] gm : v.gemsList) {

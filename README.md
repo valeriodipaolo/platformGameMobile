@@ -8,6 +8,8 @@ Gioco platform 2D a scorrimento per Android (nome provvisorio: **Robo Jump**), s
 - Livello 5 (2D, aurora boreale): tundra di notte con aurora in cielo, neve e ghiaccio, mattoni di ghiaccio, burroni larghi con appigli di mattoni e pietre, molti corvi.
 - Livello 7 (2D, incendio): una corsa per salvarsi dal rogo. Un muro di fuoco insegue il robot (velocità crescente, con una radura dove si ferma), getti di fiamma a tempo con avviso, ponti e torri di tavole bruciate che crollano mezzo secondo dopo il tocco, bivio tra terreno incandescente e torre, sedici caselle di lava da superare su tavole sospese.
 - Livello 8 (3D, incendio): fuga nel bosco in fiamme. Muro di fuoco alle spalle (bagliore rosso e «FUOCO!» quando si avvicina), tronchi in fiamme che rotolano di traverso, slalom tra muri di tronchi con un solo varco, braciere con getti a scacchiera, ponte sulla lava attraversato dai tronchi, radura con la cella energetica, rogo finale tra due strisce di lava.
+- Livello 9 (2D, primavera): ciliegi in fiore, tre fiumi da attraversare rimbalzando di isolotto in isolotto sui fiori a molla (si schiacciano e lanciano in alto), passerella di pietre tra le chiome con la cella energetica, campi di rovi da scavalcare o sorvolare.
+- Livello 10 (3D, primavera): giardino di ciliegi con petali al vento; campi di rovi a zigzag, fiumi con isolotti e fiori a molla, un guado di tre isolotti, passerella alta (3 m) raggiungibile solo rimbalzando. Nuove meccaniche: fiore a molla e rovi (`Level.SPRING`, `Level.thorns`, `World3D.springs/thorns`).
 - Livello 6 (3D, aurora boreale): lago ghiacciato sotto le tende dell'aurora che ondeggiano, abeti innevati, fiocchi di neve; lastre di ghiaccio, diagonale di fenditure, lago da attraversare di lastrone in lastrone, ponte a zig-zag e grotta segreta.
 - Al posto della bandiera, nei livelli 2D c'è un portone di pietra che si apre quando si arriva alla fine (come nei livelli 3D).
 - Livello 2 (3D, OpenGL ES 2.0): corridoio nel bosco visto da dietro le spalle. Cinque schemi di comando, da scegliere nel menu: joystick libero, joystick fisso, entrambi anche a 4 direzioni (senza diagonali), carro armato.
@@ -23,6 +25,7 @@ Gioco platform 2D a scorrimento per Android (nome provvisorio: **Robo Jump**), s
 - `GlRenderer`, `Level3DView` — disegno OpenGL e joystick del livello 3D; `MenuView` — scelta del livello.
 - `tools/gen_autumn.py` — immagini dei livelli d'autunno (sfondi, terreno, blocchi, nemici, texture del bosco).
 - `tools/gen_fire.py` — immagini dei livelli con l'incendio (cielo di fumo, pineta in fiamme, terreno bruciato, lava, fiamme, braci).
+- `tools/gen_spring.py` — immagini dei livelli di primavera (cielo, ciliegi in fiore, prato fiorito, acqua, fiore a molla, rovi, texture 3D).
 - `tools/gen_aurora.py` — immagini dei livelli con l'aurora boreale (cielo, pineta, neve, ghiaccio, tende d'aurora, fiocchi).
 - `tools/gen_gate.py` — portone d'arrivo dei livelli 2D.
 - `tools/gen_foes.py` — texture dei nemici 3D (pelo, piume, guscio, scaglie, corazza); i modelli sono in `core3d/FoeModels.java`.

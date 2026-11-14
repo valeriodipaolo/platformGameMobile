@@ -5,7 +5,8 @@ cd "$(dirname "$0")/../.."
 OUT=build/preview
 mkdir -p "$OUT/classes"
 javac -nowarn -d "$OUT/classes" app/src/main/java/com/valeriodipaolo/platformgame/core/*.java \
-    app/src/main/java/com/valeriodipaolo/platformgame/core3d/*.java tools/preview/Check.java tools/preview/Check3.java tools/preview/CheckFire.java
+    app/src/main/java/com/valeriodipaolo/platformgame/core3d/*.java tools/preview/Check.java tools/preview/Check3.java tools/preview/CheckFire.java tools/preview/CheckSpring.java
 java -cp "$OUT/classes" Check
 java -cp "$OUT/classes" Check3
 java -cp "$OUT/classes" CheckFire
+java -cp "$OUT/classes" CheckSpring

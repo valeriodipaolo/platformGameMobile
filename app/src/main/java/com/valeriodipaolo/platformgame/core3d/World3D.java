@@ -47,6 +47,14 @@ public final class World3D {
     public float[][] fireZones = new float[0][];
     public final List<float[]> jets = new ArrayList<float[]>();
     public final List<float[]> logs = new ArrayList<float[]>();
+    /** Fiori a molla {x, z} (lanciano in alto chi ci salta sopra) e cespugli di rovi {x, z} (pungono); livelli di primavera. */
+    public final List<float[]> springs = new ArrayList<float[]>();
+    public final List<float[]> thorns = new ArrayList<float[]>();
+    private static final float SPRING_V = 15.5f;
+    /** Ultimo lancio da un fiore a molla: indice nella lista e istante, per l'animazione. */
+    public int springIdx = -1;
+    public float springAt = -9f;
+    private float springBoost;
 
     /** Comandi a carro armato: joyX gira il robot, joyY lo fa avanzare o indietreggiare nella direzione in cui guarda. */
     public boolean tank;
@@ -80,7 +88,7 @@ public final class World3D {
         score = 0;
         gems = 0;
         lives = START_LIVES;
-        if (levelNo == 8) LevelEight.build(this); else if (levelNo == 6) LevelSix.build(this); else if (levelNo == 4) LevelFour.build(this); else LevelTwo.build(this);
+        if (levelNo == 10) LevelTen.build(this); else if (levelNo == 8) LevelEight.build(this); else if (levelNo == 6) LevelSix.build(this); else if (levelNo == 4) LevelFour.build(this); else LevelTwo.build(this);
         gemTotal = gemsList.size();
         for (boolean c : crate) if (c) gemTotal++;
         batteryOwned = gemOwned = false;
@@ -105,6 +113,7 @@ public final class World3D {
         state = PLAYING;
         stateTime = 0;
         jumpBuffer = coyote = 0;
+        springBoost = 0;
         spinActive = false;
         spinT = spinCool = 0;
         airJumps = 1;
@@ -267,6 +276,10 @@ public final class World3D {
             if (gap < 1e8f) fireZ = Math.max(fireZ, pz - gap);          // il fuoco non resta mai troppo indietro
             if (pz < fireZ + 0.2f) { die(); return; }
         }
+        for (float[] t : thorns) {                         // rovi
+            if (Math.abs(t[1] - pz) > 2f) continue;
+            if (Math.abs(px - t[0]) < 0.62f && Math.abs(pz - t[1]) < 0.62f && py < topAt(t[0], t[1]) + 0.55f) hurt();
+        }
         for (float[] j : jets) {
             if (Math.abs(j[1] - pz) > 3f) continue;
             if (jetPower(j, time) > 0.5f && Math.abs(px - j[0]) < 0.62f && Math.abs(pz - j[1]) < 0.62f && py < topAt(j[0], j[1]) + 2.4f) hurt();
@@ -340,7 +353,7 @@ public final class World3D {
             if (vy < -GLIDE_FALL) vy = Math.min(-GLIDE_FALL, vy + 40f * dt);
             else vy = Math.max(-GLIDE_FALL, vy - GRAVITY * dt);
         } else {
-            vy = Math.max(-MAX_FALL, vy - ((vy > 0 && jump) ? GRAVITY_HOLD : GRAVITY) * dt);
+            vy = Math.max(-MAX_FALL, vy - ((vy > 0 && (jump || springBoost > 0)) ? GRAVITY_HOLD : GRAVITY) * dt);
         }
 
         // spostamento: un asse alla volta, fermandosi contro blocchi e casse più alti dei piedi
@@ -358,6 +371,21 @@ public final class World3D {
             onGround = true;
         }
         if (g > -500f) groundY = g;
+        if (springBoost > 0) springBoost -= dt;
+        if (onGround) {                                  // fiore a molla: rimbalzo alto
+            for (int i = 0; i < springs.size(); i++) {
+                float[] sp2 = springs.get(i);
+                if (Math.abs(sp2[1] - pz) > 0.8f || Math.abs(sp2[0] - px) > 0.62f || Math.abs(sp2[1] - pz) > 0.62f) continue;
+                vy = SPRING_V;
+                onGround = false;
+                coyote = jumpBuffer = 0;
+                airJumps = 1;
+                springBoost = 1.2f;
+                springIdx = i;
+                springAt = time;
+                break;
+            }
+        }
         if (onGround && sp > 0.3f) runPhase += sp * dt * 2.1f;
 
         if (onGround && g == 0) updateCheckpoint();
@@ -373,6 +401,8 @@ public final class World3D {
                 if (cell(cx, cz) != 0) return;
             }
         }
+        for (float[] t : thorns) if (Math.abs(t[1] - pz) < 3.5f) return;
+        for (float[] t : springs) if (Math.abs(t[1] - pz) < 2.5f) return;
         cpX = px;
         cpZ = pz;
     }
