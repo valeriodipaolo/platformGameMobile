@@ -8,6 +8,8 @@ public final class Level {
     public static final char EMPTY = '.', GROUND = '#', BRICK = 'B', BONUS = '?', USED = 'U', STONE = 'S';
     /** Mattoncino identico agli altri, ma colpito da sotto rivela l'oggetto segreto. */
     public static final char SECRET = 'H';
+    /** Piattaforma che crolla poco dopo essere stata toccata (livello dell'incendio). */
+    public static final char CRUMBLE = 'C';
 
     public final int w, h;
     private final char[] t;
@@ -25,6 +27,15 @@ public final class Level {
     public final List<float[]> shards = new ArrayList<float[]>();
     /** Nemici: {x, y} (scarabeo) oppure {x, y, tipo, da, a} con il tratto percorso. */
     public final List<float[]> enemies = new ArrayList<float[]>();
+
+    /**
+     * Muro di fuoco che insegue il giocatore: parte da fireStart (NaN = nessun fuoco) e avanza alla velocità della zona
+     * più avanzata raggiunta: fireZones = {{x, velocità in caselle al secondo}, ...} (velocità 0 = il fuoco si ferma).
+     */
+    public float fireStart = Float.NaN;
+    public float[][] fireZones = new float[0][];
+    /** Getti di fiamma a tempo: {x, riga del terreno, periodo, fase}. Il getto è acceso il 40% del periodo, preceduto da un avviso. */
+    public final List<float[]> jets = new ArrayList<float[]>();
 
     public Level(int w, int h) {
         this.w = w;

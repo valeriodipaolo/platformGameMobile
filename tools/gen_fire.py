@@ -203,6 +203,17 @@ def fr_blocks():
     G.save("fr_bonus", crate(False))
     G.save("fr_used", crate(True))
 
+    cv = Cv(T, T, 3)       # piattaforma che crolla: legno bruciato spaccato, brace nelle fessure
+    wood = 0.55 + 0.45 * fbm(n, n, beta=1.2, seed=971)
+    cv.add(cv.rrect(3, 3, T - 3, T - 3, 14), (66, 44, 34), bevel=10, spec=0.1, tex=wood)
+    for k in range(4):
+        y = 12 + k * 22
+        cv.add(cv.capsule(8, y, T - 8, y + 2, 1.5), (30, 20, 18), bevel=1.2, spec=0.0)
+    for (x0, y0, x1, y1) in ((30, 8, 40, 40), (60, 50, 52, 88), (74, 14, 82, 36)):
+        cv.add(cv.capsule(x0, y0, x1, y1, 1.8), (255, 120, 24), bevel=1.0, spec=0.0)
+    cv.glow(cv.capsule(34, 12, 44, 36, 1.8), (255, 120, 24), radius=5, strength=0.5)
+    G.save("fr_crumble", cv.result())
+
     cv = Cv(T, T, 3)
     tex = 0.6 + 0.4 * fbm(n, n, beta=1.9, seed=961) + 0.25 * (fbm(n, n, beta=0.5, seed=962) - 0.5)
     cv.add(cv.rrect(1.5, 1.5, T - 1.5, T - 1.5, 30), (70, 62, 66), bevel=16, spec=0.15, tex=tex)

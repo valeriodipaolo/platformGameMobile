@@ -35,6 +35,14 @@ public final class Hud3D {
             p.rect(px - 0.04f * s, py - 0.04f * s, pip + 0.08f * s, pip + 0.08f * s, 0xB0000000);
             p.rect(px, py, pip, pip, i < w.hp ? 0xFFE53935 : 0xFF4A4A4A);
         }
+        if (!Float.isNaN(w.fireZ)) {               // il fuoco è alle spalle: bagliore rosso in basso quando si avvicina
+            float d = w.pz - w.fireZ;
+            if (d < 20f) {
+                float k = (float) Math.pow(1f - Math.max(0f, d) / 20f, 1.5f);
+                for (int i = 0; i < 8; i++) p.rect(0, sh - (i + 1) * 0.16f * s, sw, 0.16f * s, ((int) (k * (150 - i * 17)) << 24) | 0xFF4A10);
+                if (d < 12f) p.text("FUOCO!", sw / 2, sh - 0.6f * s, 0.55f * s, Painter.ALIGN_CENTER, ((int) (k * 255) << 24) | 0xFFD54F);
+            }
+        }
         if (w.toast != null && w.toastTime > 0) {
             int a = (int) (255 * Math.min(1f, w.toastTime * 2.5f));
             p.text(w.toast, sw / 2, 2.6f * s, 0.7f * s, Painter.ALIGN_CENTER, (a << 24) | 0xFFE082);

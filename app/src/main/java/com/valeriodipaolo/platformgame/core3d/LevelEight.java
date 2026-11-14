@@ -1,8 +1,9 @@
 package com.valeriodipaolo.platformgame.core3d;
 
 /**
- * Ottavo livello, il bosco in fiamme: il fuoco ha aperto fiumi di lava nel sentiero. Burroni stretti, un fiume da attraversare
- * di masso in masso, un ponte a zig-zag, una rientranza segreta con la cella energetica e una ronda di nemici tra gli alberi in fiamme.
+ * Ottavo livello, il bosco in fiamme: la fuga attraverso il rogo. Un muro di fuoco insegue da dietro; tronchi in fiamme rotolano
+ * di traverso, un slalom tra muri di tronchi bruciati, un braciere con getti di fiamma a scacchiera, un ponte sulla lava
+ * attraversato dai tronchi, una radura dove il fuoco si ferma e il rogo finale tra due strisce di lava.
  */
 public final class LevelEight {
     private LevelEight() {}
@@ -10,93 +11,108 @@ public final class LevelEight {
     private static final int W = World3D.W;
 
     public static void build(World3D w) {
-        int len = 176;
+        int len = 178;
         w.length = len;
         w.height = new int[len * W];
         w.crate = new boolean[len * W];
         w.gemsList.clear();
         w.enemies.clear();
+        w.jets.clear();
+        w.logs.clear();
 
-        // --- avvio: terra bruciata e le prime casse
+        w.fireStart = -14f;
+        w.fireZones = new float[][] {{10, 1.7f, 20}, {50, 2.1f, 20}, {108, 0f}, {124, 2.5f, 18}, {150, 2.9f, 15}};
+
+        // --- avvio
         gemLine(w, 0, 0, 4);
         gemLine(w, 2, 5, 9);
-        crate(w, 1, 11); crate(w, 3, 11);
-        acorn(w, -1f, 13);
+        crate(w, 1, 10); crate(w, 3, 10);
 
-        // --- primi spacchi di lava: uno per lato, poi uno al centro
-        pit(w, 17, 20, 0, 1);
-        pit(w, 17, 20, 3, 4);
-        gemLine(w, 0, 17, 20);
-        hog(w, 0, 24, false, -2f, 2f);
-        stones(w, 27, new int[] {0, 1, 1, 1, 0});
-        pit(w, 31, 33, 1, 3);
-        gem(w, -2, 1.8f, 32.5f); gem(w, 2, 1.8f, 32.5f);
+        // --- tronchi che rotolano: quattro tronchi in fiamme attraversano il sentiero a ritmi diversi
+        log(w, 16, 3.8f, 0f);
+        log(w, 21, 3.8f, 1.9f);
+        log(w, 26, 3.2f, 0.5f);
+        log(w, 31, 3.2f, 2.1f);
+        gem(w, 0, 0.7f, 18.5f); gem(w, 0, 0.7f, 23.5f); gem(w, 0, 0.7f, 28.5f); gem(w, 0, 0.7f, 33f);
+        acorn(w, -1f, 34);
 
-        // --- tronchi in fiamme: barricata di massi a gradini
-        stones(w, 38, new int[] {1, 1, 0, 1, 1});
-        stones(w, 40, new int[] {2, 1, 0, 1, 2});
-        crow(w, 0, 44, true, 42, 52);
-        crate(w, 1, 46); crate(w, 3, 46);
-        acorn(w, -1f, 49);
-        gemLine(w, 2, 50, 54);
+        // --- slalom tra muri di tronchi bruciati: ognuno ha un solo varco, sempre dal lato opposto al precedente
+        wall(w, 40, 4);
+        wall(w, 44, 0);
+        wall(w, 48, 3);
+        wall(w, 52, 1);
+        wall(w, 56, 4);
+        jet(w, 2, 42, 2.8f, 0f);
+        jet(w, 2, 46, 2.8f, 1.4f);
+        hog(w, 0, 50, false, -2f, 2f);
+        jet(w, 3, 54, 2.8f, 0.7f);
+        crow(w, 0, 58, false, -2f, 2f, 2.1f);
+        gem(w, 1, 0.7f, 41.5f); gem(w, -1, 0.7f, 45.5f); gem(w, 2, 0.7f, 49.5f); gem(w, -2, 0.7f, 53.5f);
 
-        // --- crepaccio di lava a tutta larghezza
-        pit(w, 58, 61, 0, 4);
-        gem(w, -1, 2.5f, 59.2f); gem(w, 1, 2.5f, 60.2f);
-        hog(w, 1, 65, false, -2f, 2f);
-        acorn(w, -1f, 68);
+        // --- braciere: righe di getti a scacchiera, due per riga, accesi a turno
+        for (int i = 0; i < 7; i++) {
+            int a = (i * 2) % 5, b = (a + 2) % 5;
+            float ph = (i % 2) * 1.4f;
+            jet(w, a, 66 + i * 3, 2.8f, ph);
+            jet(w, b, 66 + i * 3, 2.8f, ph + 1.4f);
+        }
+        crow(w, 0, 76, false, -2f, 2f, 2.2f);
+        acorn(w, 0f, 87);
+        gemLine(w, 2, 64, 86);
 
-        // --- il fiume di lava: massi sparsi nella corrente
-        pit(w, 72, 91, 0, 4);
-        floe(w, 2, 74); floe(w, 1, 77); floe(w, 3, 80); floe(w, 2, 83); floe(w, 0, 86); floe(w, 2, 89);
-        floe(w, 3, 74); floe(w, 0, 80); floe(w, 4, 83);
-        for (int i = 0; i < 6; i++) gem(w, new float[] {0, -1, 1, 0, -2, 0}[i], 1.9f, 74.5f + i * 3f);
-        crow(w, 0, 81, false, -2f, 2f, 2.8f);
+        // --- ponte sulla lava: tre caselle di larghezza, attraversato dai tronchi in fiamme
+        pit(w, 90, 111, 0, 4);
+        for (int z = 90; z <= 111; z++) for (int x = 1; x <= 3; x++) set(w, x, z, 0);
+        log(w, 94, 3.4f, 0f);
+        log(w, 99, 3.4f, 1.7f);
+        log(w, 104, 3.0f, 0.8f);
+        gem(w, 0, 0.7f, 96.5f); gem(w, 0, 0.7f, 101.5f); gem(w, 1, 0.7f, 107f); gem(w, -1, 0.7f, 109f);
 
-        // --- rientranza segreta: la cella energetica sta su un masso, al riparo dalle fiamme
-        set(w, 0, 97, 1); set(w, 0, 98, 2); set(w, 0, 99, 2); set(w, 0, 100, 1);
-        set(w, 1, 98, 1); set(w, 1, 99, 1);
-        pit(w, 101, 104, 0, 1);
-        w.battery = new float[] {-2, 2.7f, 98.5f};
-        crate(w, 3, 98);
-        hog(w, 1.5f, 102, true, 96, 106.5f);
+        // --- radura: qui il fuoco si ferma. Una scala di massi porta alla cella energetica
+        set(w, 0, 114, 1); set(w, 0, 115, 2); set(w, 0, 116, 3); set(w, 0, 117, 3); set(w, 0, 118, 2);
+        w.battery = new float[] {-2, 4.3f, 116.5f};
+        crate(w, 3, 119); crate(w, 4, 119); crate(w, 2, 121);
+        gemLine(w, 1, 112, 118);
 
-        // --- ponte a zig-zag sulla lava: una sola casella, che cambia corsia
-        pit(w, 108, 127, 0, 4);
-        lane(w, 108, 111, 2); lane(w, 112, 115, 3); lane(w, 116, 119, 1); lane(w, 120, 123, 3); lane(w, 124, 127, 2);
-        set(w, 2, 112, 0); set(w, 3, 112, 0);
-        set(w, 3, 116, 0); set(w, 1, 116, 0); set(w, 2, 116, 0);
-        set(w, 1, 120, 0); set(w, 2, 120, 0); set(w, 3, 120, 0);
-        set(w, 3, 124, 0); set(w, 2, 124, 0);
-        gem(w, 0, 0.7f, 109.5f); gem(w, 1, 0.7f, 113.5f); gem(w, -1, 0.7f, 117.5f); gem(w, 1, 0.7f, 121.5f); gem(w, 0, 0.7f, 125.5f);
-        acorn(w, 1, 114, true, 112, 115.5f);
+        // --- il rogo: due strisce di lava ai lati stringono il sentiero a tre caselle
+        pit(w, 128, 151, 0, 0);
+        pit(w, 128, 151, 4, 4);
+        log(w, 130, 3.0f, 0f);
+        log(w, 134, 3.0f, 1.5f);
+        jet(w, 2, 138, 2.4f, 0f);
+        jet(w, 1, 141, 2.4f, 1.2f);
+        jet(w, 3, 141, 2.4f, 0f);
+        jet(w, 2, 144, 2.4f, 1.2f);
+        hog(w, 0, 147, true, 145, 151);
+        acorn(w, 1f, 136);
+        gemLine(w, 0, 130, 150);
 
-        // --- la foresta che brucia: ronda di nemici
-        crate(w, 0, 132); crate(w, 2, 132); crate(w, 4, 132);
-        hog(w, -1.5f, 135, true, 131, 141);
-        w.enemies.add(patrol(0, 138, false, -2f, 2f));
-        crow(w, 0, 141, false, -2f, 2f, 2.3f);
-        acorn(w, 1.5f, 144);
-        hog(w, 1.5f, 147, true, 142, 150);
-        gemLine(w, -2, 134, 140);
-        gemLine(w, 2, 134, 140);
-
-        // --- ultimi ostacoli
-        stones(w, 152, new int[] {1, 0, 0, 0, 1});
-        pit(w, 156, 159, 0, 4);
-        floe(w, 2, 157);
-        gem(w, 0, 2.2f, 157.5f);
-        pit(w, 164, 166, 0, 1);
-        pit(w, 164, 166, 3, 4);
-        crow(w, 0, 170, true, 168, 172, 1.9f);
-        gemLine(w, 0, 164, 167);
-        w.flagZ = 172;
+        // --- ultimi muri e tronchi
+        wall(w, 156, 2);
+        wall(w, 160, 0);
+        wall(w, 164, 4);
+        jet(w, 3, 158, 2.6f, 0f);
+        jet(w, 1, 162, 2.6f, 1.3f);
+        log(w, 168, 2.6f, 0f);
+        log(w, 171, 2.6f, 1.3f);
+        crate(w, 1, 174); crate(w, 3, 174);
+        gem(w, 0, 0.7f, 157.5f); gem(w, -2, 0.7f, 161.5f); gem(w, 2, 0.7f, 165.5f);
+        w.flagZ = 175;
     }
 
-    /** Masso nella lava: una casella di terra in mezzo al lago. */
-    private static void floe(World3D w, int x, int z) {
-        set(w, x, z, 0);
-        set(w, x, z + 1, 0);
+    /** Muro di tronchi bruciati alto due caselle, con un solo varco in corrispondenza della casella gap. */
+    private static void wall(World3D w, int z, int gap) {
+        for (int x = 0; x < W; x++) set(w, x, z, x == gap ? 0 : 2);
+    }
+
+    /** Getto di fiamma nella casella (x, z): acceso il 40% del periodo, con un breve avviso prima. */
+    private static void jet(World3D w, int xi, int z, float period, float phase) {
+        w.jets.add(new float[] {xi - World3D.HALF + 0.5f, z + 0.5f, period, phase});
+    }
+
+    /** Tronco in fiamme che rotola da un lato all'altro del sentiero alla quota z. */
+    private static void log(World3D w, int z, float period, float phase) {
+        w.logs.add(new float[] {z + 0.5f, period, phase});
     }
 
     /** Corsia di una casella dentro un'area di burrone. */

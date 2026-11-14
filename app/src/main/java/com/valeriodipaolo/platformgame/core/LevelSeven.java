@@ -1,8 +1,9 @@
 package com.valeriodipaolo.platformgame.core;
 
 /**
- * Settimo livello, il prato in fiamme: l'incendio ha spaccato il terreno in burroni di lava. Colline bruciate, torri di massi
- * come appigli, corvi che volano nel fumo e nemici ovunque. Il terreno base occupa le righe 10 e 11.
+ * Settimo livello, il prato in fiamme: una corsa per salvarsi dal rogo. Un muro di fuoco insegue il robot a velocità
+ * crescente; getti di fiamma a tempo, ponti di legno bruciato che crollano appena li si tocca, una radura dove il fuoco
+ * si ferma e una scelta tra il terreno incandescente e la torre di tronchi. Il terreno base occupa le righe 10 e 11.
  */
 public final class LevelSeven {
     private LevelSeven() {}
@@ -10,102 +11,97 @@ public final class LevelSeven {
     private static final int H = 12, GROUND_Y = 10;
 
     public static Level build() {
-        Level lv = new Level(252, H);
+        Level lv = new Level(232, H);
         lv.id = "l7";
         lv.theme = 3;
-        ground(lv, 0, 34);
-        ground(lv, 39, 58);
-        ground(lv, 63, 92);
-        ground(lv, 98, 128);
-        ground(lv, 134, 168);
-        ground(lv, 174, 251);
+        ground(lv, 0, 32);
+        ground(lv, 59, 170);
+        ground(lv, 187, 231);
         lv.startX = 3;
         lv.startY = GROUND_Y - 1.2f;
 
-        // --- avvio: prato bruciacchiato
+        // il fuoco parte dietro e si accende davvero solo dopo l'avvio; il terzo valore è la distanza massima che tiene dal robot
+        lv.fireStart = -10f;
+        lv.fireZones = new float[][] {{12, 1.9f, 22}, {58, 2.3f, 20}, {96, 0f}, {126, 2.7f, 18}, {170, 3.1f, 16}, {188, 3.3f, 15}};
+
+        // --- avvio: corsa nel fumo, i primi getti
         shards(lv, 7, 9, 4);
         row(lv, 11, 7, "B?B");
-        enemy(lv, 16, Enemy.BEETLE, 0, 0);
-        hill(lv, 20, 29, 2);
-        shards(lv, 22, 6, 5);
-        enemy(lv, 26, Enemy.ACORN, 0, 0);
-        crow(lv, 31, 6, 26, 36);
+        enemy(lv, 15, Enemy.BEETLE, 0, 0);
+        jet(lv, 20, 0f, 3.4f);
+        jet(lv, 25, 1.5f, 3.4f);
+        shards(lv, 21, 6, 3);
+        enemy(lv, 28, Enemy.ACORN, 0, 0);
 
-        // --- primo burrone di lava (4 caselle)
-        shard(lv, 35, 7); shard(lv, 36, 6.2f); shard(lv, 37, 6.2f); shard(lv, 38, 7);
-        stairsUp(lv, 41, 3);
-        row(lv, 45, 5, "?B?");
-        enemy(lv, 50, Enemy.HOG, 0, 0);
-        enemy(lv, 54, Enemy.ACORN, 0, 0);
+        // --- il ponte che crolla: tavole bruciate sopra al burrone, ognuna cede mezzo secondo dopo il tocco
+        int[][] planks = {{34, 9}, {37, 8}, {40, 9}, {43, 7}, {46, 8}, {49, 9}, {52, 8}, {55, 9}};
+        for (int[] pl : planks) {
+            lv.set(pl[0], pl[1], Level.CRUMBLE);
+            shard(lv, pl[0], pl[1] - 2);
+        }
+        crow(lv, 45, 5f, 38, 54);
 
-        // --- burrone largo cinque: un mattone come appiglio
-        lv.set(60, 8, Level.BRICK);
-        shard(lv, 59, 7); shard(lv, 60, 6.2f); shard(lv, 61, 6.6f); shard(lv, 62, 7);
+        // --- l'onda di fuoco: sette getti accesi uno dopo l'altro; correndo alla velocità giusta si passa tra le fiamme
+        for (int i = 0; i < 7; i++) jet(lv, 64 + i * 4, i * 0.45f, 3.2f);
+        shards(lv, 66, 7, 3);
+        enemy(lv, 62, Enemy.BEETLE, 0, 0);
+        row(lv, 74, 6, "B?B");
+        enemy(lv, 92, Enemy.HOG, 0, 0);
 
-        // --- collina bruciata con passerella di mattoni
-        hill(lv, 65, 76, 3);
-        row(lv, 68, 5, "?B?");
-        crow(lv, 71, 4.5f, 65, 81);
-        enemy(lv, 78, Enemy.BEETLE, 0, 0);
-        enemy(lv, 82, Enemy.HOG, 0, 0);
-        row(lv, 81, 6, "BBHBB");
-        row(lv, 87, 4, "B?B");
-        lv.battery = new float[] {88, 2.6f};
+        // --- la radura: qui il fuoco si ferma. Un'altura di terra con la cella energetica in cima
+        hill(lv, 100, 114, 3);
+        row(lv, 102, 5, "?B?B?");
+        lv.battery = new float[] {107, 5.9f};
+        shards(lv, 98, 8, 3);
+        enemy(lv, 118, Enemy.ACORN, 0, 0);
+        enemy(lv, 121, Enemy.BEETLE, 0, 0);
 
-        // --- secondo burrone
-        shard(lv, 93, 7); shard(lv, 94, 6); shard(lv, 95, 6); shard(lv, 96, 7); shard(lv, 97, 7);
+        // --- il bosco bruciato: tronchi di diversa altezza con un getto tra l'uno e l'altro
+        column(lv, 131, 2);
+        column(lv, 135, 3);
+        column(lv, 139, 2);
+        column(lv, 143, 4);
+        jet(lv, 133, 0.0f, 2.8f);
+        jet(lv, 137, 1.1f, 2.8f);
+        jet(lv, 141, 2.0f, 2.8f);
+        shards(lv, 132, 7, 1); shards(lv, 136, 6, 1); shards(lv, 140, 7, 1);
+        enemy(lv, 146, Enemy.HOG, 0, 0);
 
-        // --- cresta di massi arroventati
-        column(lv, 100, 2);
-        column(lv, 102, 3);
-        column(lv, 104, 4);
-        shards(lv, 101, 6, 3);
-        enemy(lv, 108, Enemy.HOG, 0, 0);
-        crow(lv, 112, 6, 106, 120);
-        enemy(lv, 114, Enemy.ACORN, 0, 0);
-        enemy(lv, 117, Enemy.BEETLE, 0, 0);
-        row(lv, 119, 7, "B?B?B");
-        crow(lv, 124, 5, 116, 130);
-        column(lv, 126, 2);
+        // --- bivio: a terra i getti, in alto la torre di tavole che crollano (più gemme, meno fuoco)
+        jet(lv, 154, 0.0f, 2.6f);
+        jet(lv, 157, 0.9f, 2.6f);
+        jet(lv, 160, 1.8f, 2.6f);
+        lv.set(152, 8, Level.CRUMBLE); shard(lv, 152, 6);
+        lv.set(155, 6, Level.CRUMBLE); shard(lv, 155, 4);
+        lv.set(158, 4, Level.CRUMBLE); lv.set(159, 4, Level.CRUMBLE); shard(lv, 158, 2); shard(lv, 159, 2);
+        lv.set(162, 6, Level.CRUMBLE); shard(lv, 162, 4);
+        lv.set(165, 8, Level.CRUMBLE); shard(lv, 165, 6);
+        enemy(lv, 167, Enemy.ACORN, 0, 0);
 
-        // --- terzo burrone (cinque): due pilastri come appigli
-        column(lv, 130, 1);
-        column(lv, 132, 1);
-        shard(lv, 129, 7); shard(lv, 130, 6.2f); shard(lv, 131, 5.8f); shard(lv, 132, 6.2f); shard(lv, 133, 7);
+        // --- la lava: sedici caselle di vuoto, si attraversano su tavole sospese mentre il fuoco accelera
+        int[][] over = {{172, 9}, {175, 8}, {178, 7}, {181, 8}, {184, 9}};
+        for (int[] pl : over) {
+            lv.set(pl[0], pl[1], Level.CRUMBLE);
+            shard(lv, pl[0], pl[1] - 2);
+        }
+        crow(lv, 178, 4.6f, 172, 186);
 
-        // --- pianura dei corvi
-        enemy(lv, 138, Enemy.HOG, 0, 0);
-        enemy(lv, 141, Enemy.BEETLE, 0, 0);
-        crow(lv, 145, 6.2f, 139, 153);
-        crow(lv, 149, 4.6f, 139, 153);
-        row(lv, 146, 7, "?B?B?");
-        hill(lv, 154, 164, 2);
-        enemy(lv, 158, Enemy.ACORN, 0, 0);
-        shards(lv, 156, 6, 5);
+        // --- corsa finale: getti ravvicinati con ritmi diversi
+        for (int i = 0; i < 6; i++) jet(lv, 191 + i * 4, (i % 3) * 0.8f, 2.4f);
+        enemy(lv, 193, Enemy.HOG, 0, 0);
+        row(lv, 201, 7, "B?B");
+        enemy(lv, 213, Enemy.ACORN, 0, 0);
+        enemy(lv, 217, Enemy.BEETLE, 0, 0);
+        shards(lv, 205, 8, 4);
 
-        // --- quarto burrone
-        shard(lv, 169, 7); shard(lv, 170, 6); shard(lv, 171, 6); shard(lv, 172, 6); shard(lv, 173, 7);
-
-        // --- tratto finale
-        enemy(lv, 178, Enemy.ACORN, 0, 0);
-        enemy(lv, 181, Enemy.HOG, 0, 0);
-        row(lv, 183, 7, "B?B");
-        stairsUp(lv, 188, 4);
-        shards(lv, 189, 5, 4);
-        stairsDown(lv, 194, 4);
-        crow(lv, 200, 5.5f, 196, 210);
-        enemy(lv, 203, Enemy.HOG, 0, 0);
-        enemy(lv, 206, Enemy.BEETLE, 0, 0);
-        enemy(lv, 208, Enemy.ACORN, 0, 0);
-        row(lv, 209, 7, "?B?B?");
-        hill(lv, 216, 226, 3);
-        enemy(lv, 221, Enemy.HOG, 0, 0);
-        crow(lv, 228, 6, 222, 234);
-        shards(lv, 229, 9, 4);
-
-        lv.flagX = 244;
+        lv.flagX = 224;
         lv.flagBaseY = GROUND_Y;
         return lv;
+    }
+
+    /** Getto di fiamma che spunta dal terreno (o dalla cima di un'altura) alla colonna x. */
+    private static void jet(Level lv, int x, float phase, float period) {
+        lv.jets.add(new float[] {x, standRow(lv, x) + 1, period, phase});
     }
 
     private static void ground(Level lv, int x0, int x1) {

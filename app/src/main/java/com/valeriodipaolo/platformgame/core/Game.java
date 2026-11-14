@@ -41,6 +41,12 @@ public final class Game {
     public final List<float[]> pops = new ArrayList<float[]>();
     /** Cella energetica ancora sul terreno: {x, y}, oppure null se già presa in questa partita. */
     public float[] battery;
+    /** Posizione del muro di fuoco (NaN = nessun fuoco in questo livello). */
+    public float fireX = Float.NaN;
+    /** Piattaforme che crollano: {x, y, tempo trascorso da quando ci si sta sopra}; e quelle già crollate, da rimettere alla ripartenza. */
+    private final List<float[]> crumbling = new ArrayList<float[]>();
+    private final List<int[]> collapsed = new ArrayList<int[]>();
+    public static final float CRUMBLE_DELAY = 0.55f;
     public int bumpTx = -1, bumpTy = -1;
     public float bumpAge;
 
@@ -110,6 +116,9 @@ public final class Game {
         player.w = 0.62f;
         player.h = 1.2f;
         checkpointX = level.startX;
+        fireX = level.fireStart;
+        crumbling.clear();
+        collapsed.clear();
         place(level.startX);
         hp = MAX_HP;
         invuln = 0;
@@ -136,6 +145,10 @@ public final class Game {
         hp = MAX_HP;
         place(checkpointX);
         invuln = 2.5f;
+        for (int[] c : collapsed) level.set(c[0], c[1], Level.CRUMBLE);      // i ponti crollati si ricostruiscono
+        collapsed.clear();
+        crumbling.clear();
+        if (!Float.isNaN(fireX)) fireX = Math.min(fireX, checkpointX - 12f);
     }
 
     public void setInput(boolean left, boolean right, boolean jump) {
@@ -186,6 +199,7 @@ public final class Game {
 
         if (state == PLAYING) {
             stepPlayer(dt);
+            stepFire(dt);
             updateCheckpoint();
             stepEnemies(dt);
             pickups();
@@ -214,6 +228,60 @@ public final class Game {
         float target = player.x + player.w / 2 - viewW * 0.4f;
         camX += (target - camX) * Math.min(1f, 10f * dt);
         camX = Math.max(0, Math.min(camX, level.w - viewW));
+    }
+
+    /** Jet attivo (acceso) al tempo t: fase 0..1 del ciclo; acceso nel primo 40%, avviso negli ultimi 0,6 s. */
+    public static float jetPower(float[] j, float t) {
+        float per = j[2], ph = (t + j[3]) % per, on = per * 0.4f;
+        if (ph < on) return Math.min(1f, Math.min(ph / 0.12f, (on - ph) / 0.2f + 0.3f));
+        return 0f;
+    }
+
+    /** 0..1: quanto manca all'accensione (avviso con braci), solo negli ultimi 0,7 s prima. */
+    public static float jetWarn(float[] j, float t) {
+        float per = j[2], ph = (t + j[3]) % per, left = per - ph;
+        return left < 0.7f ? 1f - left / 0.7f : 0f;
+    }
+
+    /** Muro di fuoco, getti di fiamma e piattaforme che crollano. */
+    private void stepFire(float dt) {
+        Body p = player;
+        if (!Float.isNaN(fireX)) {
+            float speed = 0, gap = 1e9f;
+            for (float[] z : level.fireZones) if (p.x >= z[0]) { speed = z[1]; gap = z.length > 2 ? z[2] : 1e9f; }
+            fireX += speed * dt;
+            if (gap < 1e8f) fireX = Math.max(fireX, p.x - gap);          // il fuoco non resta mai troppo indietro
+            if (p.x + p.w * 0.5f < fireX) { die(); return; }
+        }
+        for (float[] j : level.jets) {
+            if (Math.abs(j[0] - p.x) > 3f) continue;
+            if (jetPower(j, time) > 0.5f && p.x + p.w > j[0] + 0.2f && p.x < j[0] + 0.8f && p.y + p.h > j[1] - 2.7f && p.y < j[1]) hurt();
+        }
+        // piattaforme che crollano: chi ci sta sopra le fa cedere dopo un attimo
+        if (p.onGround) {
+            int fy = (int) Math.floor(p.y + p.h + 0.02f);
+            for (int tx = (int) Math.floor(p.x); tx <= (int) Math.floor(p.x + p.w - 0.001f); tx++) {
+                if (level.get(tx, fy) != Level.CRUMBLE) continue;
+                boolean known = false;
+                for (float[] c : crumbling) if ((int) c[0] == tx && (int) c[1] == fy) known = true;
+                if (!known) crumbling.add(new float[] {tx, fy, 0});
+            }
+        }
+        for (int i = crumbling.size() - 1; i >= 0; i--) {
+            float[] c = crumbling.get(i);
+            c[2] += dt;
+            if (c[2] >= CRUMBLE_DELAY) {
+                level.set((int) c[0], (int) c[1], Level.EMPTY);
+                collapsed.add(new int[] {(int) c[0], (int) c[1]});
+                crumbling.remove(i);
+            }
+        }
+    }
+
+    /** Tempo trascorso (secondi) da quando la piattaforma è stata toccata, oppure -1 se intatta. */
+    public float crumbleAge(int tx, int ty) {
+        for (float[] c : crumbling) if ((int) c[0] == tx && (int) c[1] == ty) return c[2];
+        return -1f;
     }
 
     private void stepPlayer(float dt) {
@@ -286,7 +354,7 @@ public final class Game {
         if (!p.onGround || p.x <= checkpointX + 2f) return;
         int fx = (int) Math.floor(p.x + p.w / 2), row = (int) Math.floor(p.y + p.h + 0.01f);
         for (int dx = -2; dx <= 2; dx++) {
-            if (!level.solid(fx + dx, row) || level.solid(fx + dx, row - 1)) return;
+            if (!level.solid(fx + dx, row) || level.solid(fx + dx, row - 1) || level.get(fx + dx, row) == Level.CRUMBLE) return;
         }
         checkpointX = p.x;
     }

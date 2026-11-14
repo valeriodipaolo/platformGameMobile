@@ -54,6 +54,7 @@ public final class Renderer {
                         break;
                     case Level.BRICK:
                     case Level.SECRET: img = th == 3 ? Img.FR_BRICK : th == 2 ? Img.AR_BRICK : au ? Img.AU_BRICK : Img.BRICK; break;
+                    case Level.CRUMBLE: img = Img.FR_CRUMBLE; break;
                     case Level.BONUS: img = th == 3 ? Img.FR_BONUS : th == 2 ? Img.AR_BONUS : au ? Img.AU_BONUS : Img.BONUS; break;
                     case Level.USED: img = th == 3 ? Img.FR_USED : th == 2 ? Img.AR_USED : au ? Img.AU_USED : Img.USED; break;
                     default: img = th == 3 ? Img.FR_STONE : th == 2 ? Img.AR_STONE : au ? Img.AU_STONE : Img.STONE; break;
@@ -64,7 +65,15 @@ public final class Renderer {
                 }
                 float x0 = Math.round((tx - cam) * s), x1 = Math.round((tx + 1 - cam) * s);
                 float y0 = Math.round(ty * s), y1 = Math.round((ty + 1) * s);
-                p.image(img, x0, y0 + off, x1 - x0, y1 - y0, false, 1);
+                float ca = 1f, cj = 0f;
+                if (c == Level.CRUMBLE) {                  // sta per cedere: trema e svanisce
+                    float age = g.crumbleAge(tx, ty);
+                    if (age >= 0) {
+                        cj = (float) Math.sin(g.time * 90f) * 0.05f * s;
+                        ca = 1f - 0.5f * age / Game.CRUMBLE_DELAY;
+                    }
+                }
+                p.image(img, x0 + cj, y0 + off, x1 - x0, y1 - y0, false, ca);
                 if (img == Img.GRASS && !lv.solid(tx, ty - 1)) {
                     p.image(Img.FRINGE, x0, y0 - 0.27f * s, x1 - x0, 0.29f * s, false, 1);
                 } else if ((img == Img.AU_GRASS || img == Img.AR_GRASS || img == Img.FR_GRASS) && !lv.solid(tx, ty - 1)) {
@@ -127,6 +136,38 @@ public final class Renderer {
             }
             if (e.type == Enemy.CROW && e.flatTime > 0) h *= 0.35f;      // il corvo schiacciato
             p.image(img, x - w / 2, (e.y + e.h + 0.03f) * s - h, w, h, e.dir > 0, 1);
+        }
+
+        // ---- getti di fiamma a tempo e muro di fuoco
+        for (float[] j : lv.jets) {
+            float jx = (j[0] - cam) * s;
+            if (jx < -2 * s || jx > sw + s) continue;
+            float pw = Game.jetPower(j, g.time), warn = Game.jetWarn(j, g.time);
+            if (pw > 0) {
+                float hgt = 3.0f * s * (0.45f + 0.55f * pw);
+                p.image(Img.R3C_FLAME, jx - 0.45f * s, j[1] * s - hgt, 1.9f * s, hgt, false, 0.95f);
+            } else if (warn > 0) {                        // avviso: fiammelle basse e braci sul terreno
+                float hgt = (0.35f + 0.6f * warn) * s;
+                p.image(Img.R3C_FLAME, jx + 0.1f * s, j[1] * s - hgt, 0.8f * s, hgt, false, 0.5f + 0.5f * warn);
+            }
+        }
+        if (!Float.isNaN(g.fireX)) {
+            float dgap = g.player.x - g.fireX;
+            if (dgap < 16f) {                           // il fuoco è vicino: bagliore rosso sul bordo sinistro
+                float k = (float) Math.pow(1f - Math.max(0f, dgap) / 16f, 1.5f);
+                for (int i = 0; i < 8; i++) p.rect(i * 0.18f * s, 0, 0.18f * s, sh, ((int) (k * (150 - i * 17)) << 24) | 0xFF4A10);
+            }
+            float fx = (g.fireX - cam) * s;
+            if (fx > -4 * s) {
+                p.rect(Math.min(0f, fx - 6 * s), 0, Math.max(fx + 0.4f * s, 0f) - Math.min(0f, fx - 6 * s), sh, 0xC8A01806);
+                for (int i = 0; i < 9; i++) {
+                    float fl = 0.85f + 0.3f * (float) Math.sin(g.time * (6f + i) + i * 1.9f);
+                    float fh = 5.2f * s * fl, fwid = 2.8f * s;
+                    float fy = sh - fh + (i % 3) * 0.2f * s + 0.8f * s;
+                    p.image(Img.R3C_FLAME, fx - 1.8f * s + (i % 2) * 0.5f * s, Math.max(-2f * s, fy - (i / 3) * 2.2f * s), fwid, fh, i % 2 == 1, 0.95f);
+                }
+                p.image(Img.R3C_FLAME, fx - 2.4f * s, 0, 3.2f * s, sh * 0.55f, false, 0.7f);
+            }
         }
 
         // ---- giocatore

@@ -58,7 +58,7 @@ public final class Scene3D {
     private float fogR = FOG_R, fogG = FOG_G, fogB = FOG_B;
     /** Quanto il bordo dei burroni si arrotonda verso il basso (0 = spigolo vivo). */
     private float lip;
-    private Mesh flame, ember;
+    private Mesh flame, ember, logMesh;
     private Mesh crate, gem, battery, batteryGlow, shadow, ring, gateStone, gateDoor;
     private final HeroModel hero = new HeroModel();
     private int builtFor = -1;
@@ -995,6 +995,10 @@ public final class Scene3D {
             b.quad(-0.5f, -0.5f, 0, 0.5f, -0.5f, 0, 0.5f, 0.5f, 0, -0.5f, 0.5f, 0, 0, 0, 1, 0, 0, 1, 1);
             b.quad(0.5f, -0.5f, 0, -0.5f, -0.5f, 0, -0.5f, 0.5f, 0, 0.5f, 0.5f, 0, 0, 0, -1, 0, 0, 1, 1);
             ember = b.build(Img.R3C_EMBER, true, true);
+            b = new MeshBuilder().color(150, 105, 80);                 // tronco in fiamme che rotola (asse lungo z)
+            b.cylinder(0, -0.65f, 0.65f, 0, 0.42f, 0.42f, 12, true, true);
+            logMesh = b.build(Img.R3_BARK, false, true);
+            logMesh.spec = 0.05f; logMesh.shine = 8f;
         }
         if (aurora) {                                                  // casse di ghiaccio con la stella luminosa
             b = new MeshBuilder();
@@ -1283,7 +1287,7 @@ public final class Scene3D {
             Mat4.scale(m, ss, 1, ss);
             g.draw(shadow, m, 1, 1, 1, 0.8f, 1);
         }
-        if (fire) drawTreeFlames(w, g);
+        if (fire) { drawTreeFlames(w, g); drawFireHazards(w, g); }
         for (int c = 0; c < nChunks; c++) {
             float cz0 = zBase + c * CH;
             if (land[K_RAY][c] != null && cz0 + CH > camZ - 6f && cz0 < camZ + 60f) g.draw(land[K_RAY][c], ident, 1, 1, 1, 0.15f, 1);
@@ -1359,6 +1363,51 @@ public final class Scene3D {
             float sz = (0.10f + 0.12f * hs) * (1f - 0.6f * t);
             Mat4.scale(m, sz, sz, sz);
             g.draw(ember, m, 1f, 0.75f + 0.2f * hs, 0.4f, 1f, 1f);
+        }
+    }
+
+    /** Muro di fuoco alle spalle, getti di fiamma a tempo e tronchi in fiamme che rotolano. */
+    private void drawFireHazards(World3D w, Gfx3D g) {
+        float near = w.pz - 8, far = w.pz + 70;
+        for (float[] l : w.logs) {
+            if (l[0] < near || l[0] > far) continue;
+            float lx = World3D.logX(l, w.time), gy = groundAt(Math.max(-2.4f, Math.min(2.4f, lx)), l[0]);
+            Mat4.setIdentity(m);
+            Mat4.translate(m, lx, gy + 0.42f, l[0]);
+            Mat4.rotateX(m, (float) Math.PI / 2);
+            Mat4.rotateY(m, lx * 2.4f);
+            g.draw(logMesh, m, 1f, 0.85f, 0.7f, 1f, 0.3f);
+            for (int k = 0; k < 2; k++) {                  // fiamme sul dorso
+                float fl = 0.8f + 0.35f * (float) Math.sin(w.time * (9f + k * 4f) + l[0] + k);
+                Mat4.setIdentity(m);
+                Mat4.translate(m, lx, gy + 0.7f, l[0] + (k - 0.5f) * 0.55f);
+                Mat4.rotateY(m, w.time * 0.7f + k * 1.5f);
+                Mat4.scale(m, 0.95f * fl, 1.25f * fl, 0.95f * fl);
+                g.draw(flame, m, 1f, 1f, 1f, 0.92f, 1f);
+            }
+        }
+        for (float[] j : w.jets) {
+            if (j[1] < near || j[1] > far) continue;
+            float pw = World3D.jetPower(j, w.time), warn = World3D.jetWarn(j, w.time);
+            float hgt = pw > 0 ? 2.5f * (0.45f + 0.55f * pw) : warn > 0 ? 0.25f + 0.45f * warn : 0f;
+            if (hgt <= 0) continue;
+            float gy = groundAt(j[0], j[1]);
+            for (int k = 0; k < 2; k++) {
+                Mat4.setIdentity(m);
+                Mat4.translate(m, j[0], gy, j[1]);
+                Mat4.rotateY(m, k * 0.9f + w.time * 0.5f);
+                Mat4.scale(m, 1.2f * (pw > 0 ? 1f : 0.6f), hgt, 1.2f * (pw > 0 ? 1f : 0.6f));
+                g.draw(flame, m, 1f, 1f, 1f, pw > 0 ? 0.95f : 0.45f + 0.45f * warn, 1f);
+            }
+        }
+        if (!Float.isNaN(w.fireZ) && w.fireZ > camZ - 12f) {
+            for (int i = -4; i <= 4; i++) {
+                float fl = 0.85f + 0.3f * (float) Math.sin(w.time * (6f + i * 0.7f) + i * 1.9f);
+                Mat4.setIdentity(m);
+                Mat4.translate(m, i * 1.3f, groundAt(Math.max(-2.4f, Math.min(2.4f, i * 1.3f)), Math.max(0f, w.fireZ)) - 0.3f, w.fireZ + 0.3f * (i % 2));
+                Mat4.scale(m, 3.2f, 6.5f * fl, 3.2f);
+                g.draw(flame, m, 1f, 1f, 1f, 0.95f, 1f);
+            }
         }
     }
 

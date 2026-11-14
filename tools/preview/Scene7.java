@@ -16,7 +16,10 @@ public class Scene7 {
         String res = a[0], out = a[1];
         for (int i = 0; i < Img.COUNT; i++) Preview.imgs[i] = javax.imageio.ImageIO.read(new File(res, Img.NAMES[i] + ".png"));
         at(4, "g_start.png", out);
-        at(66, "g_hill.png", out);
-        at(102, "g_ridge.png", out);
+        at(33, "g_bridge.png", out);
+        at(66, "g_wave.png", out);
+        at(130, "g_trunks.png", out);
+        at(152, "g_tower.png", out);
+        at(176, "g_lava.png", out);
     }
 }

@@ -16,13 +16,11 @@ public class Scene8 {
         String res = a[0], out = a[1];
         for (int i = 0; i < Img.COUNT; i++) Preview.imgs[i] = javax.imageio.ImageIO.read(new java.io.File(res, Img.NAMES[i] + ".png"));
         shot("f_start.png", out, 0, 1.5f, 0.2f, false);
-        shot("f_slab.png", out, 0, 16, 0.2f, false);
-        shot("f_diag.png", out, 0, 25.5f, 0.2f, false);
-        shot("f_lake.png", out, 2, 71, 0.2f, false);
-        shot("f_lake2.png", out, 2, 80, 0.2f, false);
-        shot("f_cave.png", out, 1, 94.5f, 0.2f, false);
-        shot("f_zig.png", out, 2, 107, 0.2f, false);
-        shot("f_grove.png", out, 0, 130, 0.3f, false);
-        shot("f_end.png", out, 0, 160, 0.3f, false);
+        shot("f_logs.png", out, 0, 14, 0.8f, false);
+        shot("f_slalom.png", out, 2, 37, 1.0f, false);
+        shot("f_coals.png", out, 0, 63, 1.2f, false);
+        shot("f_bridge.png", out, 0, 89, 1.0f, false);
+        shot("f_rest.png", out, 0, 112, 0.5f, false);
+        shot("f_inferno.png", out, 0, 126, 0.9f, false);
     }
 }

@@ -39,6 +39,14 @@ public final class World3D {
     /** Gemme che escono dalle casse rotte: {x, y, z, età}. */
     public final List<float[]> pops = new ArrayList<float[]>();
     public float[] battery;
+    /**
+     * Incendio (livello 8): muro di fuoco che insegue da dietro, getti di fiamma a tempo {x, z, periodo, fase} e tronchi in fiamme
+     * che rotolano di traverso {z, periodo, fase}. fireZones = {{z, velocità}, ...}: vale la zona più avanzata raggiunta.
+     */
+    public float fireStart = Float.NaN, fireZ = Float.NaN;
+    public float[][] fireZones = new float[0][];
+    public final List<float[]> jets = new ArrayList<float[]>();
+    public final List<float[]> logs = new ArrayList<float[]>();
 
     /** Comandi a carro armato: joyX gira il robot, joyY lo fa avanzare o indietreggiare nella direzione in cui guarda. */
     public boolean tank;
@@ -81,6 +89,7 @@ public final class World3D {
         toastTime = 0;
         cpX = 0;
         cpZ = 1.5f;
+        fireZ = fireStart;
         hp = MAX_HP;
         invuln = 0;
         place();
@@ -190,6 +199,7 @@ public final class World3D {
         }
         if (state == PLAYING) {
             stepPlayer(dt);
+            stepFire(dt);
             stepEnemies(dt);
             pickups();
             if (state == PLAYING && pz >= flagZ - 0.4f) win();
@@ -202,6 +212,7 @@ public final class World3D {
                     hp = MAX_HP;
                     place();
                     invuln = 2.5f;
+                    if (!Float.isNaN(fireZ)) fireZ = Math.min(fireZ, cpZ - 14f);
                 } else {
                     state = GAME_OVER;
                     stateTime = 0;
@@ -215,6 +226,43 @@ public final class World3D {
         }
         jumpWas = jump;
         spinWas = spin;
+    }
+
+    /** Quanto è acceso un getto (0..1), e quanto manca all'accensione (avviso). */
+    public static float jetPower(float[] j, float t) {
+        float per = j[2], ph = (t + j[3]) % per, on = per * 0.4f;
+        if (ph < on) return Math.min(1f, Math.min(ph / 0.12f, (on - ph) / 0.2f + 0.3f));
+        return 0f;
+    }
+
+    public static float jetWarn(float[] j, float t) {
+        float per = j[2], ph = (t + j[3]) % per, left = per - ph;
+        return left < 0.7f ? 1f - left / 0.7f : 0f;
+    }
+
+    /** Posizione di traverso di un tronco che rotola: attraversa il corridoio e ricompare dall'altro lato. */
+    public static float logX(float[] l, float t) {
+        float u = ((t + l[2]) % l[1]) / l[1];
+        return -HALF - 0.9f + (W + 1.8f) * u;
+    }
+
+    private void stepFire(float dt) {
+        if (!Float.isNaN(fireZ)) {
+            float speed = 0, gap = 1e9f;
+            for (float[] z : fireZones) if (pz >= z[0]) { speed = z[1]; gap = z.length > 2 ? z[2] : 1e9f; }
+            fireZ += speed * dt;
+            if (gap < 1e8f) fireZ = Math.max(fireZ, pz - gap);          // il fuoco non resta mai troppo indietro
+            if (pz < fireZ + 0.2f) { die(); return; }
+        }
+        for (float[] j : jets) {
+            if (Math.abs(j[1] - pz) > 3f) continue;
+            if (jetPower(j, time) > 0.5f && Math.abs(px - j[0]) < 0.62f && Math.abs(pz - j[1]) < 0.62f && py < topAt(j[0], j[1]) + 2.4f) hurt();
+        }
+        for (float[] l : logs) {
+            if (Math.abs(l[0] - pz) > 3f) continue;
+            float lx = logX(l, time);
+            if (Math.abs(px - lx) < 0.75f && Math.abs(pz - l[0]) < 0.65f && py < topAt(lx, l[0]) + 0.85f) hurt();
+        }
     }
 
     private void stepPlayer(float dt) {
