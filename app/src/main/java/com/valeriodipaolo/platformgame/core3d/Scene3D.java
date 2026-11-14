@@ -12,8 +12,14 @@ public final class Scene3D {
     private static final int CH = 16;                          // il paesaggio è diviso in blocchi lunghi 16 m: si disegnano solo quelli vicini
 
     // tipi di mesh a blocchi
-    private static final int K_GRASS = 0, K_DIRT = 1, K_STONE = 2, K_BANK = 3, K_FOREST = 4, K_TRUNK = 5, K_CROWN = 6,
-            K_TUFT = 7, K_FERN = 8, K_FLOWER = 9, K_ROCK = 10, K_RAY = 11, K_FIR = 12, K_BLOB = 13, K_N = 14;
+    static final int K_GRASS = 0, K_DIRT = 1, K_STONE = 2, K_BANK = 3, K_FOREST = 4, K_TRUNK = 5, K_CROWN = 6,
+            K_TUFT = 7, K_FERN = 8, K_FLOWER = 9, K_ROCK = 10, K_RAY = 11, K_FIR = 12, K_BLOB = 13, K_PROP = 14, K_GLOW = 15, K_TRAIL = 16, K_N = 17;
+    /** Sentiero di terra battuta che serpeggia in mezzo al prato: mezza larghezza e posizione del centro. */
+    static final float TRAIL_HW = 0.8f;
+
+    static float trailX(float z) {
+        return 1.25f * (float) Math.sin(z * 0.19f) + 0.55f * (float) Math.sin(z * 0.071f + 1.3f);
+    }
     private static final int[] K_TEX_SUMMER = {Img.R3_GRASS, Img.R3_DIRT, Img.R3_ROCK, Img.R3_GRASS, Img.R3_FOREST, Img.R3_BARK,
             Img.R3_BRANCH, Img.R3_TUFT, Img.R3_FERN, Img.R3_FLOWERS, Img.R3_ROCK, Img.R3_RAY, Img.R3_FIRTREE, Img.R3A_FOLIAGE};
     private static final int[] K_TEX_AUTUMN = {Img.R3A_GRASS, Img.R3_DIRT, Img.R3_ROCK, Img.R3A_GRASS, Img.R3A_FOREST, Img.R3_BARK,
@@ -21,7 +27,7 @@ public final class Scene3D {
     private static final int[] K_TEX_AURORA = {Img.R3B_GRASS, Img.R3B_ICE, Img.R3_ROCK, Img.R3B_GRASS, Img.R3B_FOREST, Img.R3_BARK,
             Img.R3B_BRANCH, Img.R3B_TUFT, Img.R3B_TUFT, Img.R3B_FLOWERS, Img.R3_ROCK, Img.R3_RAY, Img.R3B_TREE, Img.R3B_ICE};
     /** Tinte delle chiome d'autunno: arancio, rosso, giallo, ruggine, verde, zucca. */
-    private static final float[][] AUTUMN_TINT = {{1.0f, 0.76f, 0.42f}, {1.0f, 0.50f, 0.38f}, {1.0f, 0.96f, 0.46f},
+    static final float[][] AUTUMN_TINT = {{1.0f, 0.76f, 0.42f}, {1.0f, 0.50f, 0.38f}, {1.0f, 0.96f, 0.46f},
             {0.96f, 0.66f, 0.36f}, {0.76f, 0.9f, 0.40f}, {1.0f, 0.60f, 0.28f}};
 
     private static final class Tree {
@@ -42,18 +48,20 @@ public final class Scene3D {
     private int fadeZ0, fadeNz;
     private Mesh leaf, crateStar;
     private final FoeModels foes = new FoeModels();
-    private boolean autumn, aurora;
+    boolean autumn, aurora;
+    private final Decor decor = new Decor(this);
+    private Mesh wing;
     private Mesh flake, curtain;
     private int[] ktex = K_TEX_SUMMER;
     private float fogR = FOG_R, fogG = FOG_G, fogB = FOG_B;
     /** Quanto il bordo dei burroni si arrotonda verso il basso (0 = spigolo vivo). */
     private float lip;
     private Mesh crate, gem, battery, batteryGlow, shadow, ring, gateStone, gateDoor;
-    private Mesh robotBody, robotEyes, robotLeg, robotArm;
+    private final HeroModel hero = new HeroModel();
     private int builtFor = -1;
     private float camX, camY = 0, camZ;
     private boolean camInit;
-    private final float[] lt = new float[3];
+    final float[] lt = new float[3];
 
     // ------------------------------------------------------------------ rumore e luce calcolata in anticipo
 
@@ -64,7 +72,7 @@ public final class Scene3D {
         return (h & 0xFFFFFF) / 16777215f;
     }
 
-    private static float vnoise(float x, float z, int s) {
+    static float vnoise(float x, float z, int s) {
         int xi = (int) Math.floor(x), zi = (int) Math.floor(z);
         float fx = x - xi, fz = z - zi;
         fx = fx * fx * (3 - 2 * fx);
@@ -77,7 +85,7 @@ public final class Scene3D {
      * Moltiplicatore di colore in (x, z): variazione dell'erba, ombre degli alberi proiettate dal sole (più fredde e azzurre,
      * perché lì arriva solo la luce del cielo) con macchie di luce tra le foglie. Risultato in lt[0..2].
      */
-    private void lightAt(float x, float z, float base) {
+    void lightAt(float x, float z, float base) {
         float macro = 0.84f + 0.32f * vnoise(x * 0.17f, z * 0.17f, 9) + 0.08f * (vnoise(x * 0.9f, z * 0.9f, 4) - 0.5f);
         float dry = vnoise(x * 0.11f + 30, z * 0.11f, 3);
         float r = macro * (1f + 0.22f * dry), g = macro * (1f + 0.04f * dry), b = macro * (1f - 0.28f * dry);
@@ -136,7 +144,7 @@ public final class Scene3D {
         return Math.max(0.4f, ao);
     }
 
-    private MeshBuilder mb(int kind, float z) {
+    MeshBuilder mb(int kind, float z) {
         int c = Math.max(0, Math.min(nChunks - 1, (int) Math.floor((z - zBase) / CH)));
         if (mbs[kind][c] == null) mbs[kind][c] = new MeshBuilder();
         return mbs[kind][c];
@@ -176,7 +184,7 @@ public final class Scene3D {
         }
     }
 
-    private float fadeAt(float x, float z) {
+    float fadeAt(float x, float z) {
         int nx = World3D.W * 2 + 1;
         float gx = (Math.max(-World3D.HALF, Math.min(World3D.HALF, x)) + World3D.HALF) * 2f;
         float gz = Math.max(0, Math.min(fadeNz - 1.001f, (z - fadeZ0) * 2f));
@@ -198,7 +206,7 @@ public final class Scene3D {
     }
 
     /** Altezza del terreno: sentiero ondulato, sponde che salgono con una curva dolce, bosco a dossi. */
-    private float groundAt(float x, float z) {
+    float groundAt(float x, float z) {
         float y = groundBase(x, z);
         return lip > 0 ? y - lipDrop(x, z) : y;
     }
@@ -322,6 +330,7 @@ public final class Scene3D {
                             }
                         }
                     }
+                    trailCell(w, x, z);
                 } else {
                     // il terreno continua sotto ai massi (in ombra): dagli spigoli arrotondati non si deve vedere il vuoto
                     MeshBuilder gs = mb(K_GRASS, z);
@@ -329,11 +338,13 @@ public final class Scene3D {
                     for (int k : order) ground(gs, gc[k][0], gc[k][1], gc[k][0] * 0.5f, gc[k][1] * 0.5f, 0.42f, 0.42f, 0.42f);
                     MeshBuilder s = mb(K_STONE, z);
                     boolean round = autumn || aurora;
+                    float rr = autumn || aurora ? 0.2f : 0.11f;
+                    blockTop(w, x, z, h);
                     s.colorf(0.24f, 0.23f, 0.22f);
                     s.box(fx + 0.5f, -0.2f, z + 0.5f, 0.94f, 0.7f, 0.94f);
                     for (int k = 0; k < h; k++) {
                         s.colorf(0.96f + 0.08f * hash(x, z, k), 0.96f + 0.06f * hash(x, z, k + 7), 0.96f);
-                        if (round) s.roundBox(fx + 0.5f, k + 0.5f, z + 0.5f, 0.98f, 0.98f, 0.98f, 0.2f);
+                        if (round) s.roundBox(fx + 0.5f, k + 0.5f, z + 0.5f, 0.98f, 0.98f, 0.98f, rr);
                         else s.box(fx + 0.5f, k + 0.5f, z + 0.5f, 1, 1, 1);
                         if (round) {       // nucleo scuro e giunti pieni: tra un masso arrotondato e l'altro non si vede attraverso
                             s.colorf(0.26f, 0.25f, 0.24f);
@@ -390,6 +401,7 @@ public final class Scene3D {
 
         buildTrees();
         buildUndergrowth(w, z0, z1);
+        decor.build(w, z0, z1);
         buildRays(z0, z1);
         buildObjects();
 
@@ -398,11 +410,13 @@ public final class Scene3D {
         for (int k = 0; k < K_N; k++) {
             for (int c = 0; c < nChunks; c++) {
                 if (mbs[k][c] == null) continue;
-                Mesh mesh = mbs[k][c].build(ktex[k], k == K_RAY, true);
+                Mesh mesh = mbs[k][c].build(k == K_TRAIL ? Img.R3_TRAIL : k < ktex.length ? ktex[k] : -1, k == K_RAY || k == K_TRAIL, true);
                 if (k == K_CROWN || k == K_TUFT || k == K_FERN || k == K_FLOWER || k == K_FIR) mesh.cutout = true;
                 switch (k) {
                     case K_GRASS: case K_BANK: mesh.spec = 0.05f; mesh.shine = 10f; break;
                     case K_STONE: case K_ROCK: mesh.spec = 0.07f; mesh.shine = 14f; break;
+                    case K_PROP: mesh.spec = 0.12f; mesh.shine = 22f; break;
+                    case K_GLOW: mesh.spec = 0.9f; mesh.shine = 50f; break;
                     // il fogliame si vede da entrambi i lati: niente riflesso, che sul rovescio lo farebbe apparire grigio
                     default: break;
                 }
@@ -410,6 +424,64 @@ public final class Scene3D {
             }
         }
         mbs = null;
+    }
+
+    /** Tratto di sentiero battuto sopra una casella di prato: quattro strisce per lato, appoggiate al terreno. */
+    private void trailCell(World3D w, int x, int z) {
+        float fx = x - World3D.HALF;
+        MeshBuilder t = mb(K_TRAIL, z);
+        float[] tint = aurora ? new float[] {1.25f, 1.7f, 2.75f} : autumn ? new float[] {0.92f, 0.82f, 0.74f} : new float[] {1f, 0.96f, 0.9f};
+        int[] order = {0, 1, 2, 0, 2, 3};
+        for (int sz = 0; sz < 2; sz++) {
+            float za = z + sz * 0.5f, zb = za + 0.5f;
+            float ca = trailX(za), cb = trailX(zb);
+            for (int k = 0; k < 4; k++) {
+                float u0 = k / 4f, u1 = (k + 1) / 4f;
+                float xa0 = ca + (u0 * 2 - 1) * TRAIL_HW, xa1 = ca + (u1 * 2 - 1) * TRAIL_HW, xb0 = cb + (u0 * 2 - 1) * TRAIL_HW, xb1 = cb + (u1 * 2 - 1) * TRAIL_HW;
+                float lo = Math.max(fx, Math.min(xa0, xb0)), hi = Math.min(fx + 1, Math.max(xa1, xb1));
+                if (hi <= lo) continue;
+                // ritaglio sulla casella: i vertici restano dentro [fx, fx+1]
+                float[][] c = {{Math.max(fx, Math.min(fx + 1, xa0)), za, 0}, {Math.max(fx, Math.min(fx + 1, xa1)), za, 0},
+                        {Math.max(fx, Math.min(fx + 1, xb1)), zb, 0}, {Math.max(fx, Math.min(fx + 1, xb0)), zb, 0}};
+                c[0][2] = (c[0][0] - ca) / (2 * TRAIL_HW) + 0.5f; c[1][2] = (c[1][0] - ca) / (2 * TRAIL_HW) + 0.5f;
+                c[2][2] = (c[2][0] - cb) / (2 * TRAIL_HW) + 0.5f; c[3][2] = (c[3][0] - cb) / (2 * TRAIL_HW) + 0.5f;
+                for (int q : order) {
+                    float px = c[q][0], pz = c[q][1];
+                    lightAt(px, pz, 1f);
+                    float ao = aoAt(w, px, pz);
+                    t.colorf(lt[0] * tint[0] * ao, lt[1] * tint[1] * ao, lt[2] * tint[2] * ao);
+                    t.vert(px, groundAt(px, pz) + 0.03f, pz, 0, 1, 0, c[q][2], pz * 0.5f);
+                }
+            }
+        }
+    }
+
+    /** In cima ai massi del percorso: neve nel livello dell'aurora, altrimenti ciuffi d'erba corta e muschio. */
+    private void blockTop(World3D w, int x, int z, int h) {
+        float fx = x - World3D.HALF;
+        Random r = new Random(x * 131 + z * 17);
+        if (aurora) {
+            MeshBuilder p = mb(K_PROP, z);
+            lightAt(fx + 0.5f, z + 0.5f, 1f);
+            p.colorf(lt[0] * 2.3f, lt[1] * 2.35f, lt[2] * 2.4f);
+            p.roundBox(fx + 0.5f, h + 0.02f, z + 0.5f, 1.03f, 0.16f, 1.03f, 0.075f);
+            return;
+        }
+        for (int k = 0; k < 3; k++) {
+            float tx = fx + 0.12f + 0.76f * r.nextFloat(), tz = z + 0.12f + 0.76f * r.nextFloat();
+            tuft(K_TUFT, tx, h - 0.02f, tz, 0.13f + 0.1f * r.nextFloat(), 3, 0.3f, r);
+        }
+        // ciuffi al piede delle facce libere: il masso sembra affondare nell'erba
+        int[][] nb = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+        for (int[] d : nb) {
+            int ax = x + d[0], az = z + d[1];
+            if (ax < 0 || ax >= World3D.W || vis(w, ax, az) != 0) continue;
+            for (int k = 0; k < 2; k++) {
+                float o = 0.15f + 0.7f * r.nextFloat();
+                float tx = fx + 0.5f + d[0] * 0.56f + (d[0] == 0 ? o - 0.5f : 0), tz = z + 0.5f + d[1] * 0.56f + (d[1] == 0 ? o - 0.5f : 0);
+                tuft(K_TUFT, tx, groundAt(tx, tz), tz, 0.2f + 0.16f * r.nextFloat(), 3, 0.3f, r);
+            }
+        }
     }
 
     // ---- alberi
@@ -531,7 +603,7 @@ public final class Scene3D {
      * Lobo di fogliame: un ellissoide pieno, irregolare, con normali morbide e un mosaico di foglie come texture.
      * Più scuro in basso (ombra interna), più chiaro in cima; il vento lo fa oscillare in alto.
      */
-    private void foliageLobe(MeshBuilder bb, float cx, float cy, float cz, float rx, float ry, float rz, int segs, int rings,
+    void foliageLobe(MeshBuilder bb, float cx, float cy, float cz, float rx, float ry, float rz, int segs, int rings,
                              float[] tc, float tone, float swayK, Random r) {
         float[] ph = {r.nextFloat() * 6.28f, r.nextFloat() * 6.28f, r.nextFloat() * 6.28f, r.nextFloat() * 6.28f};
         int n = (rings + 1) * (segs + 1);
@@ -584,7 +656,7 @@ public final class Scene3D {
         tb.cylinder(x, y0 + 0.7f, top, z, r0 * 1.1f, r0 * 0.45f, 7, false, false);
         float rh = rad * 1.3f + 0.3f, rv = h * 0.26f;
         float wind = Math.min(1.4f, 0.4f + h * 0.1f);
-        int segs = lobes >= 4 ? 9 : 7, rings = lobes >= 4 ? 6 : 4;
+        int segs = lobes >= 4 ? 10 : 7, rings = lobes >= 4 ? 6 : 4;
         float[][] centers = new float[lobes][3];
         for (int i = 0; i < lobes; i++) {
             float a = r.nextFloat() * 6.283f + i * 2.4f;
@@ -593,11 +665,12 @@ public final class Scene3D {
             float cy = crownY + (i == 0 ? rv * 0.5f : rv * (r.nextFloat() * 1.0f - 0.35f));
             float lr = rh * (i == 0 ? 0.86f : 0.58f + 0.2f * r.nextFloat());
             centers[i][0] = cx; centers[i][1] = cy; centers[i][2] = cz;
+            if (i > 0) FoeModels.tube(tb, x, crownY - rv * 0.35f, z, cx, cy - lr * 0.2f, cz, r0 * 0.5f, r0 * 0.22f, 5, FoeModels.flat(new float[] {k, k * 0.92f, k * 0.84f}));
             float[] ct = {tc[0] * (0.9f + 0.2f * r.nextFloat()), tc[1] * (0.88f + 0.24f * r.nextFloat()), tc[2] * (0.88f + 0.24f * r.nextFloat())};
             float tone = (0.92f + 0.2f * r.nextFloat()) * (0.9f + 0.15f * tint);
             foliageLobe(bb, cx, cy, cz, lr, lr * 1.0f, lr, segs, rings, ct, tone, wind, r);
             // foglie sciolte sul contorno del lobo
-            int fringe = lobes >= 4 ? 6 : 3;
+            int fringe = lobes >= 4 ? 10 : 3;
             for (int f = 0; f < fringe; f++) {
                 float fa = r.nextFloat() * 6.283f, fu = r.nextFloat() * 1.6f - 0.7f, fl = (float) Math.sqrt(1 - fu * fu);
                 float fx = cx + (float) Math.cos(fa) * fl * lr * 1.02f, fy = cy + fu * lr * 0.85f, fz = cz + (float) Math.sin(fa) * fl * lr * 1.02f;
@@ -638,6 +711,7 @@ public final class Scene3D {
     private void buildTrees() {
         Random r = new Random(11);
         for (Tree t : trees) {
+            if (t.row == 0) decor.roots(t.x, t.y, t.z, 0.1f + 0.014f * t.h, 3, r);
             if (autumn) {
                 if (t.row == 0) broadleaf(t.x, t.y, t.z, t.h, t.rad, t.tint, 4, r);
                 else if (t.row == 1) broadleaf(t.x, t.y, t.z, t.h, t.rad, t.tint, 3, r);
@@ -732,6 +806,7 @@ public final class Scene3D {
                 float x = xx + r.nextFloat() * 0.4f, zz = z + r.nextFloat() * 0.4f;
                 int xi = (int) Math.floor(x + World3D.HALF), zi = (int) Math.floor(zz);
                 if (xi < 0 || xi >= World3D.W || vis(w, xi, zi) != 0 || fadeAt(x, zz) < 0.36f) continue;
+                if (Math.abs(x - trailX(zz)) < TRAIL_HW * (0.5f + 0.35f * r.nextFloat())) continue;
                 float e = Math.abs(x) / World3D.HALF;
                 float size = 0.22f + 0.14f * r.nextFloat() + 0.2f * e * e * r.nextFloat();
                 tuft(K_TUFT, x, groundAt(x, zz), zz, size, 3, 0.35f, r);
@@ -779,7 +854,7 @@ public final class Scene3D {
     private static final float[] SIDE_D = {0, 0.35f, 0.75f, 1.2f, 1.7f, 2.3f, SEAM, 4.6f, 6f, 8f, 11f, 15f, 20f, 27f, 36f};
 
     /** Altezza della superficie realmente disegnata ai lati del sentiero (interpolazione della maglia), non quella teorica. */
-    private float meshAt(float x, float z) {
+    float meshAt(float x, float z) {
         float d = Math.abs(x) - World3D.HALF;
         if (d <= 0) return groundAt(x, z);
         float sg = Math.signum(x);
@@ -809,7 +884,7 @@ public final class Scene3D {
     }
 
     /** Altezza da disegnare: prima dell'inizio e dopo la fine il prato continua. */
-    private static int vis(World3D w, int x, int z) {
+    static int vis(World3D w, int x, int z) {
         if (z < 0 || z >= w.length) return 0;
         return w.height[z * World3D.W + x];
     }
@@ -961,43 +1036,6 @@ public final class Scene3D {
         gateDoor = b.build(Img.R3_WOOD, false, true);
         gateDoor.spec = 0.12f; gateDoor.shine = 18f;
 
-        // --- robot (guarda verso z positivo; la camera lo vede di spalle)
-        b = new MeshBuilder().color(234, 236, 240);
-        b.ellipsoid(0, 0.62f, 0, 0.25f, 0.30f, 0.21f, 14, 9);                 // busto
-        b.color(238, 118, 28);
-        b.cylinder(0, 0.46f, 0.52f, 0, 0.245f, 0.25f, 14, false, false);      // cintura
-        b.color(204, 96, 24);
-        b.box(0, 0.66f, -0.24f, 0.30f, 0.40f, 0.16f);                         // zaino
-        b.color(234, 236, 240);
-        b.ellipsoid(0, 1.07f, 0, 0.33f, 0.25f, 0.29f, 16, 10);                // testa
-        b.color(20, 26, 40);
-        b.ellipsoid(0, 1.06f, 0.13f, 0.25f, 0.13f, 0.2f, 14, 8);              // visiera
-        b.color(52, 56, 66);
-        b.box(0, 1.08f, -0.26f, 0.26f, 0.2f, 0.06f);                          // pannello dietro la testa
-        b.color(150, 154, 164);
-        b.cylinder(0, 1.3f, 1.46f, 0, 0.014f, 0.014f, 5, false, false);       // antenna
-        b.color(232, 48, 48);
-        b.ellipsoid(0, 1.49f, 0, 0.05f, 0.05f, 0.05f, 8, 5);
-        robotBody = b.build(-1, false, true);
-        robotBody.spec = 0.34f; robotBody.shine = 44f;
-        b = new MeshBuilder().color(120, 236, 255);
-        b.ellipsoid(-0.085f, 1.06f, 0.305f, 0.04f, 0.065f, 0.03f, 8, 5);
-        b.ellipsoid(0.085f, 1.06f, 0.305f, 0.04f, 0.065f, 0.03f, 8, 5);
-        b.box(0, 0.7f, 0.205f, 0.12f, 0.08f, 0.03f);                          // lampada sul petto
-        robotEyes = b.build(-1, false, true);
-        b = new MeshBuilder().color(64, 68, 78);                              // gamba: origine all'anca
-        b.cylinder(0, -0.26f, 0, 0, 0.06f, 0.065f, 8, false, false);
-        b.color(238, 118, 28);
-        b.box(0, -0.31f, 0.04f, 0.15f, 0.11f, 0.26f);
-        robotLeg = b.build(-1, false, true);
-        robotLeg.spec = 0.2f; robotLeg.shine = 30f;
-        b = new MeshBuilder().color(64, 68, 78);                              // braccio: origine alla spalla
-        b.cylinder(0, -0.3f, 0, 0, 0.048f, 0.052f, 8, false, false);
-        b.color(234, 236, 240);
-        b.ellipsoid(0, -0.34f, 0, 0.075f, 0.075f, 0.075f, 8, 5);
-        robotArm = b.build(-1, false, true);
-        robotArm.spec = 0.3f; robotArm.shine = 40f;
-
     }
 
     /** Punta a tre facce: base centrata in P, direzione D, lunghezza len, mezza larghezza w. */
@@ -1132,9 +1170,16 @@ public final class Scene3D {
         for (int c = 0; c < nChunks; c++) {
             float cz0 = zBase + c * CH, cz1 = cz0 + CH;
             if (cz1 < vz0 || cz0 > vz1) continue;
+            boolean farChunk = cz0 > camZ + 68f;          // in lontananza erba, fiori e piccoli oggetti non si distinguono: non si disegnano
             for (int k = 0; k < K_N; k++) {
-                if (k != K_RAY && land[k][c] != null) g.draw(land[k][c], ident, 1, 1, 1, 1, 0);
+                if (farChunk && (k == K_TUFT || k == K_FERN || k == K_FLOWER || k == K_PROP || k == K_GLOW)) continue;
+                if (k != K_RAY && k != K_TRAIL && land[k][c] != null) g.draw(land[k][c], ident, 1, 1, 1, 1, k == K_GLOW ? 0.6f : 0);
             }
+        }
+
+        for (int c = 0; c < nChunks; c++) {
+            float cz0 = zBase + c * CH;
+            if (land[K_TRAIL][c] != null && cz0 + CH >= vz0 && cz0 <= vz1) g.draw(land[K_TRAIL][c], ident, 1, 1, 1, 1, 0);
         }
 
         float near = w.pz - 4, far = w.pz + 120;      // gli oggetti tra la camera e il robot finirebbero enormi in primo piano
@@ -1281,33 +1326,6 @@ public final class Scene3D {
         Mat4.translate(b, w.px, w.py + bumpAt(w.px, w.pz), w.pz);
         Mat4.rotateY(b, w.yaw + (w.spinning() ? w.spinAngle : 0));
         if (w.state == World3D.DYING) Mat4.rotateX(b, -w.stateTime * 5f);
-        g.draw(robotBody, b, 1, 1, 1, 1, 0);
-        g.draw(robotEyes, b, 1, 1, 1, 1, 1);
-
-        float legA, legB, armA, armB, spread = 0.12f;
-        if (w.spinning()) {
-            legA = 0.15f; legB = -0.15f; armA = armB = 0; spread = 1.45f;
-        } else if (!w.onGround) {
-            legA = 0.7f; legB = -0.5f; armA = armB = -2.3f; spread = 0.3f;
-        } else {
-            float sp = (float) Math.sqrt(w.vx * w.vx + w.vz * w.vz);
-            float amp = Math.min(1f, sp / 3f) * 0.85f;
-            legA = (float) Math.sin(w.runPhase) * amp;
-            legB = -legA;
-            armA = -legA * 0.8f;
-            armB = -legB * 0.8f;
-        }
-        limb(g, b, robotLeg, -0.11f, 0.37f, 0, 0, legA);
-        limb(g, b, robotLeg, 0.11f, 0.37f, 0, 0, legB);
-        limb(g, b, robotArm, -0.27f, 0.8f, 0, -spread, armA);
-        limb(g, b, robotArm, 0.27f, 0.8f, 0, spread, armB);
-    }
-
-    private void limb(Gfx3D g, float[] base, Mesh mesh, float x, float y, float z, float rz, float rx) {
-        System.arraycopy(base, 0, m2, 0, 16);
-        Mat4.translate(m2, x, y, z);
-        if (rz != 0) Mat4.rotateZ(m2, rz);
-        if (rx != 0) Mat4.rotateX(m2, rx);
-        g.draw(mesh, m2, 1, 1, 1, 1, 0);
+        hero.draw(g, b, w);
     }
 }

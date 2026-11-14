@@ -16,6 +16,9 @@ public final class Mesh {
     /** Materiale: forza e durezza del riflesso (spec 0 = opaco), e se i bordi trasparenti vengono scartati (fogliame). */
     public float spec = 0f, shine = 16f;
     public boolean cutout;
+    /** I vertici cambiano a ogni fotogramma (il mantello): chi disegna li ricarica quando version cambia. */
+    public boolean dynamic;
+    public int version;
     /** Spazio libero per chi disegna (per esempio l'identificativo del buffer sulla scheda grafica). */
     public Object handle;
 

@@ -34,7 +34,9 @@ public final class Img {
             R3B_SKY = 119, R3B_MOUNTAINS = 120, R3B_AURORA = 121, R3B_FLAKE = 122, R3B_ICE = 123;
     /** Texture dei nemici 3D (chiare: il colore lo danno i vertici). */
     public static final int FOE_FUR = 124, FOE_PLUME = 125, FOE_CARD = 126, FOE_NUT = 127, FOE_CAP = 128, FOE_CHITIN = 129;
-    public static final int COUNT = 130;
+    /** Dettagli dei livelli 3D e stoffa del personaggio. */
+    public static final int R3_TRAIL = 130, R3_CLOTH = 131;
+    public static final int COUNT = 132;
 
     public static final String[] NAMES = {
         "bg_sky", "bg_mountains", "bg_hills",
@@ -59,5 +61,6 @@ public final class Img {
         "ar_brick", "ar_bonus", "ar_used", "ar_stone",
         "r3b_grass", "r3b_forest", "r3b_tuft", "r3b_flowers", "r3b_branch", "r3b_tree", "r3b_sky", "r3b_mountains", "r3b_aurora", "r3b_flake", "r3b_ice",
         "foe_fur", "foe_plume", "foe_card", "foe_nut", "foe_cap", "foe_chitin",
+        "r3_trail", "r3_cloth",
     };
 }

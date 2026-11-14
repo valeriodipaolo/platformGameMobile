@@ -24,6 +24,7 @@ Gioco platform 2D a scorrimento per Android (nome provvisorio: **Robo Jump**), s
 - `tools/gen_gate.py` — portone d'arrivo dei livelli 2D.
 - `tools/gen_foes.py` — texture dei nemici 3D (pelo, piume, guscio, scaglie, corazza); i modelli sono in `core3d/FoeModels.java`.
 - `tools/preview/FoeShot.java` — primi piani dei nemici 3D per controllarli al PC.
+- `core3d/Decor.java`: dettagli dei livelli 3D (funghi, tronchi caduti, ceppi, radici, cespugli, sassolini, neve, cristalli); `core3d/HeroModel.java`: il protagonista con zaino, veste bianca e mantello di stoffa ricalcolato a ogni fotogramma. Texture: `python3 tools/gen_decor.py`. Primi piani del protagonista: `tools/preview/HeroShot.java` (scrive `build/preview/hero.png`).
 - `tools/preview/check.sh` — controlli automatici sulla logica dei due livelli (compresi i bot che li completano).
 - `tools/preview/scenes.sh` — salva schermate dei due livelli in `build/preview` (il 3D con un renderer software).
 

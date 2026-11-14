@@ -256,16 +256,33 @@ final class GlRenderer implements GLSurfaceView.Renderer, Gfx3D {
     private int buffer(Mesh m) {
         if (m.handle instanceof int[]) {
             int[] h = (int[]) m.handle;
-            if (h[0] == generation) return h[1];
+            if (h[0] == generation) {
+                if (m.dynamic && h[2] != m.version) {             // stoffa: stessi vertici, posizioni nuove
+                    FloatBuffer db = dynBuffer(m.v.length);
+                    db.put(m.v).position(0);
+                    GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, h[1]);
+                    GLES20.glBufferSubData(GLES20.GL_ARRAY_BUFFER, 0, m.v.length * 4, db);
+                    h[2] = m.version;
+                }
+                return h[1];
+            }
         }
         int[] id = new int[1];
         GLES20.glGenBuffers(1, id, 0);
         FloatBuffer fb = ByteBuffer.allocateDirect(m.v.length * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
         fb.put(m.v).position(0);
         GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, id[0]);
-        GLES20.glBufferData(GLES20.GL_ARRAY_BUFFER, m.v.length * 4, fb, GLES20.GL_STATIC_DRAW);
-        m.handle = new int[] {generation, id[0]};
+        GLES20.glBufferData(GLES20.GL_ARRAY_BUFFER, m.v.length * 4, fb, m.dynamic ? GLES20.GL_DYNAMIC_DRAW : GLES20.GL_STATIC_DRAW);
+        m.handle = new int[] {generation, id[0], m.version};
         return id[0];
+    }
+
+    private FloatBuffer dyn;
+
+    private FloatBuffer dynBuffer(int floats) {
+        if (dyn == null || dyn.capacity() < floats) dyn = ByteBuffer.allocateDirect(floats * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
+        dyn.clear();
+        return dyn;
     }
 
     private int texture(int img) {

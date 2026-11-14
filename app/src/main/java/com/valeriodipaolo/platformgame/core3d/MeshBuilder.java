@@ -188,24 +188,35 @@ public final class MeshBuilder {
                 q[2] = cz + uz * rz * d;
             }
         }
-        for (int i = 0; i < rings; i++) {
-            for (int j = 0; j < segs; j++) {
-                float[] a = p[i * (segs + 1) + j], b = p[(i + 1) * (segs + 1) + j];
-                float[] c = p[(i + 1) * (segs + 1) + j + 1], e = p[i * (segs + 1) + j + 1];
-                float ux = (a[0] + b[0] + c[0] + e[0]) / 4 - cx, uy = (a[1] + b[1] + c[1] + e[1]) / 4 - cy, uz = (a[2] + b[2] + c[2] + e[2]) / 4 - cz;
-                float ax = c[0] - a[0], ay = c[1] - a[1], az = c[2] - a[2], bx = b[0] - e[0], by = b[1] - e[1], bz = b[2] - e[2];
+        // normali morbide: prodotto dei due lati della griglia attorno a ogni vertice
+        float[][] nr = new float[(rings + 1) * (segs + 1)][3];
+        for (int i = 0; i <= rings; i++) {
+            for (int j = 0; j <= segs; j++) {
+                int jj = j % segs;
+                float[] q = p[i * (segs + 1) + jj];
+                float[] lf = p[i * (segs + 1) + (jj + segs - 1) % segs], rt = p[i * (segs + 1) + (jj + 1) % segs];
+                float[] dn = p[Math.max(i - 1, 0) * (segs + 1) + jj], up = p[Math.min(i + 1, rings) * (segs + 1) + jj];
+                float ax = rt[0] - lf[0], ay = rt[1] - lf[1], az = rt[2] - lf[2], bx = up[0] - dn[0], by = up[1] - dn[1], bz = up[2] - dn[2];
                 float nx = ay * bz - az * by, ny = az * bx - ax * bz, nz = ax * by - ay * bx;
                 float l = (float) Math.sqrt(nx * nx + ny * ny + nz * nz);
-                if (l < 1e-9f) continue;
-                if (nx * ux + ny * uy + nz * uz < 0) { nx = -nx; ny = -ny; nz = -nz; }
-                nx /= l; ny /= l; nz /= l;
-                float u0 = j / (float) segs * 2f, u1 = (j + 1) / (float) segs * 2f, v0 = i / (float) rings * 1.4f, v1 = (i + 1) / (float) rings * 1.4f;
-                vert(a[0], a[1], a[2], nx, ny, nz, u0, v0);
-                vert(b[0], b[1], b[2], nx, ny, nz, u0, v1);
-                vert(c[0], c[1], c[2], nx, ny, nz, u1, v1);
-                vert(a[0], a[1], a[2], nx, ny, nz, u0, v0);
-                vert(c[0], c[1], c[2], nx, ny, nz, u1, v1);
-                vert(e[0], e[1], e[2], nx, ny, nz, u1, v0);
+                float ox = (q[0] - cx) / rx, oy = (q[1] - cy) / ry, oz = (q[2] - cz) / rz, ol = (float) Math.sqrt(ox * ox + oy * oy + oz * oz);
+                if (l < 1e-7f || i == 0 || i == rings) { nx = ox / ol; ny = oy / ol; nz = oz / ol; }
+                else {
+                    nx /= l; ny /= l; nz /= l;
+                    if (nx * ox + ny * oy + nz * oz < 0) { nx = -nx; ny = -ny; nz = -nz; }
+                }
+                float[] o = nr[i * (segs + 1) + j];
+                o[0] = nx; o[1] = ny; o[2] = nz;
+            }
+        }
+        int[] oi = {0, 1, 1, 0, 1, 0}, oj = {0, 0, 1, 0, 1, 1};
+        for (int i = 0; i < rings; i++) {
+            for (int j = 0; j < segs; j++) {
+                for (int k = 0; k < 6; k++) {
+                    int ii = i + oi[k], jj = j + oj[k];
+                    float[] q = p[ii * (segs + 1) + jj], o = nr[ii * (segs + 1) + jj];
+                    vert(q[0], q[1], q[2], o[0], o[1], o[2], jj / (float) segs * 2f, ii / (float) rings * 1.4f);
+                }
             }
         }
     }
