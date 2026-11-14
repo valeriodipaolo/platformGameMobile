@@ -22,6 +22,8 @@ Gioco platform 2D a scorrimento per Android (nome provvisorio: **Robo Jump**), s
 - `tools/gen_autumn.py` — immagini dei livelli d'autunno (sfondi, terreno, blocchi, nemici, texture del bosco).
 - `tools/gen_aurora.py` — immagini dei livelli con l'aurora boreale (cielo, pineta, neve, ghiaccio, tende d'aurora, fiocchi).
 - `tools/gen_gate.py` — portone d'arrivo dei livelli 2D.
+- `tools/gen_foes.py` — texture dei nemici 3D (pelo, piume, guscio, scaglie, corazza); i modelli sono in `core3d/FoeModels.java`.
+- `tools/preview/FoeShot.java` — primi piani dei nemici 3D per controllarli al PC.
 - `tools/preview/check.sh` — controlli automatici sulla logica dei due livelli (compresi i bot che li completano).
 - `tools/preview/scenes.sh` — salva schermate dei due livelli in `build/preview` (il 3D con un renderer software).
 

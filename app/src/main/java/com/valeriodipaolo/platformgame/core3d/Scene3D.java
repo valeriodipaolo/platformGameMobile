@@ -41,7 +41,7 @@ public final class Scene3D {
     private float[] fadeG;
     private int fadeZ0, fadeNz;
     private Mesh leaf, crateStar;
-    private Mesh hogBody, hogSpines, hogEyes, hogLeg, crowBody, crowWing, crowWingL, crowEyes, acornBody, acornCap, acornEyes, acornFoot;
+    private final FoeModels foes = new FoeModels();
     private boolean autumn, aurora;
     private Mesh flake, curtain;
     private int[] ktex = K_TEX_SUMMER;
@@ -49,7 +49,7 @@ public final class Scene3D {
     /** Quanto il bordo dei burroni si arrotonda verso il basso (0 = spigolo vivo). */
     private float lip;
     private Mesh crate, gem, battery, batteryGlow, shadow, ring, gateStone, gateDoor;
-    private Mesh robotBody, robotEyes, robotLeg, robotArm, beetleBody, beetleEyes, beetleLeg;
+    private Mesh robotBody, robotEyes, robotLeg, robotArm;
     private int builtFor = -1;
     private float camX, camY = 0, camZ;
     private boolean camInit;
@@ -323,11 +323,28 @@ public final class Scene3D {
                         }
                     }
                 } else {
+                    // il terreno continua sotto ai massi (in ombra): dagli spigoli arrotondati non si deve vedere il vuoto
+                    MeshBuilder gs = mb(K_GRASS, z);
+                    float[][] gc = {{fx, z}, {fx + 1, z}, {fx + 1, z + 1}, {fx, z + 1}};
+                    for (int k : order) ground(gs, gc[k][0], gc[k][1], gc[k][0] * 0.5f, gc[k][1] * 0.5f, 0.42f, 0.42f, 0.42f);
                     MeshBuilder s = mb(K_STONE, z);
+                    boolean round = autumn || aurora;
+                    s.colorf(0.24f, 0.23f, 0.22f);
+                    s.box(fx + 0.5f, -0.2f, z + 0.5f, 0.94f, 0.7f, 0.94f);
                     for (int k = 0; k < h; k++) {
                         s.colorf(0.96f + 0.08f * hash(x, z, k), 0.96f + 0.06f * hash(x, z, k + 7), 0.96f);
-                        if (autumn || aurora) s.roundBox(fx + 0.5f, k + 0.5f, z + 0.5f, 0.98f, 0.98f, 0.98f, 0.2f);
+                        if (round) s.roundBox(fx + 0.5f, k + 0.5f, z + 0.5f, 0.98f, 0.98f, 0.98f, 0.2f);
                         else s.box(fx + 0.5f, k + 0.5f, z + 0.5f, 1, 1, 1);
+                        if (round) {       // nucleo scuro e giunti pieni: tra un masso arrotondato e l'altro non si vede attraverso
+                            s.colorf(0.26f, 0.25f, 0.24f);
+                            s.box(fx + 0.5f, k + 0.5f, z + 0.5f, 0.8f, 0.8f, 0.8f);
+                            if (x + 1 < World3D.W && vis(w, x + 1, z) > k) s.box(fx + 1f, k + 0.5f, z + 0.5f, 0.42f, 0.8f, 0.8f);
+                            if (vis(w, x, z + 1) > k) s.box(fx + 0.5f, k + 0.5f, z + 1f, 0.8f, 0.8f, 0.42f);
+                            if (k + 1 < h) {
+                                s.box(fx + 0.5f, k + 1f, z + 0.5f, 0.8f, 0.42f, 0.8f);
+                                s.quad(fx + 0.1f, k + 1f, z + 0.1f, fx + 0.9f, k + 1f, z + 0.1f, fx + 0.9f, k + 1f, z + 0.9f, fx + 0.1f, k + 1f, z + 0.9f, 0, 1, 0, 0, 0, 1, 1);
+                            }
+                        }
                     }
                 }
                 MeshBuilder d = mb(K_DIRT, z);
@@ -981,26 +998,6 @@ public final class Scene3D {
         robotArm = b.build(-1, false, true);
         robotArm.spec = 0.3f; robotArm.shine = 40f;
 
-        // --- scarabeo (guarda verso z positivo)
-        b = new MeshBuilder().color(86, 44, 132);
-        b.ellipsoid(0, 0.36f, -0.04f, 0.42f, 0.30f, 0.50f, 16, 9);
-        b.color(52, 26, 82);
-        b.box(0, 0.38f, -0.04f, 0.02f, 0.6f, 0.98f);                          // giunzione della corazza
-        b.color(52, 38, 62);
-        b.ellipsoid(0, 0.26f, 0.5f, 0.18f, 0.16f, 0.17f, 10, 6);              // testa
-        b.color(30, 22, 34);
-        b.box(-0.07f, 0.2f, 0.7f, 0.03f, 0.03f, 0.14f);                       // tenaglie
-        b.box(0.07f, 0.2f, 0.7f, 0.03f, 0.03f, 0.14f);
-        beetleBody = b.build(-1, false, true);
-        beetleBody.spec = 0.5f; beetleBody.shine = 36f;
-        b = new MeshBuilder().color(250, 214, 60);
-        b.ellipsoid(-0.1f, 0.33f, 0.62f, 0.05f, 0.05f, 0.04f, 8, 5);
-        b.ellipsoid(0.1f, 0.33f, 0.62f, 0.05f, 0.05f, 0.04f, 8, 5);
-        beetleEyes = b.build(-1, false, true);
-        b = new MeshBuilder().color(30, 22, 34);
-        b.box(0, -0.12f, 0, 0.05f, 0.24f, 0.05f);
-        beetleLeg = b.build(-1, false, true);
-        buildFoes();
     }
 
     /** Punta a tre facce: base centrata in P, direzione D, lunghezza len, mezza larghezza w. */
@@ -1091,171 +1088,6 @@ public final class Scene3D {
                 b.colorf(col[0], col[1], col[2]);
                 b.vert(q[k][0], q[k][1], q[k][2], 0, 1, 0, 0.5f, 0.5f);
             }
-        }
-    }
-
-    /** Ala del corvo: remiganti e copritrici a ventaglio. sx = 1 destra, -1 sinistra (specchiata). */
-    private static Mesh buildWing(int sx, float[] navy, float[] navy2) {
-        MeshBuilder b = new MeshBuilder();
-        gball(b, sx * 0.1f, 0f, 0.02f, 0.13f, 0.05f, 0.14f, 8, 5, navy2, navy);
-        for (int i = 0; i < 8; i++) {
-            float ang = -0.05f - i * 0.1f;
-            feather(b, sx * 0.08f, 0.0f, 0.1f - i * 0.045f, sx > 0 ? ang : (float) Math.PI - ang, 0.72f - i * 0.03f, 0.075f, 0.07f, navy, rgb(74, 82, 134));
-        }
-        for (int i = 0; i < 6; i++) {
-            float ang = -0.04f - i * 0.12f;
-            feather(b, sx * 0.07f, 0.012f, 0.12f - i * 0.05f, sx > 0 ? ang : (float) Math.PI - ang, 0.38f - i * 0.03f, 0.085f, 0.03f, rgb(30, 34, 70), rgb(96, 104, 156));
-        }
-        Mesh m = b.build(-1, false, true);
-        m.spec = 0.6f; m.shine = 24f;
-        return m;
-    }
-
-    /** Nemici d'autunno: riccio (guarda verso z positivo), corvo e ghianda. */
-    private void buildFoes() {
-        Random r = new Random(77);
-        float[] cream = rgb(238, 205, 164), brown = rgb(110, 72, 44), pink = rgb(236, 150, 140), black = rgb(18, 14, 14);
-        float[] white = {1f, 1f, 0.97f};
-        // ---------------- riccio
-        MeshBuilder b = new MeshBuilder();
-        gball(b, 0, 0.34f, -0.06f, 0.42f, 0.31f, 0.52f, 18, 11, rgb(214, 176, 134), rgb(70, 46, 30));               // corpo: pancia chiara, dorso scuro
-        gball(b, 0, 0.22f, 0.44f, 0.2f, 0.18f, 0.27f, 14, 9, rgb(244, 214, 176), cream);                  // testa
-        spike(b, 0, 0.21f, 0.62f, 0, -0.06f, 1, 0.22f, 0.105f, cream, rgb(246, 220, 186));                // muso a punta
-        gball(b, 0, 0.2f, 0.84f, 0.05f, 0.045f, 0.045f, 8, 6, black, rgb(60, 50, 50));                    // naso lucido
-        gball(b, -0.15f, 0.19f, 0.5f, 0.055f, 0.045f, 0.04f, 8, 5, pink, pink);                           // guance rosa
-        gball(b, 0.15f, 0.19f, 0.5f, 0.055f, 0.045f, 0.04f, 8, 5, pink, pink);
-        gball(b, -0.15f, 0.4f, 0.28f, 0.07f, 0.085f, 0.045f, 8, 6, pink, cream);                          // orecchie
-        gball(b, 0.15f, 0.4f, 0.28f, 0.07f, 0.085f, 0.045f, 8, 6, pink, cream);
-        gball(b, 0, 0.12f, -0.52f, 0.06f, 0.05f, 0.08f, 8, 5, cream, cream);                              // codina
-        hogBody = b.build(-1, false, true);
-        hogBody.spec = 0.25f; hogBody.shine = 18f;
-        b = new MeshBuilder();
-        for (int i = 0; i < 400; i++) {                                  // aculei a due toni, scuri alla radice e chiari in punta
-            float a = r.nextFloat() * 6.283f, el = 0.0f + r.nextFloat() * 1.5f;
-            float ux = (float) (Math.cos(a) * Math.cos(el)), uy = (float) Math.sin(el), uz = (float) (Math.sin(a) * Math.cos(el));
-            if (uz > 0.5f) { if (r.nextFloat() < 0.8f) continue; uz *= 0.3f; }
-            float px = ux * 0.41f, py = 0.34f + uy * 0.3f, pz = -0.06f + uz * 0.51f;
-            float tone = 0.78f + 0.4f * r.nextFloat(), ln = 0.26f + 0.16f * r.nextFloat();
-            float[] c0 = mix(rgb(52, 32, 22), rgb(80, 52, 34), r.nextFloat(), tone);
-            float[] c1 = mix(rgb(150, 104, 64), rgb(214, 178, 122), r.nextFloat(), tone * (0.75f + 0.3f * uy));
-            spike(b, px, py, pz, ux * 0.8f, uy + 0.15f, uz * 0.8f - 0.55f, ln, 0.052f, c0, c1);
-        }
-        hogSpines = b.build(-1, false, true);
-        hogSpines.spec = 0.3f; hogSpines.shine = 16f;
-        b = new MeshBuilder();
-        for (int s2 = -1; s2 <= 1; s2 += 2) {                            // occhi: perline nere con riflesso e sopracciglio severo
-            gball(b, s2 * 0.085f, 0.3f, 0.58f, 0.048f, 0.055f, 0.036f, 8, 6, black, black);
-            gball(b, s2 * 0.075f, 0.318f, 0.612f, 0.014f, 0.016f, 0.01f, 6, 4, white, white);
-            spike(b, s2 * 0.14f, 0.385f, 0.585f, -s2 * 1f, -0.55f, 0, 0.1f, 0.018f, rgb(70, 46, 30), rgb(70, 46, 30));
-        }
-        hogEyes = b.build(-1, false, true);
-        hogEyes.spec = 0.9f; hogEyes.shine = 40f;
-        b = new MeshBuilder();
-        gball(b, 0, -0.07f, 0, 0.055f, 0.13f, 0.055f, 8, 6, cream, rgb(210, 170, 130));                  // zampa
-        gball(b, 0, -0.18f, 0.04f, 0.075f, 0.04f, 0.1f, 8, 5, rgb(150, 110, 80), rgb(210, 170, 130));   // piedino
-        hogLeg = b.build(-1, false, true);
-
-        // ---------------- corvo
-        float[] navy = rgb(22, 26, 52), navy2 = rgb(52, 58, 104), beak = rgb(250, 168, 40), beak2 = rgb(214, 120, 24);
-        b = new MeshBuilder();
-        gball(b, 0, 0, 0, 0.21f, 0.2f, 0.36f, 16, 10, rgb(64, 68, 108), navy);                           // corpo con riflessi bluastri
-        gball(b, 0, -0.04f, 0.16f, 0.15f, 0.14f, 0.16f, 12, 8, rgb(92, 98, 140), rgb(56, 62, 100));     // petto
-        gball(b, 0, 0.17f, 0.35f, 0.14f, 0.135f, 0.14f, 12, 8, rgb(52, 58, 96), rgb(24, 28, 56));       // testa
-        spike(b, 0, 0.16f, 0.46f, 0, -0.1f, 1, 0.27f, 0.07f, beak2, beak);                                // becco superiore
-        spike(b, 0, 0.115f, 0.46f, 0, -0.02f, 1, 0.19f, 0.045f, rgb(190, 100, 20), beak2);               // becco inferiore
-        for (int i = -2; i <= 2; i++) feather(b, i * 0.025f, 0.0f, -0.3f, (float) (-Math.PI / 2 + i * 0.16), 0.46f - Math.abs(i) * 0.03f, 0.065f, -0.035f, navy, rgb(70, 76, 124));   // coda a ventaglio
-        b.color(0, 0, 0);
-        for (int s2 = -1; s2 <= 1; s2 += 2) {                            // zampe raccolte
-            gball(b, s2 * 0.08f, -0.2f, 0.0f, 0.03f, 0.08f, 0.03f, 6, 5, rgb(120, 78, 40), rgb(160, 100, 50));
-            spike(b, s2 * 0.08f, -0.26f, 0.0f, 0, -0.2f, 1, 0.12f, 0.025f, rgb(130, 82, 40), rgb(130, 82, 40));
-        }
-        crowBody = b.build(-1, false, true);
-        crowBody.spec = 0.75f; crowBody.shine = 30f;
-        crowWing = buildWing(1, navy, navy2);
-        crowWingL = buildWing(-1, navy, navy2);
-        b = new MeshBuilder();
-        for (int s2 = -1; s2 <= 1; s2 += 2) {                            // occhi: anello dorato, pupilla, riflesso
-            gball(b, s2 * 0.085f, 0.215f, 0.445f, 0.036f, 0.036f, 0.025f, 8, 5, rgb(250, 210, 70), rgb(255, 232, 110));
-            gball(b, s2 * 0.09f, 0.215f, 0.462f, 0.02f, 0.021f, 0.012f, 6, 4, black, black);
-            gball(b, s2 * 0.083f, 0.225f, 0.47f, 0.007f, 0.007f, 0.005f, 4, 3, white, white);
-        }
-        crowEyes = b.build(-1, false, true);
-        crowEyes.spec = 0.9f; crowEyes.shine = 40f;
-
-        // ---------------- ghianda
-        float[] nut0 = rgb(124, 78, 38), nut1 = rgb(222, 158, 74), cap0 = rgb(70, 44, 24), cap1 = rgb(136, 92, 52);
-        b = new MeshBuilder();
-        gball(b, 0, 0.27f, 0, 0.255f, 0.27f, 0.255f, 14, 9, nut0, nut1);                                  // parte bassa
-        gball(b, 0, 0.44f, 0, 0.285f, 0.2f, 0.285f, 14, 8, nut0, nut1);                                   // spalle
-        gball(b, -0.17f, 0.3f, 0.2f, 0.055f, 0.04f, 0.03f, 8, 5, rgb(240, 120, 110), rgb(250, 150, 130)); // guance
-        gball(b, 0.17f, 0.3f, 0.2f, 0.055f, 0.04f, 0.03f, 8, 5, rgb(240, 120, 110), rgb(250, 150, 130));
-        gball(b, -0.3f, 0.3f, 0.05f, 0.06f, 0.075f, 0.06f, 8, 6, rgb(90, 56, 30), nut0);                  // braccini
-        gball(b, 0.3f, 0.3f, 0.05f, 0.06f, 0.075f, 0.06f, 8, 6, rgb(90, 56, 30), nut0);
-        acornBody = b.build(-1, false, true);
-        acornBody.spec = 0.45f; acornBody.shine = 22f;
-        b = new MeshBuilder();
-        gball(b, 0, 0.6f, 0, 0.35f, 0.2f, 0.35f, 16, 8, cap0, cap1);                                      // cappello a scaglie
-        for (int i = 0; i < 44; i++) {
-            float a = i * 2.399f, el = 0.15f + (i % 4) * 0.33f;
-            float ux = (float) (Math.cos(a) * Math.cos(el)), uy = (float) Math.sin(el), uz = (float) (Math.sin(a) * Math.cos(el));
-            float tone = 0.8f + 0.4f * r.nextFloat();
-            gball(b, ux * 0.34f, 0.6f + uy * 0.19f, uz * 0.34f, 0.075f, 0.05f, 0.075f, 6, 4, mix(cap0, cap1, 0.2f, tone), mix(cap0, cap1, 0.9f, tone));
-        }
-        gball(b, 0, 0.5f, 0, 0.345f, 0.04f, 0.345f, 14, 4, rgb(60, 38, 20), rgb(100, 66, 38));           // bordo
-        b.color(88, 58, 34);
-        b.cylinder(0, 0.74f, 0.93f, 0, 0.05f, 0.032f, 6, true, false);                                    // picciolo
-        gball(b, 0.02f, 0.94f, 0, 0.04f, 0.03f, 0.04f, 6, 4, rgb(110, 76, 42), rgb(150, 108, 60));
-        acornCap = b.build(-1, false, true);
-        acornCap.spec = 0.25f; acornCap.shine = 14f;
-        b = new MeshBuilder();
-        for (int s2 = -1; s2 <= 1; s2 += 2) {                            // occhi grandi, pupille, riflessi, sopracciglia arrabbiate
-            gball(b, s2 * 0.1f, 0.4f, 0.235f, 0.075f, 0.09f, 0.04f, 10, 6, white, white);
-            gball(b, s2 * 0.095f, 0.395f, 0.268f, 0.036f, 0.048f, 0.022f, 8, 5, black, black);
-            gball(b, s2 * 0.083f, 0.415f, 0.285f, 0.01f, 0.012f, 0.006f, 4, 3, white, white);
-            spike(b, s2 * 0.2f, 0.5f, 0.24f, -s2 * 1f, -0.5f, 0, 0.14f, 0.025f, rgb(60, 36, 20), rgb(60, 36, 20));
-        }
-        gball(b, 0, 0.255f, 0.245f, 0.065f, 0.03f, 0.02f, 8, 5, rgb(70, 24, 24), rgb(120, 40, 40));       // bocca
-        acornEyes = b.build(-1, false, true);
-        acornEyes.spec = 0.8f; acornEyes.shine = 36f;
-        b = new MeshBuilder();
-        gball(b, 0, 0.05f, 0.05f, 0.1f, 0.06f, 0.15f, 8, 5, rgb(60, 40, 26), rgb(104, 72, 46));
-        acornFoot = b.build(-1, false, true);
-    }
-
-    /** Disegna un nemico d'autunno; m è già posizionata e orientata. */
-    private void drawFoe(Gfx3D g, Enemy3 e) {
-        switch (e.type) {
-            case Enemy3.HOG:
-                g.draw(hogBody, m, 1, 1, 1, 1, 0);
-                g.draw(hogSpines, m, 1, 1, 1, 1, 0);
-                g.draw(hogEyes, m, 1, 1, 1, 1, 0.2f);
-                for (int i = 0; i < 4; i++) {
-                    System.arraycopy(m, 0, m2, 0, 16);
-                    Mat4.translate(m2, (i % 2 == 0 ? -1 : 1) * 0.2f, 0.15f, i < 2 ? -0.18f : 0.22f);
-                    Mat4.rotateX(m2, (float) Math.sin(e.anim * 10f + i * 1.7f) * 0.6f);
-                    g.draw(hogLeg, m2, 1, 1, 1, 1, 0);
-                }
-                break;
-            case Enemy3.CROW:
-                g.draw(crowBody, m, 1, 1, 1, 1, 0);
-                g.draw(crowEyes, m, 1, 1, 1, 1, 0.9f);
-                for (int side = -1; side <= 1; side += 2) {
-                    System.arraycopy(m, 0, m2, 0, 16);
-                    Mat4.translate(m2, side * 0.16f, 0.06f, 0.02f);
-                    Mat4.rotateZ(m2, side * ((float) Math.sin(e.anim * 13f) * 0.95f + 0.15f));
-                    g.draw(side > 0 ? crowWing : crowWingL, m2, 1, 1, 1, 1, 0);
-                }
-                break;
-            default:
-                g.draw(acornBody, m, 1, 1, 1, 1, 0);
-                g.draw(acornCap, m, 1, 1, 1, 1, 0);
-                g.draw(acornEyes, m, 1, 1, 1, 1, 0.1f);
-                for (int i = -1; i <= 1; i += 2) {
-                    System.arraycopy(m, 0, m2, 0, 16);
-                    Mat4.translate(m2, i * 0.14f, e.y > e.baseY + 0.05f ? 0.12f : 0f, 0);
-                    g.draw(acornFoot, m2, 1, 1, 1, 1, 0);
-                }
-                break;
         }
     }
 
@@ -1362,16 +1194,7 @@ public final class Scene3D {
             Mat4.rotateY(m, yawE);
             if (e.flung) Mat4.rotateX(m, e.anim * 3f);
             if (e.flatTime > 0) Mat4.scale(m, 1.15f, 0.22f, 1.15f);
-            if (e.type != Enemy3.BEETLE) { drawFoe(g, e); continue; }
-            g.draw(beetleBody, m, 1, 1, 1, 1, 0);
-            g.draw(beetleEyes, m, 1, 1, 1, 1, 0.9f);
-            for (int i = 0; i < 6; i++) {
-                float lx = (i % 2 == 0 ? -1 : 1) * 0.36f, lz = -0.3f + (i / 2) * 0.28f;
-                System.arraycopy(m, 0, m2, 0, 16);
-                Mat4.translate(m2, lx, 0.24f, lz);
-                Mat4.rotateX(m2, (float) Math.sin(e.anim * 14f + i * 2.1f) * 0.5f);
-                g.draw(beetleLeg, m2, 1, 1, 1, 1, 0);
-            }
+            foes.draw(g, m, e);
         }
 
         drawRobot(w, g);

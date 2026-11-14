@@ -44,6 +44,7 @@ public final class Game {
     public int bumpTx = -1, bumpTy = -1;
     public float bumpAge;
 
+    public static final int START_LIVES = 100;
     public int state, score, lives, hp;
     /** Pezzi di gemma presi in questa partita, e quanti ce ne sono in tutto (monete sparse più casse bonus). */
     public int gems, gemTotal;
@@ -84,7 +85,7 @@ public final class Game {
     public void newGame() {
         score = 0;
         gems = 0;
-        lives = 3;
+        lives = START_LIVES;
         loadLevel();
     }
 

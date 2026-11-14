@@ -124,7 +124,7 @@ public class Check3 {
         w = fresh();
         w.px = 0; w.pz = 15.5f; w.py = 0.5f;
         run(w, 1.2f, 0, 0, false, false);
-        ok(w.state == World3D.DYING && w.lives == 2, "cadendo nel burrone si perde una vita");
+        ok(w.state == World3D.DYING && w.lives == World3D.START_LIVES - 1, "cadendo nel burrone si perde una vita");
         run(w, 2f, 0, 0, false, false);
         ok(w.state == World3D.PLAYING && w.hp == 3 && w.pz < 15, "poi si riparte dal punto sicuro prima del burrone");
 
@@ -138,7 +138,7 @@ public class Check3 {
             w.update(1f / 60f);
             if (w.onGround && w.pz > 18) crossed = true;
         }
-        ok(crossed && w.lives == 3, "il salto con rincorsa supera il primo burrone");
+        ok(crossed && w.lives == World3D.START_LIVES, "il salto con rincorsa supera il primo burrone");
 
         // blocchi: contro un muretto ci si ferma, saltando ci si sale
         w = fresh();

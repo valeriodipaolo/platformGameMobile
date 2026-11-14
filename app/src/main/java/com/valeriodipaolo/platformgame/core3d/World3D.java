@@ -45,6 +45,7 @@ public final class World3D {
     public static final float TANK_TURN = 3.4f, TANK_BACK = 0.6f;
     public float px, py, pz, vx, vy, vz, yaw, runPhase;
     public boolean onGround;
+    public static final int START_LIVES = 100;
     public int state, score, lives, hp, gems, gemTotal;
     public boolean batteryOwned, gemOwned;
     public String toast;
@@ -70,7 +71,7 @@ public final class World3D {
     public void newGame() {
         score = 0;
         gems = 0;
-        lives = 3;
+        lives = START_LIVES;
         if (levelNo == 6) LevelSix.build(this); else if (levelNo == 4) LevelFour.build(this); else LevelTwo.build(this);
         gemTotal = gemsList.size();
         for (boolean c : crate) if (c) gemTotal++;
