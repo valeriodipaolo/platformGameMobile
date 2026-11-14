@@ -55,7 +55,7 @@ public class CheckFire {
         ok(c.level.get(34, 9) == Level.EMPTY, "la tavola crolla dopo mezzo secondo");
         // ---- 3D, livello 8
         World3D w = new World3D(new MemorySave(), 8);
-        ok(!Float.isNaN(w.fireZ) && w.jets.size() > 10 && w.logs.size() > 8, "livello 8: fuoco, " + w.jets.size() + " getti, " + w.logs.size() + " tronchi");
+        ok(!Float.isNaN(w.fireZ) && w.jets.size() > 10 && w.logs.size() >= 6, "livello 8: fuoco, " + w.jets.size() + " getti, " + w.logs.size() + " tronchi");
         w.setInput(0, 0, false, false);
         w.pz = 12f; w.px = 0f; w.update(0.05f);
         for (int i = 0; i < 60 * 40 && w.state == World3D.PLAYING; i++) w.update(1f / 60f);
@@ -65,7 +65,8 @@ public class CheckFire {
         boolean got = false;
         for (int i = 0; i < 60 * 8 && !got; i++) {
             l.invuln = 0; l.hp = 3;
-            float lx = World3D.logX(lg, l.time);
+            float[] lp = World3D.logPose(lg, l.time);
+            float lx = Math.max(-2.4f, Math.min(1.4f, lp[0]));
             l.px = lx; l.pz = lg[0]; l.py = 0.01f; l.vy = 0;
             int before = l.hp;
             l.update(1f / 60f);
@@ -79,8 +80,15 @@ public class CheckFire {
         ok(worst <= 3, "al massimo 3 getti nella stessa riga: " + worst);
         // i tronchi devono dare finestre di passaggio: tempo in cui il sentiero (±0,75) è libero di almeno 0,8 s per ciclo
         int badLogs = 0;
-        for (float[] x : w.logs) { float period = x[1], speed = (World3D.W + 1.8f) / period, window = period - (World3D.W + 1.8f + 1.5f) / speed * 0; if (window < 2.4f) badLogs++; }
-        ok(badLogs == 0, "tutti i tronchi hanno periodo di almeno 2,4 s");
+        for (float[] x : w.logs) if (x[1] < 3.3f) badLogs++;
+        ok(badLogs == 0, "tutti i tronchi hanno periodo di almeno 3,3 s (il tronco impiega 2 s ad attraversare)");
+        // ogni tronco ha la sua fossa di lava a destra e sparisce dopo esservi caduto
+        int noPit = 0;
+        for (float[] x : w.logs) { if (w.cell(4, (int) x[0]) != World3D.PIT) noPit++; float[] late = World3D.logPose(x, 0f); }
+        ok(noPit == 0, "ogni tronco cade in una fossa di lava a destra");
+        boolean vanish = false;
+        for (float t = 0; t < 4f; t += 0.02f) if (World3D.logPose(w.logs.get(0), t)[3] < 0.5f) vanish = true;
+        ok(vanish, "il tronco scompare dopo essere caduto");
         // nessuna gemma deve restare nascosta dai blocchi alla vista della camera (6 m dietro e 3,3 m sopra il robot)
         for (int lvNo : new int[] {2, 4, 6, 8}) {
             World3D v = new World3D(new MemorySave(), lvNo);

@@ -127,7 +127,7 @@ final class Decor {
         float ya = rest(ax, az, rad) + rad * 0.72f, yb = rest(bx, bz, rad) + rad * 0.72f;
         float ym = Math.max((ya + yb) / 2, rest(x, z, rad) + rad * 0.72f);
         light(x, z);
-        final float[] bark = lit(250, 236, 220, 0.95f), moss = s.aurora ? lit(236, 244, 255, 1.5f) : s.autumn ? lit(190, 170, 70, 1.1f) : lit(120, 190, 70, 1.2f);
+        final float[] bark = lit(250, 236, 220, 0.95f), moss = s.fire ? lit(64, 46, 40, 1.0f) : s.aurora ? lit(236, 244, 255, 1.5f) : s.autumn ? lit(190, 170, 70, 1.1f) : lit(120, 190, 70, 1.2f);
         final float[] under = lit(150, 140, 130, 0.6f);
         MeshBuilder tb = s.mb(Scene3D.K_TRUNK, z);
         int n = 6;
@@ -211,7 +211,7 @@ final class Decor {
         float y = s.meshAt(x, z);
         light(x, z);
         MeshBuilder bb = s.mb(Scene3D.K_BLOB, z), pb = s.mb(Scene3D.K_PROP, z);
-        float[] tc = s.autumn ? new float[] {1.0f * l[0], 0.62f * l[1], 0.32f * l[2]} : new float[] {0.62f * l[0], 1.0f * l[1], 0.5f * l[2]};
+        float[] tc = s.fire ? new float[] {0.42f * l[0], 0.32f * l[1], 0.26f * l[2]} : s.autumn ? new float[] {1.0f * l[0], 0.62f * l[1], 0.32f * l[2]} : new float[] {0.62f * l[0], 1.0f * l[1], 0.5f * l[2]};
         float[] berry = s.autumn ? lit(250, 150, 30, 1.3f) : lit(236, 40, 60, 1.3f);
         int lobes = 3 + r.nextInt(2);
         for (int i = 0; i < lobes; i++) {

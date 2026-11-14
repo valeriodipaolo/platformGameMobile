@@ -289,31 +289,97 @@ public final class HeroModel {
 
     // ------------------------------------------------------------------ disegno
 
+    // stato dell'animazione: i valori si inseguono dolcemente, così passare da corsa a salto non è uno scatto
+    private float animT = -1, landT = 0, liftT = 0;
+    private float sLegA, sLegB, sArmA, sArmB, sSpread, sLegSpread, sTuck;
+    private boolean wasGround = true;
+    private final float[] mb = new float[16], mt = new float[16];
+
+    private static float lerp(float a, float b, float k) { return a + (b - a) * k; }
+
     /** base = posizione e orientamento del robot nel mondo. */
     public void draw(Gfx3D g, float[] base, World3D w) {
         updateCape(w);
-        g.draw(robe, base, 1, 1, 1, 1, 0);
-        g.draw(gear, base, 1, 1, 1, 1, 0);
-        g.draw(glow, base, 1, 1, 1, 1, 1);
-        g.draw(cape, base, 1, 1, 1, 1, 0);
+        boolean first = animT < 0 || w.time < animT;
+        float dt = first ? 1f : Math.min(0.1f, w.time - animT);
+        animT = w.time;
+        float sp = (float) Math.sqrt(w.vx * w.vx + w.vz * w.vz);
+        boolean spin = w.spinning(), air = !w.onGround && !spin;
+        if (!wasGround && w.onGround) landT = 0.22f;          // appena atterrato: ammortizza piegandosi
+        if (wasGround && !w.onGround && w.vy > 3f) liftT = 0.14f;   // appena staccato: si allunga
+        wasGround = w.onGround;
+        landT = Math.max(0, landT - dt);
+        liftT = Math.max(0, liftT - dt);
 
-        float legA, legB, armA, armB, spread = 0.16f;
-        if (w.spinning()) {
-            legA = 0.15f; legB = -0.15f; armA = armB = 0; spread = 1.45f;
-        } else if (!w.onGround) {
-            legA = 0.7f; legB = -0.5f; armA = armB = -2.3f; spread = 0.34f;
+        float amp = Math.min(1f, sp / 4.2f), ph = w.runPhase;
+        float tLegA, tLegB, tArmA, tArmB, tSpread = 0.16f, tLegSpread = 0f, tTuck = 0f;
+        if (spin) {
+            tLegA = 0.15f; tLegB = -0.15f; tArmA = tArmB = 0; tSpread = 1.45f;
+        } else if (air) {
+            float up = Math.max(0f, Math.min(1f, (w.vy + 6f) / 12f));          // 1 = in salita, 0 = in caduta
+            boolean dj = w.djTime > 0;
+            if (dj) { tLegA = 1.25f; tLegB = 1.05f; tArmA = tArmB = -0.9f; tSpread = 0.9f; tTuck = 1f; }
+            else {
+                tLegA = lerp(0.3f, 1.0f, up); tLegB = lerp(-0.1f, -0.45f, up);       // salita: ginocchio avanti; discesa: gambe tese
+                tArmA = tArmB = lerp(-0.35f, -2.6f, up);                              // salita: braccia in alto; discesa: aperte
+                tSpread = lerp(1.15f, 0.45f, up);
+                tLegSpread = lerp(0.2f, 0.05f, up);
+                tTuck = up * 0.5f;
+            }
         } else {
-            float sp = (float) Math.sqrt(w.vx * w.vx + w.vz * w.vz);
-            float amp = Math.min(1f, sp / 3f) * 0.85f;
-            legA = (float) Math.sin(w.runPhase) * amp;
-            legB = -legA;
-            armA = -legA * 0.8f;
-            armB = -legB * 0.8f;
+            float swing = (float) Math.sin(ph) * (0.18f + 0.82f * amp) * (amp > 0.03f ? 1f : 0f);
+            tLegA = swing * 0.95f;
+            tLegB = -tLegA;
+            tArmA = -tLegA * (0.75f + 0.25f * amp);
+            tArmB = -tLegB * (0.75f + 0.25f * amp);
+            tSpread = 0.16f + 0.05f * amp + 0.02f * (float) Math.sin(w.time * 2.2f) * (1f - amp);
         }
-        limb(g, base, leg, -0.1f, 0.37f, 0, 0, legA);
-        limb(g, base, leg, 0.1f, 0.37f, 0, 0, legB);
-        limb(g, base, arm, -0.275f, 0.79f, 0, -spread, armA);
-        limb(g, base, arm, 0.275f, 0.79f, 0, spread, armB);
+        float k = first ? 1f : Math.min(1f, dt * (air || spin ? 16f : 22f));
+        sLegA = lerp(sLegA, tLegA, k); sLegB = lerp(sLegB, tLegB, k);
+        sArmA = lerp(sArmA, tArmA, k); sArmB = lerp(sArmB, tArmB, k);
+        sSpread = lerp(sSpread, tSpread, k); sLegSpread = lerp(sLegSpread, tLegSpread, k); sTuck = lerp(sTuck, tTuck, k);
+
+        // corpo: rimbalzo a ogni passo, inclinazione in avanti con la velocità, ondeggio di bacino e spalle
+        float bob = 0, lean = 0, roll = 0, twist = 0, sy = 1f, sxz = 1f;
+        if (!air && !spin) {
+            float step = (float) Math.abs(Math.sin(ph)) * amp;
+            bob = 0.055f * step + 0.007f * (float) Math.sin(w.time * 2.2f) * (1f - amp);
+            lean = 0.17f * amp;
+            roll = (float) Math.sin(ph) * 0.06f * amp;
+            twist = (float) Math.sin(ph) * 0.14f * amp;
+        } else if (air) {
+            lean = 0.08f + 0.12f * (1f - Math.max(0f, Math.min(1f, (w.vy + 6f) / 12f)));
+        }
+        if (landT > 0) {                                      // schiacciamento all'atterraggio
+            float u = (float) Math.sin(Math.PI * (1f - landT / 0.22f));
+            sy = 1f - 0.13f * u; sxz = 1f + 0.07f * u;
+            bob -= 0.02f * u;
+            lean += 0.1f * u;
+        } else if (liftT > 0) {
+            float u = liftT / 0.14f;
+            sy = 1f + 0.07f * u; sxz = 1f - 0.04f * u;
+        }
+        System.arraycopy(base, 0, mb, 0, 16);                 // mb = bacino: rimbalzo e schiacciamento, le gambe partono da qui
+        Mat4.translate(mb, 0, bob, 0);
+        Mat4.scale(mb, sxz, sy, sxz);
+        System.arraycopy(mb, 0, mt, 0, 16);                   // mt = busto: si inclina e ruota attorno ai fianchi
+        Mat4.translate(mt, 0, 0.4f, 0);
+        Mat4.rotateY(mt, twist);
+        Mat4.rotateX(mt, lean);
+        Mat4.rotateZ(mt, roll);
+        Mat4.translate(mt, 0, -0.4f, 0);
+
+        g.draw(robe, mt, 1, 1, 1, 1, 0);
+        g.draw(gear, mt, 1, 1, 1, 1, 0);
+        g.draw(glow, mt, 1, 1, 1, 1, 1);
+        g.draw(cape, mt, 1, 1, 1, 1, 0);
+        // gambe: la gamba che avanza si solleva, quella che spinge resta a terra
+        float liftA = (!air && !spin) ? Math.max(0f, (float) Math.cos(ph)) * 0.05f * amp : 0f;
+        float liftB = (!air && !spin) ? Math.max(0f, -(float) Math.cos(ph)) * 0.05f * amp : 0f;
+        limb(g, mb, leg, -0.1f, 0.37f + liftA, 0, -sLegSpread, sLegA);
+        limb(g, mb, leg, 0.1f, 0.37f + liftB, 0, sLegSpread, sLegB);
+        limb(g, mt, arm, -0.275f, 0.79f, 0, -sSpread, sArmA);
+        limb(g, mt, arm, 0.275f, 0.79f, 0, sSpread, sArmB);
     }
 
     private void limb(Gfx3D g, float[] base, Mesh mesh, float x, float y, float z, float rz, float rx) {

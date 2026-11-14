@@ -999,7 +999,7 @@ public final class Scene3D {
             b.cylinder(0, -0.65f, 0.65f, 0, 0.42f, 0.42f, 12, true, true);
             logMesh = b.build(Img.R3_BARK, false, true);
             b = new MeshBuilder();                                     // bocca dei getti: disco piatto sul terreno
-            b.quad(-0.72f, 0, -0.72f, -0.72f, 0, 0.72f, 0.72f, 0, 0.72f, 0.72f, 0, -0.72f, 0, 1, 0, 0, 0, 1, 1);
+            b.quad(-0.95f, 0, -0.95f, -0.95f, 0, 0.95f, 0.95f, 0, 0.95f, 0.95f, 0, -0.95f, 0, 1, 0, 0, 0, 1, 1);
             vent = b.build(Img.R3C_VENT, true, true);
             logMesh.spec = 0.05f; logMesh.shine = 8f;
         }
@@ -1374,19 +1374,39 @@ public final class Scene3D {
         float near = w.pz - 8, far = w.pz + 70;
         for (float[] l : w.logs) {
             if (l[0] < near || l[0] > far) continue;
-            float lx = World3D.logX(l, w.time), gy = groundAt(Math.max(-2.4f, Math.min(2.4f, lx)), l[0]);
+            float gyp = groundAt(-2.45f, l[0]);
+            for (int k = 0; k < 3; k++) {                  // pila di legna da cui esce il tronco
+                Mat4.setIdentity(m);
+                Mat4.translate(m, k < 2 ? -3.55f + k * 0.78f : -3.16f, gyp + (k < 2 ? 0.4f : 1.02f), l[0]);
+                Mat4.rotateX(m, (float) Math.PI / 2);
+                Mat4.rotateY(m, k * 1.7f);
+                Mat4.scale(m, 0.95f, 1.0f + 0.1f * k, 0.95f);
+                g.draw(logMesh, m, 0.8f, 0.7f, 0.62f, 1f, 0.15f);
+            }
+            float[] lp = World3D.logPose(l, w.time);
+            if (lp[3] < 0.5f) continue;
+            float gy = groundAt(Math.max(-2.4f, Math.min(2.4f, lp[0])), l[0]);
+            float sc = lp[2];
             Mat4.setIdentity(m);
-            Mat4.translate(m, lx, gy + 0.42f, l[0]);
+            Mat4.translate(m, lp[0], gy + 0.42f * sc + lp[1], l[0]);
             Mat4.rotateX(m, (float) Math.PI / 2);
-            Mat4.rotateY(m, lx * 2.4f);
+            Mat4.rotateY(m, lp[0] * 2.4f);
+            Mat4.scale(m, sc, 1, sc);
             g.draw(logMesh, m, 1f, 0.85f, 0.7f, 1f, 0.3f);
-            for (int k = 0; k < 2; k++) {                  // fiamme sul dorso
+            if (lp[4] > 0.5f) for (int k = 0; k < 2; k++) {                  // fiamme sul dorso, solo finché rotola
                 float fl = 0.8f + 0.35f * (float) Math.sin(w.time * (9f + k * 4f) + l[0] + k);
                 Mat4.setIdentity(m);
-                Mat4.translate(m, lx, gy + 0.7f, l[0] + (k - 0.5f) * 0.55f);
+                Mat4.translate(m, lp[0], gy + 0.7f * sc, l[0] + (k - 0.5f) * 0.55f);
                 Mat4.rotateY(m, w.time * 0.7f + k * 1.5f);
-                Mat4.scale(m, 0.95f * fl, 1.25f * fl, 0.95f * fl);
+                Mat4.scale(m, 0.95f * fl * sc, 1.25f * fl * sc, 0.95f * fl * sc);
                 g.draw(flame, m, 1f, 1f, 1f, 0.92f, 1f);
+            }
+            if (lp[4] < 0.5f && lp[1] > -1.5f) {         // cade nella lava: fiammata e braci
+                Mat4.setIdentity(m);
+                Mat4.translate(m, lp[0], gy + 0.1f, l[0]);
+                Mat4.rotateY(m, w.time * 2f);
+                Mat4.scale(m, 1.3f, 1.0f + 1.6f * Math.min(1f, -lp[1]), 1.3f);
+                g.draw(flame, m, 1f, 1f, 1f, 0.8f, 1f);
             }
         }
         for (float[] j : w.jets) {
@@ -1394,9 +1414,24 @@ public final class Scene3D {
             float pw = World3D.jetPower(j, w.time), warn = World3D.jetWarn(j, w.time);
             Mat4.setIdentity(m);                            // la bocca si vede sempre, e si accende prima del getto
             Mat4.translate(m, j[0], groundAt(j[0], j[1]) + 0.04f, j[1]);
-            float vs = 1f + 0.1f * warn;
+            float vs = 1f + 0.12f * warn + 0.05f * (float) Math.sin(w.time * 5f + j[1]);
             Mat4.scale(m, vs, 1, vs);
-            g.draw(vent, m, 1f, 1f - 0.2f * warn, 1f - 0.5f * warn, 1f, 0.85f + 0.15f * Math.max(warn, pw));
+            g.draw(vent, m, 1f, 1f - 0.2f * warn, 1f - 0.5f * warn, 1f, 0.9f + 0.1f * Math.max(warn, pw));
+            if (hgtBase(pw, warn) <= 0) {                   // spento: due fiammelle basse sempre accese e braci che salgono, così la bocca non passa inosservata
+                for (int k = 0; k < 2; k++) {
+                    float fl = 0.8f + 0.3f * (float) Math.sin(w.time * (8f + k * 5f) + j[1] * 3f + k);
+                    Mat4.setIdentity(m);
+                    Mat4.translate(m, j[0] + (k - 0.5f) * 0.3f, groundAt(j[0], j[1]) + 0.02f, j[1] + (0.5f - k) * 0.2f);
+                    Mat4.rotateY(m, k * 1.3f + w.time * 0.4f);
+                    Mat4.scale(m, 0.5f, 0.28f * fl, 0.5f);
+                    g.draw(flame, m, 1f, 1f, 1f, 0.75f, 1f);
+                }
+                float ph = (w.time * 0.9f + j[1] * 0.37f) % 1f;
+                Mat4.setIdentity(m);
+                Mat4.translate(m, j[0] + 0.25f * (float) Math.sin(w.time * 3f + j[1]), groundAt(j[0], j[1]) + 0.2f + ph * 1.1f, j[1]);
+                Mat4.scale(m, 0.1f, 0.1f, 0.1f);
+                g.draw(ember, m, 1f, 0.8f, 0.4f, 1f - ph, 1f);
+            }
             float hgt = pw > 0 ? 2.5f * (0.45f + 0.55f * pw) : warn > 0 ? 0.25f + 0.45f * warn : 0f;
             if (hgt <= 0) continue;
             float gy = groundAt(j[0], j[1]);
@@ -1418,6 +1453,8 @@ public final class Scene3D {
             }
         }
     }
+
+    private static float hgtBase(float pw, float warn) { return pw > 0 ? 1f : warn > 0 ? 0.5f : 0f; }
 
     /** Fiamme sulle chiome degli alberi più vicini al sentiero. */
     private void drawTreeFlames(World3D w, Gfx3D g) {

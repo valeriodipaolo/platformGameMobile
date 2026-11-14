@@ -143,13 +143,17 @@ public final class Renderer {
             float jx = (j[0] - cam) * s;
             if (jx < -2 * s || jx > sw + s) continue;
             float pw = Game.jetPower(j, g.time), warn = Game.jetWarn(j, g.time);
-            p.image(Img.FR_VENT, jx - 0.05f * s, j[1] * s - 0.32f * s, 1.1f * s, 0.46f * s, false, 1);      // la bocca si vede sempre
+            float pulse = 0.5f + 0.5f * (float) Math.sin(g.time * 4f + j[0] * 1.7f);
+            p.image(Img.R3C_EMBER, jx - 1.0f * s, j[1] * s - 1.15f * s, 2.6f * s, 1.7f * s, false, 0.3f + 0.25f * pulse + 0.4f * Math.max(pw, warn));   // alone rosso: si nota da lontano
+            p.image(Img.FR_VENT, jx - 0.25f * s, j[1] * s - 0.52f * s, 1.5f * s, 0.62f * s, false, 1);      // la bocca si vede sempre
             if (pw > 0) {
                 float hgt = 3.0f * s * (0.45f + 0.55f * pw);
                 p.image(Img.R3C_FLAME, jx - 0.45f * s, j[1] * s - hgt, 1.9f * s, hgt, false, 0.95f);
-            } else if (warn > 0) {                        // avviso: fiammelle basse e braci sul terreno
-                float hgt = (0.3f + 0.9f * warn) * s * (0.8f + 0.2f * (float) Math.sin(g.time * 40f));
-                p.image(Img.R3C_FLAME, jx + 0.1f * s, j[1] * s - hgt, 0.8f * s, hgt, false, 0.4f + 0.6f * warn);
+            } else {
+                float k = warn > 0 ? 0.35f + 0.9f * warn : 0.3f;           // spento: fiammelle basse sempre accese, più alte nell'avviso
+                float hgt = k * s * (0.8f + 0.2f * (float) Math.sin(g.time * 22f + j[0]));
+                p.image(Img.R3C_FLAME, jx + 0.0f * s, j[1] * s - hgt - 0.05f * s, 0.55f * s, hgt, false, 0.8f);
+                p.image(Img.R3C_FLAME, jx + 0.45f * s, j[1] * s - hgt * 0.8f - 0.05f * s, 0.55f * s, hgt * 0.8f, true, 0.8f);
             }
         }
         if (!Float.isNaN(g.fireX)) {

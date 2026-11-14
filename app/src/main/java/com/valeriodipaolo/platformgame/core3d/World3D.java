@@ -240,10 +240,23 @@ public final class World3D {
         return left < 1.0f ? 1f - left / 1.0f : 0f;
     }
 
-    /** Posizione di traverso di un tronco che rotola: attraversa il corridoio e ricompare dall'altro lato. */
-    public static float logX(float[] l, float t) {
-        float u = ((t + l[2]) % l[1]) / l[1];
-        return -HALF - 0.9f + (W + 1.8f) * u;
+    /** Velocità di rotolamento dei tronchi (m/s), partenza dalla pila a sinistra e bordo della fossa a destra. */
+    public static final float LOG_SPEED = 2.4f, LOG_X0 = -3.2f, LOG_EDGE = 1.55f;
+
+    /**
+     * Posa di un tronco al tempo t: {x, scarto in quota, scala, visibile (0/1), pericoloso (0/1)}. Il tronco esce dalla pila di legna a
+     * sinistra, rotola sul sentiero, arriva alla fossa di lava a destra, ci cade dentro e scompare; poi attende il ciclo successivo.
+     */
+    public static float[] logPose(float[] l, float t) {
+        float ph = (t + l[2]) % l[1], x = LOG_X0 + LOG_SPEED * ph, tEdge = (LOG_EDGE - LOG_X0) / LOG_SPEED;
+        float dy = 0, sc = Math.min(1f, 0.35f + ph / 0.35f);
+        boolean solid = ph < tEdge, vis = true;
+        if (ph >= tEdge) {
+            float tau = ph - tEdge;
+            dy = -9f * tau * tau;
+            if (dy < -1.7f) vis = false;
+        }
+        return new float[] {x, dy, sc, vis ? 1f : 0f, solid ? 1f : 0f};
     }
 
     private void stepFire(float dt) {
@@ -260,8 +273,8 @@ public final class World3D {
         }
         for (float[] l : logs) {
             if (Math.abs(l[0] - pz) > 3f) continue;
-            float lx = logX(l, time);
-            if (Math.abs(px - lx) < 0.75f && Math.abs(pz - l[0]) < 0.65f && py < topAt(lx, l[0]) + 0.85f) hurt();
+            float[] lp = logPose(l, time);
+            if (lp[4] > 0.5f && Math.abs(px - lp[0]) < 0.75f && Math.abs(pz - l[0]) < 0.65f && py < topAt(Math.max(-2.4f, Math.min(2.4f, lp[0])), l[0]) + 0.85f) hurt();
         }
     }
 

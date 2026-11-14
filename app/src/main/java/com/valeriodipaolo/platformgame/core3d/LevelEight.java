@@ -1,8 +1,8 @@
 package com.valeriodipaolo.platformgame.core3d;
 
 /**
- * Ottavo livello, il bosco in fiamme: la fuga attraverso il rogo. Un muro di fuoco insegue da dietro; tronchi in fiamme rotolano
- * di traverso, un slalom tra muri di tronchi bruciati, un braciere con getti di fiamma a scacchiera, un ponte sulla lava
+ * Ottavo livello, il bosco in fiamme: la fuga attraverso il rogo. Un muro di fuoco insegue da dietro; tronchi in fiamme escono da pile di legna e rotolano
+ * fino a cadere nella lava, un slalom tra muri di tronchi bruciati, un braciere con getti di fiamma a scacchiera, un ponte sulla lava
  * attraversato dai tronchi, una radura dove il fuoco si ferma e il rogo finale tra due strisce di lava.
  */
 public final class LevelEight {
@@ -31,8 +31,8 @@ public final class LevelEight {
         // --- tronchi che rotolano: quattro tronchi in fiamme attraversano il sentiero a ritmi diversi
         log(w, 16, 3.8f, 0f);
         log(w, 21, 3.8f, 1.9f);
-        log(w, 26, 3.2f, 0.5f);
-        log(w, 31, 3.2f, 2.1f);
+        log(w, 26, 3.6f, 0.5f);
+        log(w, 31, 3.6f, 2.1f);
         gem(w, 0, 0.7f, 18.5f); gem(w, 0, 0.7f, 23.5f); gem(w, 0, 0.7f, 28.5f); gem(w, 0, 0.7f, 33f);
         acorn(w, -1f, 34);
 
@@ -63,9 +63,10 @@ public final class LevelEight {
         // --- ponte sulla lava: tre caselle di larghezza, attraversato dai tronchi in fiamme
         pit(w, 90, 111, 0, 4);
         for (int z = 90; z <= 111; z++) for (int x = 1; x <= 3; x++) set(w, x, z, 0);
-        log(w, 94, 3.4f, 0f);
-        log(w, 99, 3.4f, 1.7f);
-        log(w, 104, 3.0f, 0.8f);
+        jet(w, 2, 94, 2.8f, 0f);
+        jet(w, 1, 98, 2.8f, 1.4f); jet(w, 3, 98, 2.8f, 0f);
+        jet(w, 2, 102, 2.8f, 1.4f);
+        jet(w, 1, 106, 2.8f, 0f); jet(w, 3, 106, 2.8f, 1.4f);
         gem(w, 0, 0.7f, 96.5f); gem(w, 0, 0.7f, 101.5f); gem(w, 1, 0.7f, 107f); gem(w, -1, 0.7f, 109f);
 
         // --- radura: qui il fuoco si ferma. Una scala di massi porta alla cella energetica
@@ -77,8 +78,8 @@ public final class LevelEight {
         // --- il rogo: due strisce di lava ai lati stringono il sentiero a tre caselle
         pit(w, 128, 151, 0, 0);
         pit(w, 128, 151, 4, 4);
-        log(w, 130, 3.0f, 0f);
-        log(w, 134, 3.0f, 1.5f);
+        jet(w, 2, 130, 2.6f, 0f);
+        jet(w, 1, 133, 2.6f, 1.3f); jet(w, 3, 133, 2.6f, 0f);
         jet(w, 2, 138, 2.4f, 0f);
         jet(w, 1, 141, 2.4f, 1.2f);
         jet(w, 3, 141, 2.4f, 0f);
@@ -93,8 +94,8 @@ public final class LevelEight {
         wall(w, 164, 4);
         jet(w, 3, 158, 2.6f, 0f);
         jet(w, 1, 162, 2.6f, 1.3f);
-        log(w, 168, 2.6f, 0f);
-        log(w, 171, 2.6f, 1.3f);
+        log(w, 168, 3.4f, 0f);
+        log(w, 171, 3.4f, 1.7f);
         crate(w, 1, 153); crate(w, 3, 153);
         gem(w, 0, 0.7f, 157.5f); gem(w, -2, 0.7f, 161.5f); gem(w, 2, 0.7f, 165.5f);
         w.flagZ = 175;
@@ -110,8 +111,9 @@ public final class LevelEight {
         w.jets.add(new float[] {xi - World3D.HALF + 0.5f, z + 0.5f, period, phase});
     }
 
-    /** Tronco in fiamme che rotola da un lato all'altro del sentiero alla quota z. */
+    /** Tronco in fiamme che esce da una pila di legna a sinistra, rotola sul sentiero e cade nella lava a destra (fossa nella casella 4 della riga). */
     private static void log(World3D w, int z, float period, float phase) {
+        pit(w, z, z, 4, 4);                                // la fossa di lava in cui il tronco cade a fine corsa
         w.logs.add(new float[] {z + 0.5f, period, phase});
     }
 
