@@ -32,7 +32,9 @@ public class CheckSpring {
                 for (float d = 0.9f; d <= 1.1f; d += 0.2f) if (!g.level.solid((int) Math.floor(p.x + p.w + d), row)) gap = true;
                 boolean thorn = false;
                 for (float[] th : g.level.thorns) if (th[0] - p.x > -0.1f && th[0] - p.x < 1.8f) thorn = true;
-                if (p.onGround && (gap || thorn || p.hitWall) && jt <= 0) jt = 0.5f;
+                boolean pad = false;
+                for (int d = 0; d <= 2; d++) if (g.level.get((int) Math.floor(p.x + p.w / 2) + d, 10) == Level.SPRING) pad = true;
+                if (p.onGround && ((gap && !pad && row >= 10) || thorn || p.hitWall) && jt <= 0) jt = 0.5f;
                 if (jt > 0) { jump = true; jt -= 1f / 60f; }
                 else if (!p.onGround && p.vy > 0 && !g.level.solid((int) Math.floor(p.x + p.w / 2), row + 1) && !g.level.solid((int) Math.floor(p.x + p.w / 2), row + 2)) jump = false;
             }
@@ -95,7 +97,7 @@ public class CheckSpring {
         // ---- 3D: fiore a molla e rovi
         World3D w = new World3D(new MemorySave(), 10);
         w.enemies.clear();
-        ok(w.springs.size() >= 5 && w.thorns.size() >= 20, "livello 10: " + w.springs.size() + " fiori a molla, " + w.thorns.size() + " rovi");
+        ok(w.springs.size() >= 5 && w.thorns.size() >= 10, "livello 10: " + w.springs.size() + " fiori a molla, " + w.thorns.size() + " rovi");
         float[] sp = w.springs.get(0);
         w.setInput(0, 0, false, false);
         placeAt(w, sp[0], sp[1] - 0.3f);
@@ -123,7 +125,9 @@ public class CheckSpring {
                 boolean pit = b.cell(xi(b.px), zi(b.pz + 0.9f)) == World3D.PIT && b.cell(xi(b.px), zi(b.pz)) != World3D.PIT;
                 boolean thorn = false;
                 for (float[] q : b.thorns) if (Math.abs(q[0] - b.px) < 0.9f && q[1] - b.pz > 0 && q[1] - b.pz < 1.0f) thorn = true;
-                if (b.onGround && (pit || thorn) && jt <= 0) jt = 0.5f;
+                boolean pad = false;
+                for (float[] q : b.springs) if (q[1] - b.pz > -0.6f && q[1] - b.pz < 2.5f && Math.abs(q[0] - b.px) < 2.6f) pad = true;
+                if (b.onGround && (pit || thorn) && !pad && jt <= 0) jt = 0.5f;
                 if (jt > 0) { jump = true; jt -= 1f / 60f; }
             }
             b.setInput(jx, 1f, jump, false);
@@ -149,17 +153,8 @@ public class CheckSpring {
 
     /** Colonna di mondo verso cui puntare a ogni quota z (caselle libere dei campi di rovi, isolotti dei fiumi). */
     static float xTarget(float z) {
-        if (z >= 24 && z < 38) {
-            int row = (int) ((z - 24) / 3);
-            if (z - 24 - row * 3 < 2.2f || true) return row % 2 == 0 ? 0f : -1f;
-        }
-        if (z >= 98 && z < 104.5f) return 0f;
-        if (z >= 104.5f && z < 110.5f) return -1f;
-        if (z >= 110.5f && z < 118f) return 1f;
-        if (z >= 140 && z < 155) {
-            int row = (int) ((z - 140) / 2);
-            return row % 2 == 0 ? 0f : -1f;
-        }
+        if ((z >= 8 && z < 34) || (z >= 68 && z < 94)) return -1.8f;     // si aggira il balcone, senza salire
+        if ((z >= 35 && z < 48) || (z >= 128 && z < 141)) return -1f;    // corsia libera dei campi di rovi
         return 0f;
     }
 }

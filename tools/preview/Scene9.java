@@ -17,9 +17,9 @@ public class Scene9 {
         for (int i = 0; i < Img.COUNT; i++) Preview.imgs[i] = javax.imageio.ImageIO.read(new File(res, Img.NAMES[i] + ".png"));
         at(4, "s9_start.png", out);
         at(17, "s9_pad.png", out);
-        at(38, "s9_river1.png", out);
+        at(30, "s9_river1.png", out);
         at(66, "s9_cherry.png", out);
         at(88, "s9_river2.png", out);
-        at(150, "s9_thorns.png", out);
+        at(144, "s9_thorns.png", out);
     }
 }

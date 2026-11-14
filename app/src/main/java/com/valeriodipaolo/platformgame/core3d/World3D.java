@@ -50,7 +50,8 @@ public final class World3D {
     /** Fiori a molla {x, z} (lanciano in alto chi ci salta sopra) e cespugli di rovi {x, z} (pungono); livelli di primavera. */
     public final List<float[]> springs = new ArrayList<float[]>();
     public final List<float[]> thorns = new ArrayList<float[]>();
-    private static final float SPRING_V = 15.5f;
+    private static final float SPRING_V = 15.5f, SPRING_H = 10f;
+    private float springDx, springDz;
     /** Ultimo lancio da un fiore a molla: indice nella lista e istante, per l'animazione. */
     public int springIdx = -1;
     public float springAt = -9f;
@@ -312,6 +313,7 @@ public final class World3D {
         float max = spinActive ? MAX_SPEED * 1.2f : MAX_SPEED;
         boolean steering = joyX != 0 || joyY != 0;
         float tx = joyX * max, tz = joyY * max;
+        boolean flung = springBoost > 0 && !onGround;            // lanciato dal fiore: tiene la spinta fino all'atterraggio, sterzando di poco
         if (tank) {
             if (onGround) yaw += joyX * TANK_TURN * dt;     // in aria non si gira
             float fwd = joyY > 0 ? joyY : joyY * TANK_BACK;
@@ -319,6 +321,7 @@ public final class World3D {
             tz = (float) Math.cos(yaw) * fwd * max;
             steering = joyY != 0;
         }
+        if (flung) { tx = springDx + joyX * 3f; tz = springDz + joyY * 3f; steering = true; }
         float rate = onGround ? (steering ? ACCEL : FRICTION) : (steering ? AIR_ACCEL : AIR_FRICTION);
         float dx = tx - vx, dz = tz - vz;
         float dl = (float) Math.sqrt(dx * dx + dz * dz), stepV = rate * dt;
@@ -377,6 +380,10 @@ public final class World3D {
                 float[] sp2 = springs.get(i);
                 if (Math.abs(sp2[1] - pz) > 0.8f || Math.abs(sp2[0] - px) > 0.62f || Math.abs(sp2[1] - pz) > 0.62f) continue;
                 vy = SPRING_V;
+                springDx = (float) Math.sin(yaw) * SPRING_H;              // il fiore lancia in avanti, verso dove guarda il robot
+                springDz = (float) Math.cos(yaw) * SPRING_H;
+                vx = springDx;
+                vz = springDz;
                 onGround = false;
                 coyote = jumpBuffer = 0;
                 airJumps = 1;

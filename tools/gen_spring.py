@@ -214,31 +214,38 @@ def sp_spring():
 
 
 def sp_thorn():
-    """Cespuglio di rovi: groviglio scuro di rami con spine chiare e qualche bacca rossa."""
-    w, h, ss = 96, 76, 3
+    """Riccio di rovi: palla viola scura con spine bianche a raggiera, occhi arrabbiati e contorno scuro spesso: si legge subito come pericolo."""
+    w, h, ss = 96, 76, 4
     im = Image.new("RGBA", (w * ss, h * ss), (0, 0, 0, 0))
     d = ImageDraw.Draw(im)
-    r = np.random.default_rng(1171)
-    circle(d, w / 2 * ss, (h - 22) * ss, 30 * ss, (70, 124, 66, 255))
-    for _ in range(26):
-        x0 = r.uniform(12, w - 12)
-        pts = [(x0 * ss, (h - 4) * ss)]
-        x, y = x0, h - 4
-        ang = r.uniform(-1.9, -1.2)
-        for _k in range(5):
-            ang += r.uniform(-0.8, 0.8)
-            x += math.cos(ang) * r.uniform(6, 12)
-            y += math.sin(ang) * r.uniform(6, 11)
-            x = min(max(x, 8), w - 8)
-            y = min(max(y, 6), h - 3)
-            pts.append((x * ss, y * ss))
-            if r.random() < 0.8:                    # spine
-                sx = math.cos(ang + 1.5) * 6
-                sy = math.sin(ang + 1.5) * 6
-                d.polygon([((x - 1.4) * ss, y * ss), ((x + 1.4) * ss, y * ss), ((x + sx) * ss, (y + sy) * ss)], fill=(244, 232, 210, 255))
-        d.line(pts, fill=((120, 64, 84, 255) if r.random() < 0.4 else (76, 142, 70, 255)), width=int(2.6 * ss))
-    for _ in range(5):
-        circle(d, r.uniform(20, w - 20) * ss, r.uniform(26, h - 10) * ss, 2.6 * ss, (214, 40, 60, 255))
+    cx, cy, rb = w / 2, h - 27, 19
+    dark = (30, 10, 40, 255)
+    n = 19
+    spikes = []
+    for i in range(n):
+        ang = math.pi * (-0.06 + 1.12 * i / (n - 1)) + math.pi        # dalla base sinistra, sopra, alla base destra
+        ln = 17 if i % 2 == 0 else 12
+        bx, by = cx + math.cos(ang) * rb * 0.85, cy + math.sin(ang) * rb * 0.85
+        tx, ty = cx + math.cos(ang) * (rb + ln), cy + math.sin(ang) * (rb + ln)
+        nx, ny = -math.sin(ang), math.cos(ang)
+        spikes.append(((bx + nx * 4.6, by + ny * 4.6), (bx - nx * 4.6, by - ny * 4.6), (tx, ty)))
+    for (p1, p2, p3) in spikes:                                       # spine: contorno scuro e interno bianco
+        d.polygon([(q[0] * ss, q[1] * ss) for q in (p1, p2, p3)], fill=dark)
+    circle(d, cx * ss, cy * ss, (rb + 2.4) * ss, dark)
+    for (p1, p2, p3) in spikes:
+        mx, my = (p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2
+        q1 = (mx + (p1[0] - mx) * 0.55, my + (p1[1] - my) * 0.55)
+        q2 = (mx + (p2[0] - mx) * 0.55, my + (p2[1] - my) * 0.55)
+        q3 = (mx + (p3[0] - mx) * 0.9, my + (p3[1] - my) * 0.9)
+        d.polygon([(q1[0] * ss, q1[1] * ss), (q2[0] * ss, q2[1] * ss), (q3[0] * ss, q3[1] * ss)], fill=(250, 246, 232, 255))
+    circle(d, cx * ss, cy * ss, rb * ss, (124, 40, 150, 255))
+    circle(d, (cx - 5) * ss, (cy - 7) * ss, 7 * ss, (160, 72, 184, 255))
+    for sx in (-1, 1):                                                # occhi arrabbiati
+        ex = cx + sx * 7.2
+        circle(d, ex * ss, (cy - 1) * ss, 4.6 * ss, (255, 255, 255, 255))
+        circle(d, (ex - sx * 0.6) * ss, (cy + 0.2) * ss, 2.3 * ss, dark)
+        d.line([((ex + sx * 5.6) * ss, (cy - 8.4) * ss), ((ex - sx * 4.2) * ss, (cy - 3.8) * ss)], fill=dark, width=int(2.2 * ss))
+    d.rectangle([0, (h - 8) * ss, w * ss, h * ss], fill=(0, 0, 0, 0))   # appoggio netto sul terreno
     arr = np.asarray(im.resize((w, h), Image.LANCZOS)).astype(float) / 255.0
     G.save("sp_thorn", arr)
 

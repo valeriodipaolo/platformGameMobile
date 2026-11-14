@@ -1,9 +1,10 @@
 package com.valeriodipaolo.platformgame.core3d;
 
 /**
- * Decimo livello, il giardino di primavera: ciliegi in fiore, un campo di rovi da attraversare a zigzag, tre fiumi (isolotti con fiori a molla,
- * un guado di pietre), una passerella alta tra le chiome raggiungibile solo rimbalzando e un ultimo campo di rovi prima del portone.
- * Difficoltà come i livelli 6 e 8 al massimo: i rovi si evitano camminando, i fiumi hanno sempre un appoggio vicino.
+ * Decimo livello, il giardino di primavera: ciliegi in fiori, tre fiumi larghi dieci metri (più del massimo di un doppio salto) che si
+ * superano solo rimbalzando sulla fila di fiori a molla in riva, due balconi di pietra a quattro metri (con la cella energetica) raggiungibili
+ * dai fiori, e due campi di rovi a zigzag. I rovi sono pochi e lasciano sempre una corsia libera; ogni gemma sta in un punto sicuro,
+ * lontano dai rovi e dall'acqua. Difficoltà come i livelli 6 e 8 al massimo.
  */
 public final class LevelTen {
     private LevelTen() {}
@@ -24,83 +25,83 @@ public final class LevelTen {
         w.fireStart = Float.NaN;
         w.fireZones = new float[0][];
 
-        // --- prato d'ingresso: il primo fiore a molla con un arco di gemme sopra
-        gemLine(w, 0, 0, 5);
-        crate(w, 1, 8); crate(w, 3, 8);
-        spring(w, 2, 12);
-        arc(w, 0, 11, 19, 4.4f);
-        acorn(w, -1f, 22);
+        // --- prato d'ingresso: poche gemme, e un fiore che lancia sul balcone di pietra
+        gemLine3(w, 0, 0.7f, 4, 6);
+        crate(w, 1, 9); crate(w, 3, 9);
+        padRow(w, 14, 1, 3);
+        balcony(w, 20, 29);
+        gem(w, 0, 4.7f, 23.5f); gem(w, -1, 4.7f, 25.5f); gem(w, 1, 4.7f, 27.5f);
+        acorn(w, 0f, 34);
 
-        // --- campo di rovi a zigzag: si passa sempre dalle caselle libere, che cambiano a ogni fila
-        int[] rowsA = {24, 27, 30, 33, 36};
-        for (int i = 0; i < rowsA.length; i++) {
-            boolean odd = i % 2 == 1;
-            for (int x = 0; x < W; x++) {
-                boolean thorn = odd ? (x % 2 == 0) : (x == 1 || x == 3);
-                if (thorn) thorn(w, x, rowsA[i]);
-                else gem(w, x - 2, 0.7f, rowsA[i] + 0.5f);
-            }
-        }
-        hog(w, 0, 40, false, -2f, 2f);
-        gemLine(w, 0, 38, 42);
+        // --- primo campo di rovi: tre file, la corsia centrale-sinistra (colonna 1) è sempre libera
+        thornRow(w, 37, 0, 2);
+        thornRow(w, 41, 2, 4);
+        thornRow(w, 45, 0, 2);
+        gem(w, -1, 0.7f, 39.5f); gem(w, 1, 0.7f, 43.5f);
+        hog(w, 0, 49, false, -2f, 2f);
 
-        // --- primo fiume: due isolotti con un fiore a molla al centro
-        pit(w, 44, 57, 0, 4);
-        island(w, 47, 48, 1, 3);
-        island(w, 52, 53, 1, 3);
-        spring(w, 2, 47);
-        spring(w, 2, 52);
-        arc(w, 0, 45, 51, 4.0f);
-        arc(w, 0, 50, 57, 4.4f);
-        crow(w, 0, 50, false, -2f, 2f, 3.3f);
+        // --- primo fiume: la fila di fiori in riva lancia dall'altra parte, le gemme seguono la traiettoria
+        padRow(w, 52, 0, 4);
+        pit(w, 53, 62, 0, 4);
+        flight(w, 52);
+        gemLine3(w, 0, 0.7f, 64, 66);
 
-        // --- il ciliegio alto: da un fiore si rimbalza sulla passerella di pietre (tre metri) con la cella energetica
-        spring(w, 2, 64);
-        gem(w, 0, 1.8f, 65.5f); gem(w, 0, 3.4f, 66.5f); gem(w, 0, 4.3f, 67.5f); gem(w, 0, 4.5f, 68.5f); gem(w, 0, 4.3f, 69.5f);
-        for (int z = 69; z <= 80; z++) for (int x = 1; x <= 3; x++) set(w, x, z, 3);
-        set(w, 2, 81, 2); set(w, 2, 82, 1);
-        gemLine3(w, 0, 3.7f, 70, 79);
-        w.battery = new float[] {0, 4.3f, 75.5f};
-        thorn(w, 0, 72); thorn(w, 4, 75); thorn(w, 0, 78);
-        acorn(w, 1f, 86);
-        gemLine(w, 0, 88, 96);
+        // --- il ciliegio alto: un fiore lancia sul balcone di pietra con la cella energetica
+        crate(w, 1, 69); crate(w, 3, 69);
+        acorn(w, 0f, 71);
+        padRow(w, 74, 1, 3);
+        balcony(w, 80, 89);
+        gem(w, -1, 4.7f, 82.5f); gem(w, 1, 4.7f, 87.5f);
+        w.battery = new float[] {0, 5.3f, 85.5f};
+        hog(w, 0, 94, false, -2f, 2f);
 
-        // --- secondo fiume: il guado, tre isolotti di prato larghi e distanti tre caselle, a zigzag
-        pit(w, 98, 117, 0, 4);
-        island(w, 100, 102, 1, 3);
-        island(w, 106, 108, 0, 2);
-        island(w, 112, 114, 2, 4);
-        gem(w, 0f, 0.7f, 101.5f); gem(w, -1f, 0.7f, 107.5f); gem(w, 1f, 0.7f, 113.5f);
-        gem(w, -0.5f, 2.3f, 104.5f); gem(w, 0f, 2.3f, 110.5f);
-        crow(w, 0, 121, false, -2f, 2f, 2.4f);
+        // --- secondo fiume
+        padRow(w, 99, 0, 4);
+        pit(w, 100, 109, 0, 4);
+        flight(w, 99);
+        gemLine3(w, 0, 0.7f, 111, 113);
 
-        // --- radura con ciliegi: riposo
-        crate(w, 1, 122); crate(w, 3, 122);
-        hog(w, 0, 126, false, -2f, 2f);
-        acorn(w, 0f, 131);
-        gemLine(w, 0, 120, 136);
-
-        // --- l'ultimo campo di rovi: più fitto, con caselle libere a zigzag
-        for (int i = 0; i < 7; i++) {
-            int z = 140 + i * 2;
-            boolean odd = i % 2 == 1;
-            for (int x = 0; x < W; x++) {
-                boolean thorn = odd ? (x % 2 == 0) : (x == 1 || x == 3);
-                if (thorn) thorn(w, x, z);
-                else gem(w, x - 2, 0.7f, z + 0.5f);
-            }
-        }
-        crow(w, 0, 147, false, -2f, 2f, 2.4f);
-        hog(w, 0, 156, false, -2f, 2f);
-        gemLine(w, 0, 154, 160);
+        // --- radura con ciliegi e secondo campo di rovi
+        crate(w, 1, 117); crate(w, 3, 117);
+        hog(w, 0, 121, false, -2f, 2f);
+        acorn(w, 0f, 125);
+        thornRow(w, 130, 2, 4);
+        thornRow(w, 134, 0, 2);
+        thornRow(w, 138, 2, 4);
+        gem(w, 1, 0.7f, 132.5f); gem(w, -1, 0.7f, 136.5f);
+        hog(w, 0, 143, false, -2f, 2f);
 
         // --- ultimo fiume e il portone
-        pit(w, 162, 170, 0, 4);
-        island(w, 165, 166, 1, 3);
-        spring(w, 2, 165);
-        arc(w, 0, 163, 169, 4.2f);
-        acorn(w, 0f, 173);
+        padRow(w, 148, 0, 4);
+        pit(w, 149, 158, 0, 4);
+        flight(w, 148);
+        gemLine3(w, 0, 0.7f, 160, 162);
+        acorn(w, 0f, 166);
+        gem(w, 0, 0.7f, 170.5f);
         w.flagZ = 175;
+    }
+
+    /** Fila di fiori a molla sulle colonne c0..c1 alla riga z. */
+    private static void padRow(World3D w, int z, int c0, int c1) {
+        for (int c = c0; c <= c1; c++) spring(w, c, z);
+    }
+
+    /** Balcone di pietra alto 4 m sulle colonne 1..3, da z0 a z1, con due gradini di discesa in fondo. */
+    private static void balcony(World3D w, int z0, int z1) {
+        for (int z = z0; z <= z1; z++) for (int x = 1; x <= 3; x++) set(w, x, z, 4);
+        for (int x = 1; x <= 3; x++) { set(w, x, z1 + 1, 2); set(w, x, z1 + 2, 1); }
+    }
+
+    /** Fila di rovi: due cespugli alle colonne ca e cb. */
+    private static void thornRow(World3D w, int z, int ca, int cb) {
+        thorn(w, ca, z);
+        thorn(w, cb, z);
+    }
+
+    /** Gemme sulla traiettoria misurata di un rimbalzo dai fiori alla riga z: alte, mai sopra l'acqua a pelo. */
+    private static void flight(World3D w, int z) {
+        float[][] g = {{2.7f, 3.9f}, {5.3f, 5.2f}, {7.9f, 5.6f}, {10.5f, 4.5f}};
+        for (float[] q : g) gem(w, 0, q[1], z + 0.5f + q[0]);
     }
 
     /** Isolotto di prato (altezza 0) nelle caselle x0..x1 delle righe z0..z1, dentro un fiume. */
@@ -116,15 +117,6 @@ public final class LevelTen {
     /** Cespuglio di rovi al centro della casella (xi, z). */
     private static void thorn(World3D w, int xi, int z) {
         w.thorns.add(new float[] {xi - World3D.HALF + 0.5f, z + 0.5f});
-    }
-
-    /** Gemme su un arco che segue un rimbalzo: da z0 a z1 alla colonna di mondo cx, con il vertice alla quota apex. */
-    private static void arc(World3D w, float cx, int zFrom, int zTo, float apex) {
-        int n = zTo - zFrom + 1;
-        for (int i = 0; i < n; i++) {
-            float u = n == 1 ? 0.5f : (float) i / (n - 1);
-            gem(w, cx, 0.7f + (apex - 0.7f) * 4f * u * (1f - u), zFrom + i + 0.5f);
-        }
     }
 
     private static void set(World3D w, int x, int z, int h) {

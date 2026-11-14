@@ -48,7 +48,7 @@ public final class Game {
     private final List<int[]> collapsed = new ArrayList<int[]>();
     public static final float CRUMBLE_DELAY = 0.55f;
     /** Lancio dei fiori a molla (caselle/s verso l'alto) e ultima molla usata, per l'animazione: posizione e secondi trascorsi. */
-    private static final float SPRING_V = 24.5f;
+    private static final float SPRING_V = 24.5f, SPRING_VX = 11f;
     public int springTx = -1, springTy = -1;
     public float springAge = 9f;
     private float springBoost;
@@ -316,6 +316,8 @@ public final class Game {
             spinAngle = 0;
         }
         float maxSpeed = spinActive ? MAX_SPEED * SPIN_SPEED : MAX_SPEED;
+        boolean flung = springBoost > 0 && !p.onGround;               // lanciato dal fiore: tiene la velocità fino all'atterraggio
+        if (flung) maxSpeed = Math.max(maxSpeed, SPRING_VX);
 
         float dir = (right ? 1 : 0) - (left ? 1 : 0);
         if (dir != 0) {
@@ -323,7 +325,7 @@ public final class Game {
             if (dir * p.vx < 0) a *= p.onGround ? 2f : 1.5f;      // inversione più reattiva
             p.vx += dir * a * dt;
             if (p.onGround) facing = dir > 0 ? 1 : -1;            // in aria il personaggio non si volta
-        } else {
+        } else if (!flung) {
             float f = (p.onGround ? FRICTION : AIR_FRICTION) * dt;
             if (Math.abs(p.vx) <= f) p.vx = 0; else p.vx -= Math.signum(p.vx) * f;
         }
@@ -364,6 +366,7 @@ public final class Game {
             for (int tx = (int) Math.floor(p.x); tx <= (int) Math.floor(p.x + p.w - 0.001f); tx++) {
                 if (level.get(tx, fy) != Level.SPRING) continue;
                 p.vy = -SPRING_V;
+                p.vx = facing * SPRING_VX;                                 // il fiore lancia in avanti, nella direzione in cui guarda il robot
                 p.onGround = false;
                 coyote = jumpBuffer = 0;
                 airJumps = 1;

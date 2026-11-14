@@ -17,8 +17,8 @@ public class Scene10 {
         for (int i = 0; i < Img.COUNT; i++) Preview.imgs[i] = javax.imageio.ImageIO.read(new java.io.File(res, Img.NAMES[i] + ".png"));
         shot("s10_start.png", out, 0, 1.5f, 0.2f, false);
         shot("s10_pad.png", out, 0, 9, 0.8f, false);
-        shot("s10_thorns.png", out, 0, 21, 1.0f, false);
-        shot("s10_river1.png", out, 0, 41, 1.2f, false);
+        shot("s10_thorns.png", out, 0, 33, 1.0f, false);
+        shot("s10_river1.png", out, 0, 48, 1.2f, false);
         shot("s10_canopy.png", out, 0, 62, 1.0f, false);
         shot("s10_river2.png", out, 0, 95, 0.5f, false);
         shot("s10_field.png", out, 0, 137, 0.9f, false);

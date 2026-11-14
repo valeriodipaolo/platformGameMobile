@@ -1,9 +1,10 @@
 package com.valeriodipaolo.platformgame.core;
 
 /**
- * Nono livello, il prato di primavera: ciliegi in fiore, tre fiumi da attraversare rimbalzando di isolotto in isolotto sui fiori a molla,
- * una passerella di pietre tra le chiome, un campo di rovi da scavalcare (a terra) oppure da sorvolare (sulle pietre in alto). Il terreno
- * base occupa le righe 10 e 11; l'acqua scorre sotto ai burroni. Difficoltà come i livelli 7 e 8 al massimo.
+ * Nono livello, il prato di primavera: ciliegi in fiori, tre fiumi larghi 10 caselle (più di un doppio salto) che si superano solo
+ * con il fiore a molla all'ultima casella della riva, e due balconi in alto (sul prato d'ingresso e tra le chiome) raggiungibili
+ * rimbalzando. I rovi sono pochi, isolati, e si scavalcano con un salto. Ogni gemma sta su un percorso sicuro (mai sull'acqua in basso,
+ * mai accanto ai rovi). Difficoltà come i livelli 7 e 8 al massimo.
  */
 public final class LevelNine {
     private LevelNine() {}
@@ -14,103 +15,80 @@ public final class LevelNine {
         Level lv = new Level(240, H);
         lv.id = "l9";
         lv.theme = 4;
-        ground(lv, 0, 36);
-        ground(lv, 40, 42);          // primo fiume: due isolotti con un fiore a molla al centro
-        ground(lv, 47, 49);
-        ground(lv, 54, 84);
-        ground(lv, 89, 91);          // secondo fiume: tre isolotti
-        ground(lv, 97, 99);
-        ground(lv, 105, 107);
-        ground(lv, 114, 190);
-        ground(lv, 195, 197);        // terzo fiume
-        ground(lv, 203, 205);
-        ground(lv, 212, 239);
+        ground(lv, 0, 36);           // il fiore a molla sta sull'ultima casella di ogni riva
+        ground(lv, 47, 96);
+        ground(lv, 107, 190);
+        ground(lv, 201, 239);
         lv.startX = 3;
         lv.startY = GROUND_Y - 1.2f;
 
-        // --- prato d'ingresso: i primi fiori a molla e un campetto di rovi
-        shards(lv, 7, 9, 4);
+        // --- prato d'ingresso: un fiore lancia sul balcone di pietra (gemme), rovi isolati più avanti
+        shards(lv, 7, 9, 3);
         row(lv, 11, 7, "B?B");
-        enemy(lv, 15, Enemy.BEETLE, 0, 0);
+        enemy(lv, 14, Enemy.BEETLE, 0, 0);
         pad(lv, 19);
-        arc(lv, 17, 22, 3.2f);
-        thorn(lv, 26);
-        thorn(lv, 27);
-        shards(lv, 25, 7, 4);
-        enemy(lv, 31, Enemy.ACORN, 0, 0);
-        crow(lv, 33, 5.5f, 28, 36);
+        for (int x = 25; x <= 30; x++) lv.set(x, 3, Level.STONE);
+        shards(lv, 26, 2, 4);
+        enemy(lv, 28, Enemy.ACORN, 0, 0);
+        thorn(lv, 22);
+        thorn(lv, 23);
+        shards(lv, 22, 6, 2);
 
-        // --- primo fiume: dal prato all'isolotto, poi sul fiore si rimbalza fino al successivo
-        arc(lv, 37, 40, 7.2f);
-        pad(lv, 41);
-        arc(lv, 43, 46, 3.4f);
-        pad(lv, 48);
-        arc(lv, 50, 53, 4.0f);
-        crow(lv, 44, 4.2f, 38, 52);
+        // --- primo fiume (10 caselle): si salta dal fiore a metà arco, le gemme seguono la traiettoria
+        pad(lv, 36);
+        flight(lv, 36);
 
-        // --- bosco di ciliegi: un'altura, rovi e la passerella di pietre tra le chiome
+        // --- bosco di ciliegi: un'altura e il balcone tra le chiome, con la batteria, che si raggiunge dal fiore
+        shards(lv, 49, 9, 3);
         hill(lv, 58, 66, 3);
         row(lv, 60, 5, "?B?");
-        enemy(lv, 70, Enemy.HOG, 0, 0);
-        thorn(lv, 69);
-        thorn(lv, 73);
-        thorn(lv, 77);
-        pad(lv, 71);
-        for (int x = 72; x <= 80; x++) lv.set(x, 5, Level.STONE);        // passerella di pietre tra le chiome
-        shards(lv, 72, 3, 8);
-        lv.battery = new float[] {78, 3.9f};
-        crow(lv, 74, 2.6f, 70, 82);
         enemy(lv, 62, Enemy.ACORN, 0, 0);
+        pad(lv, 68);
+        for (int x = 74; x <= 80; x++) lv.set(x, 3, Level.STONE);
+        shards(lv, 75, 2, 2);
+        shards(lv, 78, 2, 2);
+        lv.battery = new float[] {77, 1.9f};
+        enemy(lv, 75, Enemy.HOG, 0, 0);
+        thorn(lv, 85);
+        thorn(lv, 86);
+        shards(lv, 85, 6, 2);
+        row(lv, 89, 7, "B?B");
 
-        // --- secondo fiume: tre isolotti a distanza di rimbalzo
-        arc(lv, 85, 89, 7.0f);
-        pad(lv, 90);
-        arc(lv, 92, 96, 3.0f);
-        pad(lv, 98);
-        arc(lv, 100, 104, 3.0f);
-        pad(lv, 106);
-        arc(lv, 108, 113, 3.4f);
-        crow(lv, 95, 4.6f, 88, 108);
+        // --- secondo fiume
+        pad(lv, 96);
+        flight(lv, 96);
 
         // --- prato di sosta con ciliegi
+        shards(lv, 109, 9, 3);
         hill(lv, 118, 130, 3);
         row(lv, 120, 5, "?B?B?");
         enemy(lv, 134, Enemy.BEETLE, 0, 0);
         enemy(lv, 137, Enemy.ACORN, 0, 0);
-        shards(lv, 115, 9, 3);
 
-        // --- il campo di rovi: a terra si scavalcano uno per volta, in alto una passerella di pietre li sorvola
-        pad(lv, 143);
+        // --- rovi: tre coppie ben separate, ognuna con tre gemme proprio sopra (si raccolgono scavalcandole)
         thorn(lv, 147);
-        thorn(lv, 150);
-        thorn(lv, 154);
-        thorn(lv, 158);
-        thorn(lv, 161);
+        thorn(lv, 148);
+        shards(lv, 147, 6, 2);
+        thorn(lv, 156);
+        thorn(lv, 157);
+        shards(lv, 156, 6, 2);
         thorn(lv, 165);
-        thorn(lv, 168);
-        for (int x : new int[] {147, 148, 149, 153, 154, 155, 159, 160, 161, 165, 166, 167}) lv.set(x, 5, Level.STONE);
-        shards(lv, 147, 3, 3);
-        shards(lv, 153, 3, 3);
-        shards(lv, 159, 3, 3);
-        shards(lv, 165, 3, 3);
+        thorn(lv, 166);
+        shards(lv, 165, 6, 2);
         enemy(lv, 174, Enemy.HOG, 0, 0);
-        crow(lv, 158, 3.0f, 146, 170);
         row(lv, 176, 7, "B?B");
         enemy(lv, 182, Enemy.BEETLE, 0, 0);
-        shards(lv, 178, 9, 4);
+        shards(lv, 178, 9, 3);
 
         // --- terzo fiume e il portone
-        arc(lv, 191, 195, 7.0f);
-        pad(lv, 196);
-        arc(lv, 198, 202, 3.2f);
-        pad(lv, 204);
-        arc(lv, 206, 211, 3.4f);
-        crow(lv, 200, 4.4f, 193, 210);
-        enemy(lv, 218, Enemy.ACORN, 0, 0);
-        thorn(lv, 222);
-        thorn(lv, 223);
-        shards(lv, 220, 7, 5);
-        enemy(lv, 227, Enemy.BEETLE, 0, 0);
+        pad(lv, 190);
+        flight(lv, 190);
+        shards(lv, 203, 9, 3);
+        enemy(lv, 209, Enemy.ACORN, 0, 0);
+        thorn(lv, 216);
+        thorn(lv, 217);
+        shards(lv, 216, 6, 2);
+        enemy(lv, 224, Enemy.BEETLE, 0, 0);
 
         lv.flagX = 232;
         lv.flagBaseY = GROUND_Y;
@@ -133,14 +111,10 @@ public final class LevelNine {
         lv.thorns.add(new float[] {x, standRow(lv, x)});
     }
 
-    /** Gemme su un arco (come la traiettoria di un rimbalzo) tra le colonne x0 e x1, con il vertice alla quota apex. */
-    private static void arc(Level lv, int x0, int x1, float apex) {
-        int n = x1 - x0 + 1;
-        for (int i = 0; i < n; i++) {
-            float u = n == 1 ? 0.5f : (float) i / (n - 1);
-            float y = GROUND_Y - 1.2f - (GROUND_Y - 1.2f - apex) * 4f * u * (1f - u);
-            shard(lv, x0 + i, y);
-        }
+    /** Gemme lungo la traiettoria misurata di un rimbalzo dal fiore in x: sempre in alto, mai vicino all'acqua. */
+    private static void flight(Level lv, int x) {
+        float[][] g = {{2f, 4.7f}, {3.5f, 3.0f}, {5f, 2.0f}, {6.4f, 1.6f}, {8f, 2.2f}, {9.4f, 4.1f}};
+        for (float[] q : g) shard(lv, x + 0.5f + q[0], q[1]);
     }
 
     private static void hill(Level lv, int x0, int x1, int maxRise) {
