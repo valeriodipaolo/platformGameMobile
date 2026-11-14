@@ -13,6 +13,14 @@ public final class MeshBuilder {
         return this;
     }
 
+    /** Colore con decimali (per le ombre e l'occlusione calcolate in anticipo sui vertici). */
+    public MeshBuilder colorf(float r, float g, float b) {
+        cr = r;
+        cg = g;
+        cb = b;
+        return this;
+    }
+
     public void vert(float x, float y, float z, float nx, float ny, float nz, float u, float v) {
         if (n + Mesh.STRIDE > d.length) d = java.util.Arrays.copyOf(d, d.length * 2);
         d[n++] = x; d[n++] = y; d[n++] = z;
@@ -120,6 +128,46 @@ public final class MeshBuilder {
             float c0 = (float) Math.cos(b0), s0 = (float) Math.sin(b0), c1 = (float) Math.cos(b1), s1 = (float) Math.sin(b1);
             quad(cx + c0 * rIn, cy, cz + s0 * rIn, cx + c0 * rOut, cy, cz + s0 * rOut,
                  cx + c1 * rOut, cy, cz + s1 * rOut, cx + c1 * rIn, cy, cz + s1 * rIn, 0, 1, 0, 0.5f, 0.5f, 0.5f, 0.5f);
+        }
+    }
+
+    /** Masso irregolare: sfera schiacciata con la superficie deformata da rumore (seed per variare i sassi). */
+    public void rock(float cx, float cy, float cz, float rx, float ry, float rz, int seed, int segs, int rings) {
+        float[][] p = new float[(rings + 1) * (segs + 1)][3];
+        java.util.Random r = new java.util.Random(seed);
+        float[] ph = {r.nextFloat() * 6.28f, r.nextFloat() * 6.28f, r.nextFloat() * 6.28f};
+        for (int i = 0; i <= rings; i++) {
+            double a = Math.PI * i / rings;
+            for (int j = 0; j <= segs; j++) {
+                double b = 2 * Math.PI * j / segs;
+                float ux = (float) (Math.sin(a) * Math.cos(b)), uy = (float) Math.cos(a), uz = (float) (Math.sin(a) * Math.sin(b));
+                float d = 1f + 0.18f * (float) Math.sin(ux * 3.1 + ph[0]) * (float) Math.cos(uz * 2.7 + ph[1])
+                        + 0.12f * (float) Math.sin(uy * 5.3 + ux * 2.1 + ph[2]);
+                float[] q = p[i * (segs + 1) + j];
+                q[0] = cx + ux * rx * d;
+                q[1] = cy + uy * ry * d;
+                q[2] = cz + uz * rz * d;
+            }
+        }
+        for (int i = 0; i < rings; i++) {
+            for (int j = 0; j < segs; j++) {
+                float[] a = p[i * (segs + 1) + j], b = p[(i + 1) * (segs + 1) + j];
+                float[] c = p[(i + 1) * (segs + 1) + j + 1], e = p[i * (segs + 1) + j + 1];
+                float ux = (a[0] + b[0] + c[0] + e[0]) / 4 - cx, uy = (a[1] + b[1] + c[1] + e[1]) / 4 - cy, uz = (a[2] + b[2] + c[2] + e[2]) / 4 - cz;
+                float ax = b[0] - a[0], ay = b[1] - a[1], az = b[2] - a[2], bx = e[0] - a[0], by = e[1] - a[1], bz = e[2] - a[2];
+                float nx = ay * bz - az * by, ny = az * bx - ax * bz, nz = ax * by - ay * bx;
+                float l = (float) Math.sqrt(nx * nx + ny * ny + nz * nz);
+                if (l < 1e-9f) continue;
+                if (nx * ux + ny * uy + nz * uz < 0) { nx = -nx; ny = -ny; nz = -nz; }
+                nx /= l; ny /= l; nz /= l;
+                float u0 = j / (float) segs * 2f, u1 = (j + 1) / (float) segs * 2f, v0 = i / (float) rings * 1.4f, v1 = (i + 1) / (float) rings * 1.4f;
+                vert(a[0], a[1], a[2], nx, ny, nz, u0, v0);
+                vert(b[0], b[1], b[2], nx, ny, nz, u0, v1);
+                vert(c[0], c[1], c[2], nx, ny, nz, u1, v1);
+                vert(a[0], a[1], a[2], nx, ny, nz, u0, v0);
+                vert(c[0], c[1], c[2], nx, ny, nz, u1, v1);
+                vert(e[0], e[1], e[2], nx, ny, nz, u1, v0);
+            }
         }
     }
 

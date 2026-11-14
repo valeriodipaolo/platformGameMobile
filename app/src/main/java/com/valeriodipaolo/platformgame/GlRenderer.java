@@ -24,46 +24,79 @@ final class GlRenderer implements GLSurfaceView.Renderer, Gfx3D {
 
     private static final String VERTEX =
             "uniform mat4 uMVP;\n"
-            + "uniform mat4 uModel;\n"
-            + "uniform mat4 uView;\n"
-            + "uniform vec3 uLight;\n"
+            + "uniform mat4 uMV;\n"
             + "uniform vec4 uTint;\n"
-            + "uniform float uEmissive;\n"
             + "uniform vec3 uFog;\n"                       // inizio, 1/ampiezza, massimo
             + "attribute vec3 aPos;\n"
             + "attribute vec3 aNormal;\n"
             + "attribute vec2 aUV;\n"
             + "attribute vec3 aColor;\n"
             + "varying vec2 vUV;\n"
-            + "varying vec4 vColor;\n"
+            + "varying vec3 vCol;\n"
+            + "varying vec3 vN;\n"
+            + "varying vec3 vP;\n"
             + "varying float vFog;\n"
             + "void main() {\n"
-            + "  vec4 world = uModel * vec4(aPos, 1.0);\n"
-            + "  vec3 n = normalize((uModel * vec4(aNormal, 0.0)).xyz);\n"
-            + "  float d = max(dot(n, uLight), 0.0);\n"
-            + "  float l = mix(" + AMBIENT + " + " + DIFFUSE + " * d, 1.0, uEmissive);\n"
-            + "  vColor = vec4(aColor * uTint.rgb * l, uTint.a);\n"
-            + "  vec4 vp = uView * world;\n"
+            + "  vec4 vp = uMV * vec4(aPos, 1.0);\n"
+            + "  vP = vp.xyz;\n"
+            + "  vN = (uMV * vec4(aNormal, 0.0)).xyz;\n"
+            + "  vCol = aColor * uTint.rgb;\n"
             + "  vFog = clamp((-vp.z - uFog.x) * uFog.y, 0.0, uFog.z);\n"
             + "  vUV = aUV;\n"
             + "  gl_Position = uMVP * vec4(aPos, 1.0);\n"
             + "}\n";
 
     // Le texture arrivano da Android con il colore già moltiplicato per la trasparenza.
+    // Oggetti opachi: luce in spazio lineare (sole, cielo, terra, riflesso, bordo luminoso), foschia, tono filmico.
     private static final String FRAGMENT =
             "precision mediump float;\n"
             + "uniform sampler2D uTex;\n"
             + "uniform vec3 uFogColor;\n"
+            + "uniform vec3 uLightV;\n"                     // verso il sole, nello spazio della camera
+            + "uniform vec3 uUpV;\n"                        // l'alto, nello spazio della camera
+            + "uniform vec2 uSpec;\n"                       // forza e durezza del riflesso
             + "uniform float uOpaque;\n"
+            + "uniform float uCut;\n"
+            + "uniform float uEmissive;\n"
+            + "uniform float uAlpha;\n"
             + "varying vec2 vUV;\n"
-            + "varying vec4 vColor;\n"
+            + "varying vec3 vCol;\n"
+            + "varying vec3 vN;\n"
+            + "varying vec3 vP;\n"
             + "varying float vFog;\n"
             + "void main() {\n"
             + "  vec4 t = texture2D(uTex, vUV);\n"
-            + "  float a = mix(t.a * vColor.a, 1.0, uOpaque);\n"
-            + "  vec3 rgb = t.rgb * vColor.rgb * mix(vColor.a, 1.0, uOpaque);\n"
-            + "  if (a < 0.01) discard;\n"
-            + "  gl_FragColor = vec4(mix(rgb, uFogColor * a, vFog), a);\n"
+            + "  vec3 n = normalize(vN);\n"
+            + "  if (uOpaque < 0.5) {\n"                     // trasparenze semplici: ombre, anelli, bandiera
+            + "    float l = mix(0.6 + 0.4 * max(dot(n, uLightV), 0.0), 1.0, uEmissive);\n"
+            + "    float a = t.a * uAlpha;\n"
+            + "    if (a < 0.01) discard;\n"
+            + "    vec3 rgb = t.rgb * vCol * l * uAlpha;\n"
+            + "    gl_FragColor = vec4(mix(rgb, uFogColor * a, vFog), a);\n"
+            + "    return;\n"
+            + "  }\n"
+            + "  if (uCut > 0.5 && t.a < 0.45) discard;\n"
+            + "  vec3 tex = t.a > 0.001 ? t.rgb / t.a : t.rgb;\n"
+            + "  vec3 srgb = min(tex * vCol, vec3(1.0));\n"
+            + "  vec3 alb = srgb * srgb;\n"
+            + "  vec3 v = -normalize(vP);\n"
+            + "  float nl = max(dot(n, uLightV), 0.0);\n"
+            + "  float hemi = dot(n, uUpV) * 0.5 + 0.5;\n"
+            + "  vec3 amb = mix(vec3(" + GND_R + ", " + GND_G + ", " + GND_B + "), vec3(" + SKY_R + ", " + SKY_G + ", " + SKY_B + "), hemi);\n"
+            + "  vec3 sun = vec3(" + SUN_R + ", " + SUN_G + ", " + SUN_B + ");\n"
+            + "  vec3 c = alb * (sun * nl + amb);\n"
+            + "  if (uSpec.x > 0.0) {\n"
+            + "    vec3 h = normalize(uLightV + v);\n"
+            + "    float fres = pow(1.0 - max(dot(n, v), 0.0), 3.0);\n"
+            + "    c += sun * uSpec.x * pow(max(dot(n, h), 0.0), uSpec.y) * nl;\n"
+            + "    c += vec3(" + SKY_R + ", " + SKY_G + ", " + SKY_B + ") * fres * uSpec.x * 1.4;\n"
+            + "  }\n"
+            + "  vec3 fogc = uFogColor * uFogColor;\n"
+            + "  c = mix(c, fogc, vFog);\n"
+            + "  c = (c * (2.51 * c + 0.03)) / (c * (2.43 * c + 0.59) + 0.14);\n"
+            + "  c = sqrt(clamp(c, 0.0, 1.0));\n"
+            + "  c = mix(c, srgb, uEmissive);\n"
+            + "  gl_FragColor = vec4(c, 1.0);\n"
             + "}\n";
 
     private final Bitmap[] bitmaps;
@@ -73,9 +106,9 @@ final class GlRenderer implements GLSurfaceView.Renderer, Gfx3D {
 
     private int program, generation, whiteTex;
     private int aPos, aNormal, aUV, aColor;
-    private int uMVP, uModel, uView, uLight, uTint, uEmissive, uFog, uFogColor, uOpaque, uTex;
+    private int uMVP, uMV, uTint, uAlpha, uEmissive, uFog, uFogColor, uOpaque, uCut, uTex, uLightV, uUpV, uSpec;
     private final int[] textures = new int[Img.COUNT];
-    private final float[] view = new float[16], vp = new float[16], mvp = new float[16], ident = Mat4.identity();
+    private final float[] view = new float[16], vp = new float[16], mvp = new float[16], mv = new float[16], ident = Mat4.identity();
     private float fogStart, fogEnd, fogMax, aspect = 2f;
     private long last;
     /** Messaggio da mostrare a schermo se la grafica 3D non riesce a partire. */
@@ -96,7 +129,7 @@ final class GlRenderer implements GLSurfaceView.Renderer, Gfx3D {
         GLES20.glEnable(GLES20.GL_DEPTH_TEST);
         GLES20.glDepthFunc(GLES20.GL_LEQUAL);
         GLES20.glDisable(GLES20.GL_CULL_FACE);
-        GLES20.glClearColor(0.41f, 0.65f, 0.89f, 1f);
+        GLES20.glClearColor(0.745f, 0.847f, 0.933f, 1f);
         last = 0;
     }
 
@@ -127,8 +160,10 @@ final class GlRenderer implements GLSurfaceView.Renderer, Gfx3D {
         this.fogEnd = fogEnd;
         this.fogMax = fogMax;
         GLES20.glUseProgram(program);
-        GLES20.glUniformMatrix4fv(uView, 1, false, this.view, 0);
-        GLES20.glUniform3f(uLight, LX, LY, LZ);
+        // sole e "alto" nello spazio della camera (parte rotatoria della matrice di vista)
+        GLES20.glUniform3f(uLightV, view[0] * LX + view[4] * LY + view[8] * LZ,
+                view[1] * LX + view[5] * LY + view[9] * LZ, view[2] * LX + view[6] * LY + view[10] * LZ);
+        GLES20.glUniform3f(uUpV, view[4], view[5], view[6]);
         GLES20.glUniform3f(uFogColor, fogR, fogG, fogB);
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
         GLES20.glUniform1i(uTex, 0);
@@ -144,6 +179,7 @@ final class GlRenderer implements GLSurfaceView.Renderer, Gfx3D {
     public void backdrop(Mesh m) {
         GLES20.glDisable(GLES20.GL_DEPTH_TEST);
         GLES20.glDepthMask(false);
+        Mat4.mul(mv, this.view, ident);
         submit(m, ident, ident, 1, 1, 1, 1, 1, false);
         GLES20.glDepthMask(true);
         GLES20.glEnable(GLES20.GL_DEPTH_TEST);
@@ -152,6 +188,7 @@ final class GlRenderer implements GLSurfaceView.Renderer, Gfx3D {
     @Override
     public void draw(Mesh m, float[] model, float r, float g, float b, float a, float emissive) {
         Mat4.mul(mvp, vp, model);
+        Mat4.mul(mv, this.view, model);
         if (m.blend) {
             GLES20.glEnable(GLES20.GL_BLEND);
             GLES20.glBlendFunc(GLES20.GL_ONE, GLES20.GL_ONE_MINUS_SRC_ALPHA);
@@ -179,10 +216,13 @@ final class GlRenderer implements GLSurfaceView.Renderer, Gfx3D {
         GLES20.glVertexAttribPointer(aColor, 3, GLES20.GL_FLOAT, false, stride, 32);
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, m.tex < 0 ? whiteTex : texture(m.tex));
         GLES20.glUniformMatrix4fv(uMVP, 1, false, mvpM, 0);
-        GLES20.glUniformMatrix4fv(uModel, 1, false, model, 0);
-        GLES20.glUniform4f(uTint, r, g, b, a);
+        GLES20.glUniformMatrix4fv(uMV, 1, false, mv, 0);
+        GLES20.glUniform4f(uTint, r, g, b, 1f);
+        GLES20.glUniform1f(uAlpha, a);
         GLES20.glUniform1f(uEmissive, emissive);
         GLES20.glUniform1f(uOpaque, m.blend ? 0f : 1f);
+        GLES20.glUniform1f(uCut, m.cutout ? 1f : 0f);
+        GLES20.glUniform2f(uSpec, m.spec, m.shine);
         if (fog) GLES20.glUniform3f(uFog, fogStart, 1f / (fogEnd - fogStart), fogMax);
         else GLES20.glUniform3f(uFog, 0f, 0f, 0f);
         GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, m.count);
@@ -276,9 +316,12 @@ final class GlRenderer implements GLSurfaceView.Renderer, Gfx3D {
         aUV = GLES20.glGetAttribLocation(p, "aUV");
         aColor = GLES20.glGetAttribLocation(p, "aColor");
         uMVP = GLES20.glGetUniformLocation(p, "uMVP");
-        uModel = GLES20.glGetUniformLocation(p, "uModel");
-        uView = GLES20.glGetUniformLocation(p, "uView");
-        uLight = GLES20.glGetUniformLocation(p, "uLight");
+        uMV = GLES20.glGetUniformLocation(p, "uMV");
+        uLightV = GLES20.glGetUniformLocation(p, "uLightV");
+        uUpV = GLES20.glGetUniformLocation(p, "uUpV");
+        uSpec = GLES20.glGetUniformLocation(p, "uSpec");
+        uCut = GLES20.glGetUniformLocation(p, "uCut");
+        uAlpha = GLES20.glGetUniformLocation(p, "uAlpha");
         uTint = GLES20.glGetUniformLocation(p, "uTint");
         uEmissive = GLES20.glGetUniformLocation(p, "uEmissive");
         uFog = GLES20.glGetUniformLocation(p, "uFog");
