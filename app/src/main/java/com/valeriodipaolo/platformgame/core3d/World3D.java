@@ -38,6 +38,9 @@ public final class World3D {
     public final List<float[]> pops = new ArrayList<float[]>();
     public float[] battery;
 
+    /** Comandi a carro armato: joyX gira il robot, joyY lo fa avanzare o indietreggiare nella direzione in cui guarda. */
+    public boolean tank;
+    public static final float TANK_TURN = 3.4f, TANK_BACK = 0.6f;
     public float px, py, pz, vx, vy, vz, yaw, runPhase;
     public boolean onGround;
     public int state, score, lives, hp, gems, gemTotal;
@@ -226,6 +229,13 @@ public final class World3D {
         float max = spinActive ? MAX_SPEED * 1.2f : MAX_SPEED;
         boolean steering = joyX != 0 || joyY != 0;
         float tx = joyX * max, tz = joyY * max;
+        if (tank) {
+            if (onGround) yaw += joyX * TANK_TURN * dt;     // in aria non si gira
+            float fwd = joyY > 0 ? joyY : joyY * TANK_BACK;
+            tx = (float) Math.sin(yaw) * fwd * max;
+            tz = (float) Math.cos(yaw) * fwd * max;
+            steering = joyY != 0;
+        }
         float rate = onGround ? (steering ? ACCEL : FRICTION) : (steering ? AIR_ACCEL : AIR_FRICTION);
         float dx = tx - vx, dz = tz - vz;
         float dl = (float) Math.sqrt(dx * dx + dz * dz), stepV = rate * dt;
@@ -233,7 +243,7 @@ public final class World3D {
 
         // a terra il robot si gira verso dove va; in aria non si volta
         float sp = (float) Math.sqrt(vx * vx + vz * vz);
-        if (onGround && sp > 0.5f) {
+        if (!tank && onGround && sp > 0.5f) {
             float want = (float) Math.atan2(vx, vz), d = want - yaw;
             while (d > Math.PI) d -= 2 * Math.PI;
             while (d < -Math.PI) d += 2 * Math.PI;

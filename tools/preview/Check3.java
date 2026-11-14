@@ -104,6 +104,22 @@ public class Check3 {
         run(w, 0.3f, -1, -1, true, false);
         ok(!w.onGround && Math.abs(w.yaw - yaw) < 0.01f, "in salto il robot non si volta");
 
+        // carro armato: sinistra/destra ruota sul posto, su avanza nella direzione in cui guarda
+        w = fresh();
+        w.tank = true;
+        float tz0 = w.pz, tx0 = w.px;
+        run(w, 0.5f, 0, 1, false, false);
+        ok(w.pz > tz0 + 1.5f && Math.abs(w.px - tx0) < 0.05f, "tank: su avanza dritto");
+        float px1 = w.px, pz1 = w.pz;
+        run(w, 0.5f, 1, 0, false, false);
+        ok(Math.abs(w.px - px1) < 0.9f && Math.abs(w.pz - pz1) < 1.2f && w.yaw > 1.2f, "tank: destra gira sul posto");
+        run(w, 0.6f, 0, 1, false, false);
+        ok(w.px > px1 + 1.5f, "tank: dopo aver girato a destra, su porta a destra");
+        px1 = w.px;
+        run(w, 0.4f, 0, -1, false, false);
+        ok(w.px < px1 - 0.3f, "tank: giù indietreggia senza voltarsi");
+        w.tank = false;
+
         // burrone: cadendo si perde una vita e si riparte dal punto sicuro
         w = fresh();
         w.px = 0; w.pz = 15.5f; w.py = 0.5f;

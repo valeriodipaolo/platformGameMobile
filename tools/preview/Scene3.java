@@ -18,7 +18,7 @@ public class Scene3 {
         p.g = b.createGraphics();
         p.g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
         p.g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-        new Hud3D().draw(w, p, W, H, joy, 300, 520, 0.2f, -0.9f, null);
+        new Hud3D().draw(w, p, W, H, false, joy, 300, 520, 0.2f, -0.9f, null);
         p.g.dispose();
         ImageIO.write(b, "png", new File(out, file));
     }

@@ -8,6 +8,7 @@ import com.valeriodipaolo.platformgame.core.Painter;
 public final class Hud3D {
     private static final int WHITE = 0xFFFFFFFF;
 
+    /** fixedStick: il joystick resta sempre nella posizione di riposo. */
     /** Raggio del joystick in pixel. */
     public static float joyRadius(float sw, float sh) { return 0.17f * sh; }
     public static float joyHomeX(float sw, float sh) { return 0.05f * sw + joyRadius(sw, sh); }
@@ -17,7 +18,7 @@ public final class Hud3D {
      * joyActive: un dito sta usando il joystick, con centro (joyCx, joyCy) e spostamento (joyDx, joyDy) da -1 a 1.
      * error: messaggio da mostrare se la grafica 3D non parte.
      */
-    public void draw(World3D w, Painter p, float sw, float sh, boolean joyActive, float joyCx, float joyCy,
+    public void draw(World3D w, Painter p, float sw, float sh, boolean fixedStick, boolean joyActive, float joyCx, float joyCy,
                      float joyDx, float joyDy, String error) {
         float s = sh / 12f;
         float m = 0.06f * sw, ts = 0.5f * s, base = 0.95f * s;
@@ -41,7 +42,7 @@ public final class Hud3D {
 
         // joystick: compare dove si appoggia il dito, altrimenti resta nella posizione di riposo
         float jr = joyRadius(sw, sh);
-        float cx = joyActive ? joyCx : joyHomeX(sw, sh), cy = joyActive ? joyCy : joyHomeY(sw, sh);
+        float cx = joyActive && !fixedStick ? joyCx : joyHomeX(sw, sh), cy = joyActive && !fixedStick ? joyCy : joyHomeY(sw, sh);
         p.image(Img.JOY_BASE, cx - jr, cy - jr, 2 * jr, 2 * jr, false, joyActive ? 1f : 0.7f);
         float kr = jr * 0.46f;
         p.image(Img.JOY_KNOB, cx + (joyActive ? joyDx : 0) * jr * 0.75f - kr, cy + (joyActive ? joyDy : 0) * jr * 0.75f - kr,

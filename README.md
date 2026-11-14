@@ -3,7 +3,7 @@
 Gioco platform 2D a scorrimento per Android (nome provvisorio: **Robo Jump**), scritto in Java nativo senza librerie esterne.
 
 - Livello 1 (2D): prato a scorrimento con gemme, casse bonus, nemici, burroni e traguardo.
-- Livello 2 (3D, OpenGL ES 2.0): corridoio nel bosco visto da dietro le spalle, con joystick.
+- Livello 2 (3D, OpenGL ES 2.0): corridoio nel bosco visto da dietro le spalle. Cinque schemi di comando, da scegliere nel menu: joystick libero, joystick fisso, entrambi anche a 4 direzioni (senza diagonali), carro armato.
 - Mosse: salto (più alto tenendo premuto), doppio salto, giravolta, planata.
 
 ## Struttura
