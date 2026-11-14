@@ -48,6 +48,8 @@ public class Soft3D implements Gfx3D {
         raster(m, mvp, model, mv, r, g, b, a, emissive, true, m.fog);
     }
 
+    public void time(float t) {}
+
     public void end() {}
 
     void raster(Mesh m, float[] mvp, float[] model, float[] mv, float tr, float tg, float tb, float ta, float emissive,
@@ -192,6 +194,9 @@ public class Soft3D implements Gfx3D {
                 }
                 cr += (fr * fr - cr) * fo; cg += (fg * fg - cg) * fo; cb += (fb * fb - cb) * fo;
                 r = tone(cr); g = tone(cg); bl = tone(cb);
+                float[] sc = {r, g, bl};
+                sat(sc);
+                r = sc[0]; g = sc[1]; bl = sc[2];
                 r += (sr - r) * emis; g += (sg - g) * emis; bl += (sb - bl) * emis;
                 if (depthTest) depth[idx] = z;
                 color[idx] = 0xFF000000 | (c8(r) << 16) | (c8(g) << 8) | c8(bl);
@@ -251,6 +256,11 @@ public class Soft3D implements Gfx3D {
         c = Math.max(0, c);
         c = (c * (2.51f * c + 0.03f)) / (c * (2.43f * c + 0.59f) + 0.14f);
         return (float) Math.sqrt(Math.max(0, Math.min(1, c)));
+    }
+
+    static void sat(float[] c) {
+        float g = 0.299f * c[0] + 0.587f * c[1] + 0.114f * c[2];
+        for (int i = 0; i < 3; i++) c[i] = Math.max(0, Math.min(1, g + (c[i] - g) * 1.22f));
     }
 
     static int c8(float f) { return Math.max(0, Math.min(255, Math.round(f * 255))); }

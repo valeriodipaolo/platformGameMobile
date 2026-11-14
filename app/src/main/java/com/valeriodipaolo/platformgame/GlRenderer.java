@@ -27,6 +27,8 @@ final class GlRenderer implements GLSurfaceView.Renderer, Gfx3D {
             + "uniform mat4 uMV;\n"
             + "uniform vec4 uTint;\n"
             + "uniform vec3 uFog;\n"                       // inizio, 1/ampiezza, massimo
+            + "uniform float uTime;\n"
+            + "attribute float aSway;\n"
             + "attribute vec3 aPos;\n"
             + "attribute vec3 aNormal;\n"
             + "attribute vec2 aUV;\n"
@@ -37,13 +39,18 @@ final class GlRenderer implements GLSurfaceView.Renderer, Gfx3D {
             + "varying vec3 vP;\n"
             + "varying float vFog;\n"
             + "void main() {\n"
-            + "  vec4 vp = uMV * vec4(aPos, 1.0);\n"
+            + "  vec3 p = aPos;\n"
+            + "  float gust = 0.55 + 0.45 * sin(uTime * 0.45 + aPos.z * 0.11);\n"   // raffiche che corrono lungo il corridoio
+            + "  float sw = aSway * gust;\n"
+            + "  p.x += sw * 0.16 * (sin(uTime * 1.9 + aPos.z * 0.8 + aPos.x * 0.5) * 0.5 + 0.8);\n"
+            + "  p.z += sw * 0.06 * cos(uTime * 1.4 + aPos.x * 0.7);\n"
+            + "  vec4 vp = uMV * vec4(p, 1.0);\n"
             + "  vP = vp.xyz;\n"
             + "  vN = (uMV * vec4(aNormal, 0.0)).xyz;\n"
             + "  vCol = aColor * uTint.rgb;\n"
             + "  vFog = clamp((-vp.z - uFog.x) * uFog.y, 0.0, uFog.z);\n"
             + "  vUV = aUV;\n"
-            + "  gl_Position = uMVP * vec4(aPos, 1.0);\n"
+            + "  gl_Position = uMVP * vec4(p, 1.0);\n"
             + "}\n";
 
     // Le texture arrivano da Android con il colore già moltiplicato per la trasparenza.
@@ -95,6 +102,7 @@ final class GlRenderer implements GLSurfaceView.Renderer, Gfx3D {
             + "  c = mix(c, fogc, vFog);\n"
             + "  c = (c * (2.51 * c + 0.03)) / (c * (2.43 * c + 0.59) + 0.14);\n"
             + "  c = sqrt(clamp(c, 0.0, 1.0));\n"
+            + "  c = mix(vec3(dot(c, vec3(0.299, 0.587, 0.114))), c, 1.22);\n"
             + "  c = mix(c, srgb, uEmissive);\n"
             + "  gl_FragColor = vec4(c, 1.0);\n"
             + "}\n";
@@ -105,7 +113,7 @@ final class GlRenderer implements GLSurfaceView.Renderer, Gfx3D {
     private final Scene3D scene = new Scene3D();
 
     private int program, generation, whiteTex;
-    private int aPos, aNormal, aUV, aColor;
+    private int aPos, aNormal, aUV, aColor, aSway, uTime;
     private int uMVP, uMV, uTint, uAlpha, uEmissive, uFog, uFogColor, uOpaque, uCut, uTex, uLightV, uUpV, uSpec;
     private final int[] textures = new int[Img.COUNT];
     private final float[] view = new float[16], vp = new float[16], mvp = new float[16], mv = new float[16], ident = Mat4.identity();
@@ -171,6 +179,7 @@ final class GlRenderer implements GLSurfaceView.Renderer, Gfx3D {
         GLES20.glEnableVertexAttribArray(aNormal);
         GLES20.glEnableVertexAttribArray(aUV);
         GLES20.glEnableVertexAttribArray(aColor);
+        GLES20.glEnableVertexAttribArray(aSway);
         GLES20.glDisable(GLES20.GL_BLEND);
         GLES20.glDepthMask(true);
     }
@@ -202,6 +211,11 @@ final class GlRenderer implements GLSurfaceView.Renderer, Gfx3D {
     }
 
     @Override
+    public void time(float t) {
+        GLES20.glUniform1f(uTime, t);
+    }
+
+    @Override
     public void end() {
         GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, 0);
     }
@@ -214,6 +228,7 @@ final class GlRenderer implements GLSurfaceView.Renderer, Gfx3D {
         GLES20.glVertexAttribPointer(aNormal, 3, GLES20.GL_FLOAT, false, stride, 12);
         GLES20.glVertexAttribPointer(aUV, 2, GLES20.GL_FLOAT, false, stride, 24);
         GLES20.glVertexAttribPointer(aColor, 3, GLES20.GL_FLOAT, false, stride, 32);
+        GLES20.glVertexAttribPointer(aSway, 1, GLES20.GL_FLOAT, false, stride, 44);
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, m.tex < 0 ? whiteTex : texture(m.tex));
         GLES20.glUniformMatrix4fv(uMVP, 1, false, mvpM, 0);
         GLES20.glUniformMatrix4fv(uMV, 1, false, mv, 0);
@@ -315,6 +330,8 @@ final class GlRenderer implements GLSurfaceView.Renderer, Gfx3D {
         aNormal = GLES20.glGetAttribLocation(p, "aNormal");
         aUV = GLES20.glGetAttribLocation(p, "aUV");
         aColor = GLES20.glGetAttribLocation(p, "aColor");
+        aSway = GLES20.glGetAttribLocation(p, "aSway");
+        uTime = GLES20.glGetUniformLocation(p, "uTime");
         uMVP = GLES20.glGetUniformLocation(p, "uMVP");
         uMV = GLES20.glGetUniformLocation(p, "uMV");
         uLightV = GLES20.glGetUniformLocation(p, "uLightV");

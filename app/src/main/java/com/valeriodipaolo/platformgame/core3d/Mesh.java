@@ -1,8 +1,8 @@
 package com.valeriodipaolo.platformgame.core3d;
 
-/** Triangoli pronti da disegnare. Ogni vertice: posizione (3), normale (3), coordinate texture (2), colore (3). */
+/** Triangoli pronti da disegnare. Ogni vertice: posizione (3), normale (3), coordinate texture (2), colore (3), peso del vento (1). */
 public final class Mesh {
-    public static final int STRIDE = 11;
+    public static final int STRIDE = 12;
 
     public final float[] v;
     /** Numero di vertici (multiplo di 3). */

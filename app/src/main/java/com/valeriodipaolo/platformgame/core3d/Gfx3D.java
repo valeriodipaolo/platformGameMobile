@@ -18,5 +18,8 @@ public interface Gfx3D {
     /** emissive: 0 = illuminato normalmente, 1 = colore pieno come se emettesse luce. */
     void draw(Mesh m, float[] model, float r, float g, float b, float a, float emissive);
 
+    /** Tempo di gioco in secondi: serve al vento che muove l'erba e le foglie. */
+    void time(float t);
+
     void end();
 }

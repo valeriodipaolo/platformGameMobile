@@ -4,7 +4,7 @@ package com.valeriodipaolo.platformgame.core3d;
 public final class MeshBuilder {
     private float[] d = new float[4096];
     private int n;
-    private float cr = 1, cg = 1, cb = 1;
+    private float cr = 1, cg = 1, cb = 1, sw;
 
     public MeshBuilder color(int r, int g, int b) {
         cr = r / 255f;
@@ -21,12 +21,19 @@ public final class MeshBuilder {
         return this;
     }
 
+    /** Peso con cui il vento muove i vertici successivi (0 = fermi, 1 = oscillano al massimo). */
+    public MeshBuilder sway(float s) {
+        sw = s;
+        return this;
+    }
+
     public void vert(float x, float y, float z, float nx, float ny, float nz, float u, float v) {
         if (n + Mesh.STRIDE > d.length) d = java.util.Arrays.copyOf(d, d.length * 2);
         d[n++] = x; d[n++] = y; d[n++] = z;
         d[n++] = nx; d[n++] = ny; d[n++] = nz;
         d[n++] = u; d[n++] = v;
         d[n++] = cr; d[n++] = cg; d[n++] = cb;
+        d[n++] = sw;
     }
 
     /**

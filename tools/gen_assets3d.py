@@ -91,12 +91,12 @@ def gen_grass():
     fine = fbm(n, n, beta=0.9, seed=203)
     soil = col((62, 48, 30))
     # fondo scuro con un po' di terra tra i fili
-    base = lerp(col((24, 36, 14)), soil, np.clip((fine - 0.55) * 3.0, 0, 0.5)[..., None])
+    base = lerp(col((20, 52, 12)), soil, np.clip((fine - 0.55) * 3.0, 0, 0.5)[..., None])
     im = to_img(base)
     layers = [
-        blade_layer(n, 5200, 211, (col((26, 44, 16)), col((60, 84, 28))), (14, 30), (1.6, 2.6)),
-        blade_layer(n, 5200, 212, (col((44, 68, 22)), col((98, 124, 42))), (12, 32), (1.4, 2.4)),
-        blade_layer(n, 3000, 213, (col((70, 96, 30)), col((142, 156, 62))), (10, 26), (1.2, 2.0)),
+        blade_layer(n, 5200, 211, (col((30, 78, 20)), col((78, 140, 34))), (14, 30), (1.6, 2.6)),
+        blade_layer(n, 5200, 212, (col((60, 118, 28)), col((120, 188, 50))), (12, 32), (1.4, 2.4)),
+        blade_layer(n, 3000, 213, (col((100, 160, 40)), col((176, 224, 76))), (10, 26), (1.2, 2.0)),
     ]
     arr = from_img(im)
     for L in layers:
@@ -126,7 +126,7 @@ def gen_grass():
                        cx + math.cos(a) * rr + rr * 0.8, cy + math.sin(a) * rr + rr * 0.8], fill=c)
     arr = from_img(im2)
     gray = arr.mean(axis=2, keepdims=True)
-    arr = np.clip((gray + (arr - gray) * 0.8) * 1.0, 0, 1)
+    arr = np.clip((gray + (arr - gray) * 1.15) * 1.12, 0, 1)
     save("r3_grass", arr)
 
 
@@ -145,7 +145,7 @@ def gen_forest_floor():
     # muschio
     mm = smooth((fbm(n, n, beta=2.2, seed=225) - 0.44) * 5)
     mfine = fbm(n, n, beta=0.8, seed=226)
-    moss = lerp(col((34, 62, 22)), col((88, 124, 44)), mfine[..., None])
+    moss = lerp(col((40, 96, 26)), col((110, 176, 52)), mfine[..., None])
     arr = arr * (1 - 0.8 * mm[..., None]) + moss * 0.8 * mm[..., None]
     # rametti
     im = to_img(np.clip(arr, 0, 1))
@@ -282,58 +282,154 @@ def finish_card(im, name, ss):
     save(name, from_img(im))
 
 
+def rgba(c, a=255):
+    return tuple(int(max(0, min(255, v * 255))) for v in c) + (a,)
+
+
+def needle_palette():
+    return col((16, 58, 26)), col((36, 112, 38)), col((72, 164, 52)), col((148, 208, 78))
+
+
 def gen_branch():
-    """Falda di abete: fascia ripetibile in orizzontale, fitta in alto e con le punte dei rami che pendono in basso."""
+    """Un singolo ramo di abete (fusto lungo l'asse orizzontale, attacco al tronco a sinistra), con rametti e aghi."""
     ss = 2
     W, H = 512 * ss, 256 * ss
     r = rng(261)
     im = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     d = ImageDraw.Draw(im)
-    dark, mid, light, tip = col((10, 26, 16)), col((24, 60, 28)), col((46, 96, 40)), col((104, 150, 66))
+    dark, mid, light, tip = needle_palette()
+    cy = H / 2
 
-    def rgba(c):
-        return tuple(int(max(0, min(255, v * 255))) for v in c) + (255,)
+    def stem(x):
+        return cy + math.sin(x / W * 2.6) * 10 * ss * (x / W)
 
-    boughs = []
-    for layer in range(3):
-        n = 22 + layer * 4
-        for k in range(n):
-            x = (k + r.uniform(0.1, 0.9)) / n * W
-            top = r.uniform(-0.05, 0.22) * H
-            ln = r.uniform(0.55, 0.98 - 0.1 * (2 - layer)) * H - top
-            boughs.append((layer, x, top, ln, r.uniform(-0.18, 0.18), r.uniform(0.75, 1.15)))
-    boughs.sort(key=lambda b: (b[0], b[3]))
-    for layer, x, top, ln, sway, wk in boughs:
-        shade_k = 0.55 + 0.22 * layer
-        hw = 34 * ss * wk
-        # sagoma piena (così da lontano l'albero resta folto), poi gli aghi sopra
-        axis = []
-        for i in range(13):
-            t = i / 12
-            axis.append((x + sway * ln * t * t, top + ln * t))
-        left = [(ax - hw * math.sin(math.pi * min(1, t * 1.15)) ** 0.7 * (1 - 0.35 * t), ay)
-                for (ax, ay), t in zip(axis, [i / 12 for i in range(13)])]
-        right = [(ax + hw * math.sin(math.pi * min(1, t * 1.15)) ** 0.7 * (1 - 0.35 * t), ay)
-                 for (ax, ay), t in zip(axis, [i / 12 for i in range(13)])]
-        for off in (-W, 0, W):
-            d.polygon([(px + off, py) for px, py in left + right[::-1]], fill=rgba(dark * (0.8 + 0.3 * layer)))
-        for off in (-W, 0, W):
-            d.line([(px + off, py) for px, py in axis], fill=(58, 42, 28, 255), width=ss * 2)
-        nn = int(ln / ss * 1.5)
-        for i in range(nn):
-            t = r.uniform(0.02, 1.0)
-            k = int(t * 12)
-            ax, ay = axis[min(12, k)]
+    d.line([(x, stem(x)) for x in range(int(0.02 * W), int(0.97 * W), 6 * ss)], fill=(60, 42, 28, 255), width=int(3.2 * ss))
+    twigs = []
+    x = 0.07 * W
+    while x < 0.93 * W:
+        t = x / W
+        for side in (-1, 1):
+            reach = H * 0.47 * (0.35 + 0.65 * math.sin(math.pi * min(1, t * 1.05 + 0.08))) * (1 - 0.35 * t) * r.uniform(0.8, 1.1)
+            twigs.append((x + r.uniform(-3, 3) * ss, side, reach, r.uniform(0.85, 1.25)))
+        x += r.uniform(9, 13) * ss
+    for x0, side, reach, ang in twigs:
+        sy = stem(x0)
+        ex, ey = x0 + math.cos(ang) * reach * 0.62, sy + side * math.sin(ang) * reach
+        d.line([(x0, sy), (ex, ey)], fill=(66, 46, 30, 255), width=int(1.8 * ss))
+        ta = math.atan2(ey - sy, ex - x0)
+        n = int(18 + reach / ss * 0.35)
+        for i in range(n):
+            u = r.uniform(0.08, 1.0)
+            px, py = x0 + (ex - x0) * u, sy + (ey - sy) * u
             for sgn in (-1, 1):
-                a = math.pi / 2 + sgn * r.uniform(0.5, 1.15)
-                nl = hw * (math.sin(math.pi * min(1, t * 1.15)) ** 0.7 * (1 - 0.35 * t) + 0.25) * r.uniform(0.8, 1.25)
-                q = r.uniform(0, 1)
-                c = lerp(mid, light, q) if q < 0.75 else lerp(light, tip, (q - 0.75) * 4)
-                c = c * shade_k * (0.55 + 0.75 * t * t)
-                ex, ey = ax + math.cos(a) * nl, ay + math.sin(a) * nl
-                for off in (-W, 0, W):
-                    d.line([(ax + off, ay), (ex + off, ey)], fill=rgba(c), width=int(1.6 * ss))
-    finish_card(im, "r3_branch", ss)
+                a = ta + sgn * r.uniform(0.55, 1.2)
+                nl = r.uniform(11, 19) * ss * (1.05 - 0.35 * u)
+                q = r.uniform(0, 1) ** 1.3 * (0.35 + 0.65 * u)
+                c = lerp(dark, mid, r.uniform(0.2, 1)) if q < 0.45 else (lerp(mid, light, (q - 0.45) / 0.35) if q < 0.8 else lerp(light, tip, (q - 0.8) / 0.2))
+                d.line([(px, py), (px + math.cos(a) * nl, py + math.sin(a) * nl)], fill=rgba(c), width=int(2.3 * ss))
+    for i in range(60):
+        a = r.uniform(-0.8, 0.8)
+        nl = r.uniform(12, 24) * ss
+        px, py = 0.95 * W, stem(0.95 * W)
+        d.line([(px, py), (px + math.cos(a) * nl, py + math.sin(a) * nl)], fill=rgba(lerp(light, tip, r.uniform(0.3, 1))), width=int(2.3 * ss))
+    arr = from_img(im)
+    a = arr[..., 3]
+    sh = ndi.gaussian_filter(a, 6 * ss)
+    arr[..., :3] *= (0.6 + 0.55 * (1 - np.clip(sh * 1.5, 0, 1)))[..., None]
+    finish_card(Image.fromarray((np.clip(arr, 0, 1) * 255).astype(np.uint8), "RGBA"), "r3_branch", ss)
+
+
+def gen_firtree():
+    """Abete intero (per gli alberi lontani): tronco, rami che pendono a livelli, aghi, luce dall'alto."""
+    ss = 2
+    W, H = 256 * ss, 512 * ss
+    r = rng(341)
+    im = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    dark, mid, light, tip = needle_palette()
+    cx = W / 2
+    top, bottom = 0.03 * H, 0.97 * H
+    # tronco
+    d.polygon([(cx - 8 * ss, bottom), (cx + 8 * ss, bottom), (cx + 1.5 * ss, top * 2), (cx - 1.5 * ss, top * 2)], fill=(74, 54, 38, 255))
+    for k in range(18):
+        yk = bottom - r.uniform(0, 0.4) * (bottom - top)
+        d.line([(cx - 5 * ss, yk), (cx - 3 * ss, yk + 14 * ss)], fill=(46, 32, 22, 255), width=ss)
+    levels = 30
+    crown0 = 0.74 * H
+    for li in range(levels):
+        f = li / (levels - 1)                       # 0 in basso, 1 in cima
+        y = crown0 - (crown0 - top - 0.04 * H) * f
+        L = (92 * (1 - 0.86 * f) + 8) * ss
+        for side in (-1, 1):
+            for rep in range(2 if f < 0.85 else 1):
+                ll = L * r.uniform(0.75, 1.05)
+                droop = (0.34 + 0.3 * (1 - f)) * r.uniform(0.8, 1.2)
+                yy = y + r.uniform(-4, 4) * ss
+                # massa piena del ramo, così da lontano la chioma è folta
+                body = [(cx, yy - 4 * ss)]
+                for st in range(1, 9):
+                    t = st / 8
+                    body.append((cx + side * ll * t, yy + ll * droop * t + ll * 0.35 * t * t - (1 - t) * 6 * ss))
+                for st in range(8, 0, -1):
+                    t = st / 8
+                    body.append((cx + side * ll * t, yy + ll * droop * t + ll * 0.35 * t * t + (14 * (1 - 0.6 * t) + 4) * ss))
+                d.polygon(body, fill=rgba(lerp(mid, light, 0.35) * (0.78 + 0.3 * (1 - f))))
+                prev = (cx, yy)
+                steps = 14
+                for st in range(1, steps + 1):
+                    t = st / steps
+                    px = cx + side * ll * t
+                    py = yy + ll * droop * t + ll * 0.35 * t * t
+                    d.line([prev, (px, py)], fill=(58, 42, 28, 255), width=int(1.6 * ss))
+                    prev = (px, py)
+                    nn = 5 if t > 0.12 else 1
+                    for _ in range(nn):
+                        a = (math.pi / 2 + r.uniform(-1.0, 1.0))
+                        nl = (r.uniform(8, 16) + ll / ss * 0.06) * ss * (1.0 - 0.3 * t)
+                        up = r.uniform(0, 1) < 0.5
+                        shade = (0.78 + 0.5 * (1 - f) * 0.0) if up else 0.55
+                        q = r.uniform(0, 1)
+                        c = lerp(dark, mid, q) if q < 0.5 else (lerp(mid, light, (q - 0.5) / 0.35) if q < 0.85 else lerp(light, tip, (q - 0.85) / 0.15))
+                        c = c * (0.8 + 0.4 * (1 - 0.6 * t)) * (1.35 if up else 0.85)
+                        dy = -abs(math.sin(a)) * nl * (0.5 if up else -0.5)
+                        d.line([(px, py), (px + math.cos(a) * nl * 0.9, py + dy + math.sin(a) * nl * 0.3)], fill=rgba(c), width=int(2.4 * ss))
+    # cima
+    for i in range(50):
+        a = -math.pi / 2 + r.uniform(-0.55, 0.55)
+        nl = r.uniform(10, 30) * ss
+        px, py = cx, top + 0.09 * H
+        d.line([(px, py), (px + math.cos(a) * nl, py + math.sin(a) * nl)], fill=rgba(lerp(light, tip, r.uniform(0.2, 1))), width=int(2.4 * ss))
+    arr = from_img(im)
+    # ombra interna verso il centro e più scuro in basso
+    a = arr[..., 3]
+    sh = ndi.gaussian_filter(a, 9 * ss)
+    yy = np.linspace(0, 1, H)[:, None]
+    arr[..., :3] *= ((0.82 + 0.4 * (1 - np.clip(sh * 1.3, 0, 1))) * (0.9 + 0.2 * (1 - yy)))[..., None]
+    finish_card(Image.fromarray((np.clip(arr, 0, 1) * 255).astype(np.uint8), "RGBA"), "r3_firtree", ss)
+
+
+def gen_leaf():
+    """Foglia chiara con nervature: il colore (verde, giallo, arancio) lo dà il tono applicato quando si disegna."""
+    ss = 4
+    S = 64 * ss
+    im = Image.new("RGBA", (S, S), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    pts_l, pts_r = [], []
+    for i in range(41):
+        t = i / 40
+        wd = (math.sin(math.pi * t ** 0.75) ** 0.9) * 0.34 * S * (1 - 0.25 * t)
+        y = S * 0.92 - t * S * 0.84
+        pts_l.append((S / 2 - wd, y))
+        pts_r.append((S / 2 + wd, y))
+    d.polygon(pts_l + pts_r[::-1], fill=(214, 206, 160, 255))
+    d.line([(S / 2, S * 0.95), (S / 2, S * 0.1)], fill=(150, 120, 70, 255), width=2 * ss)
+    for k in range(1, 8):
+        t = k / 9
+        y = S * 0.92 - t * S * 0.84
+        wd = (math.sin(math.pi * t ** 0.75) ** 0.9) * 0.34 * S * (1 - 0.25 * t)
+        for sg in (-1, 1):
+            d.line([(S / 2, y), (S / 2 + sg * wd * 0.9, y - S * 0.07)], fill=(170, 140, 90, 255), width=max(1, ss // 2))
+    finish_card(im, "r3_leaf", ss)
 
 
 def gen_tuft():
@@ -342,7 +438,7 @@ def gen_tuft():
     r = rng(271)
     im = Image.new("RGBA", (S, S), (0, 0, 0, 0))
     d = ImageDraw.Draw(im)
-    dark, light = col((30, 56, 20)), col((124, 150, 58))
+    dark, light = col((40, 100, 26)), col((156, 214, 72))
     blades = []
     for _ in range(44):
         bx = S / 2 + r.normal(0, S * 0.12)
@@ -384,7 +480,7 @@ def gen_fern():
     r = rng(281)
     im = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     d = ImageDraw.Draw(im)
-    dark, light = col((34, 78, 30)), col((112, 160, 58))
+    dark, light = col((36, 106, 34)), col((126, 200, 62))
     cy = H / 2
     n = 46
     for i in range(n):
@@ -439,28 +535,35 @@ def gen_wood():
 
 
 def gen_flowers():
+    """Prato fiorito: tanti fiori di colori diversi (rosso, rosa, arancio, giallo, viola, blu, bianco), con foglie e steli."""
     ss = 2
     S = 256 * ss
     r = rng(291)
     im = Image.new("RGBA", (S, S), (0, 0, 0, 0))
     d = ImageDraw.Draw(im)
-    kinds = [((246, 244, 236), (236, 196, 50)), ((250, 214, 60), (200, 140, 20)), ((196, 120, 220), (240, 220, 120)), ((250, 250, 250), (240, 200, 60))]
-    for _ in range(9):
-        x = r.uniform(0.1, 0.9) * S
-        top = r.uniform(0.18, 0.55) * S
-        bend = r.uniform(-18, 18) * ss
+    kinds = [((236, 40, 48), (255, 214, 60)), ((255, 96, 160), (255, 236, 120)), ((255, 140, 30), (120, 60, 10)),
+             ((255, 218, 40), (200, 120, 10)), ((150, 70, 230), (255, 236, 130)), ((60, 120, 255), (255, 240, 150)),
+             ((252, 252, 252), (255, 205, 40)), ((255, 70, 110), (90, 30, 40)), ((190, 110, 255), (255, 255, 200))]
+    order = list(range(len(kinds))) * 2
+    r.shuffle(order)
+    for n, k in enumerate(order):
+        x = (0.07 + 0.86 * ((n * 0.618) % 1.0)) * S + r.uniform(-8, 8) * ss
+        top = r.uniform(0.12, 0.62) * S
+        bend = r.uniform(-16, 16) * ss
         pts = [(x, S - 2), (x + bend * 0.5, (S + top) / 2), (x + bend, top)]
-        d.line(pts, fill=(52, 96, 36, 255), width=max(2, int(2.2 * ss)))
-        # foglie sullo stelo
-        ly = S - r.uniform(18, 60) * ss
-        d.polygon([(x, ly), (x - 22 * ss, ly - 14 * ss), (x - 6 * ss, ly - 3 * ss)], fill=(54, 108, 38, 255))
-        petal, center = kinds[r.integers(0, len(kinds))]
-        rad = r.uniform(11, 17) * ss
-        for k in range(8):
-            a = k * math.pi / 4 + r.uniform(-0.1, 0.1)
+        d.line(pts, fill=(48, 128, 40, 255), width=max(2, int(2.4 * ss)))
+        ly = S - r.uniform(14, 70) * ss
+        for sg in (-1, 1):
+            d.polygon([(x, ly), (x + sg * 24 * ss, ly - 16 * ss), (x + sg * 6 * ss, ly - 2 * ss)], fill=(60, 150, 44, 255))
+        petal, center = kinds[k]
+        rad = r.uniform(10, 17) * ss
+        np_ = r.choice([5, 6, 8])
+        for q in range(np_):
+            a = q * 2 * math.pi / np_ + r.uniform(-0.1, 0.1)
             cx, cy = x + bend + math.cos(a) * rad * 0.8, top + math.sin(a) * rad * 0.8
-            d.ellipse([cx - rad * 0.55, cy - rad * 0.55, cx + rad * 0.55, cy + rad * 0.55], fill=petal + (255,))
-        d.ellipse([x + bend - rad * 0.45, top - rad * 0.45, x + bend + rad * 0.45, top + rad * 0.45], fill=center + (255,))
+            c2 = tuple(int(min(255, v * (0.9 + 0.2 * r.random()))) for v in petal) + (255,)
+            d.ellipse([cx - rad * 0.56, cy - rad * 0.56, cx + rad * 0.56, cy + rad * 0.56], fill=c2)
+        d.ellipse([x + bend - rad * 0.42, top - rad * 0.42, x + bend + rad * 0.42, top + rad * 0.42], fill=center + (255,))
     finish_card(im, "r3_flowers", ss)
 
 
@@ -575,7 +678,7 @@ def gen_mountains():
 GENS = {
     "grass": gen_grass, "forest": gen_forest_floor, "dirt": gen_dirt, "rock": gen_rock, "bark": gen_bark,
     "branch": gen_branch, "tuft": gen_tuft, "fern": gen_fern, "flowers": gen_flowers, "ray": gen_ray,
-    "sky": gen_sky, "mountains": gen_mountains, "wood": gen_wood,
+    "sky": gen_sky, "mountains": gen_mountains, "wood": gen_wood, "firtree": gen_firtree, "leaf": gen_leaf,
 }
 
 if __name__ == "__main__":
