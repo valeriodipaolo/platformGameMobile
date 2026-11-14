@@ -22,7 +22,8 @@ public final class Img {
     // texture realistiche del livello 3D (tools/gen_assets3d.py)
     public static final int R3_GRASS = 52, R3_FOREST = 53, R3_DIRT = 54, R3_ROCK = 55, R3_BARK = 56, R3_BRANCH = 57;
     public static final int R3_TUFT = 58, R3_FERN = 59, R3_FLOWERS = 60, R3_RAY = 61, R3_SKY = 62, R3_MOUNTAINS = 63;
-    public static final int COUNT = 64;
+    public static final int R3_WOOD = 64;
+    public static final int COUNT = 65;
 
     public static final String[] NAMES = {
         "bg_sky", "bg_mountains", "bg_hills",
@@ -38,5 +39,6 @@ public final class Img {
         "tex_grass", "shadow", "joy_base", "joy_knob",
         "r3_grass", "r3_forest", "r3_dirt", "r3_rock", "r3_bark", "r3_branch",
         "r3_tuft", "r3_fern", "r3_flowers", "r3_ray", "r3_sky", "r3_mountains",
+        "r3_wood",
     };
 }

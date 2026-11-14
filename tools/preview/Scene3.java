@@ -68,7 +68,7 @@ public class Scene3 {
         shot(w, sc, "t_zigzag.png", out, true);
 
         w = new World3D(new MemorySave()); sc = new Scene3D();
-        warp(w, 0, 138);
+        warp(w, 0, 140);
         run(w, 0.3f, 0, 1, false, false);
         shot(w, sc, "t_flag.png", out, true);
     }
