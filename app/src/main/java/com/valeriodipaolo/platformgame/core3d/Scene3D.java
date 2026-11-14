@@ -13,14 +13,14 @@ public final class Scene3D {
 
     // tipi di mesh a blocchi
     private static final int K_GRASS = 0, K_DIRT = 1, K_STONE = 2, K_BANK = 3, K_FOREST = 4, K_TRUNK = 5, K_CROWN = 6,
-            K_TUFT = 7, K_FERN = 8, K_FLOWER = 9, K_ROCK = 10, K_RAY = 11, K_FIR = 12, K_N = 13;
+            K_TUFT = 7, K_FERN = 8, K_FLOWER = 9, K_ROCK = 10, K_RAY = 11, K_FIR = 12, K_BLOB = 13, K_N = 14;
     private static final int[] K_TEX_SUMMER = {Img.R3_GRASS, Img.R3_DIRT, Img.R3_ROCK, Img.R3_GRASS, Img.R3_FOREST, Img.R3_BARK,
-            Img.R3_BRANCH, Img.R3_TUFT, Img.R3_FERN, Img.R3_FLOWERS, Img.R3_ROCK, Img.R3_RAY, Img.R3_FIRTREE};
+            Img.R3_BRANCH, Img.R3_TUFT, Img.R3_FERN, Img.R3_FLOWERS, Img.R3_ROCK, Img.R3_RAY, Img.R3_FIRTREE, Img.R3A_FOLIAGE};
     private static final int[] K_TEX_AUTUMN = {Img.R3A_GRASS, Img.R3_DIRT, Img.R3_ROCK, Img.R3A_GRASS, Img.R3A_FOREST, Img.R3_BARK,
-            Img.R3A_CROWN, Img.R3A_TUFT, Img.R3_FERN, Img.R3A_FLOWERS, Img.R3_ROCK, Img.R3_RAY, Img.R3A_TREE};
+            Img.R3A_CROWN, Img.R3A_TUFT, Img.R3_FERN, Img.R3A_FLOWERS, Img.R3_ROCK, Img.R3_RAY, Img.R3A_TREE, Img.R3A_FOLIAGE};
     /** Tinte delle chiome d'autunno: arancio, rosso, giallo, ruggine, verde, zucca. */
     private static final float[][] AUTUMN_TINT = {{1.0f, 0.76f, 0.42f}, {1.0f, 0.50f, 0.38f}, {1.0f, 0.96f, 0.46f},
-            {0.96f, 0.66f, 0.36f}, {0.66f, 0.98f, 0.42f}, {1.0f, 0.60f, 0.28f}};
+            {0.96f, 0.66f, 0.36f}, {0.76f, 0.9f, 0.40f}, {1.0f, 0.60f, 0.28f}};
 
     private static final class Tree {
         float x, y, z, h, rad, tint;
@@ -39,7 +39,7 @@ public final class Scene3D {
     private float[] fadeG;
     private int fadeZ0, fadeNz;
     private Mesh leaf, crateStar;
-    private Mesh hogBody, hogSpines, hogEyes, hogLeg, crowBody, crowWing, crowEyes, acornBody, acornCap, acornEyes, acornFoot;
+    private Mesh hogBody, hogSpines, hogEyes, hogLeg, crowBody, crowWing, crowWingL, crowEyes, acornBody, acornCap, acornEyes, acornFoot;
     private boolean autumn;
     private int[] ktex = K_TEX_SUMMER;
     private float fogR = FOG_R, fogG = FOG_G, fogB = FOG_B;
@@ -244,7 +244,7 @@ public final class Scene3D {
         Random r = new Random(7);
         for (int side = -1; side <= 1; side += 2) {
             for (int row = 0; row < 5; row++) {
-                for (float z = z0; z < z1; z += 2.1f + row * 0.5f) {
+                for (float z = z0; z < z1; z += (autumn && row < 2 ? 3.3f + row * 0.6f : 2.1f + row * 0.5f)) {
                     Tree t = new Tree();
                     t.row = row;
                     t.x = side * (World3D.HALF + (lvl.levelNo == 4 ? 4.4f : 3.0f) + row * 2.6f + r.nextFloat() * 2.0f);
@@ -502,28 +502,83 @@ public final class Scene3D {
         cb.sway(0);
     }
 
-    /** Albero a foglie larghe d'autunno: tronco e chioma fatta di mazzi di fogliame incrociati. */
-    private void broadleaf(float x, float y0, float z, float h, float rad, float tint, int clusters, Random r) {
-        MeshBuilder tb = mb(K_TRUNK, z), cb = mb(K_CROWN, z);
+    /**
+     * Lobo di fogliame: un ellissoide pieno, irregolare, con normali morbide e un mosaico di foglie come texture.
+     * Più scuro in basso (ombra interna), più chiaro in cima; il vento lo fa oscillare in alto.
+     */
+    private void foliageLobe(MeshBuilder bb, float cx, float cy, float cz, float rx, float ry, float rz, int segs, int rings,
+                             float[] tc, float tone, float swayK, Random r) {
+        float[] ph = {r.nextFloat() * 6.28f, r.nextFloat() * 6.28f, r.nextFloat() * 6.28f, r.nextFloat() * 6.28f};
+        int n = (rings + 1) * (segs + 1);
+        float[][] p = new float[n][8];            // x y z nx ny nz u v
+        for (int i = 0; i <= rings; i++) {
+            double a = Math.PI * i / rings;
+            for (int j = 0; j <= segs; j++) {
+                double b = 2 * Math.PI * j / segs;
+                float ux = (float) (Math.sin(a) * Math.cos(b)), uy = (float) Math.cos(a), uz = (float) (Math.sin(a) * Math.sin(b));
+                float d = 1f + 0.17f * (float) Math.sin(ux * 3.3 + uz * 1.7 + ph[0]) + 0.12f * (float) Math.sin(uy * 4.1 + ux * 2.3 + ph[1])
+                        + 0.08f * (float) Math.sin(uz * 6.1 + uy * 3.7 + ph[2]);
+                float[] q = p[i * (segs + 1) + j];
+                q[0] = cx + ux * rx * d; q[1] = cy + uy * ry * d * (uy < 0 ? 0.8f : 1f); q[2] = cz + uz * rz * d;
+                float nxx = ux / rx, nyy = uy / ry, nzz = uz / rz, l = (float) Math.sqrt(nxx * nxx + nyy * nyy + nzz * nzz);
+                q[3] = nxx / l; q[4] = nyy / l * 0.8f + 0.25f; q[5] = nzz / l;
+                q[6] = j / (float) segs * (6.2832f * Math.max(rx, rz) * (float) Math.sin(a)) / 2.6f;
+                q[7] = i / (float) rings * (3.1416f * ry) / 2.6f;
+            }
+        }
+        for (int i = 0; i < rings; i++) {
+            for (int j = 0; j < segs; j++) {
+                float[][] qs = {p[i * (segs + 1) + j], p[(i + 1) * (segs + 1) + j], p[(i + 1) * (segs + 1) + j + 1], p[i * (segs + 1) + j + 1]};
+                int[] ord = {0, 1, 2, 0, 2, 3};
+                // proiezione piana secondo l'asse dominante della faccia: niente schiacciamento ai poli
+                float anx = 0, any = 0, anz = 0;
+                for (float[] q : qs) { anx += q[3]; any += q[4] - 0.25f; anz += q[5]; }
+                int axis = Math.abs(any) >= Math.abs(anx) && Math.abs(any) >= Math.abs(anz) ? 1 : (Math.abs(anx) > Math.abs(anz) ? 0 : 2);
+                for (int k : ord) {
+                    float[] q = qs[k];
+                    float up = (q[1] - (cy - ry)) / (2 * ry);
+                    float shade = (0.6f + 0.55f * Math.max(0f, Math.min(1f, up))) * tone;
+                    bb.colorf(tc[0] * shade, tc[1] * shade, tc[2] * shade);
+                    bb.sway(swayK * (0.4f + 0.6f * Math.max(0f, Math.min(1f, up))));
+                    float u = (axis == 0 ? q[2] : q[0]) / 2.6f + ph[3], v = (axis == 1 ? q[2] : q[1]) / 2.6f;
+                    bb.vert(q[0], q[1], q[2], q[3], q[4], q[5], u, v);
+                }
+            }
+        }
+        bb.sway(0);
+    }
+
+    /** Albero a foglie larghe d'autunno: tronco con rami, chioma fatta di lobi pieni e foglie sciolte sul contorno. */
+    private void broadleaf(float x, float y0, float z, float h, float rad, float tint, int lobes, Random r) {
+        MeshBuilder tb = mb(K_TRUNK, z), cb = mb(K_CROWN, z), bb = mb(K_BLOB, z);
         float[] tc = AUTUMN_TINT[r.nextInt(AUTUMN_TINT.length)];
         float k = 0.8f + 0.2f * tint;
         tb.colorf(k, k * 0.92f, k * 0.84f);
         float crownY = y0 + h * 0.62f, r0 = 0.1f + 0.016f * h, top = crownY + h * 0.05f;
         tb.cylinder(x, y0 - 0.3f, y0 + 0.7f, z, r0 * 1.5f, r0 * 1.1f, 8, false, false);
         tb.cylinder(x, y0 + 0.7f, top, z, r0 * 1.1f, r0 * 0.45f, 7, false, false);
-        float rh = rad * 1.45f + 0.3f, rv = h * 0.30f;
-        float wind = Math.min(1.5f, 0.45f + h * 0.12f);
-        for (int i = 0; i < clusters; i++) {
-            float ux, uy, uz, l;
-            do { ux = r.nextFloat() * 2 - 1; uy = r.nextFloat() * 2 - 1; uz = r.nextFloat() * 2 - 1; l = ux * ux + uy * uy + uz * uz; } while (l > 1f || l < 0.12f);
-            float cx = x + ux * rh, cy = crownY + uy * rv * 0.95f, cz = z + uz * rh;
-            float tone = (0.95f + 0.28f * (uy * 0.5f + 0.5f)) * (0.92f + 0.18f * r.nextFloat()) * (0.9f + 0.15f * tint);
-            float[] ct = {tc[0] * (0.92f + 0.16f * r.nextFloat()), tc[1] * (0.9f + 0.2f * r.nextFloat()), tc[2] * (0.9f + 0.2f * r.nextFloat())};
-            float size = (1.3f + 0.8f * r.nextFloat()) * (0.75f + 0.25f * rad / 2f);
-            float yaw = r.nextFloat() * 3.14159f;
-            leafCard(cb, cx, cy, cz, size, yaw, (r.nextFloat() - 0.5f) * 0.5f, ct, tone, wind * (0.4f + 0.6f * (uy * 0.5f + 0.5f)));
-            leafCard(cb, cx, cy, cz, size, yaw + 1.2f, (r.nextFloat() - 0.5f) * 0.5f, ct, tone, wind * 0.8f);
-            leafCard(cb, cx, cy + size * 0.1f, cz, size * 0.9f, yaw + 2.4f, 1.1f + 0.3f * r.nextFloat(), ct, tone * 1.05f, wind * 0.9f);
+        float rh = rad * 1.3f + 0.3f, rv = h * 0.26f;
+        float wind = Math.min(1.4f, 0.4f + h * 0.1f);
+        int segs = lobes >= 4 ? 9 : 7, rings = lobes >= 4 ? 6 : 4;
+        float[][] centers = new float[lobes][3];
+        for (int i = 0; i < lobes; i++) {
+            float a = r.nextFloat() * 6.283f + i * 2.4f;
+            float rr = i == 0 ? 0f : rh * (0.30f + 0.32f * r.nextFloat());
+            float cx = x + (float) Math.cos(a) * rr, cz = z + (float) Math.sin(a) * rr;
+            float cy = crownY + (i == 0 ? rv * 0.5f : rv * (r.nextFloat() * 1.0f - 0.35f));
+            float lr = rh * (i == 0 ? 0.86f : 0.58f + 0.2f * r.nextFloat());
+            centers[i][0] = cx; centers[i][1] = cy; centers[i][2] = cz;
+            float[] ct = {tc[0] * (0.9f + 0.2f * r.nextFloat()), tc[1] * (0.88f + 0.24f * r.nextFloat()), tc[2] * (0.88f + 0.24f * r.nextFloat())};
+            float tone = (0.92f + 0.2f * r.nextFloat()) * (0.9f + 0.15f * tint);
+            foliageLobe(bb, cx, cy, cz, lr, lr * 1.0f, lr, segs, rings, ct, tone, wind, r);
+            // foglie sciolte sul contorno del lobo
+            int fringe = lobes >= 4 ? 6 : 3;
+            for (int f = 0; f < fringe; f++) {
+                float fa = r.nextFloat() * 6.283f, fu = r.nextFloat() * 1.6f - 0.7f, fl = (float) Math.sqrt(1 - fu * fu);
+                float fx = cx + (float) Math.cos(fa) * fl * lr * 1.02f, fy = cy + fu * lr * 0.85f, fz = cz + (float) Math.sin(fa) * fl * lr * 1.02f;
+                float ts = (0.95f + 0.3f * (fu * 0.5f + 0.5f)) * (0.92f + 0.15f * r.nextFloat());
+                leafCard(cb, fx, fy, fz, 0.55f + 0.35f * r.nextFloat(), r.nextFloat() * 3.14f, (r.nextFloat() - 0.5f) * 1.2f, ct, ts, wind);
+            }
         }
     }
 
@@ -559,8 +614,8 @@ public final class Scene3D {
         Random r = new Random(11);
         for (Tree t : trees) {
             if (autumn) {
-                if (t.row == 0) broadleaf(t.x, t.y, t.z, t.h, t.rad, t.tint, 19, r);
-                else if (t.row == 1) broadleaf(t.x, t.y, t.z, t.h, t.rad, t.tint, 9, r);
+                if (t.row == 0) broadleaf(t.x, t.y, t.z, t.h, t.rad, t.tint, 4, r);
+                else if (t.row == 1) broadleaf(t.x, t.y, t.z, t.h, t.rad, t.tint, 3, r);
                 else impostor(t.x, t.y, t.z, t.h, t.tint, r);
             } else if (t.row == 0) fir(t.x, t.y, t.z, t.h, t.rad, t.tint, true, r);
             else if (t.row == 1) fir(t.x, t.y, t.z, t.h, t.rad, t.tint, false, r);
@@ -673,19 +728,44 @@ public final class Scene3D {
             // abeti giovani
             for (float z = z0; z < z1; z += 3.5f + r.nextFloat() * 5f) {
                 float d = 1.4f + r.nextFloat() * 3.2f, x = side * (World3D.HALF + d), h = 1.0f + r.nextFloat() * 1.6f;
-                if (autumn) broadleaf(x, groundAt(x, z) - 0.05f, z, h + 0.6f, h * 0.35f, 0.95f + 0.2f * r.nextFloat(), 4, r);
+                if (autumn) broadleaf(x, groundAt(x, z) - 0.05f, z, h + 0.6f, h * 0.35f, 0.95f + 0.2f * r.nextFloat(), 3, r);
                 else fir(x, groundAt(x, z) - 0.05f, z, h, h * 0.3f, 0.95f + 0.2f * r.nextFloat(), false, r);
             }
-            // massi muschiati
+            // massi muschiati: appoggiati sulla quota più bassa della maglia di terreno sotto di loro e affondati
             for (float z = z0; z < z1; z += 3.5f + r.nextFloat() * 4f) {
                 float d = 0.3f + r.nextFloat() * 3.5f, rad = 0.3f + r.nextFloat() * 0.5f;
-                float x = side * (World3D.HALF + d), y = groundAt(x, z) + rad * 0.15f;
+                float x = side * (World3D.HALF + d);
+                float rx = rad * 1.25f, ry = rad * 1.0f, rz = rad * 1.1f;
+                float low = meshAt(x, z);
+                for (int k = 0; k < 12; k++) {
+                    double a = k * Math.PI / 6;
+                    low = Math.min(low, meshAt(x + (float) Math.cos(a) * rx * 1.1f, z + (float) Math.sin(a) * rz * 1.1f));
+                    low = Math.min(low, meshAt(x + (float) Math.cos(a) * rx * 0.5f, z + (float) Math.sin(a) * rz * 0.5f));
+                }
+                float y = low + ry * 0.5f;
                 MeshBuilder rb = mb(K_ROCK, z);
                 lightAt(x, z, 1f);
                 rb.colorf(lt[0] * 0.95f, lt[1] * 0.95f, lt[2] * 0.95f);
-                rb.rock(x, y, z, rad * 1.3f, rad * 0.8f, rad * 1.1f, (int) (z * 31) + side, 9, 6);
+                rb.rock(x, y, z, rx, ry, rz, (int) (z * 31) + side, 10, 7);
             }
         }
+    }
+
+    private static final float[] SIDE_D = {0, 0.35f, 0.75f, 1.2f, 1.7f, 2.3f, SEAM, 4.6f, 6f, 8f, 11f, 15f, 20f, 27f, 36f};
+
+    /** Altezza della superficie realmente disegnata ai lati del sentiero (interpolazione della maglia), non quella teorica. */
+    private float meshAt(float x, float z) {
+        float d = Math.abs(x) - World3D.HALF;
+        if (d <= 0) return groundAt(x, z);
+        float sg = Math.signum(x);
+        int k = 0;
+        while (k + 2 < SIDE_D.length && d >= SIDE_D[k + 1]) k++;
+        float d0 = SIDE_D[k], d1 = SIDE_D[k + 1], fz0 = (float) Math.floor(z);
+        float tx = Math.max(0, Math.min(1, (d - d0) / (d1 - d0))), tz = z - fz0;
+        float a = groundAt(sg * (World3D.HALF + d0), fz0), b = groundAt(sg * (World3D.HALF + d1), fz0);
+        float c = groundAt(sg * (World3D.HALF + d1), fz0 + 1), e = groundAt(sg * (World3D.HALF + d0), fz0 + 1);
+        float bil = (a + (b - a) * tx) * (1 - tz) + (e + (c - e) * tx) * tz;
+        return Math.min(bil, Math.min(Math.min(a, b), Math.min(c, e)) + 0.5f * (bil - Math.min(Math.min(a, b), Math.min(c, e))));
     }
 
     private void buildRays(int z0, int z1) {
@@ -906,7 +986,7 @@ public final class Scene3D {
     }
 
     /** Punta a tre facce: base centrata in P, direzione D, lunghezza len, mezza larghezza w. */
-    private static void spike(MeshBuilder b, float px, float py, float pz, float dx, float dy, float dz, float len, float w) {
+    private static void spike(MeshBuilder b, float px, float py, float pz, float dx, float dy, float dz, float len, float w, float[] c0, float[] c1) {
         float l = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
         dx /= l; dy /= l; dz /= l;
         // due assi perpendicolari a D
@@ -928,78 +1008,199 @@ public final class Scene3D {
             nx /= nl; ny /= nl; nz /= nl;
             float mx = (a[0] + c[0]) / 2 - px, my = (a[1] + c[1]) / 2 - py, mz = (a[2] + c[2]) / 2 - pz;
             if (nx * mx + ny * my + nz * mz < 0) { nx = -nx; ny = -ny; nz = -nz; }
+            b.colorf(c0[0], c0[1], c0[2]);
             b.vert(a[0], a[1], a[2], nx, ny, nz, 0.5f, 0.5f);
             b.vert(c[0], c[1], c[2], nx, ny, nz, 0.5f, 0.5f);
+            b.colorf(c1[0], c1[1], c1[2]);
             b.vert(tx, ty, tz, nx, ny, nz, 0.5f, 0.5f);
         }
+    }
+
+    private static float[] rgb(int r, int g, int b) {
+        return new float[] {r / 255f, g / 255f, b / 255f};
+    }
+
+    private static float[] mix(float[] a, float[] b, float t, float k) {
+        return new float[] {(a[0] + (b[0] - a[0]) * t) * k, (a[1] + (b[1] - a[1]) * t) * k, (a[2] + (b[2] - a[2]) * t) * k};
+    }
+
+    /** Ellissoide con sfumatura dal basso (bot) all'alto (top) e normali morbide. */
+    private static void gball(MeshBuilder b, float cx, float cy, float cz, float rx, float ry, float rz, int segs, int rings, float[] bot, float[] top) {
+        float[][] p = new float[(rings + 1) * (segs + 1)][6];
+        for (int i = 0; i <= rings; i++) {
+            double a = Math.PI * i / rings;
+            for (int j = 0; j <= segs; j++) {
+                double t = 2 * Math.PI * j / segs;
+                float ux = (float) (Math.sin(a) * Math.cos(t)), uy = (float) Math.cos(a), uz = (float) (Math.sin(a) * Math.sin(t));
+                float[] q = p[i * (segs + 1) + j];
+                q[0] = cx + ux * rx; q[1] = cy + uy * ry; q[2] = cz + uz * rz;
+                float nx = ux / rx, ny = uy / ry, nz = uz / rz, l = (float) Math.sqrt(nx * nx + ny * ny + nz * nz);
+                q[3] = nx / l; q[4] = ny / l; q[5] = nz / l;
+            }
+        }
+        for (int i = 0; i < rings; i++) {
+            for (int j = 0; j < segs; j++) {
+                float[][] qs = {p[i * (segs + 1) + j], p[(i + 1) * (segs + 1) + j], p[(i + 1) * (segs + 1) + j + 1], p[i * (segs + 1) + j + 1]};
+                int[] ord = {0, 1, 2, 0, 2, 3};
+                for (int k : ord) {
+                    float[] q = qs[k];
+                    float t = sm((q[4] + 0.6f) / 1.6f);
+                    b.colorf(bot[0] + (top[0] - bot[0]) * t, bot[1] + (top[1] - bot[1]) * t, bot[2] + (top[2] - bot[2]) * t);
+                    b.vert(q[0], q[1], q[2], q[3], q[4], q[5], 0.5f, 0.5f);
+                }
+            }
+        }
+    }
+
+    /** Penna piatta: striscia che parte da (ox,oy,oz) in direzione angolo ang nel piano XZ, si assottiglia e si solleva in punta. */
+    private static void feather(MeshBuilder b, float ox, float oy, float oz, float ang, float len, float wid, float rise, float[] c0, float[] c1) {
+        float dx = (float) Math.cos(ang), dz = (float) Math.sin(ang), px = -dz, pz = dx;
+        int n = 4;
+        float[][] l = new float[n + 1][3], r = new float[n + 1][3];
+        for (int i = 0; i <= n; i++) {
+            float t = i / (float) n, w = wid * (float) Math.sqrt(Math.max(0.02f, 1f - t * t * 0.9f)) * (0.55f + 0.45f * (1 - t * 0.3f));
+            float cx = ox + dx * len * t, cz = oz + dz * len * t, cy = oy + rise * t * t;
+            l[i][0] = cx + px * w; l[i][1] = cy; l[i][2] = cz + pz * w;
+            r[i][0] = cx - px * w; r[i][1] = cy; r[i][2] = cz - pz * w;
+        }
+        for (int i = 0; i < n; i++) {
+            float t0 = i / (float) n, t1 = (i + 1) / (float) n;
+            float[][] q = {l[i], r[i], r[i + 1], l[i + 1]};
+            float[] cc = {t0, t0, t1, t1};
+            int[] ord = {0, 1, 2, 0, 2, 3};
+            for (int k : ord) {
+                float[] col = mix(c0, c1, cc[k], 1f);
+                b.colorf(col[0], col[1], col[2]);
+                b.vert(q[k][0], q[k][1], q[k][2], 0, 1, 0, 0.5f, 0.5f);
+            }
+        }
+    }
+
+    /** Ala del corvo: remiganti e copritrici a ventaglio. sx = 1 destra, -1 sinistra (specchiata). */
+    private static Mesh buildWing(int sx, float[] navy, float[] navy2) {
+        MeshBuilder b = new MeshBuilder();
+        gball(b, sx * 0.1f, 0f, 0.02f, 0.13f, 0.05f, 0.14f, 8, 5, navy2, navy);
+        for (int i = 0; i < 8; i++) {
+            float ang = -0.05f - i * 0.1f;
+            feather(b, sx * 0.08f, 0.0f, 0.1f - i * 0.045f, sx > 0 ? ang : (float) Math.PI - ang, 0.72f - i * 0.03f, 0.075f, 0.07f, navy, rgb(74, 82, 134));
+        }
+        for (int i = 0; i < 6; i++) {
+            float ang = -0.04f - i * 0.12f;
+            feather(b, sx * 0.07f, 0.012f, 0.12f - i * 0.05f, sx > 0 ? ang : (float) Math.PI - ang, 0.38f - i * 0.03f, 0.085f, 0.03f, rgb(30, 34, 70), rgb(96, 104, 156));
+        }
+        Mesh m = b.build(-1, false, true);
+        m.spec = 0.6f; m.shine = 24f;
+        return m;
     }
 
     /** Nemici d'autunno: riccio (guarda verso z positivo), corvo e ghianda. */
     private void buildFoes() {
         Random r = new Random(77);
-        MeshBuilder b = new MeshBuilder().color(106, 72, 46);
-        b.ellipsoid(0, 0.34f, -0.06f, 0.40f, 0.30f, 0.50f, 16, 9);
-        b.color(226, 190, 150);
-        b.ellipsoid(0, 0.2f, 0.46f, 0.17f, 0.15f, 0.2f, 12, 7);
+        float[] cream = rgb(238, 205, 164), brown = rgb(110, 72, 44), pink = rgb(236, 150, 140), black = rgb(18, 14, 14);
+        float[] white = {1f, 1f, 0.97f};
+        // ---------------- riccio
+        MeshBuilder b = new MeshBuilder();
+        gball(b, 0, 0.34f, -0.06f, 0.42f, 0.31f, 0.52f, 18, 11, rgb(214, 176, 134), rgb(70, 46, 30));               // corpo: pancia chiara, dorso scuro
+        gball(b, 0, 0.22f, 0.44f, 0.2f, 0.18f, 0.27f, 14, 9, rgb(244, 214, 176), cream);                  // testa
+        spike(b, 0, 0.21f, 0.62f, 0, -0.06f, 1, 0.22f, 0.105f, cream, rgb(246, 220, 186));                // muso a punta
+        gball(b, 0, 0.2f, 0.84f, 0.05f, 0.045f, 0.045f, 8, 6, black, rgb(60, 50, 50));                    // naso lucido
+        gball(b, -0.15f, 0.19f, 0.5f, 0.055f, 0.045f, 0.04f, 8, 5, pink, pink);                           // guance rosa
+        gball(b, 0.15f, 0.19f, 0.5f, 0.055f, 0.045f, 0.04f, 8, 5, pink, pink);
+        gball(b, -0.15f, 0.4f, 0.28f, 0.07f, 0.085f, 0.045f, 8, 6, pink, cream);                          // orecchie
+        gball(b, 0.15f, 0.4f, 0.28f, 0.07f, 0.085f, 0.045f, 8, 6, pink, cream);
+        gball(b, 0, 0.12f, -0.52f, 0.06f, 0.05f, 0.08f, 8, 5, cream, cream);                              // codina
         hogBody = b.build(-1, false, true);
-        hogBody.spec = 0.2f; hogBody.shine = 18f;
+        hogBody.spec = 0.25f; hogBody.shine = 18f;
         b = new MeshBuilder();
-        for (int i = 0; i < 70; i++) {                                   // aculei: sulla metà alta e posteriore del corpo
-            float a = r.nextFloat() * 6.283f, el = 0.15f + r.nextFloat() * 1.25f;
+        for (int i = 0; i < 400; i++) {                                  // aculei a due toni, scuri alla radice e chiari in punta
+            float a = r.nextFloat() * 6.283f, el = 0.0f + r.nextFloat() * 1.5f;
             float ux = (float) (Math.cos(a) * Math.cos(el)), uy = (float) Math.sin(el), uz = (float) (Math.sin(a) * Math.cos(el));
-            if (uz > 0.55f) uz *= 0.3f;
-            float px = ux * 0.38f, py = 0.34f + uy * 0.3f, pz = -0.06f + uz * 0.48f;
-            float tone = 0.8f + 0.4f * r.nextFloat();
-            b.colorf(0.34f * tone, 0.22f * tone, 0.14f * tone);
-            spike(b, px, py, pz, ux * 0.9f, uy + 0.2f, uz * 0.9f - 0.45f, 0.30f + 0.12f * r.nextFloat(), 0.045f);
+            if (uz > 0.5f) { if (r.nextFloat() < 0.8f) continue; uz *= 0.3f; }
+            float px = ux * 0.41f, py = 0.34f + uy * 0.3f, pz = -0.06f + uz * 0.51f;
+            float tone = 0.78f + 0.4f * r.nextFloat(), ln = 0.26f + 0.16f * r.nextFloat();
+            float[] c0 = mix(rgb(52, 32, 22), rgb(80, 52, 34), r.nextFloat(), tone);
+            float[] c1 = mix(rgb(150, 104, 64), rgb(214, 178, 122), r.nextFloat(), tone * (0.75f + 0.3f * uy));
+            spike(b, px, py, pz, ux * 0.8f, uy + 0.15f, uz * 0.8f - 0.55f, ln, 0.052f, c0, c1);
         }
         hogSpines = b.build(-1, false, true);
-        hogSpines.spec = 0.25f; hogSpines.shine = 16f;
-        b = new MeshBuilder().color(20, 14, 12);
-        b.ellipsoid(0, 0.19f, 0.65f, 0.045f, 0.04f, 0.04f, 8, 5);
-        b.ellipsoid(-0.09f, 0.28f, 0.56f, 0.035f, 0.04f, 0.03f, 8, 5);
-        b.ellipsoid(0.09f, 0.28f, 0.56f, 0.035f, 0.04f, 0.03f, 8, 5);
+        hogSpines.spec = 0.3f; hogSpines.shine = 16f;
+        b = new MeshBuilder();
+        for (int s2 = -1; s2 <= 1; s2 += 2) {                            // occhi: perline nere con riflesso e sopracciglio severo
+            gball(b, s2 * 0.085f, 0.3f, 0.58f, 0.048f, 0.055f, 0.036f, 8, 6, black, black);
+            gball(b, s2 * 0.075f, 0.318f, 0.612f, 0.014f, 0.016f, 0.01f, 6, 4, white, white);
+            spike(b, s2 * 0.14f, 0.385f, 0.585f, -s2 * 1f, -0.55f, 0, 0.1f, 0.018f, rgb(70, 46, 30), rgb(70, 46, 30));
+        }
         hogEyes = b.build(-1, false, true);
-        b = new MeshBuilder().color(206, 168, 128);
-        b.box(0, -0.1f, 0, 0.07f, 0.2f, 0.07f);
+        hogEyes.spec = 0.9f; hogEyes.shine = 40f;
+        b = new MeshBuilder();
+        gball(b, 0, -0.07f, 0, 0.055f, 0.13f, 0.055f, 8, 6, cream, rgb(210, 170, 130));                  // zampa
+        gball(b, 0, -0.18f, 0.04f, 0.075f, 0.04f, 0.1f, 8, 5, rgb(150, 110, 80), rgb(210, 170, 130));   // piedino
         hogLeg = b.build(-1, false, true);
 
-        b = new MeshBuilder().color(38, 36, 62);
-        b.ellipsoid(0, 0, 0, 0.22f, 0.2f, 0.36f, 14, 8);
-        b.ellipsoid(0, 0.14f, 0.36f, 0.14f, 0.14f, 0.14f, 10, 6);
-        b.box(0, 0.0f, -0.46f, 0.2f, 0.03f, 0.34f);
-        b.color(244, 176, 44);
-        spike(b, 0, 0.12f, 0.48f, 0, -0.1f, 1, 0.2f, 0.05f);
+        // ---------------- corvo
+        float[] navy = rgb(22, 26, 52), navy2 = rgb(52, 58, 104), beak = rgb(250, 168, 40), beak2 = rgb(214, 120, 24);
+        b = new MeshBuilder();
+        gball(b, 0, 0, 0, 0.21f, 0.2f, 0.36f, 16, 10, rgb(64, 68, 108), navy);                           // corpo con riflessi bluastri
+        gball(b, 0, -0.04f, 0.16f, 0.15f, 0.14f, 0.16f, 12, 8, rgb(92, 98, 140), rgb(56, 62, 100));     // petto
+        gball(b, 0, 0.17f, 0.35f, 0.14f, 0.135f, 0.14f, 12, 8, rgb(52, 58, 96), rgb(24, 28, 56));       // testa
+        spike(b, 0, 0.16f, 0.46f, 0, -0.1f, 1, 0.27f, 0.07f, beak2, beak);                                // becco superiore
+        spike(b, 0, 0.115f, 0.46f, 0, -0.02f, 1, 0.19f, 0.045f, rgb(190, 100, 20), beak2);               // becco inferiore
+        for (int i = -2; i <= 2; i++) feather(b, i * 0.025f, 0.0f, -0.3f, (float) (-Math.PI / 2 + i * 0.16), 0.46f - Math.abs(i) * 0.03f, 0.065f, -0.035f, navy, rgb(70, 76, 124));   // coda a ventaglio
+        b.color(0, 0, 0);
+        for (int s2 = -1; s2 <= 1; s2 += 2) {                            // zampe raccolte
+            gball(b, s2 * 0.08f, -0.2f, 0.0f, 0.03f, 0.08f, 0.03f, 6, 5, rgb(120, 78, 40), rgb(160, 100, 50));
+            spike(b, s2 * 0.08f, -0.26f, 0.0f, 0, -0.2f, 1, 0.12f, 0.025f, rgb(130, 82, 40), rgb(130, 82, 40));
+        }
         crowBody = b.build(-1, false, true);
-        crowBody.spec = 0.7f; crowBody.shine = 30f;
-        b = new MeshBuilder().color(54, 52, 90);
-        b.box(0.3f, 0, 0, 0.6f, 0.03f, 0.36f);
-        crowWing = b.build(-1, false, true);
-        crowWing.spec = 0.5f; crowWing.shine = 20f;
-        b = new MeshBuilder().color(252, 220, 70);
-        b.ellipsoid(-0.07f, 0.2f, 0.45f, 0.03f, 0.03f, 0.03f, 6, 4);
-        b.ellipsoid(0.07f, 0.2f, 0.45f, 0.03f, 0.03f, 0.03f, 6, 4);
+        crowBody.spec = 0.75f; crowBody.shine = 30f;
+        crowWing = buildWing(1, navy, navy2);
+        crowWingL = buildWing(-1, navy, navy2);
+        b = new MeshBuilder();
+        for (int s2 = -1; s2 <= 1; s2 += 2) {                            // occhi: anello dorato, pupilla, riflesso
+            gball(b, s2 * 0.085f, 0.215f, 0.445f, 0.036f, 0.036f, 0.025f, 8, 5, rgb(250, 210, 70), rgb(255, 232, 110));
+            gball(b, s2 * 0.09f, 0.215f, 0.462f, 0.02f, 0.021f, 0.012f, 6, 4, black, black);
+            gball(b, s2 * 0.083f, 0.225f, 0.47f, 0.007f, 0.007f, 0.005f, 4, 3, white, white);
+        }
         crowEyes = b.build(-1, false, true);
+        crowEyes.spec = 0.9f; crowEyes.shine = 40f;
 
-        b = new MeshBuilder().color(206, 148, 66);
-        b.ellipsoid(0, 0.34f, 0, 0.3f, 0.34f, 0.3f, 14, 8);
+        // ---------------- ghianda
+        float[] nut0 = rgb(124, 78, 38), nut1 = rgb(222, 158, 74), cap0 = rgb(70, 44, 24), cap1 = rgb(136, 92, 52);
+        b = new MeshBuilder();
+        gball(b, 0, 0.27f, 0, 0.255f, 0.27f, 0.255f, 14, 9, nut0, nut1);                                  // parte bassa
+        gball(b, 0, 0.44f, 0, 0.285f, 0.2f, 0.285f, 14, 8, nut0, nut1);                                   // spalle
+        gball(b, -0.17f, 0.3f, 0.2f, 0.055f, 0.04f, 0.03f, 8, 5, rgb(240, 120, 110), rgb(250, 150, 130)); // guance
+        gball(b, 0.17f, 0.3f, 0.2f, 0.055f, 0.04f, 0.03f, 8, 5, rgb(240, 120, 110), rgb(250, 150, 130));
+        gball(b, -0.3f, 0.3f, 0.05f, 0.06f, 0.075f, 0.06f, 8, 6, rgb(90, 56, 30), nut0);                  // braccini
+        gball(b, 0.3f, 0.3f, 0.05f, 0.06f, 0.075f, 0.06f, 8, 6, rgb(90, 56, 30), nut0);
         acornBody = b.build(-1, false, true);
-        acornBody.spec = 0.4f; acornBody.shine = 22f;
-        b = new MeshBuilder().color(126, 80, 44);
-        b.ellipsoid(0, 0.56f, 0, 0.35f, 0.2f, 0.35f, 14, 7);
+        acornBody.spec = 0.45f; acornBody.shine = 22f;
+        b = new MeshBuilder();
+        gball(b, 0, 0.6f, 0, 0.35f, 0.2f, 0.35f, 16, 8, cap0, cap1);                                      // cappello a scaglie
+        for (int i = 0; i < 44; i++) {
+            float a = i * 2.399f, el = 0.15f + (i % 4) * 0.33f;
+            float ux = (float) (Math.cos(a) * Math.cos(el)), uy = (float) Math.sin(el), uz = (float) (Math.sin(a) * Math.cos(el));
+            float tone = 0.8f + 0.4f * r.nextFloat();
+            gball(b, ux * 0.34f, 0.6f + uy * 0.19f, uz * 0.34f, 0.075f, 0.05f, 0.075f, 6, 4, mix(cap0, cap1, 0.2f, tone), mix(cap0, cap1, 0.9f, tone));
+        }
+        gball(b, 0, 0.5f, 0, 0.345f, 0.04f, 0.345f, 14, 4, rgb(60, 38, 20), rgb(100, 66, 38));           // bordo
         b.color(88, 58, 34);
-        b.cylinder(0, 0.7f, 0.9f, 0, 0.05f, 0.035f, 6, true, false);
+        b.cylinder(0, 0.74f, 0.93f, 0, 0.05f, 0.032f, 6, true, false);                                    // picciolo
+        gball(b, 0.02f, 0.94f, 0, 0.04f, 0.03f, 0.04f, 6, 4, rgb(110, 76, 42), rgb(150, 108, 60));
         acornCap = b.build(-1, false, true);
-        acornCap.spec = 0.2f; acornCap.shine = 14f;
-        b = new MeshBuilder().color(250, 246, 236);
-        b.ellipsoid(-0.1f, 0.4f, 0.26f, 0.065f, 0.075f, 0.04f, 8, 5);
-        b.ellipsoid(0.1f, 0.4f, 0.26f, 0.065f, 0.075f, 0.04f, 8, 5);
-        b.color(22, 14, 10);
-        b.ellipsoid(-0.09f, 0.39f, 0.3f, 0.03f, 0.04f, 0.02f, 6, 4);
-        b.ellipsoid(0.09f, 0.39f, 0.3f, 0.03f, 0.04f, 0.02f, 6, 4);
+        acornCap.spec = 0.25f; acornCap.shine = 14f;
+        b = new MeshBuilder();
+        for (int s2 = -1; s2 <= 1; s2 += 2) {                            // occhi grandi, pupille, riflessi, sopracciglia arrabbiate
+            gball(b, s2 * 0.1f, 0.4f, 0.235f, 0.075f, 0.09f, 0.04f, 10, 6, white, white);
+            gball(b, s2 * 0.095f, 0.395f, 0.268f, 0.036f, 0.048f, 0.022f, 8, 5, black, black);
+            gball(b, s2 * 0.083f, 0.415f, 0.285f, 0.01f, 0.012f, 0.006f, 4, 3, white, white);
+            spike(b, s2 * 0.2f, 0.5f, 0.24f, -s2 * 1f, -0.5f, 0, 0.14f, 0.025f, rgb(60, 36, 20), rgb(60, 36, 20));
+        }
+        gball(b, 0, 0.255f, 0.245f, 0.065f, 0.03f, 0.02f, 8, 5, rgb(70, 24, 24), rgb(120, 40, 40));       // bocca
         acornEyes = b.build(-1, false, true);
-        b = new MeshBuilder().color(74, 48, 30);
-        b.ellipsoid(0, 0.05f, 0.04f, 0.1f, 0.06f, 0.14f, 8, 5);
+        acornEyes.spec = 0.8f; acornEyes.shine = 36f;
+        b = new MeshBuilder();
+        gball(b, 0, 0.05f, 0.05f, 0.1f, 0.06f, 0.15f, 8, 5, rgb(60, 40, 26), rgb(104, 72, 46));
         acornFoot = b.build(-1, false, true);
     }
 
@@ -1023,9 +1224,8 @@ public final class Scene3D {
                 for (int side = -1; side <= 1; side += 2) {
                     System.arraycopy(m, 0, m2, 0, 16);
                     Mat4.translate(m2, side * 0.16f, 0.06f, 0.02f);
-                    if (side < 0) Mat4.rotateY(m2, (float) Math.PI);
-                    Mat4.rotateZ(m2, (float) Math.sin(e.anim * 13f) * 0.95f * (side < 0 ? -1 : 1) * (side < 0 ? -1 : 1) + 0.15f);
-                    g.draw(crowWing, m2, 1, 1, 1, 1, 0);
+                    Mat4.rotateZ(m2, side * ((float) Math.sin(e.anim * 13f) * 0.95f + 0.15f));
+                    g.draw(side > 0 ? crowWing : crowWingL, m2, 1, 1, 1, 1, 0);
                 }
                 break;
             default:

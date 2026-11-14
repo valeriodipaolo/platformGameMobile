@@ -193,7 +193,7 @@ public final class MeshBuilder {
                 float[] a = p[i * (segs + 1) + j], b = p[(i + 1) * (segs + 1) + j];
                 float[] c = p[(i + 1) * (segs + 1) + j + 1], e = p[i * (segs + 1) + j + 1];
                 float ux = (a[0] + b[0] + c[0] + e[0]) / 4 - cx, uy = (a[1] + b[1] + c[1] + e[1]) / 4 - cy, uz = (a[2] + b[2] + c[2] + e[2]) / 4 - cz;
-                float ax = b[0] - a[0], ay = b[1] - a[1], az = b[2] - a[2], bx = e[0] - a[0], by = e[1] - a[1], bz = e[2] - a[2];
+                float ax = c[0] - a[0], ay = c[1] - a[1], az = c[2] - a[2], bx = b[0] - e[0], by = b[1] - e[1], bz = b[2] - e[2];
                 float nx = ay * bz - az * by, ny = az * bx - ax * bz, nz = ax * by - ay * bx;
                 float l = (float) Math.sqrt(nx * nx + ny * ny + nz * nz);
                 if (l < 1e-9f) continue;

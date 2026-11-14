@@ -272,78 +272,118 @@ def au_blocks():
 
 
 # ------------------------------------------------------------------ 2D: nemici
+def leaf_feather(bx, by, ang, L, W):
+    pts = [(0, 0), (0.28, -1.0), (0.72, -0.85), (1.0, 0), (0.72, 0.85), (0.28, 1.0)]
+    ca, sa = math.cos(ang), math.sin(ang)
+    return [(bx + (px * L) * ca - (py * W) * sa, by + (px * L) * sa + (py * W) * ca) for px, py in pts]
+
+
 def hog(step):
-    """Riccio spinoso, rivolto a sinistra."""
+    """Riccio spinoso, rivolto a sinistra: due strati di aculei a due toni, orecchio, guancia, zampe con piedini."""
     cv = Cv(128, 88, 3)
-    for i, bx in enumerate((48, 66, 88, 106)):
+    for i, bx in enumerate((46, 64, 90, 108)):
         dx = 5 if (i + step) % 2 == 0 else -5
-        cv.add(cv.capsule(bx, 68, bx + dx, 82, 3.2), (206, 168, 128), ao=0.3, bevel=3.2, spec=0.2)
-    n = cv.w
+        cv.add(cv.capsule(bx, 66, bx + dx, 80, 3.4), (200, 160, 120), ao=0.3, bevel=3.4, spec=0.2)
+        cv.add(cv.ell(bx + dx - 2, 82, 6.5, 3.2), (150, 110, 80), ao=0.2, bevel=3, spec=0.2)
     r = np.random.default_rng(181)
-    for k in range(30):
-        a = math.radians(196 + k * (148 / 29.0) + r.uniform(-2, 2))
-        rim = (72 + 45 * math.cos(a), 56 + 29 * math.sin(a))
-        dirx, diry = math.cos(a), math.sin(a) * 0.85
-        ln = math.hypot(dirx, diry)
-        dirx, diry = dirx / ln, diry / ln
-        L = r.uniform(17, 24)
-        px, py = -diry * 3.6, dirx * 3.6
-        tip = (rim[0] + dirx * L, rim[1] + diry * L)
-        base = [(rim[0] - dirx * 8 + px, rim[1] - diry * 8 + py), (rim[0] - dirx * 8 - px, rim[1] - diry * 8 - py), tip]
-        c = [(78, 52, 34), (96, 64, 40), (68, 44, 30)][k % 3]
-        cv.add(cv.poly(base), c, ao=0.25, bevel=3, spec=0.25)
-        tip2 = [(tip[0] - dirx * 9 + px * 0.5, tip[1] - diry * 9 + py * 0.5), (tip[0] - dirx * 9 - px * 0.5, tip[1] - diry * 9 - py * 0.5), tip]
-        cv.add(cv.poly(tip2), (176, 138, 92), bevel=2, spec=0.4)
+    for layer, (n, lo, hi, cols, off) in enumerate((
+            (52, 22, 30, [(58, 38, 26), (74, 48, 32), (50, 32, 22)], 0),
+            (46, 15, 22, [(92, 62, 40), (110, 76, 48), (84, 56, 36)], 7))):
+        for k in range(n):
+            a = math.radians(188 + k * (164 / (n - 1.0)) + r.uniform(-2, 2))
+            rim = (72 + (43 - off * 0.5) * math.cos(a), 56 + (27 - off * 0.4) * math.sin(a))
+            dirx, diry = math.cos(a), math.sin(a) * 0.85
+            ln = math.hypot(dirx, diry)
+            dirx, diry = dirx / ln, diry / ln
+            L = r.uniform(lo, hi)
+            px, py = -diry * 3.0, dirx * 3.0
+            tip = (rim[0] + dirx * L, rim[1] + diry * L)
+            base = [(rim[0] - dirx * 8 + px, rim[1] - diry * 8 + py), (rim[0] - dirx * 8 - px, rim[1] - diry * 8 - py), tip]
+            cv.add(cv.poly(base), cols[k % 3], ao=0.25, bevel=2.6, spec=0.25)
+            tip2 = [(tip[0] - dirx * 10 + px * 0.45, tip[1] - diry * 10 + py * 0.45), (tip[0] - dirx * 10 - px * 0.45, tip[1] - diry * 10 - py * 0.45), tip]
+            cv.add(cv.poly(tip2), (196, 156, 104) if layer == 0 else (226, 192, 138), bevel=1.8, spec=0.4)
     tex = 0.9 + 0.2 * fbm(cv.h, cv.w, beta=1.3, seed=182)
-    cv.add(cv.ell(72, 58, 44, 27), (102, 70, 46), ao=0.4, bevel=22, spec=0.2, tex=tex)
-    cv.add(cv.ell(26, 64, 21, 17), (232, 198, 156), ao=0.4, bevel=14, spec=0.25)
-    cv.add(cv.ell(9, 67, 10, 8), (240, 210, 172), bevel=8, spec=0.3)
-    cv.add(cv.ell(2.5, 68, 3.8, 3.4), (22, 16, 14), bevel=3, spec=0.8)
-    cv.add(cv.ell(34, 51, 6, 7), (206, 164, 124), bevel=5, spec=0.2)
-    eye = cv.ell(24, 59, 4.6, 5.2)
+    cv.add(cv.ell(72, 60, 42, 24), (110, 76, 50), ao=0.4, bevel=22, spec=0.2, tex=tex)
+    cv.add(cv.ell(70, 74, 38, 9), (226, 188, 146), ao=0.3, bevel=8, spec=0.2)               # pancia chiara
+    cv.add(cv.ell(26, 64, 21, 17), (236, 204, 164), ao=0.4, bevel=14, spec=0.25)
+    cv.add(cv.ell(9, 67, 10, 8), (244, 216, 180), bevel=8, spec=0.3)
+    cv.add(cv.ell(2.5, 68, 3.9, 3.5), (22, 16, 14), bevel=3, spec=0.9)
+    cv.add(cv.ell(1.6, 66.8, 1.2, 1.0), (200, 190, 190), bevel=1, spec=0.0)
+    cv.add(cv.ell(33, 50, 6.5, 8), (232, 150, 140), ao=0.3, bevel=5, spec=0.2)              # orecchio
+    cv.add(cv.ell(33, 51, 3.4, 5), (246, 190, 176), bevel=3, spec=0.2)
+    cv.add(cv.ell(19, 72, 5.5, 3.8), (240, 150, 140), bevel=3, spec=0.15)                   # guancia
+    eye = cv.ell(24, 59, 4.8, 5.4)
     cv.add(eye, (22, 16, 14), bevel=4, spec=0.9)
-    cv.add(cv.ell(22.8, 57.6, 1.4, 1.6), (255, 255, 255), bevel=1, spec=0.0)
-    cv.add(cv.capsule(17, 51, 29, 55, 1.4), (70, 46, 30), bevel=1.4, spec=0.1)          # sopracciglio arrabbiato
+    cv.add(cv.ell(22.6, 57.2, 1.5, 1.7), (255, 255, 255), bevel=1, spec=0.0)
+    cv.add(cv.capsule(16, 50, 30, 55, 1.7), (64, 40, 26), bevel=1.7, spec=0.1)          # sopracciglio arrabbiato
     return cv.result()
 
 
 def crow(frame):
-    """Corvo con le ali alzate (0) o abbassate (1), rivolto a sinistra."""
+    """Corvo con le ali alzate (0) o abbassate (1), rivolto a sinistra: remiganti e coda a penne, becco aperto."""
     cv = Cv(120, 96, 3)
-    body, wing = (38, 36, 62), (54, 52, 90)
-    wing_pts = ([(70, 46), (52, 4), (80, 8), (104, 42)] if frame == 0 else [(70, 56), (52, 92), (82, 90), (104, 58)])
-    cv.add(cv.poly(wing_pts), wing, ao=0.3, bevel=5, spec=0.5, shin=20)
-    cv.add(cv.poly([(88, 52), (118, 40), (116, 64), (88, 62)]), (30, 28, 50), bevel=4, spec=0.4)
-    cv.add(cv.capsule(60, 68, 58, 80, 2.2), (232, 160, 50), bevel=2.2, spec=0.3)
-    cv.add(cv.capsule(72, 68, 72, 80, 2.2), (232, 160, 50), bevel=2.2, spec=0.3)
+    body, light = (36, 38, 70), (86, 94, 150)
+    up = frame == 0
+    sh = (72, 50 if up else 54)
+    for i in range(9):                                            # ala: penne a ventaglio
+        k = i / 8.0
+        ang = math.radians((-100 + 78 * k) if up else (100 - 78 * k))
+        L = 46 - 6 * abs(k - 0.35)
+        col = tuple(int(c * (0.85 + 0.25 * k)) for c in (44, 48, 92))
+        cv.add(cv.poly(leaf_feather(sh[0] + 4 * k, sh[1], ang, L, 7.5)), col, ao=0.3, bevel=3, spec=0.5, shin=20)
+    for i in range(6):                                            # copritrici
+        k = i / 5.0
+        ang = math.radians((-92 + 62 * k) if up else (92 - 62 * k))
+        cv.add(cv.poly(leaf_feather(sh[0] + 2 * k, sh[1], ang, 24, 7)), (60, 66, 118), ao=0.3, bevel=3, spec=0.5)
+    for i in range(5):                                            # coda
+        ang = math.radians(8 + i * 11)
+        cv.add(cv.poly(leaf_feather(92, 56, ang, 28, 5.2)), (28, 30, 58), ao=0.3, bevel=2.6, spec=0.5)
+    cv.add(cv.capsule(60, 70, 58, 82, 2.0), (214, 140, 44), bevel=2, spec=0.3)
+    cv.add(cv.capsule(73, 70, 73, 82, 2.0), (214, 140, 44), bevel=2, spec=0.3)
+    cv.add(cv.poly([(54, 82), (46, 86), (58, 85)]), (200, 128, 40), bevel=1.5, spec=0.2)
+    cv.add(cv.poly([(70, 82), (62, 86), (74, 85)]), (200, 128, 40), bevel=1.5, spec=0.2)
     cv.add(cv.ell(66, 54, 30, 20), body, ao=0.4, bevel=18, spec=0.8, shin=30)
-    cv.add(cv.ell(38, 43, 14, 13), body, ao=0.4, bevel=13, spec=0.8, shin=30)
-    cv.add(cv.poly([(26, 40), (6, 47), (26, 52)]), (244, 176, 44), bevel=4, spec=0.5)
-    eye = cv.ell(33, 39, 4.4, 4.6)
-    cv.add(eye, (252, 220, 70), bevel=4, spec=0.7)
-    cv.add(cv.ell(32, 39.4, 1.9, 2.4), (18, 12, 10), bevel=1.5, spec=0.1)
-    cv.add(cv.capsule(26, 31, 40, 35, 1.5), (20, 18, 36), bevel=1.5, spec=0.1)
+    cv.add(cv.ell(52, 60, 15, 11), (76, 82, 132), ao=0.2, bevel=10, spec=0.8, shin=30)       # petto chiaro
+    cv.add(cv.ell(38, 43, 14, 13), (30, 34, 64), ao=0.4, bevel=13, spec=0.8, shin=30)
+    cv.add(cv.poly([(26, 38), (4, 41), (26, 45)]), (250, 178, 44), bevel=4, spec=0.5)       # becco superiore
+    cv.add(cv.poly([(26, 46), (9, 50), (26, 51)]), (218, 124, 28), bevel=3, spec=0.4)       # becco inferiore
+    cv.add(cv.ell(21, 41.5, 1.1, 0.9), (110, 60, 16), bevel=1, spec=0.0)
+    eye = cv.ell(33, 39, 4.8, 5.0)
+    cv.add(eye, (252, 214, 64), bevel=4, spec=0.7)
+    cv.add(cv.ell(32, 39.4, 2.2, 2.7), (14, 10, 10), bevel=1.5, spec=0.1)
+    cv.add(cv.ell(31.2, 38.2, 0.9, 0.9), (255, 255, 255), bevel=0.5, spec=0.0)
+    cv.add(cv.capsule(25, 30, 41, 35, 1.8), (16, 16, 32), bevel=1.7, spec=0.1)
     return cv.result()
 
 
 def acorn(frame):
     cv = Cv(96, 106, 3)
-    n = cv.w
     foot_dy = 0 if frame == 0 else -7
     for fx in (34, 62):
-        cv.add(cv.capsule(fx, 92 + foot_dy, fx + (4 if fx > 48 else -4), 99 + foot_dy, 4), (74, 48, 30), ao=0.3, bevel=4, spec=0.3)
-    cv.add(cv.ell(48, 70, 28, 31), (206, 148, 66), ao=0.4, bevel=24, spec=0.55, shin=24, tex=0.92 + 0.16 * fbm(cv.h, cv.w, beta=1.4, seed=191))
-    X, Y = np.arange(cv.w)[None, :], np.arange(cv.h)[:, None]
-    tex = 0.8 + 0.3 * (0.5 + 0.5 * np.sin(X * 0.5 + Y * 0.5)) * (0.5 + 0.5 * np.sin(X * 0.5 - Y * 0.5))
-    cap = cv.ell(48, 46, 35, 24) & cv.rrect(0, 0, 96, 53, 0)
-    cv.add(cap, (126, 80, 44), ao=0.5, bevel=18, spec=0.25, tex=tex)
-    cv.add(cv.capsule(48, 26, 52, 12, 3.8), (88, 58, 34), bevel=3.8, spec=0.3)
-    for ex in (38, 59):
-        cv.add(cv.ell(ex, 62, 6.2, 7.2), (250, 246, 236), bevel=5, spec=0.6)
-        cv.add(cv.ell(ex + (1.4 if ex < 48 else -1.4), 63.5, 2.9, 3.6), (22, 14, 10), bevel=2, spec=0.4)
-    cv.add(cv.capsule(31, 52, 43, 56, 1.8), (70, 44, 26), bevel=1.8, spec=0.1)
-    cv.add(cv.capsule(65, 52, 53, 56, 1.8), (70, 44, 26), bevel=1.8, spec=0.1)
-    cv.add(cv.capsule(42, 79, 54, 79, 1.6), (110, 66, 36), bevel=1.6, spec=0.1)
+        cv.add(cv.ell(fx + (4 if fx > 48 else -4), 96 + foot_dy, 8.5, 4.5), (74, 48, 30), ao=0.3, bevel=4, spec=0.3)
+    cv.add(cv.ell(48, 70, 28, 31), (208, 150, 68), ao=0.4, bevel=24, spec=0.55, shin=24, tex=0.92 + 0.16 * fbm(cv.h, cv.w, beta=1.4, seed=191))
+    cv.add(cv.ell(14, 66, 6, 8), (128, 82, 42), ao=0.3, bevel=5, spec=0.3)                      # braccini
+    cv.add(cv.ell(82, 66, 6, 8), (128, 82, 42), ao=0.3, bevel=5, spec=0.3)
+    cap = cv.ell(48, 46, 36, 25) & cv.rrect(0, 0, 96, 54, 0)
+    cv.add(cap, (112, 70, 38), ao=0.5, bevel=18, spec=0.25)
+    r = np.random.default_rng(193)
+    for row, y in enumerate((24, 32, 40, 48)):                    # cappello a scaglie
+        for x in range(10 + (row % 2) * 5, 92, 10):
+            m = cv.ell(x, y, 6.2, 4.6) & cap
+            tone = r.uniform(0.85, 1.18)
+            cv.add(m, tuple(min(255, int(c * tone)) for c in (146, 98, 56)), ao=0.3, bevel=3.5, spec=0.3)
+    cv.add(cv.ell(48, 53, 36, 4.5), (70, 44, 24), ao=0.4, bevel=4, spec=0.25)                 # bordo
+    cv.add(cv.capsule(48, 26, 53, 11, 3.8), (88, 58, 34), bevel=3.8, spec=0.3)
+    cv.add(cv.ell(54, 10, 4.2, 3.2), (130, 92, 50), bevel=3, spec=0.3)
+    for ex in (37, 60):
+        cv.add(cv.ell(ex, 63, 7.2, 8.4), (250, 246, 236), bevel=5, spec=0.6)
+        cv.add(cv.ell(ex + (1.6 if ex < 48 else -1.6), 64.5, 3.4, 4.4), (22, 14, 10), bevel=2, spec=0.4)
+        cv.add(cv.ell(ex + (0.6 if ex < 48 else -2.6), 62.0, 1.1, 1.3), (255, 255, 255), bevel=0.5, spec=0.0)
+    cv.add(cv.capsule(28, 51, 44, 58, 2.3), (62, 38, 22), bevel=2.0, spec=0.1)                 # sopracciglia
+    cv.add(cv.capsule(68, 51, 52, 58, 2.3), (62, 38, 22), bevel=2.0, spec=0.1)
+    cv.add(cv.ell(28, 75, 5.5, 3.6), (236, 120, 110), bevel=3, spec=0.15)                      # guance
+    cv.add(cv.ell(68, 75, 5.5, 3.6), (236, 120, 110), bevel=3, spec=0.15)
+    cv.add(cv.ell(48, 80, 7, 3.4), (96, 30, 30), bevel=2.5, spec=0.3)                          # bocca
     return cv.result()
 
 
@@ -452,10 +492,36 @@ def a3_tree():
                1700, 431, (24, 40), "r3a_tree", trunk)
 
 
+def a3_foliage():
+    """Mosaico di foglie senza trasparenza, ripetibile: serve alle chiome tridimensionali (si tinge in gioco)."""
+    W = 256
+    ss = 2
+    r = np.random.default_rng(477)
+    im = Image.new("RGB", (W * ss, W * ss), (70, 58, 24))
+    d = ImageDraw.Draw(im)
+    pts = [(r.uniform(0, W), r.uniform(0, W)) for _ in range(1500)]
+    for x, y in pts:
+        ln = r.uniform(17, 30)
+        wd = ln * r.uniform(0.5, 0.68)
+        k = r.uniform(0.62, 1.12)
+        c = (min(255, int(255 * k)), min(255, int(226 * k)), min(255, int(120 * k)))
+        a = r.uniform(0, 6.28)
+        for ox in (-W, 0, W):
+            for oy in (-W, 0, W):
+                if -ln <= x + ox <= W + ln and -ln <= y + oy <= W + ln:
+                    pl = leaf_poly((x + ox) * ss, (y + oy) * ss, ln * ss, wd * ss, a)
+                    d.polygon(pl, fill=c)
+                    d.line([((x + ox) * ss - math.cos(a) * ln * ss * 0.4, (y + oy) * ss - math.sin(a) * ln * ss * 0.4),
+                            ((x + ox) * ss + math.cos(a) * ln * ss * 0.45, (y + oy) * ss + math.sin(a) * ln * ss * 0.45)],
+                           fill=(int(c[0] * 0.62), int(c[1] * 0.62), int(c[2] * 0.6)), width=ss)
+    out = np.asarray(im.resize((W, W), Image.LANCZOS)).astype(float) / 255.0
+    G3.save("r3a_foliage", np.dstack([out, np.ones((W, W))]))
+
+
 GENS = {
     "au_sky": au_sky, "au_mountains": au_mountains, "au_hills": au_hills, "au_ground": au_ground, "au_blocks": au_blocks,
     "au_enemies": au_enemies, "a3_ground": a3_ground, "a3_tuft": a3_tuft, "a3_flowers": a3_flowers, "a3_sky": a3_sky,
-    "a3_mountains": a3_mountains, "a3_crown": a3_crown, "a3_tree": a3_tree,
+    "a3_mountains": a3_mountains, "a3_crown": a3_crown, "a3_tree": a3_tree, "a3_foliage": a3_foliage,
 }
 
 if __name__ == "__main__":

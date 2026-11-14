@@ -91,6 +91,19 @@ public class Check {
             if (overGround && c[1] >= 8 && c[1] < 9) high++;
         }
         ok(high == 0, "nessuna moneta a livello della testa sopra il terreno, irraggiungibile camminando");
+        // livello 3: sotto ogni cassa/mattone ci devono essere almeno due caselle libere, e nessun oggetto dentro il terreno
+        Level l3 = LevelThree.build();
+        int tight = 0, buried = 0;
+        for (int y = 0; y < l3.h; y++) for (int x = 0; x < l3.w; x++) {
+            char c = l3.get(x, y);
+            if (c != Level.BRICK && c != Level.BONUS && c != Level.SECRET) continue;
+            int t = y + 1;
+            while (t < l3.h && !(l3.get(x, t) == Level.GROUND || l3.get(x, t) == Level.STONE)) t++;
+            if (t < l3.h && t - y - 1 < 2) { tight++; System.out.println("L3 cassa troppo bassa: " + x + "," + y); }
+        }
+        for (float[] c : l3.shards) if (l3.solid((int) c[0], (int) c[1])) { buried++; System.out.println("L3 gemma nel terreno: " + c[0] + "," + c[1]); }
+        for (float[] e : l3.enemies) if (e[2] != Enemy.CROW && l3.solid((int) e[0], (int) e[1])) { buried++; System.out.println("L3 nemico nel terreno: " + e[0] + "," + e[1]); }
+        ok(tight == 0 && buried == 0, "livello 3: casse raggiungibili e oggetti fuori dal terreno");
         Game w = fresh();
         run(w, 1.4f, false, true, false);
         ok(w.gems >= 2, "camminando all'inizio si prendono pezzi di gemma: " + w.gems);

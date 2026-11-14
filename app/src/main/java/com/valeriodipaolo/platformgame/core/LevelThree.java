@@ -110,8 +110,23 @@ public final class LevelThree {
         }
     }
 
+    /**
+     * Fila di mattoni/casse. La quota viene abbassata se serve: tra il terreno sotto (colline, massi) e la fila
+     * devono restare almeno due caselle libere, altrimenti il personaggio non passa e non può colpirla.
+     */
     private static void row(Level lv, int x, int y, String s) {
+        int top = H;
+        for (int i = 0; i < s.length(); i++) top = Math.min(top, topSolid(lv, x + i));
+        y = Math.min(y, top - 3);
         for (int i = 0; i < s.length(); i++) lv.set(x + i, y, s.charAt(i));
+    }
+
+    private static int topSolid(Level lv, int x) {
+        for (int y = 0; y < H; y++) {
+            char c = lv.get(x, y);
+            if (c == Level.GROUND || c == Level.STONE) return y;
+        }
+        return H;
     }
 
     private static void column(Level lv, int x, int height) {
