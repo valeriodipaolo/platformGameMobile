@@ -34,7 +34,12 @@ public class CheckSpring {
                 for (float[] th : g.level.thorns) if (th[0] - p.x > -0.1f && th[0] - p.x < 1.8f) thorn = true;
                 boolean pad = false;
                 for (int d = 0; d <= 2; d++) if (g.level.get((int) Math.floor(p.x + p.w / 2) + d, 10) == Level.SPRING) pad = true;
-                if (p.onGround && ((gap && !pad && row >= 10) || thorn || p.hitWall) && jt <= 0) jt = 0.5f;
+                if (p.onGround && ((gap && !pad && (row >= 10 || g.level.get((int) Math.floor(p.x + 0.1f), row) == Level.CRUMBLE)) || thorn || p.hitWall) && jt <= 0) {
+                    int land = 99, x1 = (int) Math.floor(p.x + p.w);
+                    for (int dx = 2; dx <= 12 && land == 99; dx++)
+                        for (int ry = row - 3; ry <= row + 2; ry++) if (g.level.solid(x1 + dx, ry)) land = dx;
+                    jt = thorn || p.hitWall ? 0.5f : land <= 5 ? 0.1f : 0.5f;
+                }
                 if (jt > 0) { jump = true; jt -= 1f / 60f; }
                 else if (!p.onGround && p.vy > 0 && !g.level.solid((int) Math.floor(p.x + p.w / 2), row + 1) && !g.level.solid((int) Math.floor(p.x + p.w / 2), row + 2)) jump = false;
             }
@@ -94,6 +99,12 @@ public class CheckSpring {
         }
         ok(tight == 0, "livello 9: casse raggiungibili");
 
+        // ---- livello 11 (cielo, 2D): il robot automatico lo completa su nuvole, ponti che cedono e trampolini
+        Game l11 = new Game(new MemorySave(), 11);
+        float[] r11 = bot2d(l11, 400, 1e9f);
+        System.out.println("     livello 11: morti " + (int) r11[0] + ", x finale " + r11[1] + ", stato " + l11.state + ", t " + r11[2]);
+        ok(l11.state == Game.WON, "il robot automatico completa il livello 11");
+        ok(r11[0] <= 2, "al massimo 2 morti del robot sul livello 11: " + (int) r11[0]);
         // ---- 3D: fiore a molla e rovi
         World3D w = new World3D(new MemorySave(), 10);
         w.enemies.clear();
@@ -112,6 +123,7 @@ public class CheckSpring {
         for (int i = 0; i < 10; i++) wt.update(1f / 60f);
         ok(wt.hp < h0, "3D: i rovi feriscono");
         bot3dCheck(10);
+        bot3dCheck(12);
         // ---- livello 10, seconda parte: il nido cade e parte lo sciame
         World3D e = new World3D(new MemorySave(), 10);
         e.enemies.clear();
@@ -125,8 +137,9 @@ public class CheckSpring {
         ok(e.lives < livesE, "fermi abbastanza a lungo lo sciame raggiunge e punge");
         ok(e.gemsList.size() >= 80 && e.gemsList.size() <= 140, "livello 10 intero: " + e.gemsList.size() + " gemme");
         ok(e.flagZ > e.hiveZ + 100, "il traguardo è dopo la fuga (z " + e.flagZ + ")");
-        ok(Levels.ORDER.length == 10 && Levels.ORDER[0] == 1 && Levels.next(6) == 9 && Levels.next(10) == 7 && Levels.next(8) == 0 && !Levels.is3D(9),
-                "ordine dei livelli: estate, autunno, inverno, primavera, incendio");
+        ok(Levels.ORDER.length == 12 && Levels.ORDER[0] == 1 && Levels.next(6) == 9 && Levels.next(10) == 7 && Levels.next(8) == 11 && Levels.next(11) == 12
+                && Levels.next(12) == 0 && !Levels.is3D(9) && !Levels.is3D(11) && Levels.is3D(12),
+                "ordine dei livelli: estate, autunno, inverno, primavera, incendio, cielo");
         System.out.println(fails == 0 ? "TUTTO OK" : fails + " FALLITI");
     }
 
@@ -171,6 +184,17 @@ public class CheckSpring {
 
     /** Colonna di mondo verso cui puntare a ogni quota z (caselle libere dei campi di rovi, isolotti dei fiumi). */
     static float xTarget(int levelNo, float z) {
+        if (levelNo == 12) {
+            if ((z >= 10 && z < 18) || (z >= 74 && z < 97)) return -1.8f;                 // si aggirano scalinata e balcone, senza salire
+            if (z >= 39 && z < 43) return 2f;
+            if (z >= 43 && z < 47) return -2f;
+            if (z >= 47 && z < 51) return 1f;
+            if (z >= 51 && z < 55) return -1f;
+            if (z >= 169 && z < 173) return 0f;
+            if (z >= 173 && z < 177) return -2f;
+            if (z >= 177 && z < 181) return 2f;
+            return 0f;
+        }
         if ((z >= 8 && z < 34) || (z >= 68 && z < 94)) return -1.8f;     // si aggira il balcone, senza salire
         if ((z >= 35 && z < 48) || (z >= 128 && z < 141)) return -1f;    // corsia libera dei campi di rovi
         return 0f;

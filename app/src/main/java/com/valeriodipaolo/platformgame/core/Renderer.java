@@ -11,18 +11,18 @@ public final class Renderer {
         Level lv = g.level;
 
         // ---- sfondi in parallasse
-        int th = lv.theme;                          // 0 estate, 1 autunno, 2 aurora boreale, 3 incendio, 4 primavera
+        int th = lv.theme;                          // 0 estate, 1 autunno, 2 aurora boreale, 3 incendio, 4 primavera, 5 cielo
         boolean au = th >= 1;
-        layer(p, th == 4 ? Img.SP_SKY : th == 3 ? Img.FR_SKY : th == 2 ? Img.AR_SKY : th == 1 ? Img.AU_SKY : Img.SKY, cam * s * 0.03f, 0, sh, sw);
-        layer(p, th == 4 ? Img.SP_MOUNTAINS : th == 3 ? Img.FR_MOUNTAINS : th == 2 ? Img.AR_MOUNTAINS : th == 1 ? Img.AU_MOUNTAINS : Img.MOUNTAINS, cam * s * 0.12f, 3.9f * s, 6.6f * s, sw);
-        layer(p, th == 4 ? Img.SP_HILLS : th == 3 ? Img.FR_HILLS : th == 2 ? Img.AR_HILLS : th == 1 ? Img.AU_HILLS : Img.HILLS, cam * s * 0.35f, 6.2f * s, 5.8f * s, sw);
+        layer(p, th == 5 ? Img.HV_SKY : th == 4 ? Img.SP_SKY : th == 3 ? Img.FR_SKY : th == 2 ? Img.AR_SKY : th == 1 ? Img.AU_SKY : Img.SKY, cam * s * 0.03f, 0, sh, sw);
+        layer(p, th == 5 ? Img.HV_MOUNTAINS : th == 4 ? Img.SP_MOUNTAINS : th == 3 ? Img.FR_MOUNTAINS : th == 2 ? Img.AR_MOUNTAINS : th == 1 ? Img.AU_MOUNTAINS : Img.MOUNTAINS, cam * s * 0.12f, 3.9f * s, 6.6f * s, sw);
+        layer(p, th == 5 ? Img.HV_HILLS : th == 4 ? Img.SP_HILLS : th == 3 ? Img.FR_HILLS : th == 2 ? Img.AR_HILLS : th == 1 ? Img.AU_HILLS : Img.HILLS, cam * s * 0.35f, 6.2f * s, 5.8f * s, sw);
 
         // ---- fiume: l'acqua scorre sotto ai burroni (le caselle del terreno la coprono altrove)
-        if (th == 4) {
-            float wh = 1.6f * s, ww = wh * 256f / 96f, wy = 10.45f * s;
+        if (th == 4 || th == 5) {
+            float wh = (th == 5 ? 2.2f : 1.6f) * s, ww = wh * 256f / 96f, wy = (th == 5 ? 10.2f : 10.45f) * s;
             for (int k = 0; k < 2; k++) {
                 float drift = (g.time * (0.35f + 0.25f * k) * s + cam * s * (1f - 0.15f * k) + k * 0.4f * ww) % ww;
-                for (float x = -drift - ww; x < sw + ww; x += ww) p.image(Img.SP_WATER, x, wy + k * 0.12f * s, ww + 1, wh, k == 1, k == 0 ? 1f : 0.55f);
+                for (float x = -drift - ww; x < sw + ww; x += ww) p.image(th == 5 ? Img.HV_SEA : Img.SP_WATER, x, wy + k * 0.12f * s, ww + 1, wh, k == 1, k == 0 ? 1f : 0.55f);
             }
         }
 
@@ -58,18 +58,20 @@ public final class Renderer {
                                     : img == Img.AU_GRASS_L ? Img.FR_GRASS_L : img == Img.AU_GRASS_R ? Img.FR_GRASS_R : Img.FR_GRASS;
                             if (th == 4) img = img == Img.AU_DIRT_L ? Img.SP_DIRT_L : img == Img.AU_DIRT_R ? Img.SP_DIRT_R : img == Img.AU_DIRT ? Img.SP_DIRT
                                     : img == Img.AU_GRASS_L ? Img.SP_GRASS_L : img == Img.AU_GRASS_R ? Img.SP_GRASS_R : Img.SP_GRASS;
+                            if (th == 5) img = img == Img.AU_DIRT_L ? Img.HV_DIRT_L : img == Img.AU_DIRT_R ? Img.HV_DIRT_R : img == Img.AU_DIRT ? Img.HV_DIRT
+                                    : img == Img.AU_GRASS_L ? Img.HV_GRASS_L : img == Img.AU_GRASS_R ? Img.HV_GRASS_R : Img.HV_GRASS;
                             softEdge = el || er;
                         } else {
                             img = under ? Img.DIRT : Img.GRASS;
                         }
                         break;
                     case Level.BRICK:
-                    case Level.SECRET: img = th == 4 ? Img.SP_BRICK : th == 3 ? Img.FR_BRICK : th == 2 ? Img.AR_BRICK : au ? Img.AU_BRICK : Img.BRICK; break;
-                    case Level.CRUMBLE: img = Img.FR_CRUMBLE; break;
-                    case Level.SPRING: img = Img.SP_SPRING; break;
-                    case Level.BONUS: img = th == 4 ? Img.SP_BONUS : th == 3 ? Img.FR_BONUS : th == 2 ? Img.AR_BONUS : au ? Img.AU_BONUS : Img.BONUS; break;
-                    case Level.USED: img = th == 4 ? Img.SP_USED : th == 3 ? Img.FR_USED : th == 2 ? Img.AR_USED : au ? Img.AU_USED : Img.USED; break;
-                    default: img = th == 4 ? Img.SP_STONE : th == 3 ? Img.FR_STONE : th == 2 ? Img.AR_STONE : au ? Img.AU_STONE : Img.STONE; break;
+                    case Level.SECRET: img = th == 5 ? Img.HV_BRICK : th == 4 ? Img.SP_BRICK : th == 3 ? Img.FR_BRICK : th == 2 ? Img.AR_BRICK : au ? Img.AU_BRICK : Img.BRICK; break;
+                    case Level.CRUMBLE: img = th == 5 ? Img.HV_CRUMBLE : Img.FR_CRUMBLE; break;
+                    case Level.SPRING: img = th == 5 ? Img.HV_SPRING : Img.SP_SPRING; break;
+                    case Level.BONUS: img = th == 5 ? Img.HV_BONUS : th == 4 ? Img.SP_BONUS : th == 3 ? Img.FR_BONUS : th == 2 ? Img.AR_BONUS : au ? Img.AU_BONUS : Img.BONUS; break;
+                    case Level.USED: img = th == 5 ? Img.HV_USED : th == 4 ? Img.SP_USED : th == 3 ? Img.FR_USED : th == 2 ? Img.AR_USED : au ? Img.AU_USED : Img.USED; break;
+                    default: img = th == 5 ? Img.HV_STONE : th == 4 ? Img.SP_STONE : th == 3 ? Img.FR_STONE : th == 2 ? Img.AR_STONE : au ? Img.AU_STONE : Img.STONE; break;
                 }
                 float off = 0;
                 if (tx == g.bumpTx && ty == g.bumpTy) {
@@ -94,8 +96,8 @@ public final class Renderer {
                 p.image(img, x0 + cj, y0 + off, x1 - x0, y1 - y0, false, ca);
                 if (img == Img.GRASS && !lv.solid(tx, ty - 1)) {
                     p.image(Img.FRINGE, x0, y0 - 0.27f * s, x1 - x0, 0.29f * s, false, 1);
-                } else if ((img == Img.AU_GRASS || img == Img.AR_GRASS || img == Img.FR_GRASS || img == Img.SP_GRASS) && !lv.solid(tx, ty - 1)) {
-                    p.image(th == 4 ? Img.SP_FRINGE : th == 3 ? Img.FR_FRINGE : th == 2 ? Img.AR_FRINGE : Img.AU_FRINGE, x0, y0 - 0.27f * s, x1 - x0, 0.29f * s, false, 1);
+                } else if ((img == Img.AU_GRASS || img == Img.AR_GRASS || img == Img.FR_GRASS || img == Img.SP_GRASS || img == Img.HV_GRASS) && !lv.solid(tx, ty - 1)) {
+                    p.image(th == 5 ? Img.HV_FRINGE : th == 4 ? Img.SP_FRINGE : th == 3 ? Img.FR_FRINGE : th == 2 ? Img.AR_FRINGE : Img.AU_FRINGE, x0, y0 - 0.27f * s, x1 - x0, 0.29f * s, false, 1);
                 }
             }
         }
@@ -118,14 +120,14 @@ public final class Renderer {
             p.image(Img.SP_THORN, tx2 - 0.12f * s, (t[1] + 1f) * s - 1.0f * s, 1.24f * s, 1.0f * s, false, 1);
         }
 
-        // ---- petali che cadono nel livello di primavera
-        if (th == 4) {
+        // ---- petali (primavera) o scintille dorate (cielo) che cadono
+        if (th == 4 || th == 5) {
             for (int i = 0; i < 38; i++) {
                 float ph = (g.time * (0.05f + 0.03f * (i % 5)) + i * 0.173f) % 1f;
                 float ex = ((i * 89 % 197) / 197f * (g.viewW + 8f) - cam * 0.5f % (g.viewW + 8f) + (g.viewW + 8f)) % (g.viewW + 8f) - 1f + 1.6f * ph;
                 float ey = ph * 12.4f - 0.3f;
                 float sz = (0.16f + 0.07f * (i % 3)) * s;
-                p.image(Img.SP_PETAL, (ex + 0.4f * (float) Math.sin(g.time * 1.4f + i)) * s, ey * s, sz * (0.55f + 0.45f * (float) Math.abs(Math.sin(g.time * 2f + i))), sz, i % 2 == 0, 0.9f);
+                p.image(th == 5 ? Img.HV_SPARK : Img.SP_PETAL, (ex + 0.4f * (float) Math.sin(g.time * 1.4f + i)) * s, ey * s, sz * (0.55f + 0.45f * (float) Math.abs(Math.sin(g.time * 2f + i))), sz, i % 2 == 0, 0.9f);
             }
         }
 

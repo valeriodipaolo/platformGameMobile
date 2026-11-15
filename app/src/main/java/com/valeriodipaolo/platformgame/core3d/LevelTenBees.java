@@ -6,8 +6,8 @@ package com.valeriodipaolo.platformgame.core3d;
  * (la fila di fiori a molla in riva lancia dall'altra parte senza perdere un istante) e qualche ghianda e riccio di traverso. Lo sciame accelera
  * piano piano ma resta sempre più lento di chi corre: gli ostacoli sono l'unico modo per farsi raggiungere.
  */
-public final class LevelEleven {
-    private LevelEleven() {}
+public final class LevelTenBees {
+    private LevelTenBees() {}
 
     private static final int W = World3D.W;
 

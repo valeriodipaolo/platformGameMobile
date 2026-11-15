@@ -4,7 +4,7 @@ package com.valeriodipaolo.platformgame.core3d;
  * Decimo livello, il giardino di primavera e la fuga dalle api: ciliegi in fiori, tre fiumi larghi dieci metri (più del massimo di un doppio salto) che si
  * superano solo rimbalzando sulla fila di fiori a molla in riva, due balconi di pietra a quattro metri (con la cella energetica) raggiungibili
  * dai fiori, e due campi di rovi a zigzag. I rovi sono pochi e lasciano sempre una corsia libera; ogni gemma sta in un punto sicuro,
- * lontano dai rovi e dall'acqua. Passato l'ultimo ciliegio il nido d'api cade e si parte senza stacchi con la fuga (LevelEleven). Difficoltà come i livelli 6 e 8 al massimo.
+ * lontano dai rovi e dall'acqua. Passato l'ultimo ciliegio il nido d'api cade e si parte senza stacchi con la fuga (LevelTenBees). Difficoltà come i livelli 6 e 8 al massimo.
  */
 public final class LevelTen {
     private LevelTen() {}
@@ -80,7 +80,7 @@ public final class LevelTen {
         acorn(w, 0f, 166);
         gem(w, 0, 0.7f, 170.5f);
         w.hiveZ = 172;
-        LevelEleven.append(w, 176);
+        LevelTenBees.append(w, 176);
     }
 
     /** Fila di fiori a molla sulle colonne c0..c1 alla riga z. */

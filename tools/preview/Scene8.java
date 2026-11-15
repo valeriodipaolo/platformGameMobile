@@ -22,5 +22,6 @@ public class Scene8 {
         shot("f_bridge.png", out, 0, 89, 1.0f, false);
         shot("f_rest.png", out, 0, 112, 0.5f, false);
         shot("f_inferno.png", out, 0, 126, 0.9f, false);
+        shot("f_gate.png", out, 0, 172f, 3.2f, false);
     }
 }

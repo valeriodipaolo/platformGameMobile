@@ -48,7 +48,12 @@ public final class Img {
             SP_SPRING = 174, SP_THORN = 175, SP_WATER = 176, SP_PETAL = 177;
     public static final int R3D_GRASS = 178, R3D_FOREST = 179, R3D_TUFT = 180, R3D_FLOWERS = 181, R3D_CROWN = 182, R3D_TREE = 183,
             R3D_FOLIAGE = 184, R3D_SKY = 185, R3D_MOUNTAINS = 186, R3D_WATER = 187, R3D_SPRING = 188;
-    public static final int COUNT = 189;
+    // livelli del cielo (tools/gen_heaven.py)
+    public static final int HV_SKY = 189, HV_MOUNTAINS = 190, HV_HILLS = 191, HV_GRASS = 192, HV_GRASS_L = 193, HV_GRASS_R = 194,
+            HV_DIRT = 195, HV_DIRT_L = 196, HV_DIRT_R = 197, HV_FRINGE = 198, HV_BRICK = 199, HV_BONUS = 200, HV_USED = 201, HV_STONE = 202,
+            HV_SPRING = 203, HV_CRUMBLE = 204, HV_SEA = 205, HV_SPARK = 206;
+    public static final int R3H_CLOUD = 207, R3H_BODY = 208, R3H_SEA = 209, R3H_MARBLE = 210, R3H_SKY = 211, R3H_MOUNTAINS = 212, R3H_SPRING = 213;
+    public static final int COUNT = 214;
 
     public static final String[] NAMES = {
         "bg_sky", "bg_mountains", "bg_hills",
@@ -81,5 +86,8 @@ public final class Img {
         "sp_sky", "sp_mountains", "sp_hills", "sp_grass", "sp_grass_l", "sp_grass_r", "sp_dirt", "sp_dirt_l", "sp_dirt_r", "sp_fringe",
         "sp_brick", "sp_bonus", "sp_used", "sp_stone", "sp_spring", "sp_thorn", "sp_water", "sp_petal",
         "r3d_grass", "r3d_forest", "r3d_tuft", "r3d_flowers", "r3d_crown", "r3d_tree", "r3d_foliage", "r3d_sky", "r3d_mountains", "r3d_water", "r3d_spring",
+        "hv_sky", "hv_mountains", "hv_hills", "hv_grass", "hv_grass_l", "hv_grass_r", "hv_dirt", "hv_dirt_l", "hv_dirt_r", "hv_fringe",
+        "hv_brick", "hv_bonus", "hv_used", "hv_stone", "hv_spring", "hv_crumble", "hv_sea", "hv_spark",
+        "r3h_cloud", "r3h_body", "r3h_sea", "r3h_marble", "r3h_sky", "r3h_mountains", "r3h_spring",
     };
 }
