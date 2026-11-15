@@ -288,7 +288,7 @@ public final class Renderer {
                 }
             }
             if (g.stateTime > 1.2f) {
-                p.text(won ? (g.levelNo >= 8 ? "Tocca lo schermo per tornare al menu" : "Tocca lo schermo per il livello " + (g.levelNo + 1)) : "Tocca lo schermo per riprovare", sw / 2, 9.4f * s, 0.5f * s, Painter.ALIGN_CENTER, 0xFFFFE082);
+                p.text(won ? Levels.wonText(g.levelNo) : "Tocca lo schermo per riprovare", sw / 2, 9.4f * s, 0.5f * s, Painter.ALIGN_CENTER, 0xFFFFE082);
             }
         }
     }

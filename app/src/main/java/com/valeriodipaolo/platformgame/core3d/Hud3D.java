@@ -39,8 +39,9 @@ public final class Hud3D {
             float d = w.pz - w.fireZ;
             if (d < 20f) {
                 float k = (float) Math.pow(1f - Math.max(0f, d) / 20f, 1.5f);
-                for (int i = 0; i < 8; i++) p.rect(0, sh - (i + 1) * 0.16f * s, sw, 0.16f * s, ((int) (k * (150 - i * 17)) << 24) | 0xFF4A10);
-                if (d < 12f) p.text("FUOCO!", sw / 2, sh - 0.6f * s, 0.55f * s, Painter.ALIGN_CENTER, ((int) (k * 255) << 24) | 0xFFD54F);
+                boolean bees = w.chase == 1;
+                for (int i = 0; i < 8; i++) p.rect(0, sh - (i + 1) * 0.16f * s, sw, 0.16f * s, ((int) (k * (150 - i * 17)) << 24) | (bees ? 0xE0A800 : 0xFF4A10));
+                if (d < 12f) p.text(bees ? "API!" : "FUOCO!", sw / 2, sh - 0.6f * s, 0.55f * s, Painter.ALIGN_CENTER, ((int) (k * 255) << 24) | (bees ? 0xFFF176 : 0xFFD54F));
             }
         }
         if (w.toast != null && w.toastTime > 0) {
@@ -77,7 +78,7 @@ public final class Hud3D {
                 }
             }
             if (w.stateTime > 1.2f) {
-                p.text(won ? (w.levelNo < 8 ? "Tocca lo schermo per il livello " + (w.levelNo + 1) : "Tocca lo schermo per tornare al menu") : "Tocca lo schermo per riprovare",
+                p.text(won ? com.valeriodipaolo.platformgame.core.Levels.wonText(w.levelNo) : "Tocca lo schermo per riprovare",
                         sw / 2, 9.4f * s, 0.5f * s, Painter.ALIGN_CENTER, 0xFFFFE082);
             }
         }

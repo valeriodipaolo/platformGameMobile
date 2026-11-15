@@ -433,11 +433,56 @@ def d_spring():
     G3.save("r3d_spring", np.dstack([rgb, a]))
 
 
+def d_bees():
+    """Sciame di api visto di faccia: centinaia di api gialle e nere con le ali chiare, fitte al centro e rade ai bordi (3D, livello 11)."""
+    w, h, ss = 192, 256, 3
+    r = np.random.default_rng(1331)
+    big = Image.new("RGBA", (w * ss, h * ss), (0, 0, 0, 0))
+    bd = ImageDraw.Draw(big)
+    for _ in range(70):                                       # nube scura e morbida dietro, per dare corpo allo sciame
+        u, v = r.normal(0, 0.28), r.normal(0, 0.30)
+        cx, cy = w / 2 + u * w * 0.5, h / 2 + v * h * 0.5
+        rr = r.uniform(10, 24)
+        circle(bd, cx * ss, cy * ss, rr * ss, (60, 40, 10, 30))
+    def bee(cx, cy, sc, ang):
+        n = 40
+        sp = Image.new("RGBA", (n * ss * 2, n * ss * 2), (0, 0, 0, 0))
+        d = ImageDraw.Draw(sp)
+        c = n * ss
+        k = ss * sc
+        for sx in (-1, 1):                                     # ali
+            d.ellipse([c + sx * 3 * k - 5 * k, c - 12 * k, c + sx * 3 * k + 5 * k, c - 2 * k], fill=(235, 245, 255, 190), outline=(90, 110, 130, 220))
+        d.ellipse([c - 11 * k, c - 5.5 * k, c + 9 * k, c + 6.5 * k], fill=(40, 28, 12, 255))          # corpo (contorno scuro)
+        d.ellipse([c - 10 * k, c - 4.5 * k, c + 8 * k, c + 5.5 * k], fill=(255, 205, 30, 255))
+        for sx in (-5, -0.5, 4):                               # strisce nere
+            d.rectangle([c + sx * k, c - 4.6 * k, c + (sx + 2) * k, c + 5.6 * k], fill=(40, 28, 12, 255))
+        d.ellipse([c + 7 * k, c - 4 * k, c + 14 * k, c + 4 * k], fill=(40, 28, 12, 255))               # testa
+        d.polygon([(c - 11 * k, c), (c - 15 * k, c - 1 * k), (c - 15 * k, c + 1 * k)], fill=(40, 28, 12, 255))  # pungiglione
+        sp = sp.rotate(ang, resample=Image.BICUBIC)
+        big.alpha_composite(sp, (int(cx * ss - n * ss), int(cy * ss - n * ss)))
+    pts = []
+    for _ in range(330):
+        u, v = r.normal(0, 0.25), r.normal(0, 0.27)
+        if u * u / 0.55 + v * v / 0.60 > 1.0:
+            continue
+        pts.append((w / 2 + u * w, h / 2 + v * h, r.uniform(0.55, 1.0), r.uniform(-50, 50) + (180 if r.random() < 0.5 else 0)))
+    pts.sort(key=lambda q: q[1])
+    for cx, cy, sc, ang in pts:
+        if 14 < cx < w - 14 and 14 < cy < h - 14:
+            bee(cx, cy, sc, ang)
+    arr = np.asarray(big.resize((w, h), Image.LANCZOS)).astype(float) / 255.0
+    yy, xx = np.mgrid[0:h, 0:w].astype(float)
+    ex = np.clip(np.minimum(xx, w - 1 - xx) / (w * 0.12), 0, 1)
+    ey = np.clip(np.minimum(yy, h - 1 - yy) / (h * 0.12), 0, 1)
+    arr[..., 3] *= (ex * ey) ** 0.6                                 # bordi sfumati: le nuvole si fondono tra loro
+    G3.save("r3d_bees", arr)
+
+
 GENS = {
     "sp_sky": sp_sky, "sp_mountains": sp_mountains, "sp_hills": sp_hills, "sp_ground": sp_ground, "sp_blocks": sp_blocks,
     "sp_spring": sp_spring, "sp_thorn": sp_thorn, "sp_water": sp_water, "sp_petal": sp_petal,
     "d_ground": d_ground, "d_tuft": d_tuft, "d_flowers": d_flowers, "d_sky": d_sky, "d_mountains": d_mountains,
-    "d_crown": d_crown, "d_tree": d_tree, "d_foliage": d_foliage, "d_water": d_water, "d_spring": d_spring,
+    "d_crown": d_crown, "d_tree": d_tree, "d_foliage": d_foliage, "d_water": d_water, "d_spring": d_spring, "d_bees": d_bees,
 }
 
 if __name__ == "__main__":

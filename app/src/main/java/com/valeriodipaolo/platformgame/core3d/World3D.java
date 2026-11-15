@@ -45,6 +45,8 @@ public final class World3D {
      */
     public float fireStart = Float.NaN, fireZ = Float.NaN;
     public float[][] fireZones = new float[0][];
+    /** Cosa insegue da dietro: 0 = muro di fuoco, 1 = sciame di api (livello 11). */
+    public int chase;
     public final List<float[]> jets = new ArrayList<float[]>();
     public final List<float[]> logs = new ArrayList<float[]>();
     /** Fiori a molla {x, z} (lanciano in alto chi ci salta sopra) e cespugli di rovi {x, z} (pungono); livelli di primavera. */
@@ -89,7 +91,7 @@ public final class World3D {
         score = 0;
         gems = 0;
         lives = START_LIVES;
-        if (levelNo == 10) LevelTen.build(this); else if (levelNo == 8) LevelEight.build(this); else if (levelNo == 6) LevelSix.build(this); else if (levelNo == 4) LevelFour.build(this); else LevelTwo.build(this);
+        if (levelNo == 11) LevelEleven.build(this); else if (levelNo == 10) LevelTen.build(this); else if (levelNo == 8) LevelEight.build(this); else if (levelNo == 6) LevelSix.build(this); else if (levelNo == 4) LevelFour.build(this); else LevelTwo.build(this);
         gemTotal = gemsList.size();
         for (boolean c : crate) if (c) gemTotal++;
         batteryOwned = gemOwned = false;

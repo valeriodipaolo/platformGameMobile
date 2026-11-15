@@ -111,14 +111,30 @@ public class CheckSpring {
         int h0 = wt.hp;
         for (int i = 0; i < 10; i++) wt.update(1f / 60f);
         ok(wt.hp < h0, "3D: i rovi feriscono");
-        // ---- percorribilità 3D con robot a punti di passaggio
-        World3D b = new World3D(new MemorySave(), 10);
+        bot3dCheck(10);
+        // ---- livello 11: la fuga dalle api
+        bot3dCheck(11);
+        World3D e = new World3D(new MemorySave(), 11);
+        e.enemies.clear();
+        ok(e.chase == 1 && !Float.isNaN(e.fireZ), "livello 11: lo sciame parte alle spalle (z " + e.fireZ + ")");
+        int livesE = e.lives;
+        e.setInput(0, 0, false, false);
+        for (int i = 0; i < 60 * 14; i++) e.update(1f / 60f);
+        ok(e.lives < livesE, "fermi abbastanza a lungo lo sciame raggiunge e punge");
+        ok(e.gemsList.size() >= 40 && e.gemsList.size() <= 75, "livello 11: " + e.gemsList.size() + " gemme");
+        ok(Levels.ORDER.length == 11 && Levels.ORDER[0] == 9 && Levels.next(11) == 1 && Levels.next(8) == 0 && Levels.is3D(11) && !Levels.is3D(9),
+                "ordine dei livelli: primavera in testa");
+        System.out.println(fails == 0 ? "TUTTO OK" : fails + " FALLITI");
+    }
+
+    static void bot3dCheck(int levelNo) {
+        World3D b = new World3D(new MemorySave(), levelNo);
         b.enemies.clear();
         int lives0 = b.lives;
         float stuck = 0, lastZ = b.pz, jt = 0;
         boolean won = false;
         for (float time = 0; time < 300; time += 1f / 60f) {
-            float tx = xTarget(b.pz + 0.9f);
+            float tx = xTarget(levelNo, b.pz + 0.9f);
             float jx = Math.max(-1f, Math.min(1f, (tx - b.px) * 2f));
             boolean jump = false;
             if (b.state == World3D.PLAYING) {
@@ -135,10 +151,9 @@ public class CheckSpring {
             if (b.state == World3D.WON) { won = true; break; }
             if (Math.abs(b.pz - lastZ) < 0.005f && b.state == World3D.PLAYING) { stuck += 1f / 60f; if (stuck > 6f) break; } else { stuck = 0; lastZ = b.pz; }
         }
-        System.out.println("     livello 10: morti " + (lives0 - b.lives) + ", z finale " + b.pz + ", vinto " + won);
-        ok(won, "il robot automatico completa il livello 10");
-        ok(lives0 - b.lives <= 2, "al massimo 2 morti del robot sul livello 10: " + (lives0 - b.lives));
-        System.out.println(fails == 0 ? "TUTTO OK" : fails + " FALLITI");
+        System.out.println("     livello " + levelNo + ": morti " + (lives0 - b.lives) + ", z finale " + b.pz + ", vinto " + won);
+        ok(won, "il robot automatico completa il livello " + levelNo);
+        ok(lives0 - b.lives <= 2, "al massimo 2 morti del robot sul livello " + levelNo + ": " + (lives0 - b.lives));
     }
 
     static int xi(float x) { return (int) Math.floor(x + World3D.HALF); }
@@ -152,7 +167,8 @@ public class CheckSpring {
     }
 
     /** Colonna di mondo verso cui puntare a ogni quota z (caselle libere dei campi di rovi, isolotti dei fiumi). */
-    static float xTarget(float z) {
+    static float xTarget(int levelNo, float z) {
+        if (levelNo == 11) return 0f;
         if ((z >= 8 && z < 34) || (z >= 68 && z < 94)) return -1.8f;     // si aggira il balcone, senza salire
         if ((z >= 35 && z < 48) || (z >= 128 && z < 141)) return -1f;    // corsia libera dei campi di rovi
         return 0f;

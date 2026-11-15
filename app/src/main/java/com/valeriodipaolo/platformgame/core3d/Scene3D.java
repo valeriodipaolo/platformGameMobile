@@ -47,7 +47,7 @@ public final class Scene3D {
     private final float[] view = new float[16], proj = new float[16], m = new float[16], m2 = new float[16];
     private final float[] ident = Mat4.identity();
 
-    private Mesh sky, mountains, pitFloor, pitWater, padDome, padTop, thornMesh;
+    private Mesh sky, mountains, pitFloor, pitWater, padDome, padTop, thornMesh, beeMesh;
     private Mesh[][] land;                       // [tipo][blocco]
     private MeshBuilder[][] mbs;
     private int zBase, nChunks;
@@ -268,7 +268,7 @@ public final class Scene3D {
                 for (float z = z0; z < z1; z += (autumn && row < 2 ? 3.3f + row * 0.6f : 2.1f + row * 0.5f)) {
                     Tree t = new Tree();
                     t.row = row;
-                    t.x = side * (World3D.HALF + (lvl.levelNo == 4 || lvl.levelNo == 10 ? 4.4f : 3.0f) + row * 2.6f + r.nextFloat() * 2.0f);
+                    t.x = side * (World3D.HALF + (lvl.levelNo == 4 || lvl.levelNo >= 10 ? 4.4f : 3.0f) + row * 2.6f + r.nextFloat() * 2.0f);
                     t.z = z + r.nextFloat() * 1.8f;
                     t.h = 5.0f + r.nextFloat() * 4.0f + row * 0.5f;
                     t.rad = t.h * 0.25f * (0.85f + 0.3f * r.nextFloat());
@@ -287,7 +287,7 @@ public final class Scene3D {
     private void build(World3D w) {
         builtFor = w.length;
         lvl = w;
-        spring = w.levelNo == 10;
+        spring = w.levelNo >= 10;
         autumn = w.levelNo == 4 || spring;       // la primavera usa gli alberi a chioma larga dell'autunno, con altri colori
         aurora = w.levelNo == 6;
         fire = w.levelNo == 8;
@@ -861,7 +861,7 @@ public final class Scene3D {
                 d = Math.max(d, rx * 1.32f + 0.08f);                   // il masso (con le sue gobbe) resta fuori dal sentiero percorribile
                 float x = side * (World3D.HALF + d);
                 float low = meshAt(x, z);
-                for (int k = 0; k < 12; k++) {
+                for (int k = 0; k < 14; k++) {
                     double a = k * Math.PI / 6;
                     low = Math.min(low, meshAt(x + (float) Math.cos(a) * rx * 1.1f, z + (float) Math.sin(a) * rz * 1.1f));
                     low = Math.min(low, meshAt(x + (float) Math.cos(a) * rx * 0.5f, z + (float) Math.sin(a) * rz * 0.5f));
@@ -1020,6 +1020,10 @@ public final class Scene3D {
             b.quad(0, 0, -0.62f, 0, 0, 0.62f, 0, 0.95f, 0.62f, 0, 0.95f, -0.62f, 1, 0, 0, 0, 0, 1, 1);
             b.quad(0, 0, 0.62f, 0, 0, -0.62f, 0, 0.95f, -0.62f, 0, 0.95f, 0.62f, -1, 0, 0, 0, 0, 1, 1);
             thornMesh = b.build(Img.SP_THORN, true, true);
+            b = new MeshBuilder();                                     // sciame di api: un cartoncino, sempre rivolto verso chi scappa
+            b.quad(-0.5f, 0, 0, 0.5f, 0, 0, 0.5f, 1, 0, -0.5f, 1, 0, 0, 0, -1, 0, 0, 1, 1);
+            b.quad(0.5f, 0, 0, -0.5f, 0, 0, -0.5f, 1, 0, 0.5f, 1, 0, 0, 0, 1, 0, 0, 1, 1);
+            beeMesh = b.build(Img.R3D_BEES, true, true);
         }
         if (fire) {                                                    // casse di roccia incandescente
             b = new MeshBuilder();
@@ -1337,6 +1341,7 @@ public final class Scene3D {
         }
         if (fire) { drawTreeFlames(w, g); drawFireHazards(w, g); }
         if (spring) drawSpringProps(w, g);
+        if (w.chase == 1) drawBees(w, g);
         for (int c = 0; c < nChunks; c++) {
             float cz0 = zBase + c * CH;
             if (land[K_RAY][c] != null && cz0 + CH > camZ - 6f && cz0 < camZ + 60f) g.draw(land[K_RAY][c], ident, 1, 1, 1, 0.15f, 1);
@@ -1444,6 +1449,37 @@ public final class Scene3D {
             Mat4.rotateY(m, t[0] * 5f + t[1] * 3f);
             Mat4.scale(m, 1.15f, 1.15f, 1.15f);
             g.draw(thornMesh, m, 1, 1, 1, 1, 0.12f);
+        }
+    }
+
+    /** Lo sciame che insegue: tre strati di nuvole di api che ondeggiano, più qualche ape sciolta davanti. */
+    private void drawBees(World3D w, Gfx3D g) {
+        if (Float.isNaN(w.fireZ) || w.fireZ < camZ - 12f) return;
+        for (int layer = 0; layer < 3; layer++) {
+            for (int i = -3; i <= 3; i++) {
+                float t = w.time * (5f + 0.6f * i) + i * 2.3f + layer * 1.7f;
+                float x = i * 1.55f + 0.22f * (float) Math.sin(t * 0.7f), z = w.fireZ + 1.4f - layer * 1.3f + 0.35f * (float) Math.sin(t * 0.5f);
+                float hov = 0.15f * (float) Math.sin(t) + 0.1f * layer;
+                Mat4.setIdentity(m);
+                Mat4.translate(m, x, groundAt(Math.max(-2.4f, Math.min(2.4f, x)), Math.max(0f, z)) + 0.1f + hov, z);
+                Mat4.rotateZ(m, 0.06f * (float) Math.sin(t * 0.9f));
+                float sc = 1f + 0.12f * (float) Math.sin(t * 1.3f);
+                Mat4.scale(m, 3.3f * sc, 5.0f * sc, 3.3f);
+                float near = Math.max(0f, Math.min(1f, (z - camZ + 5f) / 3f));       // vicino alla camera si dissolve invece di riempire lo schermo
+                if (near > 0f) g.draw(beeMesh, m, 1f, 1f, 1f, (0.97f - layer * 0.07f) * near, 1f);
+            }
+        }
+        for (int k = 0; k < 14; k++) {                                      // api sciolte davanti allo sciame: lo annunciano prima che arrivi
+            float t = w.time * 3f + k * 1.9f;
+            float span = Math.max(1f, Math.min(14f, (w.pz - w.fireZ) - 2.4f));     // restano sempre alle spalle del robot
+            float z = w.fireZ + 1.4f + span * k / 13f + 0.3f * (float) Math.sin(t);
+            float x = -2.3f + (k * 5) % 7 * 0.7f + 0.4f * (float) Math.sin(t * 1.3f);
+            Mat4.setIdentity(m);
+            Mat4.translate(m, x, groundAt(Math.max(-2.4f, Math.min(2.4f, x)), Math.max(0f, z)) + 0.7f + 0.5f * (float) Math.sin(t * 1.7f) + 0.3f * (k % 3), z);
+            float sk = 1.7f - k * 0.07f;
+            Mat4.scale(m, sk, sk * 1.3f, sk);
+            float nr = Math.max(0f, Math.min(1f, (z - camZ + 5f) / 3f));
+            if (nr > 0f) g.draw(beeMesh, m, 1f, 1f, 1f, 0.9f * nr, 1f);
         }
     }
 

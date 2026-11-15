@@ -43,15 +43,16 @@ public class MainActivity extends Activity {
         }));
     }
 
-    /** Livelli 1, 3, 5, 7 e 9 sono 2D, 2, 4, 6, 8 e 10 sono 3D. Finito un livello si passa al successivo; dopo l'ultimo si torna al menu. */
-    private void startLevel(final int level) {
+    /** Si parte dalla posizione nell'ordine di gioco (core.Levels). Finito un livello si passa al successivo; dopo l'ultimo si torna al menu. */
+    private void startLevel(final int slot) {
+        final int level = com.valeriodipaolo.platformgame.core.Levels.ORDER[slot];
         Runnable next = new Runnable() {
             @Override
             public void run() {
-                if (level < 10) startLevel(level + 1); else showMenu();
+                if (slot + 1 < com.valeriodipaolo.platformgame.core.Levels.ORDER.length) startLevel(slot + 1); else showMenu();
             }
         };
-        if (level % 2 == 1) show(new GameView(this, level, next));
+        if (!com.valeriodipaolo.platformgame.core.Levels.is3D(level)) show(new GameView(this, level, next));
         else show(new Level3DView(this, level, next));
     }
 
