@@ -7,7 +7,7 @@ public class Scene11 {
         World3D w = new World3D(new MemorySave(), 11);
         Scene3D sc = new Scene3D();
         Scene3.warp(w, x, z);
-        w.fireZ = z - (name.contains("close") ? 4f : name.contains("run") ? 10f : 14f);
+        w.fireZ = z - (name.contains("close") ? 4f : name.contains("run") ? 9f : 14f);
         Scene3.run(w, 0.3f, 0, 0, false, false);
         Scene3.run(w, t, 0, 1, false, spin);
         Scene3.shot(w, sc, name, out, true);

@@ -47,7 +47,7 @@ public final class Scene3D {
     private final float[] view = new float[16], proj = new float[16], m = new float[16], m2 = new float[16];
     private final float[] ident = Mat4.identity();
 
-    private Mesh sky, mountains, pitFloor, pitWater, padDome, padTop, thornMesh, beeMesh;
+    private Mesh sky, mountains, pitFloor, pitWater, padDome, padTop, thornMesh, beeBody, beeWings;
     private Mesh[][] land;                       // [tipo][blocco]
     private MeshBuilder[][] mbs;
     private int zBase, nChunks;
@@ -1020,10 +1020,21 @@ public final class Scene3D {
             b.quad(0, 0, -0.62f, 0, 0, 0.62f, 0, 0.95f, 0.62f, 0, 0.95f, -0.62f, 1, 0, 0, 0, 0, 1, 1);
             b.quad(0, 0, 0.62f, 0, 0, -0.62f, 0, 0.95f, -0.62f, 0, 0.95f, 0.62f, -1, 0, 0, 0, 0, 1, 1);
             thornMesh = b.build(Img.SP_THORN, true, true);
-            b = new MeshBuilder();                                     // sciame di api: un cartoncino, sempre rivolto verso chi scappa
-            b.quad(-0.5f, 0, 0, 0.5f, 0, 0, 0.5f, 1, 0, -0.5f, 1, 0, 0, 0, -1, 0, 0, 1, 1);
-            b.quad(0.5f, 0, 0, -0.5f, 0, 0, -0.5f, 1, 0, 0.5f, 1, 0, 0, 0, 1, 0, 0, 1, 1);
-            beeMesh = b.build(Img.R3D_BEES, true, true);
+            b = new MeshBuilder().color(255, 198, 24);                 // ape: addome giallo a strisce nere, testa scura (asse lungo y)
+            b.ellipsoid(0, 0, 0, 0.1f, 0.17f, 0.1f, 10, 7);
+            b.colorf(0.1f, 0.07f, 0.03f);
+            b.cylinder(0, -0.085f, -0.035f, 0, 0.098f, 0.1f, 10, false, false);
+            b.cylinder(0, 0.03f, 0.08f, 0, 0.1f, 0.088f, 10, false, false);
+            b.ellipsoid(0, 0.2f, 0, 0.052f, 0.05f, 0.052f, 8, 6);
+            b.bipyramid(0, -0.2f, 0, 0.035f, 0.05f, 5);
+            beeBody = b.build(-1, false, true);
+            beeBody.spec = 0.1f; beeBody.shine = 10f;
+            b = new MeshBuilder().color(235, 245, 255);                // ali: due piccole lame traslucide
+            b.quad(0.04f, 0.1f, 0.02f, 0.3f, 0.12f, 0.1f, 0.3f, -0.02f, 0.1f, 0.04f, -0.02f, 0.02f, 0, 1, 0, 0, 0, 1, 1);
+            b.quad(0.04f, -0.02f, 0.02f, 0.3f, -0.02f, 0.1f, 0.3f, 0.12f, 0.1f, 0.04f, 0.1f, 0.02f, 0, -1, 0, 0, 0, 1, 1);
+            b.quad(-0.04f, 0.1f, 0.02f, -0.04f, -0.02f, 0.02f, -0.3f, -0.02f, 0.1f, -0.3f, 0.12f, 0.1f, 0, 1, 0, 0, 0, 1, 1);
+            b.quad(-0.04f, -0.02f, 0.02f, -0.04f, 0.1f, 0.02f, -0.3f, 0.12f, 0.1f, -0.3f, -0.02f, 0.1f, 0, -1, 0, 0, 0, 1, 1);
+            beeWings = b.build(-1, true, true);
         }
         if (fire) {                                                    // casse di roccia incandescente
             b = new MeshBuilder();
@@ -1452,34 +1463,40 @@ public final class Scene3D {
         }
     }
 
-    /** Lo sciame che insegue: tre strati di nuvole di api che ondeggiano, più qualche ape sciolta davanti. */
+    /** Una singola ape alla posizione (x, y, z), con il muso verso (dx, dz) e le ali che battono. */
+    private void drawBee(float x, float y, float z, float dx, float dz, float t, float size) {
+        float yaw = (float) Math.atan2(dx, dz);
+        Mat4.setIdentity(m);
+        Mat4.translate(m, x, y, z);
+        Mat4.rotateY(m, yaw);
+        Mat4.rotateX(m, 1.25f);                                  // l'asse dell'ape passa da verticale a orizzontale, muso in avanti
+        Mat4.scale(m, size, size, size);
+        gfxBee.draw(beeBody, m, 1f, 1f, 1f, 1f, 0.15f);
+        float flap = 0.35f + 0.65f * Math.abs((float) Math.sin(t * 38f));
+        Mat4.scale(m, flap, 1f, 1f);
+        gfxBee.draw(beeWings, m, 1f, 1f, 1f, 0.42f, 0.6f);
+    }
+
+    private Gfx3D gfxBee;
+
+    /** Lo sciame che insegue: una nuvola di api che vorticano attorno a fireZ, con le più coraggiose che arrivano fin quasi al robot. */
     private void drawBees(World3D w, Gfx3D g) {
-        if (Float.isNaN(w.fireZ) || w.fireZ < camZ - 12f) return;
-        for (int layer = 0; layer < 3; layer++) {
-            for (int i = -3; i <= 3; i++) {
-                float t = w.time * (5f + 0.6f * i) + i * 2.3f + layer * 1.7f;
-                float x = i * 1.55f + 0.22f * (float) Math.sin(t * 0.7f), z = w.fireZ + 1.4f - layer * 1.3f + 0.35f * (float) Math.sin(t * 0.5f);
-                float hov = 0.15f * (float) Math.sin(t) + 0.1f * layer;
-                Mat4.setIdentity(m);
-                Mat4.translate(m, x, groundAt(Math.max(-2.4f, Math.min(2.4f, x)), Math.max(0f, z)) + 0.1f + hov, z);
-                Mat4.rotateZ(m, 0.06f * (float) Math.sin(t * 0.9f));
-                float sc = 1f + 0.12f * (float) Math.sin(t * 1.3f);
-                Mat4.scale(m, 3.3f * sc, 5.0f * sc, 3.3f);
-                float near = Math.max(0f, Math.min(1f, (z - camZ + 5f) / 3f));       // vicino alla camera si dissolve invece di riempire lo schermo
-                if (near > 0f) g.draw(beeMesh, m, 1f, 1f, 1f, (0.97f - layer * 0.07f) * near, 1f);
-            }
-        }
-        for (int k = 0; k < 14; k++) {                                      // api sciolte davanti allo sciame: lo annunciano prima che arrivi
-            float t = w.time * 3f + k * 1.9f;
-            float span = Math.max(1f, Math.min(14f, (w.pz - w.fireZ) - 2.4f));     // restano sempre alle spalle del robot
-            float z = w.fireZ + 1.4f + span * k / 13f + 0.3f * (float) Math.sin(t);
-            float x = -2.3f + (k * 5) % 7 * 0.7f + 0.4f * (float) Math.sin(t * 1.3f);
-            Mat4.setIdentity(m);
-            Mat4.translate(m, x, groundAt(Math.max(-2.4f, Math.min(2.4f, x)), Math.max(0f, z)) + 0.7f + 0.5f * (float) Math.sin(t * 1.7f) + 0.3f * (k % 3), z);
-            float sk = 1.7f - k * 0.07f;
-            Mat4.scale(m, sk, sk * 1.3f, sk);
-            float nr = Math.max(0f, Math.min(1f, (z - camZ + 5f) / 3f));
-            if (nr > 0f) g.draw(beeMesh, m, 1f, 1f, 1f, 0.9f * nr, 1f);
+        if (Float.isNaN(w.fireZ) || w.fireZ < camZ - 14f) return;
+        gfxBee = g;
+        float camPos = camZ - 6f, span = Math.max(1f, Math.min(14f, (w.pz - w.fireZ) - 2.4f));
+        for (int i = 0; i < 150; i++) {
+            float h1 = hash(i, 3, 11), h2 = hash(i, 7, 13), h3 = hash(i, 5, 17), h4 = hash(i, 9, 19);
+            boolean scout = i >= 85;
+            float depth = scout ? (float) Math.pow(h3, 1.7f) * span : -2.4f + h3 * 4.2f;        // massa compatta o api sparse davanti
+            float spread = scout ? 2.3f : 4.2f;
+            float bx = (h1 - 0.5f) * 2f * spread, by = 0.5f + h2 * (scout ? 2.6f : 3.6f);
+            float rad = 0.35f + h4 * 0.6f, om = 2.5f + h4 * 3.5f, ph = i * 1.7f;
+            float t = w.time * om + ph;
+            float x = bx + rad * (float) Math.cos(t), z = w.fireZ + 1.2f + depth + rad * 0.8f * (float) Math.sin(t);
+            float y = by + 0.3f * (float) Math.sin(t * 1.3f + ph);
+            if (z < camPos + 0.8f) continue;                      // dietro la camera
+            float gy = groundAt(Math.max(-2.4f, Math.min(2.4f, x)), Math.max(0f, z));
+            drawBee(x, gy + y, z, -(float) Math.sin(t) * rad, (float) Math.cos(t) * rad * 0.8f, w.time + ph, scout ? 0.95f : 0.8f);
         }
     }
 

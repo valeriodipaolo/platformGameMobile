@@ -47,8 +47,8 @@ public final class Img {
             SP_DIRT = 166, SP_DIRT_L = 167, SP_DIRT_R = 168, SP_FRINGE = 169, SP_BRICK = 170, SP_BONUS = 171, SP_USED = 172, SP_STONE = 173,
             SP_SPRING = 174, SP_THORN = 175, SP_WATER = 176, SP_PETAL = 177;
     public static final int R3D_GRASS = 178, R3D_FOREST = 179, R3D_TUFT = 180, R3D_FLOWERS = 181, R3D_CROWN = 182, R3D_TREE = 183,
-            R3D_FOLIAGE = 184, R3D_SKY = 185, R3D_MOUNTAINS = 186, R3D_WATER = 187, R3D_SPRING = 188, R3D_BEES = 189;
-    public static final int COUNT = 190;
+            R3D_FOLIAGE = 184, R3D_SKY = 185, R3D_MOUNTAINS = 186, R3D_WATER = 187, R3D_SPRING = 188;
+    public static final int COUNT = 189;
 
     public static final String[] NAMES = {
         "bg_sky", "bg_mountains", "bg_hills",
@@ -80,6 +80,6 @@ public final class Img {
         "fr_crumble", "fr_vent", "r3c_vent",
         "sp_sky", "sp_mountains", "sp_hills", "sp_grass", "sp_grass_l", "sp_grass_r", "sp_dirt", "sp_dirt_l", "sp_dirt_r", "sp_fringe",
         "sp_brick", "sp_bonus", "sp_used", "sp_stone", "sp_spring", "sp_thorn", "sp_water", "sp_petal",
-        "r3d_grass", "r3d_forest", "r3d_tuft", "r3d_flowers", "r3d_crown", "r3d_tree", "r3d_foliage", "r3d_sky", "r3d_mountains", "r3d_water", "r3d_spring", "r3d_bees",
+        "r3d_grass", "r3d_forest", "r3d_tuft", "r3d_flowers", "r3d_crown", "r3d_tree", "r3d_foliage", "r3d_sky", "r3d_mountains", "r3d_water", "r3d_spring",
     };
 }
