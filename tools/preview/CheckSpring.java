@@ -105,6 +105,13 @@ public class CheckSpring {
         System.out.println("     livello 11: morti " + (int) r11[0] + ", x finale " + r11[1] + ", stato " + l11.state + ", t " + r11[2]);
         ok(l11.state == Game.WON, "il robot automatico completa il livello 11");
         ok(r11[0] <= 2, "al massimo 2 morti del robot sul livello 11: " + (int) r11[0]);
+        // sotto ogni mattone o cassa del livello 11 il robot passa e può colpirlo da sotto: nessun ostacolo nelle due caselle sotto
+        int blocked11 = 0;
+        for (int tx = 0; tx < l11.level.w; tx++) for (int ty = 0; ty < l11.level.h - 3; ty++) {
+            char c = l11.level.get(tx, ty);
+            if ((c == Level.BRICK || c == Level.BONUS || c == Level.SECRET) && (l11.level.solid(tx, ty + 1) || l11.level.solid(tx, ty + 2))) { blocked11++; System.out.println("  blocco ostruito x=" + tx + " y=" + ty); }
+        }
+        ok(blocked11 == 0, "livello 11: nessun ostacolo sotto mattoni e casse (" + blocked11 + ")");
         // ---- 3D: fiore a molla e rovi
         World3D w = new World3D(new MemorySave(), 10);
         w.enemies.clear();

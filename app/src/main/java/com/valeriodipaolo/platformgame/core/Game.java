@@ -459,13 +459,21 @@ public final class Game {
             if (!e.active) {
                 if (e.x < camX + viewW + 1.5f) e.active = true; else continue;
             }
-            if (e.type == Enemy.CROW) {                          // il corvo vola a onde sopra il percorso, senza urtare nulla
+            if (e.type == Enemy.STORM) {                         // la nuvola temporalesca vaga lenta, poi si ferma, si carica e scaglia un fulmine in verticale
+                e.hop += dt;
+                if (stormPhase(e.hop) == 0) {
+                    e.x += e.dir * 1.3f * dt;
+                    if (e.x > e.hi) { e.x = e.hi; e.dir = -1; } else if (e.x < e.lo) { e.x = e.lo; e.dir = 1; }
+                }
+                e.y = e.baseY + (float) Math.sin(e.anim * 1.8f) * 0.25f;
+                e.anim += dt;
+            } else if (e.type == Enemy.CROW) {                          // il corvo vola a onde sopra il percorso, senza urtare nulla
                 e.x += e.dir * 2.3f * dt;
                 if (e.x > e.hi) { e.x = e.hi; e.dir = -1; } else if (e.x < e.lo) { e.x = e.lo; e.dir = 1; }
                 e.y = e.baseY + (float) Math.sin(e.anim * 2.6f) * 1.15f;
                 e.anim += dt;
             } else {
-                float speed = e.type == Enemy.HOG ? ENEMY_SPEED * 0.75f : ENEMY_SPEED;
+                float speed = e.type == Enemy.HOG ? ENEMY_SPEED * 0.75f : e.type == Enemy.WHIRL ? ENEMY_SPEED * 1.7f : ENEMY_SPEED;
                 e.vx = e.dir * speed;
                 if (e.type == Enemy.ACORN) {                       // la ghianda sta ferma, poi spicca un balzo in avanti
                     e.hop -= dt;
@@ -475,6 +483,10 @@ public final class Game {
                 e.vy = Math.min(MAX_FALL, e.vy + GRAVITY * dt);
                 e.move(level, dt);
                 if (e.hitWall) e.dir = -e.dir;
+                if (e.type == Enemy.WHIRL) {                       // il mulinello resta sul suo tratto: torna indietro ai bordi e ai limiti
+                    if (e.onGround && !level.solid((int) Math.floor(e.x + e.w / 2 + e.dir * 0.6f), (int) Math.floor(e.y + e.h + 0.1f))) e.dir = -e.dir;
+                    if (e.x > e.hi) e.dir = -1; else if (e.x < e.lo) e.dir = 1;
+                }
                 e.anim += dt;
                 if (e.y > level.h + 2) { e.dead = true; continue; }
             }
@@ -486,7 +498,7 @@ public final class Game {
                 e.vx = facing * 5f;
                 score += 100;
             } else if (player.overlaps(e)) {
-                if (e.type != Enemy.HOG && player.vy > 0 && player.y + player.h - e.y < 0.75f) {
+                if (e.type != Enemy.HOG && e.type != Enemy.WHIRL && player.vy > 0 && player.y + player.h - e.y < 0.75f) {
                     e.flatTime = 0.45f;
                     player.vy = jump ? -15f : -10f;
                     airJumps = 1;                       // rimbalzando su un nemico si può rifare il doppio salto
@@ -494,8 +506,25 @@ public final class Game {
                 } else {
                     hurt();
                 }
+            } else if (e.type == Enemy.STORM && stormPhase(e.hop) == 2) {
+                float bx = e.x + e.w / 2;
+                if (player.x + player.w > bx - 0.4f && player.x < bx + 0.4f && player.y + player.h > e.y + e.h && player.y < boltBottom(e)) hurt();
             }
         }
+    }
+
+    /** Ciclo della nuvola temporalesca: 0 vaga, 1 si carica (avviso), 2 fulmine. */
+    public static int stormPhase(float t) {
+        float c = t % 3.6f;
+        return c < 2.4f ? 0 : c < 3.1f ? 1 : 2;
+    }
+
+    /** Riga (in caselle) fin dove arriva il fulmine di una nuvola: la prima casella solida sotto di lei. */
+    public float boltBottom(Enemy e) {
+        int tx = (int) Math.floor(e.x + e.w / 2);
+        int ty = Math.max(0, (int) Math.floor(e.y + e.h));
+        while (ty < level.h && !level.solid(tx, ty)) ty++;
+        return ty;
     }
 
     private static boolean touches(Body a, Body b, float m) {

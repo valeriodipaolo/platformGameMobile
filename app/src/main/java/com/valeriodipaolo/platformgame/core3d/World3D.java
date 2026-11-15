@@ -430,7 +430,7 @@ public final class World3D {
      */
     public boolean enemyBlocked(Enemy3 e, float x, float z) {
         float floor = Float.isNaN(e.floor) ? (e.type == Enemy3.ACORN ? e.baseY : e.y) : e.floor;
-        float feet = e.type == Enemy3.CROW ? e.baseY - 0.75f : floor;
+        float feet = e.flies() ? e.baseY - 0.75f : floor;
         for (int cz = zi(z - ENEMY_R); cz <= zi(z + ENEMY_R); cz++) {
             for (int cx = xi(x - ENEMY_R); cx <= xi(x + ENEMY_R); cx++) {
                 int h = cell(cx, cz);
@@ -438,7 +438,7 @@ public final class World3D {
                 if (h != PIT && h > feet + 0.05f) return true;
             }
         }
-        if (e.type != Enemy3.CROW) {
+        if (!e.flies()) {
             int hc = cell(xi(x), zi(z));
             if (hc == PIT || hc < floor - 0.05f) return true;
         }
@@ -469,7 +469,8 @@ public final class World3D {
             }
             if (Math.abs(e.z - pz) > 45) continue;
             e.anim += dt;
-            float speed = e.type == Enemy3.HOG ? ENEMY_SPEED * 0.8f : e.type == Enemy3.CROW ? ENEMY_SPEED * 1.5f : ENEMY_SPEED;
+            float speed = e.type == Enemy3.HOG ? ENEMY_SPEED * 0.8f : e.type == Enemy3.CROW ? ENEMY_SPEED * 1.5f : e.type == Enemy3.WHIRL ? ENEMY_SPEED * 1.7f
+                    : e.type == Enemy3.STORM ? ENEMY_SPEED * 0.7f : ENEMY_SPEED;
             if (e.type == Enemy3.ACORN) {                       // la ghianda aspetta ferma, poi balza in avanti
                 e.hopT += dt;
                 float t = e.hopT % 1.7f;
@@ -483,6 +484,10 @@ public final class World3D {
                 }
             } else if (e.type == Enemy3.CROW) {
                 e.y = e.baseY + 0.45f * (float) Math.sin(e.anim * 2.4f);
+            } else if (e.type == Enemy3.STORM) {                // la nuvola vaga lenta, poi si ferma, si carica e scaglia un fulmine verso il basso
+                e.hopT += dt;
+                e.y = e.baseY + 0.2f * (float) Math.sin(e.anim * 1.8f);
+                if (Enemy3.stormPhase(e.hopT) != 0) speed = 0;
             }
             if (Float.isNaN(e.floor)) e.floor = e.type == Enemy3.ACORN ? e.baseY : e.y;
             float nx = e.x, nz = e.z;
@@ -509,7 +514,7 @@ public final class World3D {
                 e.vy = 8f;
                 score += 100;
             } else if (ax < 0.75f && az < 0.75f && vertical) {
-                if (e.type != Enemy3.HOG && vy < 0 && py > e.y + 0.25f) {     // schiacciato dall'alto (il riccio punge)
+                if (e.type != Enemy3.HOG && e.type != Enemy3.WHIRL && vy < 0 && py > e.y + 0.25f) {     // schiacciato dall'alto (il riccio punge)
                     e.flatTime = 0.45f;
                     vy = jump ? 9f : 6.5f;
                     airJumps = 1;
@@ -517,6 +522,8 @@ public final class World3D {
                 } else {
                     hurt();
                 }
+            } else if (e.type == Enemy3.STORM && Enemy3.stormPhase(e.hopT) == 2 && ax < 0.55f && az < 0.55f && py < e.y) {
+                hurt();                                  // il fulmine colpisce tutta la colonna sotto la nuvola
             }
         }
     }

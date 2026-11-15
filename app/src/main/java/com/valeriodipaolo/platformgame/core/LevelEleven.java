@@ -28,7 +28,7 @@ public final class LevelEleven {
         // --- prato d'ingresso
         shards(lv, 7, 9, 4);
         row(lv, 11, 7, "B?B");
-        crow(lv, 24, 5.8f, 19, 30);
+        whirl(lv, 24, 16, 30);
         shards(lv, 21, 7, 3);
 
         // --- isolotti: salti brevi da una nuvola all'altra
@@ -36,6 +36,7 @@ public final class LevelEleven {
         shard(lv, 32, 6f); shard(lv, 40, 6f);
 
         // --- la radura e il tempio di marmo: un fiore a molla lancia sul tetto con la cella energetica
+        whirl(lv, 47, 44, 50);
         hill(lv, 51, 60, 3);
         row(lv, 53, 5, "?B?");
         crow(lv, 58, 4.6f, 49, 64);
@@ -57,20 +58,21 @@ public final class LevelEleven {
         column(lv, 108, 2);
         column(lv, 112, 4);
         shard(lv, 100, 6.4f); shard(lv, 104, 5.4f); shard(lv, 108, 6.4f); shard(lv, 112, 4.4f);
-        crow(lv, 106, 3.6f, 99, 114);
+        whirl(lv, 96, 94, 99);
+        storm(lv, 106, 2.6f, 98, 114);
 
         // --- primo ponte di nuvole: sei nuvole che cedono, larghe tre caselle e spaziate di cinque
-        bridge(lv, 121, new int[] {9, 8, 9, 8, 9, 8});
-        crow(lv, 132, 5f, 122, 143);
+        bridge(lv, 121, new int[] {9, 8, 9, 8, 9});
+        storm(lv, 132, 3.6f, 122, 141);
 
-        // --- terreno alto: una torre di nuvole instabili dà più gemme e meno uccelli
-        row(lv, 148, 7, "B?B?B");
-        crow(lv, 157, 3.8f, 150, 166);
-        lv.set(152, 8, Level.CRUMBLE); shard(lv, 152, 6);
-        lv.set(155, 6, Level.CRUMBLE); shard(lv, 155, 4);
-        lv.set(158, 4, Level.CRUMBLE); lv.set(159, 4, Level.CRUMBLE); shard(lv, 158, 2.6f); shard(lv, 159, 2.6f);
-        lv.set(162, 6, Level.CRUMBLE); shard(lv, 162, 4);
-        lv.set(165, 8, Level.CRUMBLE); shard(lv, 165, 6);
+        // --- terreno alto: i mattoni sono liberi sopra e sotto; la torre di nuvole instabili è più a destra, con un mulinello a terra
+        row(lv, 147, 7, "B?B?B");
+        whirl(lv, 150, 147, 156);
+        lv.set(155, 8, Level.CRUMBLE); shard(lv, 155, 6);
+        lv.set(158, 6, Level.CRUMBLE); shard(lv, 158, 4);
+        lv.set(161, 4, Level.CRUMBLE); lv.set(162, 4, Level.CRUMBLE); shard(lv, 161, 2.6f); shard(lv, 162, 2.6f);
+        lv.set(165, 6, Level.CRUMBLE); shard(lv, 165, 4);
+        crow(lv, 160, 1.6f, 154, 168);
         shards(lv, 168, 9, 2);
 
         // --- secondo balzo lungo
@@ -86,11 +88,12 @@ public final class LevelEleven {
 
         // --- il gran ponte: sei nuvole, salgono e scendono, con due uccelli di guardia
         bridge(lv, 203, new int[] {9, 8, 7, 8, 9, 8});
-        crow(lv, 210, 5f, 204, 219);
-        crow(lv, 224, 4.6f, 214, 231);
+        storm(lv, 212, 3.6f, 204, 220);
+        crow(lv, 225, 4.6f, 216, 231);
 
         // --- il portone, alla fine del cielo
         row(lv, 238, 7, "B?B");
+        whirl(lv, 244, 236, 249);
         shards(lv, 236, 9, 3);
         shards(lv, 241, 9, 3);
 
@@ -175,6 +178,14 @@ public final class LevelEleven {
         int y = 0;
         while (y < H && !lv.solid(x, y)) y++;
         return y - 1;
+    }
+
+    private static void storm(Level lv, float x, float y, float lo, float hi) {
+        lv.enemies.add(new float[] {x, y, Enemy.STORM, lo, hi});
+    }
+
+    private static void whirl(Level lv, float x, float lo, float hi) {
+        lv.enemies.add(new float[] {x, standRow(lv, (int) x), Enemy.WHIRL, lo, hi});
     }
 
     private static void crow(Level lv, float x, float y, float lo, float hi) {

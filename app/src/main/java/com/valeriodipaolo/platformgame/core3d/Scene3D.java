@@ -64,6 +64,7 @@ public final class Scene3D {
     private Mesh wing;
     private Mesh flake, curtain;
     private int[] ktex = K_TEX_SUMMER;
+    private float pitD = PIT_DEPTH;
     private float fogR = FOG_R, fogG = FOG_G, fogB = FOG_B;
     /** Quanto il bordo dei burroni si arrotonda verso il basso (0 = spigolo vivo). */
     private float lip;
@@ -292,12 +293,13 @@ public final class Scene3D {
         builtFor = w.length;
         lvl = w;
         heaven = w.levelNo == 12;
+        pitD = heaven ? 2.2f : PIT_DEPTH;
         spring = w.levelNo == 10;
         autumn = w.levelNo == 4 || spring;       // la primavera usa gli alberi a chioma larga dell'autunno, con altri colori
         aurora = w.levelNo == 6;
         fire = w.levelNo == 8;
         ktex = heaven ? K_TEX_HEAVEN : spring ? K_TEX_SPRING : fire ? K_TEX_FIRE : aurora ? K_TEX_AURORA : autumn ? K_TEX_AUTUMN : K_TEX_SUMMER;
-        if (heaven) { fogR = 0.97f; fogG = 0.96f; fogB = 0.93f; lip = 0.5f; }
+        if (heaven) { fogR = 0.86f; fogG = 0.93f; fogB = 1.0f; lip = 0.5f; }
         else if (spring) { fogR = 0.80f; fogG = 0.90f; fogB = 0.97f; lip = 0.5f; }
         else if (autumn) { fogR = 0.90f; fogG = 0.79f; fogB = 0.64f; lip = 0.5f; }
         if (aurora) { fogR = 0.05f; fogG = 0.10f; fogB = 0.22f; lip = 0.5f; }
@@ -311,7 +313,8 @@ public final class Scene3D {
         genTrees(z0, z1);
 
         b = new MeshBuilder();                                         // cielo: occupa la parte alta dello schermo, con la foschia all'orizzonte
-        b.quad(-1, 0.18f, 0.999f, 1, 0.18f, 0.999f, 1, 1, 0.999f, -1, 1, 0.999f, 0, 0, -1, 0, 0, 1, 1);
+        float skyLow = heaven ? -1f : 0.18f;                           // in cielo il fondale riempie tutto lo schermo, anche sotto l'orizzonte
+        b.quad(-1, skyLow, 0.999f, 1, skyLow, 0.999f, 1, 1, 0.999f, -1, 1, 0.999f, 0, 0, -1, 0, 0, 1, 1);
         sky = b.build(heaven ? Img.R3H_SKY : spring ? Img.R3D_SKY : fire ? Img.R3C_SKY : aurora ? Img.R3B_SKY : autumn ? Img.R3A_SKY : Img.R3_SKY, false, false);
 
         b = new MeshBuilder();                                         // montagne lontane
@@ -385,8 +388,8 @@ public final class Scene3D {
                 if (x < World3D.W - 1 && vis(w, x + 1, z) == World3D.PIT) wallX(d, fx + 1, z, -1);
             }
             MeshBuilder d = mb(K_DIRT, z);
-            if (vis(w, 0, z) == World3D.PIT) wallX(d, -World3D.HALF, z, 1);
-            if (vis(w, World3D.W - 1, z) == World3D.PIT) wallX(d, World3D.HALF, z, -1);
+            if (vis(w, 0, z) == World3D.PIT || heaven) wallX(d, -World3D.HALF, z, 1);
+            if (vis(w, World3D.W - 1, z) == World3D.PIT || heaven) wallX(d, World3D.HALF, z, -1);
         }
 
         b = fire ? new MeshBuilder().color(255, 96, 22) : new MeshBuilder().color(10, 18, 14);   // fondo dei burroni (lava nell'incendio)
@@ -418,7 +421,7 @@ public final class Scene3D {
         float[] D = {0, 0.35f, 0.75f, 1.2f, 1.7f, 2.3f, SEAM, 4.6f, 6f, 8f, 11f, 15f, 20f, 27f, 36f};
         float[] seamG = autumn || aurora || fire || heaven ? new float[] {1f, 1f, 1f} : new float[] {1.214f, 1.064f, 1.073f};
         float[] seamF = autumn || aurora || fire || heaven ? new float[] {1f, 1f, 1f} : new float[] {0.850f, 0.943f, 0.936f};
-        for (int z = z0; z < z1; z++) {
+        for (int z = z0; z < (heaven ? z0 : z1); z++) {                    // in cielo non c'è terreno ai lati: si vede solo il cielo
             for (int side = -1; side <= 1; side += 2) {
                 for (int k = 0; k + 1 < D.length; k++) {
                     boolean grassy = D[k + 1] <= SEAM + 0.01f;
@@ -499,34 +502,38 @@ public final class Scene3D {
         }
     }
 
-    /** Nel cielo: ciuffi di nuvola ai lati del percorso, per dare profondità al mare di nuvole, e un orlo soffice lungo il bordo. */
+    /** Nel cielo il sentiero è una lastra di nuvola sospesa: ciuffi sotto ai bordi, un orlo soffice sopra e, molto in basso, qualche nuvola lontana per dare l'altezza. */
     private void buildPuffs(World3D w, int z0, int z1) {
         Random r = new Random(11);
-        for (int side = -1; side <= 1; side += 2) {
-            for (float z = z0; z < z1; z += 5f + 4f * r.nextFloat()) {
-                int n = 2 + r.nextInt(3);
-                float bx = side * (World3D.HALF + 2.5f + 12f * r.nextFloat());
-                for (int k = 0; k < n; k++) {
-                    float rad = 1.6f + 2.4f * r.nextFloat();
-                    float px = bx + side * (k * 1.4f * r.nextFloat()), pz = z + (k - 1) * 1.6f * r.nextFloat() + 1.5f * r.nextFloat();
-                    float py = groundAt(px, pz) - 0.4f + rad * 0.35f;
-                    MeshBuilder p = mb(K_PROP, (int) pz);
-                    lightAt(px, pz, 1f);
-                    float sh = 0.97f + 0.05f * r.nextFloat();
-                    p.colorf(lt[0] * sh * 1.1f, lt[1] * sh * 1.1f, lt[2] * sh * 1.1f);
-                    p.ellipsoid(px, py, pz, rad * 1.25f, rad * 0.72f, rad, 12, 8);
-                }
+        for (float z = z0; z < z1; z += 1.5f) {                       // pancia della lastra: bolle sotto ai due bordi e sotto ai ponti
+            for (int side = -1; side <= 1; side += 2) {
+                float rad = 0.9f + 0.7f * r.nextFloat();
+                float px = side * (World3D.HALF - 0.3f + 0.5f * r.nextFloat()), pz = z + r.nextFloat();
+                MeshBuilder p = mb(K_PROP, (int) pz);
+                lightAt(px, pz, 1f);
+                float sh = 0.9f + 0.1f * r.nextFloat();
+                p.colorf(lt[0] * sh, lt[1] * sh, lt[2] * sh * 1.04f);
+                p.ellipsoid(px, -pitD + 0.1f, pz, rad * 1.3f, rad * 0.8f, rad * 1.1f, 10, 7);
             }
-            for (float z = z0; z < z1; z += 0.9f) {            // orlo di bolle lungo il bordo del sentiero, dove non c'è il vuoto
+        }
+        for (int side = -1; side <= 1; side += 2) {
+            for (float z = z0; z < z1; z += 0.9f) {                    // orlo di bolle lungo il bordo del sentiero, dove non c'è il vuoto
                 int zi = (int) Math.floor(z);
                 if (vis(w, side < 0 ? 0 : World3D.W - 1, zi) == World3D.PIT) continue;
-                float rad = 0.42f + 0.25f * r.nextFloat();
-                float px = side * (World3D.HALF + 0.05f), pz = z + 0.4f * r.nextFloat();
-                float py = groundAt(px, pz) - 0.15f + rad * 0.2f;
+                float rad = 0.4f + 0.25f * r.nextFloat();
+                float px = side * (World3D.HALF + 0.02f), pz = z + 0.4f * r.nextFloat();
+                float py = groundAt(px, pz) - 0.12f + rad * 0.2f;
                 MeshBuilder p = mb(K_PROP, zi);
                 lightAt(px, pz, 1f);
-                p.colorf(lt[0] * 1.15f, lt[1] * 1.15f, lt[2] * 1.15f);
+                p.colorf(lt[0] * 1.12f, lt[1] * 1.12f, lt[2] * 1.12f);
                 p.ellipsoid(px, py, pz, rad * 1.2f, rad * 0.8f, rad, 8, 6);
+            }
+            for (float z = z0; z < z1; z += 7f + 6f * r.nextFloat()) {  // nuvole lontane, tanti metri più in basso
+                float rad = 5f + 8f * r.nextFloat();
+                float px = side * (World3D.HALF + 14f + 70f * r.nextFloat() * r.nextFloat()), pz = z + 4f * r.nextFloat();
+                MeshBuilder p = mb(K_PROP, (int) pz);
+                p.colorf(0.96f, 0.98f, 1f);
+                p.ellipsoid(px, -22f - 40f * r.nextFloat(), pz, rad * 1.5f, rad * 0.55f, rad, 12, 8);
             }
         }
     }
@@ -972,10 +979,10 @@ public final class Scene3D {
         d.colorf(1f, 0.95f, 0.9f);
         d.vert(ax, top, az, nx, 0, nz, 0, 0);
         d.vert(bx, top, bz, nx, 0, nz, 1, 0);
-        d.colorf(0.04f, 0.05f, 0.045f);
-        d.vert(bx, -PIT_DEPTH, bz, nx, 0, nz, 1, PIT_DEPTH);
-        d.vert(bx, -PIT_DEPTH, bz, nx, 0, nz, 1, PIT_DEPTH);
-        d.vert(ax, -PIT_DEPTH, az, nx, 0, nz, 0, PIT_DEPTH);
+        if (heaven) d.colorf(0.80f, 0.88f, 1f); else d.colorf(0.04f, 0.05f, 0.045f);
+        d.vert(bx, -pitD, bz, nx, 0, nz, 1, pitD);
+        d.vert(bx, -pitD, bz, nx, 0, nz, 1, pitD);
+        d.vert(ax, -pitD, az, nx, 0, nz, 0, pitD);
         d.colorf(1f, 0.95f, 0.9f);
         d.vert(ax, top, az, nx, 0, nz, 0, 0);
     }
@@ -1325,13 +1332,12 @@ public final class Scene3D {
             }
         }
         Mat4.setIdentity(m);
-        Mat4.translate(m, camX * 0.3f, 0, camZ + 230f);
+        Mat4.translate(m, camX * 0.3f, heaven ? -34f : 0f, camZ + 230f);
         if (aurora) Mat4.scale(m, 1f, 0.5f, 1f);          // montagne basse: lasciano vedere l'aurora tra gli alberi
         g.draw(mountains, m, 1, 1, 1, 1, aurora ? 0.35f : 1);
         // (le montagne sono già ritoccate nella texture)
 
-        if (heaven) g.draw(seaPlane, ident, 1, 1, 1, 1, 0.5f);
-        g.draw(pitFloor, ident, 1, 1, 1, 1, spring ? 0.45f : 1);
+        if (!heaven) g.draw(pitFloor, ident, 1, 1, 1, 1, spring ? 0.45f : 1);
         if (spring) {
             Mat4.setIdentity(m);
             Mat4.translate(m, 0.18f * (float) Math.sin(w.time * 0.7f), -0.7f + 0.03f * (float) Math.sin(w.time * 1.9f), 0.25f * (float) Math.sin(w.time * 0.5f));
@@ -1440,8 +1446,8 @@ public final class Scene3D {
         for (Enemy3 e : w.enemies) {
             if (e.dead || e.flung || e.z < near || e.z > far) continue;
             Mat4.setIdentity(m);
-            float sy = e.type == Enemy3.CROW ? 0 : e.type == Enemy3.ACORN ? e.baseY : e.y;
-            float ss = 1.5f * (e.type == Enemy3.ACORN || e.type == Enemy3.CROW ? Math.max(0.5f, 1f - (e.y - sy) * 0.2f) : 1f);
+            float sy = e.flies() ? 0 : e.type == Enemy3.ACORN ? e.baseY : e.y;
+            float ss = 1.5f * (e.type == Enemy3.ACORN || e.flies() ? Math.max(0.5f, 1f - (e.y - sy) * 0.2f) : 1f);
             Mat4.translate(m, e.x, sy + bumpAt(e.x, e.z) + 0.03f, e.z);
             Mat4.scale(m, ss, 1, ss);
             g.draw(shadow, m, 1, 1, 1, 0.8f, 1);

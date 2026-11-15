@@ -52,12 +52,15 @@ public final class Hud3D {
         // joystick: compare dove si appoggia il dito, altrimenti resta nella posizione di riposo
         float jr = joyRadius(sw, sh);
         float cx = joyActive && !fixedStick ? joyCx : joyHomeX(sw, sh), cy = joyActive && !fixedStick ? joyCy : joyHomeY(sw, sh);
+        boolean sky = w.levelNo == 12;                       // sulle nuvole i comandi bianchi non si vedrebbero: fondo scuro
+        if (sky) p.image(Img.HV_PAD, cx - jr * 1.05f, cy - jr * 1.05f, 2.1f * jr, 2.1f * jr, false, 1);
         p.image(Img.JOY_BASE, cx - jr, cy - jr, 2 * jr, 2 * jr, false, joyActive ? 1f : 0.7f);
         float kr = jr * 0.46f;
         p.image(Img.JOY_KNOB, cx + (joyActive ? joyDx : 0) * jr * 0.75f - kr, cy + (joyActive ? joyDy : 0) * jr * 0.75f - kr,
                 2 * kr, 2 * kr, false, 1);
 
         float bs = Controls.size(sw, sh), bty = Controls.btnY(sw, sh);
+        if (sky) for (float bxx : new float[] {Controls.jumpX(sw, sh), Controls.spinX(sw, sh)}) p.image(Img.HV_PAD, bxx - 0.1f * bs, bty - 0.1f * bs, 1.2f * bs, 1.2f * bs, false, 1);
         p.image(Img.BTN_JUMP, Controls.jumpX(sw, sh), bty, bs, bs, false, 1);
         p.image(Img.BTN_SPIN, Controls.spinX(sw, sh), bty, bs, bs, false, w.spinning() || w.spinCool > 0 ? 0.45f : 1f);
 

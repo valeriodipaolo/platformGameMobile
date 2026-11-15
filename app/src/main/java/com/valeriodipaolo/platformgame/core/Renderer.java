@@ -14,6 +14,7 @@ public final class Renderer {
         int th = lv.theme;                          // 0 estate, 1 autunno, 2 aurora boreale, 3 incendio, 4 primavera, 5 cielo
         boolean au = th >= 1;
         layer(p, th == 5 ? Img.HV_SKY : th == 4 ? Img.SP_SKY : th == 3 ? Img.FR_SKY : th == 2 ? Img.AR_SKY : th == 1 ? Img.AU_SKY : Img.SKY, cam * s * 0.03f, 0, sh, sw);
+        if (th == 5) p.image(Img.HV_SUN, sw * 0.17f - 3.4f * s, 0.2f * s, 6.8f * s, 6.8f * s, false, 1f);       // il sole sta fermo nel cielo
         layer(p, th == 5 ? Img.HV_MOUNTAINS : th == 4 ? Img.SP_MOUNTAINS : th == 3 ? Img.FR_MOUNTAINS : th == 2 ? Img.AR_MOUNTAINS : th == 1 ? Img.AU_MOUNTAINS : Img.MOUNTAINS, cam * s * 0.12f, 3.9f * s, 6.6f * s, sw);
         layer(p, th == 5 ? Img.HV_HILLS : th == 4 ? Img.SP_HILLS : th == 3 ? Img.FR_HILLS : th == 2 ? Img.AR_HILLS : th == 1 ? Img.AU_HILLS : Img.HILLS, cam * s * 0.35f, 6.2f * s, 5.8f * s, sw);
 
@@ -160,19 +161,31 @@ public final class Renderer {
             if (e.dead) continue;
             float x = (e.x + e.w / 2 - cam) * s;
             if (x < -2 * s || x > sw + 2 * s) continue;
-            int fr = (int) (e.anim * (e.type == Enemy.CROW ? 9f : 7f)) % 2;
+            int fr = (int) (e.anim * (e.type == Enemy.CROW ? 9f : e.type == Enemy.WHIRL ? 12f : 7f)) % 2;
             int img;
             float w = 1.083f * s, h = 0.875f * s;
             switch (e.type) {
                 case Enemy.HOG: img = Img.HOG + fr; w = 1.25f * s; h = 0.85f * s; break;
                 case Enemy.CROW: img = Img.CROW + fr; w = 1.25f * s; h = 1.0f * s; break;
+                case Enemy.STORM:
+                    img = Game.stormPhase(e.hop) > 0 && e.flatTime <= 0 ? Img.HV_STORM_C : Img.HV_STORM;
+                    w = 1.7f * s; h = 1.36f * s;
+                    break;
+                case Enemy.WHIRL: img = Img.HV_WHIRL + fr; w = 1.2f * s; h = 1.38f * s; break;
                 case Enemy.ACORN:
                     img = e.flatTime > 0 ? Img.ACORN_FLAT : Img.ACORN + (e.onGround ? 0 : 1);
                     w = 0.95f * s; h = 1.05f * s;
                     break;
                 default: img = e.flatTime > 0 ? Img.ENEMY_FLAT : Img.ENEMY + fr; break;
             }
-            if (e.type == Enemy.CROW && e.flatTime > 0) h *= 0.35f;      // il corvo schiacciato
+            if ((e.type == Enemy.CROW || e.type == Enemy.STORM) && e.flatTime > 0) h *= 0.35f;      // schiacciato
+            if (e.type == Enemy.STORM && e.flatTime <= 0 && Game.stormPhase(e.hop) > 0) {            // fulmine: prima un avviso tremolante, poi la scarica
+                float bx = (e.x + e.w / 2 - cam) * s, by = (e.y + e.h) * s, bot = g.boltBottom(e) * s;
+                boolean strike = Game.stormPhase(e.hop) == 2;
+                float a = strike ? 1f : 0.2f + 0.2f * (float) Math.sin(g.time * 40f);
+                float bw = strike ? 0.9f * s : 0.5f * s;
+                p.image(Img.HV_BOLT, bx - bw / 2, by - 0.1f * s, bw, bot - by + 0.1f * s, ((int) (g.time * 30f) & 1) == 0, Math.max(0.05f, a));
+            }
             p.image(img, x - w / 2, (e.y + e.h + 0.03f) * s - h, w, h, e.dir > 0, 1);
         }
 
@@ -267,6 +280,9 @@ public final class Renderer {
 
         // ---- pulsanti
         float bs = Controls.size(sw, sh), bty = Controls.btnY(sw, sh);
+        if (th == 5) for (float bxx : new float[] {Controls.leftX(sw, sh), Controls.rightX(sw, sh), Controls.jumpX(sw, sh), Controls.spinX(sw, sh)}) {
+            p.image(Img.HV_PAD, bxx - 0.1f * bs, bty - 0.1f * bs, 1.2f * bs, 1.2f * bs, false, 1);       // fondo scuro: sulle nuvole i comandi bianchi non si vedrebbero
+        }
         p.image(Img.BTN_LEFT, Controls.leftX(sw, sh), bty, bs, bs, false, 1);
         p.image(Img.BTN_RIGHT, Controls.rightX(sw, sh), bty, bs, bs, false, 1);
         p.image(Img.BTN_JUMP, Controls.jumpX(sw, sh), bty, bs, bs, false, 1);

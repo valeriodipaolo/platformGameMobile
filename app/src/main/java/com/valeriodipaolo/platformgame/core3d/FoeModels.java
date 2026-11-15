@@ -25,6 +25,7 @@ public final class FoeModels {
     private Mesh crowBody, crowPlumes, crowBeak, crowJaw, crowBits, crowEyes;
     private final Mesh[] crowArm = new Mesh[2], crowHand = new Mesh[2];
     private Mesh acornBody, acornCap, acornBits, acornEyes, acornArm, acornFoot;
+    private Mesh stormBody, stormEyes, stormBolt, whirlTier, whirlEyes;
     private Mesh beetleShell, beetleGloss, beetleEyes, beetleLeg, beetleJaw;
     private final float[] a = new float[16], b2 = new float[16], c2 = new float[16];
 
@@ -33,6 +34,7 @@ public final class FoeModels {
         buildCrow();
         buildAcorn();
         buildBeetle();
+        buildSky();
     }
 
     // ------------------------------------------------------------------ attrezzi
@@ -762,11 +764,86 @@ public final class FoeModels {
         }
     }
 
+    // ------------------------------------------------------------------ nemici del cielo
+
+    private void buildSky() {
+        MeshBuilder b = new MeshBuilder();                                  // nuvola temporalesca: cumuli grigio-azzurri, il ventre più scuro
+        b.colorf(0.34f, 0.37f, 0.48f);
+        b.ellipsoid(0, 0.22f, 0, 0.52f, 0.26f, 0.46f, 14, 9);
+        b.colorf(0.47f, 0.51f, 0.64f);
+        b.ellipsoid(-0.38f, 0.36f, 0.02f, 0.38f, 0.32f, 0.36f, 12, 8);
+        b.ellipsoid(0.38f, 0.36f, 0f, 0.36f, 0.30f, 0.34f, 12, 8);
+        b.colorf(0.56f, 0.60f, 0.72f);
+        b.ellipsoid(0, 0.56f, -0.02f, 0.42f, 0.34f, 0.40f, 12, 8);
+        stormBody = done(b, -1, 0.1f, 14f);
+        b = new MeshBuilder();                                              // occhi truci e sopracciglia aggrottate
+        b.colorf(1f, 1f, 1f);
+        b.ellipsoid(-0.17f, 0.40f, 0.40f, 0.10f, 0.10f, 0.05f, 10, 6);
+        b.ellipsoid(0.17f, 0.40f, 0.40f, 0.10f, 0.10f, 0.05f, 10, 6);
+        b.colorf(0.05f, 0.05f, 0.12f);
+        b.ellipsoid(-0.17f, 0.39f, 0.44f, 0.045f, 0.05f, 0.03f, 8, 5);
+        b.ellipsoid(0.17f, 0.39f, 0.44f, 0.045f, 0.05f, 0.03f, 8, 5);
+        b.box(-0.18f, 0.53f, 0.41f, 0.22f, 0.04f, 0.04f);
+        b.box(0.18f, 0.53f, 0.41f, 0.22f, 0.04f, 0.04f);
+        stormEyes = done(b, -1, 0.3f, 30f);
+        b = new MeshBuilder();                                              // fulmine: due cartoncini incrociati con la texture a zig-zag, da 0 a -1 in y
+        b.colorf(1f, 1f, 1f);
+        b.quad(-0.45f, -1f, 0, 0.45f, -1f, 0, 0.45f, 0f, 0, -0.45f, 0f, 0, 0, 0, 1, 0, 0, 1, 1);
+        b.quad(0, -1f, -0.45f, 0, -1f, 0.45f, 0, 0f, 0.45f, 0, 0f, -0.45f, 1, 0, 0, 0, 0, 1, 1);
+        stormBolt = b.build(Img.HV_BOLT, true, true);
+        b = new MeshBuilder();                                              // mulinello: un anello schiacciato, ripetuto in pile di raggio crescente
+        b.colorf(1f, 1f, 1f);
+        b.ellipsoid(0, 0, 0, 1f, 0.22f, 1f, 14, 6);
+        whirlTier = done(b, -1, 0.15f, 20f);
+        b = new MeshBuilder();
+        b.colorf(1f, 1f, 1f);
+        b.ellipsoid(-0.14f, 0f, 0.12f, 0.06f, 0.07f, 0.04f, 8, 5);
+        b.ellipsoid(0.14f, 0f, 0.12f, 0.06f, 0.07f, 0.04f, 8, 5);
+        b.colorf(0.05f, 0.08f, 0.2f);
+        b.ellipsoid(-0.14f, -0.005f, 0.155f, 0.03f, 0.04f, 0.02f, 8, 5);
+        b.ellipsoid(0.14f, -0.005f, 0.155f, 0.03f, 0.04f, 0.02f, 8, 5);
+        whirlEyes = done(b, -1, 0.3f, 30f);
+    }
+
+    private void drawStorm(Gfx3D g, float[] m, Enemy3 e) {
+        int ph = Enemy3.stormPhase(e.hopT);
+        System.arraycopy(m, 0, a, 0, 16);
+        Mat4.translate(a, 0, -0.25f, 0);
+        if (ph > 0) Mat4.scale(a, 1f + 0.05f * (float) Math.sin(e.anim * 40f), 1f, 1f + 0.05f * (float) Math.sin(e.anim * 40f + 1f));
+        g.draw(stormBody, a, ph > 0 ? 1.3f : 1f, ph > 0 ? 1.25f : 1f, ph > 0 ? 0.9f : 1f, 1, ph > 0 ? 0.25f : 0f);
+        if (ph > 0) g.draw(stormEyes, a, 1f, 0.85f, 0.2f, 1, 0.9f); else g.draw(stormEyes, a, 1, 1, 1, 1, 0.3f);
+        if (ph > 0 && e.flatTime <= 0) {                                    // avviso tremolante, poi la scarica
+            System.arraycopy(m, 0, b2, 0, 16);
+            Mat4.translate(b2, 0, -0.3f, 0);
+            Mat4.scale(b2, ph == 2 ? 1.2f : 0.55f, Math.max(1f, e.y + 0.3f), ph == 2 ? 1.2f : 0.55f);
+            g.draw(stormBolt, b2, 1, 1, 1, ph == 2 ? 1f : 0.25f + 0.2f * (float) Math.sin(e.anim * 45f), 1f);
+        }
+    }
+
+    private void drawWhirl(Gfx3D g, float[] m, Enemy3 e) {
+        int n = 7;
+        for (int i = 0; i < n; i++) {
+            float t = i / (float) (n - 1);
+            float ph = e.anim * 9f + i * 0.9f;
+            System.arraycopy(m, 0, a, 0, 16);
+            Mat4.translate(a, 0.07f * (float) Math.sin(ph) * (1f - t * 0.4f), 0.12f + t * 1.15f, 0.07f * (float) Math.cos(ph));
+            Mat4.rotateY(a, e.anim * 10f + i);
+            float r = 0.17f + 0.38f * t;
+            Mat4.scale(a, r, 1f, r);
+            if (i % 2 == 0) g.draw(whirlTier, a, 0.95f, 0.98f, 1f, 1, 0.25f); else g.draw(whirlTier, a, 0.62f, 0.8f, 0.95f, 1, 0.1f);
+        }
+        System.arraycopy(m, 0, a, 0, 16);
+        Mat4.translate(a, 0, 1.0f, 0.12f);
+        g.draw(whirlEyes, a, 1, 1, 1, 1, 0.4f);
+    }
+
     /** Disegna un nemico; m è la matrice già posizionata e orientata (ed eventualmente schiacciata). */
     public void draw(Gfx3D g, float[] m, Enemy3 e) {
         switch (e.type) {
             case Enemy3.HOG: drawHog(g, m, e); break;
             case Enemy3.CROW: drawCrow(g, m, e); break;
+            case Enemy3.STORM: drawStorm(g, m, e); break;
+            case Enemy3.WHIRL: drawWhirl(g, m, e); break;
             case Enemy3.ACORN: drawAcorn(g, m, e); break;
             default: drawBeetle(g, m, e); break;
         }

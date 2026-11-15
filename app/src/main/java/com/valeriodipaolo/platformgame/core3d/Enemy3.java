@@ -5,7 +5,7 @@ package com.valeriodipaolo.platformgame.core3d;
  * corvo (vola a onde) o ghianda (procede a balzi).
  */
 public final class Enemy3 {
-    public static final int BEETLE = 0, HOG = 1, CROW = 2, ACORN = 3;
+    public static final int BEETLE = 0, HOG = 1, CROW = 2, ACORN = 3, STORM = 4, WHIRL = 5;
     public int type;
     /** Quota di partenza (ghianda) o quota media del volo (corvo). */
     public float baseY, hopT;
@@ -18,6 +18,17 @@ public final class Enemy3 {
     public float flatTime, vx, vy, vz;
     /** Quota del suolo su cui cammina (fissata alla prima mossa): niente salti nel vuoto né attraversamenti di blocchi. */
     public float floor = Float.NaN;
+
+    /** Ciclo della nuvola temporalesca: 0 vaga, 1 si carica (avviso), 2 fulmine verticale. */
+    public static int stormPhase(float t) {
+        float c = t % 3.6f;
+        return c < 2.4f ? 0 : c < 3.1f ? 1 : 2;
+    }
+
+    /** Vola (corvo, nuvola temporalesca): non ha terreno sotto i piedi. */
+    public boolean flies() {
+        return type == CROW || type == STORM;
+    }
 
     public Enemy3(float x, float z, boolean alongZ, float lo, float hi) {
         this.x = x;

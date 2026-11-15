@@ -31,12 +31,12 @@ public final class LevelTwelve {
         crate(w, 1, 9); crate(w, 3, 9);
         for (int x = 1; x <= 3; x++) { set(w, x, 13, 1); set(w, x, 14, 2); set(w, x, 15, 2); set(w, x, 16, 1); }
         gem(w, 0, 2.7f, 14.5f); gem(w, 0, 2.7f, 15.5f);
-        crow(w, 0, 20, false, -2f, 2f, 2.0f);
+        whirl(w, 0, 20, false, -2f, 2f);
 
         // --- ponte di nuvola: tre caselle di larghezza sul vuoto, con un uccello di guardia
         pit(w, 24, 35, 0, 4);
         for (int z = 24; z <= 35; z++) for (int x = 1; x <= 3; x++) set(w, x, z, 0);
-        crow(w, 0, 29, false, -2f, 2f, 2.2f);
+        storm(w, 0, 29, true, 26f, 33f, 2.9f);
         gem(w, 0, 0.7f, 26.5f); gem(w, 0, 0.7f, 31.5f); gem(w, 1, 0.7f, 34f);
 
         // --- corridoio di muri di marmo: ognuno ha un solo varco, sempre dal lato opposto al precedente
@@ -45,7 +45,7 @@ public final class LevelTwelve {
         wall(w, 45, 0);
         wall(w, 49, 3);
         wall(w, 53, 1);
-        crow(w, 0, 43, false, -2f, 2f, 2.1f);
+        whirl(w, 0, 43, false, -2f, 2f);
         crow(w, 0, 51, false, -2f, 2f, 2.1f);
         gem(w, 2, 0.7f, 41.5f); gem(w, -2, 0.7f, 45.5f); gem(w, 1, 0.7f, 49.5f); gem(w, -1, 0.7f, 53.5f);
 
@@ -66,8 +66,8 @@ public final class LevelTwelve {
         // --- sentiero stretto con il vuoto ai lati e due uccelli
         pit(w, 99, 116, 0, 0);
         pit(w, 99, 116, 4, 4);
-        crow(w, 0, 103, false, -1.5f, 1.5f, 2.0f);
-        crow(w, 0, 110, false, -1.5f, 1.5f, 2.2f);
+        storm(w, 0, 103, true, 101f, 112f, 2.9f);
+        whirl(w, 0, 112, false, -1f, 1f);
         wall(w, 106, 2);
         for (int z = 99; z <= 116; z += 3) if (z != 105 && z != 108) gem(w, 0, 0.7f, z + 0.5f);
 
@@ -87,6 +87,7 @@ public final class LevelTwelve {
         gem(w, 0, 0.7f, 141.5f); gem(w, 1, 0.7f, 148.5f); gem(w, -1, 0.7f, 155.5f); gem(w, 0, 0.7f, 162.5f);
         gem(w, 0.5f, 2.8f, 145.5f); gem(w, -0.5f, 2.8f, 152f);
         crow(w, 0, 145, false, -2f, 2f, 3.0f);
+        storm(w, 0, 152, false, -1.5f, 1.5f, 3.4f);
 
         // --- ultimi muri e il portone
         crate(w, 1, 168); crate(w, 3, 168);
@@ -94,7 +95,8 @@ public final class LevelTwelve {
         wall(w, 175, 0);
         wall(w, 179, 4);
         crow(w, 0, 173, false, -2f, 2f, 2.1f);
-        crow(w, 0, 177, false, -2f, 2f, 2.1f);
+        whirl(w, 0, 183, false, -2f, 2f);
+        storm(w, 0, 184, false, -2f, 2f, 2.9f);
         gem(w, 0, 0.7f, 171.5f); gem(w, -2, 0.7f, 175.5f); gem(w, 2, 0.7f, 179.5f);
         gemLine3(w, 0, 0.7f, 182, 185);
         w.flagZ = 188;
@@ -137,6 +139,22 @@ public final class LevelTwelve {
 
     private static void gemLine3(World3D w, float cx, float y, int z0, int z1) {
         for (int z = z0; z <= z1; z++) gem(w, cx, y, z + 0.5f);
+    }
+
+    /** Nuvola temporalesca: vaga lenta sopra al sentiero, poi si carica e scaglia un fulmine verso il basso. */
+    private static void storm(World3D w, float x, float z, boolean alongZ, float lo, float hi, float y) {
+        Enemy3 e = new Enemy3(x, z, alongZ, lo, hi);
+        e.type = Enemy3.STORM;
+        e.y = y;
+        e.baseY = y;
+        w.enemies.add(e);
+    }
+
+    /** Mulinello di vento: corre veloce, non si schiaccia (si salta o si travolge con la giravolta). */
+    private static void whirl(World3D w, float x, float z, boolean alongZ, float lo, float hi) {
+        Enemy3 e = new Enemy3(x, z, alongZ, lo, hi);
+        e.type = Enemy3.WHIRL;
+        w.enemies.add(e);
     }
 
     /** Uccello: vola a onde sopra al sentiero, a quota media y. */

@@ -53,7 +53,8 @@ public final class Img {
             HV_DIRT = 195, HV_DIRT_L = 196, HV_DIRT_R = 197, HV_FRINGE = 198, HV_BRICK = 199, HV_BONUS = 200, HV_USED = 201, HV_STONE = 202,
             HV_SPRING = 203, HV_CRUMBLE = 204, HV_SEA = 205, HV_SPARK = 206;
     public static final int R3H_CLOUD = 207, R3H_BODY = 208, R3H_SEA = 209, R3H_MARBLE = 210, R3H_SKY = 211, R3H_MOUNTAINS = 212, R3H_SPRING = 213;
-    public static final int COUNT = 214;
+    public static final int HV_STORM = 214, HV_STORM_C = 215, HV_WHIRL = 216, HV_WHIRL_B = 217, HV_BOLT = 218, HV_SUN = 219, HV_PAD = 220;
+    public static final int COUNT = 221;
 
     public static final String[] NAMES = {
         "bg_sky", "bg_mountains", "bg_hills",
@@ -88,6 +89,6 @@ public final class Img {
         "r3d_grass", "r3d_forest", "r3d_tuft", "r3d_flowers", "r3d_crown", "r3d_tree", "r3d_foliage", "r3d_sky", "r3d_mountains", "r3d_water", "r3d_spring",
         "hv_sky", "hv_mountains", "hv_hills", "hv_grass", "hv_grass_l", "hv_grass_r", "hv_dirt", "hv_dirt_l", "hv_dirt_r", "hv_fringe",
         "hv_brick", "hv_bonus", "hv_used", "hv_stone", "hv_spring", "hv_crumble", "hv_sea", "hv_spark",
-        "r3h_cloud", "r3h_body", "r3h_sea", "r3h_marble", "r3h_sky", "r3h_mountains", "r3h_spring",
+        "r3h_cloud", "r3h_body", "r3h_sea", "r3h_marble", "r3h_sky", "r3h_mountains", "r3h_spring", "hv_storm", "hv_storm_c", "hv_whirl", "hv_whirl_b", "hv_bolt", "hv_sun", "hv_pad",
     };
 }

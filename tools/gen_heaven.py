@@ -88,9 +88,6 @@ def hv_sky():
     t = y ** 0.9
     grad = np.where(t[..., None] < 0.62, lerp(top, mid, (t / 0.62)[..., None]), lerp(mid, hor, ((t - 0.62) / 0.38)[..., None]))
     sky = np.broadcast_to(grad, (h, w, 3)).copy()
-    r = np.sqrt(((y - 0.22) * 1.0) ** 2 + ((x - 0.28) * 2.0) ** 2)
-    sky += col((255, 236, 170)) * (np.exp(-r * 4.2) * 0.45)[..., None]            # alone del sole
-    sky += col((255, 250, 220)) * (np.exp(-r * 14) * 0.5)[..., None]
     den = ndi.gaussian_filter(fbm(h, w, beta=3.4, seed=2101, ax=2.4, ay=1.0), (3, 3), mode="wrap")
     den2 = ndi.gaussian_filter(fbm(h, w, beta=2.6, seed=2102, ax=1.6, ay=1.0), (2, 2), mode="wrap")
     c = smooth((den + 0.25 * (den2 - 0.5) - (0.60 - 0.1 * y)) * 5.0) * (0.30 + 0.6 * y)
@@ -110,7 +107,8 @@ def hv_mountains():
     f = (np.linspace(0, 1, h)[:, None, None]) ** 1.4
     rgb = lerp(rgb * np.array([1.0, 1.03, 1.1]), col((226, 232, 248)), 0.26 + 0.34 * f)
     rgb = rgb * np.array([1.03, 1.0, 0.96])
-    G.save("hv_mountains", np.dstack([np.clip(rgb, 0, 1), a[..., 3]]))
+    arr = np.dstack([np.clip(rgb, 0, 1), a[..., 3]])
+    G.save("hv_mountains", np.concatenate([arr, arr[:, ::-1]], axis=1))      # specchiata: la ripetizione si nota meno
 
 
 def cloud_bank(d, w, ss, base_y, lumps_n, rmin, rmax, lit, shade, rng, spread):
@@ -287,6 +285,94 @@ def hv_spark():
     G.save("hv_spark", np.dstack([c, a]))
 
 
+def hv_sun():
+    n = 384
+    y, x = np.mgrid[0:n, 0:n].astype(float)
+    r = np.sqrt((x - n / 2 + 0.5) ** 2 + (y - n / 2 + 0.5) ** 2) / (n / 2)
+    core = np.clip((0.16 - r) * 30, 0, 1)
+    glow = np.exp(-r * 4.5) * 0.85 + np.exp(-r * 14) * 0.5
+    a = np.clip(core + glow * np.clip(1 - r, 0, 1), 0, 1)
+    c = lerp(col((255, 236, 160)), col((255, 255, 246)), np.clip(core * 1.2 + np.exp(-r * 9), 0, 1)[..., None])
+    G.save("hv_sun", np.dstack([c, a]))
+
+
+def hv_pad():
+    n = 128
+    y, x = np.mgrid[0:n, 0:n].astype(float)
+    r = np.sqrt((x - n / 2 + 0.5) ** 2 + (y - n / 2 + 0.5) ** 2) / (n / 2)
+    a = np.clip((1 - r) * 5, 0, 1) * 0.5
+    c = np.zeros((n, n, 3)) + col((14, 38, 74))
+    G.save("hv_pad", np.dstack([c, a]))
+
+
+def sprite(w, h, fn, ss=4):
+    im = Image.new("RGBA", (w * ss, h * ss), (0, 0, 0, 0))
+    fn(ImageDraw.Draw(im), ss)
+    return np.asarray(im.resize((w, h), Image.LANCZOS)).astype(float) / 255.0
+
+
+def hv_storm():
+    """Nuvola temporalesca: grigia, con le sopracciglia aggrottate; carica (occhi gialli, scintille) prima di lanciare il fulmine."""
+    def draw(charged):
+        def fn(d, ss):
+            body = (118, 130, 160) if not charged else (150, 150, 150)
+            lit = (160, 172, 198) if not charged else (206, 198, 150)
+            shade = (70, 80, 108)
+            puffs = [(36, 78, 26), (62, 62, 34), (96, 62, 32), (124, 78, 26), (80, 84, 38)]
+            for dx, dy, r in puffs:
+                circle(d, dx * ss, (dy + 5) * ss, r * ss, shade + (255,))
+            for dx, dy, r in puffs:
+                circle(d, dx * ss, dy * ss, r * ss, body + (255,))
+            for dx, dy, r in puffs:
+                circle(d, (dx - r * 0.25) * ss, (dy - r * 0.3) * ss, r * 0.62 * ss, lit + (255,))
+            ec = (255, 226, 70) if charged else (250, 250, 255)
+            for sx in (-1, 1):
+                ex = 80 + sx * 20
+                circle(d, ex * ss, 78 * ss, 11 * ss, ec + (255,))
+                circle(d, (ex - sx * 2) * ss, 80 * ss, 5 * ss, (20, 20, 40, 255))
+                d.line([(ex + sx * 14) * ss, 60 * ss, (ex - sx * 12) * ss, 70 * ss], fill=(24, 28, 52, 255), width=6 * ss)
+            d.arc([68 * ss, 96 * ss, 92 * ss, 108 * ss], 200, 340, fill=(24, 28, 52, 255), width=3 * ss)
+            if charged:
+                for ang, ln in ((-0.9, 24), (-0.3, 18), (0.3, 22), (0.9, 26)):
+                    x0, y0 = 80 + math.sin(ang) * 52, 112 + abs(math.cos(ang)) * 6
+                    d.line([x0 * ss, y0 * ss, (x0 + math.sin(ang) * 10) * ss, (y0 + 8) * ss, (x0 - 4) * ss, (y0 + 12) * ss, (x0 + 4) * ss, (y0 + ln * 0.8) * ss],
+                           fill=(255, 238, 120, 255), width=3 * ss)
+        return sprite(160, 128, fn)
+    G.save("hv_storm", draw(False))
+    G.save("hv_storm_c", draw(True))
+
+
+def hv_whirl():
+    """Mulinello di vento: spirale di strisce bianche e azzurre con due occhietti truci in cima."""
+    def draw(ph):
+        def fn(d, ss):
+            n = 9
+            for i in range(n):
+                t = i / (n - 1)
+                cy = 12 + t * 124
+                rx = 52 - 40 * t
+                ry = 11 - 4 * t
+                off = math.sin(ph + i * 0.9) * 8 * (1 - t * 0.5)
+                tone = (232, 244, 255) if i % 2 == 0 else (150, 196, 232)
+                d.ellipse([(64 + off - rx) * ss, (cy - ry) * ss, (64 + off + rx) * ss, (cy + ry) * ss], fill=tone + (235,), outline=(96, 140, 190, 255), width=2 * ss)
+            for sx in (-1, 1):
+                ex = 64 + sx * 14 + math.sin(ph) * 8
+                circle(d, ex * ss, 30 * ss, 7 * ss, (255, 255, 255, 255))
+                circle(d, (ex - sx) * ss, 31 * ss, 3.2 * ss, (20, 30, 60, 255))
+                d.line([(ex + sx * 9) * ss, 19 * ss, (ex - sx * 8) * ss, 25 * ss], fill=(30, 50, 90, 255), width=4 * ss)
+        return sprite(128, 148, fn)
+    G.save("hv_whirl", draw(0.0))
+    G.save("hv_whirl_b", draw(math.pi))
+
+
+def hv_bolt():
+    def fn(d, ss):
+        pts = [(32, 0), (22, 40), (42, 70), (18, 112), (44, 150), (24, 196), (32, 256)]
+        for wd, c in ((22, (255, 240, 140, 90)), (12, (255, 236, 90, 200)), (5, (255, 255, 250, 255))):
+            d.line([(x * ss, y * ss) for x, y in pts], fill=c, width=wd * ss, joint="curve")
+    G.save("hv_bolt", sprite(64, 256, fn))
+
+
 # ------------------------------------------------------------------ 3D
 def h_cloud():
     n = 512
@@ -324,17 +410,31 @@ def h_marble():
 
 
 def h_sky():
-    c = G3.col
-    G3.gen_sky("r3h_sky", (c((38, 128, 238)), c((130, 202, 252)), c((255, 246, 222))), (1.0, 0.97, 0.80))
+    """Cielo a tutto schermo, visto da molto in alto: sfumatura morbida dall'azzurro intenso alla foschia chiara, sole in alto a destra, pochi cirri."""
+    w, h = 1024, 512
+    y = np.linspace(0, 1, h)[:, None]
+    x = np.linspace(0, 1, w)[None, :]
+    top, mid, low = col((30, 112, 232)), col((112, 186, 250)), col((196, 226, 252))
+    t = y
+    grad = np.where(t[..., None] < 0.55, lerp(top, mid, (t / 0.55)[..., None]), lerp(mid, low, ((t - 0.55) / 0.45)[..., None]))
+    sky = np.broadcast_to(grad, (h, w, 3)).copy()
+    r = np.sqrt(((y - 0.16) * 1.0) ** 2 + ((x - 0.72) * 1.9) ** 2)
+    sky = lerp(sky, col((255, 244, 200)), (np.exp(-r * 5.0) * 0.55)[..., None])
+    sky = lerp(sky, col((255, 252, 236)), (np.exp(-r * 22) * 0.9)[..., None])
+    den = ndi.gaussian_filter(fbm(h, w, beta=3.6, seed=3101, ax=3.0, ay=1.2), (6, 6), mode="wrap")
+    c = smooth((den - 0.60) * 6.0) * 0.55 * (0.4 + 0.6 * (1 - y))
+    sky = lerp(sky, col((255, 255, 255)), np.clip(c, 0, 0.7)[..., None])
+    G3.save("r3h_sky", np.clip(sky, 0, 1))
 
 
 def h_mountains():
     a = A.capture(G3, G3.gen_mountains)
     h = a.shape[0]
     f = (np.linspace(0, 1, h)[:, None, None]) ** 1.4
-    rgb = lerp(a[..., :3] * np.array([1.0, 1.04, 1.1]), col((228, 234, 250)), 0.40 + 0.30 * f)
-    rgb = rgb * np.array([1.04, 1.02, 0.97])
-    G3.save("r3h_mountains", np.dstack([np.clip(rgb, 0, 1), a[..., 3]]))
+    rgb = lerp(a[..., :3] * np.array([1.0, 1.04, 1.1]), col((228, 234, 250)), 0.55 + 0.30 * f)
+    rgb = rgb * np.array([0.98, 1.0, 1.04])
+    al = a[..., 3] * np.clip(1.0 - (np.linspace(0, 1, h)[:, None] - 0.55) / 0.35, 0, 1)      # il piede della montagna svanisce nella foschia
+    G3.save("r3h_mountains", np.dstack([np.clip(rgb, 0, 1), al]))
 
 
 def h_spring():
@@ -363,7 +463,7 @@ def h_spring():
 
 GENS = {
     "hv_sky": hv_sky, "hv_mountains": hv_mountains, "hv_hills": hv_hills, "hv_ground": hv_ground, "hv_blocks": hv_blocks,
-    "hv_spring": hv_spring, "hv_crumble": hv_crumble, "hv_sea": hv_sea, "hv_spark": hv_spark,
+    "hv_spring": hv_spring, "hv_sun": hv_sun, "hv_pad": hv_pad, "hv_storm": hv_storm, "hv_whirl": hv_whirl, "hv_bolt": hv_bolt, "hv_crumble": hv_crumble, "hv_sea": hv_sea, "hv_spark": hv_spark,
     "h_cloud": h_cloud, "h_body": h_body, "h_sea": h_sea, "h_marble": h_marble, "h_sky": h_sky, "h_mountains": h_mountains,
     "h_spring": h_spring,
 }
