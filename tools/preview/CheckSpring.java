@@ -22,28 +22,34 @@ public class CheckSpring {
     static float[] bot2d(Game g, float maxSec, float stopX) {
         g.enemies.clear();
         int deaths = 0, lives0 = g.lives;
-        float jt = 0, stuck = 0, lastX = g.player.x;
+        float jt = 0, rel = 0, stuck = 0, lastX = g.player.x, at = 0; boolean wide = false;
         for (float t = 0; t < maxSec; t += 1f / 60f) {
             Body p = g.player;
             boolean jump = false;
             if (g.state == Game.PLAYING) {
                 int row = (int) Math.floor(p.y + p.h + 0.05f);
                 boolean gap = false;
-                for (float d = 0.9f; d <= 1.1f; d += 0.2f) if (!g.level.solid((int) Math.floor(p.x + p.w + d), row)) gap = true;
+                int gw = 0;
+                for (int dx = 1; dx <= 12 && !g.level.solid((int) Math.floor(p.x + p.w) + dx, row) && !g.level.solid((int) Math.floor(p.x + p.w) + dx, row + 1) && !g.level.solid((int) Math.floor(p.x + p.w) + dx, row + 2) && !g.level.solid((int) Math.floor(p.x + p.w) + dx, row + 3) && !g.level.solid((int) Math.floor(p.x + p.w) + dx, row - 1); dx++) gw++;
+                float gd0 = gw >= 5 ? 0.1f : 0.9f;
+                if (gw >= 5) { int cx = (int) Math.floor(p.x + 0.4f); if (!g.level.solid(cx, row) && !g.level.solid(cx, row + 1) && !g.level.solid(cx, row + 2)) gap = true; gd0 = 5f; }
+                for (float d = gd0; d <= gd0 + 0.2f; d += 0.2f) if (!g.level.solid((int) Math.floor(p.x + p.w + d), row) && !g.level.solid((int) Math.floor(p.x + p.w + d), row + 1) && !g.level.solid((int) Math.floor(p.x + p.w + d), row + 2) && !g.level.solid((int) Math.floor(p.x + p.w + d), row + 3) && !g.level.solid((int) Math.floor(p.x + p.w + d), row - 1)) gap = true;
                 boolean thorn = false;
                 for (float[] th : g.level.thorns) if (th[0] - p.x > -0.1f && th[0] - p.x < 1.8f) thorn = true;
                 boolean pad = false;
                 for (int d = 0; d <= 2; d++) if (g.level.get((int) Math.floor(p.x + p.w / 2) + d, 10) == Level.SPRING) pad = true;
-                if (p.onGround && ((gap && !pad && (row >= 10 || g.level.get((int) Math.floor(p.x + 0.1f), row) == Level.CRUMBLE)) || thorn || p.hitWall) && jt <= 0) {
+                if (p.onGround && ((gap && !pad && (row >= 9 || g.level.get((int) Math.floor(p.x + 0.1f), row) == Level.CRUMBLE)) || thorn || p.hitWall) && jt <= 0 && rel <= 0) {
                     int land = 99, x1 = (int) Math.floor(p.x + p.w);
                     for (int dx = 2; dx <= 12 && land == 99; dx++)
-                        for (int ry = row - 3; ry <= row + 2; ry++) if (g.level.solid(x1 + dx, ry)) land = dx;
-                    jt = thorn || p.hitWall ? 0.5f : land <= 5 ? 0.1f : 0.5f;
+                        for (int ry = row - 1; ry <= row + 2; ry++) if (g.level.solid(x1 + dx, ry)) land = dx;
+                    jt = thorn || p.hitWall ? 0.5f : land <= 5 ? 0.1f : 1.4f; wide = !(thorn || p.hitWall) && land > 5 && gw >= 7;
                 }
-                if (jt > 0) { jump = true; jt -= 1f / 60f; }
+                if (p.onGround) { if (at > 0.2f && g.level.get((int) Math.floor(p.x + 0.1f), (int) Math.floor(p.y + p.h + 0.05f)) != Level.CRUMBLE) { jt = 0; rel = 0.05f; } at = 0; } else at += 1f / 60f;
+                if (jt > 0) { jump = !(wide && at >= 0.4f && at < 0.45f); jt -= 1f / 60f; if (jt <= 0) rel = 0.08f; } else if (rel > 0) rel -= 1f / 60f;
                 else if (!p.onGround && p.vy > 0 && !g.level.solid((int) Math.floor(p.x + p.w / 2), row + 1) && !g.level.solid((int) Math.floor(p.x + p.w / 2), row + 2)) jump = false;
             }
             g.setInput(false, true, jump);
+            if (System.getProperty("trace") != null && g.player.x > Float.parseFloat(System.getProperty("trace")) && g.player.x < Float.parseFloat(System.getProperty("trace")) + Float.parseFloat(System.getProperty("tw", "12"))) System.out.printf("x %.2f y %.2f vy %.1f og %b jump %b at %.2f jt %.2f wide %b lives %d%n", g.player.x, g.player.y, g.player.vy, g.player.onGround, jump, at, jt, wide, g.lives);
             g.update(1f / 60f);
             if (g.state == Game.WON || g.player.x >= stopX) return new float[] {lives0 - g.lives, g.player.x, t};
             if (Math.abs(g.player.x - lastX) < 0.01f && g.state == Game.PLAYING) { stuck += 1f / 60f; if (stuck > 5f) return new float[] {lives0 - g.lives, g.player.x, -t}; } else { stuck = 0; lastX = g.player.x; }
@@ -144,8 +150,8 @@ public class CheckSpring {
         ok(e.lives < livesE, "fermi abbastanza a lungo lo sciame raggiunge e punge");
         ok(e.gemsList.size() >= 80 && e.gemsList.size() <= 140, "livello 10 intero: " + e.gemsList.size() + " gemme");
         ok(e.flagZ > e.hiveZ + 100, "il traguardo è dopo la fuga (z " + e.flagZ + ")");
-        ok(Levels.ORDER.length == 12 && Levels.ORDER[0] == 1 && Levels.next(6) == 9 && Levels.next(10) == 7 && Levels.next(8) == 11 && Levels.next(11) == 12
-                && Levels.next(12) == 0 && !Levels.is3D(9) && !Levels.is3D(11) && Levels.is3D(12),
+        ok(Levels.ORDER.length == 24 && Levels.ORDER[0] == 1 && Levels.next(6) == 9 && Levels.next(10) == 7 && Levels.next(8) == 11 && Levels.next(11) == 12
+                && Levels.next(12) == 13 && Levels.next(24) == 0 && Levels.is3D(24) && !Levels.is3D(23) && !Levels.is3D(9) && !Levels.is3D(11) && Levels.is3D(12),
                 "ordine dei livelli: estate, autunno, inverno, primavera, incendio, cielo");
         System.out.println(fails == 0 ? "TUTTO OK" : fails + " FALLITI");
     }

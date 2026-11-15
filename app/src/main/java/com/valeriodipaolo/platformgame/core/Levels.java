@@ -7,7 +7,7 @@ package com.valeriodipaolo.platformgame.core;
 public final class Levels {
     private Levels() {}
 
-    public static final int[] ORDER = {1, 2, 3, 4, 5, 6, 9, 10, 7, 8, 11, 12};
+    public static final int[] ORDER = {1, 2, 3, 4, 5, 6, 9, 10, 7, 8, 11, 12, 13, 14, 15, 16, 17, 18, 21, 22, 19, 20, 23, 24};
 
     public static boolean is3D(int id) { return id % 2 == 0; }
 

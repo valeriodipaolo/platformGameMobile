@@ -27,6 +27,8 @@ public final class World3D {
     public final Save save;
     /** 2 = bosco d'estate, 4 = bosco d'autunno. */
     public final int levelNo;
+    /** Tema grafico (2, 4, 6, 8, 10, 12): i livelli della seconda serie (14..24) hanno lo stesso aspetto delle controparti. */
+    public final int theme;
     public final String id;
     public int length;
     /** Altezza di ogni colonna [z * W + x]: PIT = vuoto, 0 = prato, 1 o più = blocchi di pietra impilati. */
@@ -85,6 +87,7 @@ public final class World3D {
     public World3D(Save save, int levelNo) {
         this.save = save;
         this.levelNo = levelNo;
+        this.theme = levelNo > 12 ? levelNo - 12 : levelNo;
         this.id = "l" + levelNo;
         newGame();
     }
@@ -93,7 +96,7 @@ public final class World3D {
         score = 0;
         gems = 0;
         lives = START_LIVES;
-        if (levelNo == 12) LevelTwelve.build(this); else if (levelNo == 10) LevelTen.build(this); else if (levelNo == 8) LevelEight.build(this); else if (levelNo == 6) LevelSix.build(this); else if (levelNo == 4) LevelFour.build(this); else LevelTwo.build(this);
+        if (levelNo > 12) Levels3B.build(this, levelNo); else if (levelNo == 12) LevelTwelve.build(this); else if (levelNo == 10) LevelTen.build(this); else if (levelNo == 8) LevelEight.build(this); else if (levelNo == 6) LevelSix.build(this); else if (levelNo == 4) LevelFour.build(this); else LevelTwo.build(this);
         gemTotal = gemsList.size();
         for (boolean c : crate) if (c) gemTotal++;
         batteryOwned = gemOwned = false;
@@ -214,7 +217,7 @@ public final class World3D {
         if (state == PLAYING) {
             stepPlayer(dt);
             stepFire(dt);
-            stepEnemies(dt);
+            stepEnemies(dt); stepShots(dt);
             pickups();
             if (state == PLAYING && pz >= flagZ - 0.4f) win();
         } else if (state == DYING) {
@@ -470,7 +473,9 @@ public final class World3D {
             if (Math.abs(e.z - pz) > 45) continue;
             e.anim += dt;
             float speed = e.type == Enemy3.HOG ? ENEMY_SPEED * 0.8f : e.type == Enemy3.CROW ? ENEMY_SPEED * 1.5f : e.type == Enemy3.WHIRL ? ENEMY_SPEED * 1.7f
-                    : e.type == Enemy3.STORM ? ENEMY_SPEED * 0.7f : ENEMY_SPEED;
+                    : e.type == Enemy3.STORM ? ENEMY_SPEED * 0.7f : e.type == Enemy3.SNAIL ? (e.mode == 1 ? 0f : ENEMY_SPEED * 0.4f) : e.type == Enemy3.PENGUIN ? ENEMY_SPEED * 2.3f
+                    : e.type == Enemy3.SALAMANDER ? (e.mode == 0 ? ENEMY_SPEED * 0.8f : 0f) : ENEMY_SPEED;
+            if (e.type >= Enemy3.MOLE && stepNew3(e, dt)) continue;
             if (e.type == Enemy3.ACORN) {                       // la ghianda aspetta ferma, poi balza in avanti
                 e.hopT += dt;
                 float t = e.hopT % 1.7f;
@@ -504,6 +509,7 @@ public final class World3D {
                 if (e.x > e.hi) { e.x = e.hi; e.dir = -1; } else if (e.x < e.lo) { e.x = e.lo; e.dir = 1; }
             }
             if (state != PLAYING) continue;
+            if (e.type == Enemy3.SNAIL && e.mode == 1) continue;
             float ax = Math.abs(e.x - px), az = Math.abs(e.z - pz);
             boolean vertical = py < e.y + 0.6f && py + PLAYER_H > e.y;
             if (spinActive && ax < 0.75f + SPIN_REACH && az < 0.75f + SPIN_REACH && vertical) {
@@ -514,8 +520,8 @@ public final class World3D {
                 e.vy = 8f;
                 score += 100;
             } else if (ax < 0.75f && az < 0.75f && vertical) {
-                if (e.type != Enemy3.HOG && e.type != Enemy3.WHIRL && vy < 0 && py > e.y + 0.25f) {     // schiacciato dall'alto (il riccio punge)
-                    e.flatTime = 0.45f;
+                if (stompable3(e) && vy < 0 && py > e.y + 0.25f) {     // schiacciato dall'alto (il riccio punge)
+                    if (e.type == Enemy3.SNAIL) { e.mode = 1; e.t = 2.6f; } else e.flatTime = 0.45f;
                     vy = jump ? 9f : 6.5f;
                     airJumps = 1;
                     score += 100;
@@ -523,8 +529,190 @@ public final class World3D {
                     hurt();
                 }
             } else if (e.type == Enemy3.STORM && Enemy3.stormPhase(e.hopT) == 2 && ax < 0.55f && az < 0.55f && py < e.y) {
-                hurt();                                  // il fulmine colpisce tutta la colonna sotto la nuvola
+                hurt();                                  // il fulmine colpisce tutta la colonna sotto la nuvola            } else if (e.type == Enemy3.SALAMANDER && e.mode == 2 && flameHits(e)) {
+                hurt();                                  // il getto di fuoco davanti alla salamandra
             }
+        }
+    }
+
+    /** Lista dei proiettili (palle di neve): {x, y, z, vx, vy, vz}. */
+    public final List<float[]> shots = new ArrayList<float[]>();
+
+    private boolean stompable3(Enemy3 e) {
+        switch (e.type) {
+            case Enemy3.HOG: case Enemy3.WHIRL: case Enemy3.CHESTNUT: case Enemy3.LAPILLO: case Enemy3.STAR: case Enemy3.SUNNY: return false;
+            case Enemy3.PLANT: return e.mode != 2;
+            case Enemy3.SNAIL: return true;
+            default: return true;
+        }
+    }
+
+    /** true se il getto di fuoco della salamandra (due caselle davanti al muso) tocca il giocatore. */
+    public boolean flameHits(Enemy3 e) {
+        float fx = e.alongZ ? 0 : e.dir, fz = e.alongZ ? e.dir : 0;
+        float cx = e.x + fx * 1.2f, cz = e.z + fz * 1.2f;
+        return Math.abs(px - cx) < (fx != 0 ? 1.15f : 0.6f) && Math.abs(pz - cz) < (fz != 0 ? 1.15f : 0.6f) && py < e.y + 1.0f && py + PLAYER_H > e.y;
+    }
+
+    private void touch(Enemy3 e, boolean stompable) {
+        float ax = Math.abs(e.x - px), az = Math.abs(e.z - pz);
+        boolean vertical = py < e.y + 0.6f && py + PLAYER_H > e.y;
+        if (spinActive && ax < 0.75f + SPIN_REACH && az < 0.75f + SPIN_REACH && vertical) {
+            e.flung = true;
+            float l = Math.max(0.01f, (float) Math.sqrt((e.x - px) * (e.x - px) + (e.z - pz) * (e.z - pz)));
+            e.vx = (e.x - px) / l * 6f;
+            e.vz = (e.z - pz) / l * 6f + 3f;
+            e.vy = 8f;
+            score += 100;
+        } else if (ax < 0.75f && az < 0.75f && vertical) {
+            if (stompable && vy < 0 && py > e.y + 0.25f) {
+                e.flatTime = 0.45f;
+                vy = jump ? 9f : 6.5f;
+                airJumps = 1;
+                score += 100;
+            } else {
+                hurt();
+            }
+        }
+    }
+
+    /**
+     * Comportamento dei nemici nuovi. Restituisce true se il nemico si muove da sé e il passo generico va saltato; i camminatori
+     * (lumaca, pinguino, salamandra) restituiscono false e usano il pattugliamento comune.
+     */
+    private boolean stepNew3(Enemy3 e, float dt) {
+        e.t += dt;
+        float dxp = px - e.x, dzp = pz - e.z;
+        float floorY = Float.isNaN(e.floor) ? e.y : e.floor;
+        switch (e.type) {
+            case Enemy3.MOLE: {                                // sotto terra 1,5 s, trema 0,4 s, esce 1,2 s
+                float c = e.t % 3.4f;
+                e.mode = c < 1.5f ? 0 : c < 1.9f ? 1 : 2;
+                if (Float.isNaN(e.floor)) e.floor = e.y;
+                if (e.mode != 2) return true;
+                touch(e, true);
+                return true;
+            }
+            case Enemy3.CHESTNUT: {                            // pende immobile, trema quando si passa sotto, cade e rotola
+                if (Float.isNaN(e.floor)) { e.floor = Math.max(0, topAt(e.x, e.z)); e.y0 = e.y; }
+                if (e.mode == 0) {
+                    e.y = e.y0;
+                    if (Math.abs(dzp) < 4.2f && dzp > -1f && Math.abs(dxp) < 2.2f) { e.mode = 1; e.t = 0; }
+                } else if (e.mode == 1) {
+                    if (e.t > 0.45f) { e.mode = 2; e.vy = 0; }
+                } else if (e.mode == 2) {
+                    e.vy -= GRAVITY * 0.8f * dt;
+                    e.y += e.vy * dt;
+                    if (e.y <= e.floor + 0.3f) { e.y = e.floor + 0.3f; e.mode = 3; e.t = 0; e.dir = dzp >= 0 ? 1 : -1; }
+                } else {
+                    float nz = e.z + e.dir * 4.2f * dt;
+                    float h = topAt(e.x, nz);
+                    if (h < e.floor - 0.05f || h > e.floor + 0.05f) e.dir = -e.dir; else e.z = nz;
+                    if (e.t > 3.2f) { e.dead = true; return true; }
+                }
+                if (state == PLAYING) touch(e, false);
+                return true;
+            }
+            case Enemy3.OWL: {                                 // ronda alta, poi si tuffa sul giocatore e risale
+                if (Float.isNaN(e.floor)) e.floor = e.y;
+                if (e.mode == 0) {
+                    e.y = e.baseY + 0.3f * (float) Math.sin(e.anim * 2f);
+                    float n = e.alongZ ? e.z + e.dir * ENEMY_SPEED * 0.9f * dt : e.x + e.dir * ENEMY_SPEED * 0.9f * dt;
+                    if (e.alongZ) { e.z = n; if (e.z > e.hi) { e.z = e.hi; e.dir = -1; } else if (e.z < e.lo) { e.z = e.lo; e.dir = 1; } }
+                    else { e.x = n; if (e.x > e.hi) { e.x = e.hi; e.dir = -1; } else if (e.x < e.lo) { e.x = e.lo; e.dir = 1; } }
+                    if (Math.abs(dzp) < 4f && Math.abs(dxp) < 1.5f && py < e.baseY - 0.8f) { e.mode = 1; e.t = 0; e.x0 = px; e.z0 = pz + 1.2f; }
+                } else if (e.mode == 1) {                      // allerta: si abbassa in avanti
+                    e.y -= 3.2f * dt;
+                    float k = Math.min(1f, 3.5f * dt);
+                    e.x += (e.x0 - e.x) * k; e.z += (e.z0 - e.z) * k;
+                    if (e.y <= Math.max(floorY, 0.5f) || e.t > 1.1f) { e.mode = 2; e.t = 0; }
+                } else {
+                    e.y += 2.2f * dt;
+                    if (e.y >= e.baseY) { e.y = e.baseY; e.mode = 0; }
+                }
+                if (state == PLAYING) touch(e, true);
+                return true;
+            }
+            case Enemy3.SNOWMAN: {                             // fermo, si volta e lancia palle di neve ogni 2,3 s
+                if (Float.isNaN(e.floor)) e.floor = e.y;
+                e.dir = dzp >= 0 ? 1 : -1;
+                if (Math.abs(dzp) < 11f && dzp > -2f && e.t > 2.3f) {
+                    e.t = 0;
+                    float l = Math.max(0.5f, (float) Math.sqrt(dxp * dxp + dzp * dzp));
+                    shots.add(new float[] {e.x, e.y + 1.3f, e.z, dxp / l * 5.5f, 3.2f, dzp / l * 5.5f});
+                }
+                if (state == PLAYING) touch(e, true);
+                return true;
+            }
+            case Enemy3.LAPILLO: {                             // schizza dalla lava (o dal bordo) ritmicamente: nascosto, poi un balzo
+                float per = e.lo > 0 ? e.lo : 2.6f, hgt = e.hi > 0 ? e.hi : 3f;
+                if (Float.isNaN(e.floor)) e.floor = e.y;
+                float c = e.t % per, d = 0.9f;
+                if (c < per - d) { e.mode = 0; e.y = e.baseY - 3f; return true; }
+                float u = (c - (per - d)) / d;
+                e.mode = 1;
+                e.y = e.baseY + hgt * 4f * u * (1f - u) - 0.3f;
+                if (state == PLAYING && e.y > e.baseY - 0.2f) touch(e, false);
+                return true;
+            }
+            case Enemy3.FROG: {                                // balza verso il giocatore quando è vicino
+                if (Float.isNaN(e.floor)) { e.floor = e.y; e.y0 = e.y; }
+                if (e.mode == 0) {
+                    e.y = e.y0;
+                    if (e.t > 1.4f && Math.abs(dzp) < 8f && Math.abs(dxp) < 3f) {
+                        e.mode = 1; e.t = 0;
+                        float l = Math.max(0.5f, (float) Math.sqrt(dxp * dxp + dzp * dzp));
+                        e.vx = dxp / l * 3.6f; e.vz = dzp / l * 3.6f; e.dir = dzp >= 0 ? 1 : -1;
+                    }
+                } else {
+                    float u = e.t / 0.7f;
+                    if (u >= 1f) { e.mode = 0; e.t = 0; e.y = e.y0; }
+                    else {
+                        float nx = e.x + e.vx * dt, nz = e.z + e.vz * dt;
+                        if (!enemyBlocked(e, nx, nz)) { e.x = nx; e.z = nz; }
+                        e.y = e.y0 + 1.6f * 4f * u * (1f - u);
+                    }
+                }
+                if (state == PLAYING) touch(e, true);
+                return true;
+            }
+            case Enemy3.PLANT: {                               // chiusa 1,4 s, trema 0,4 s, morde 1,2 s
+                float c = e.t % 3.0f;
+                e.mode = c < 1.4f ? 0 : c < 1.8f ? 1 : 2;
+                e.dir = dzp >= 0 ? 1 : -1;
+                if (state == PLAYING) touch(e, e.mode != 2);
+                return true;
+            }
+            case Enemy3.STAR: {                                // stella cadente: attraversa il corridoio in diagonale e riparte
+                e.x += (e.lo != 0 ? e.lo : 3.2f) * dt; e.y += (e.hi != 0 ? e.hi : -4.6f) * dt;
+                if (e.y < -3f || e.x < -6f || e.x > 6f) { e.x = e.x0; e.y = e.y0; e.z = e.z0; }
+                if (state == PLAYING) touch(e, false);
+                return true;
+            }
+            case Enemy3.SUNNY: {                               // solleone: gira attorno al suo centro nel piano della sezione
+                float r = e.hi > 0 ? e.hi : 1.6f, wv = e.lo != 0 ? e.lo : 2.2f;
+                e.x = e.x0 + r * (float) Math.cos(e.t * wv);
+                e.y = e.y0 + r * (float) Math.sin(e.t * wv) * 0.8f;
+                if (state == PLAYING) touch(e, false);
+                return true;
+            }
+            case Enemy3.SNAIL: {                               // nel guscio resta fermo e innocuo
+                if (e.mode == 1) { e.t -= 2 * dt; if (e.t <= 0) e.mode = 0; }
+                return false;
+            }
+            default: return false;
+        }
+    }
+
+    private void stepShots(float dt) {
+        for (int i = shots.size() - 1; i >= 0; i--) {
+            float[] s = shots.get(i);
+            s[4] -= 14f * dt;
+            s[0] += s[3] * dt; s[1] += s[4] * dt; s[2] += s[5] * dt;
+            float top = topAt(s[0], s[2]);
+            boolean hit = state == PLAYING && Math.abs(s[0] - px) < 0.55f && Math.abs(s[2] - pz) < 0.55f && s[1] > py - 0.15f && s[1] < py + PLAYER_H + 0.15f;
+            if (hit) hurt();
+            if (hit || s[1] < Math.max(0, top) - 0.1f || Math.abs(s[2] - pz) > 30f) shots.remove(i);
         }
     }
 

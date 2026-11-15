@@ -1,0 +1,92 @@
+import com.valeriodipaolo.platformgame.core.*;
+import com.valeriodipaolo.platformgame.core3d.*;
+
+/** Robot 3D per i livelli 14..24: sceglie la corsia più libera davanti a sé, salta i burroni corti, usa i fiori a molla per quelli lunghi. Non conta i colpi dei nemici (ha punti vita infiniti), ma le cadute. */
+public class Check3B {
+    static int fails;
+    static void ok(boolean c, String m) { System.out.println((c ? "OK   " : "FALLITO ") + m); if (!c) fails++; }
+    static int xi(float x) { return (int) Math.floor(x + World3D.HALF); }
+    static int zi(float z) { return (int) Math.floor(z); }
+
+    static boolean blocked(World3D w, int c, int z) {
+        if (z < 0 || z >= w.length) return false;
+        int h = w.cell(c, z);
+        if (h == 99) return true;
+        if (h == World3D.PIT) return false;
+        if (h >= 1) return true;
+        if (w.crate[z * World3D.W + c]) return true;
+        for (float[] t : w.thorns) if (xi(t[0]) == c && zi(t[1]) == z) return true;
+        return false;
+    }
+
+    static int pitRun(World3D w, int c, int z) { int n = 0; while (z + n < w.length && w.cell(c, z + n) == World3D.PIT) n++; return n; }
+
+    /** distanza libera (in caselle) davanti alla colonna c. */
+    static float freeRun(World3D w, int c, float pz) {
+        int z0 = zi(pz) + 1;
+        for (int z = z0; z < z0 + 14; z++) {
+            if (blocked(w, c, z)) return z - z0;
+            if (w.cell(c, z) == World3D.PIT && (w.cell(c, z - 1) != World3D.PIT || z == z0)) {
+                int zs = z; while (zs > 0 && w.cell(c, zs - 1) == World3D.PIT) zs--;
+                int run = (z - zs) + pitRun(w, c, z);
+                boolean spring = false;
+                for (float[] q : w.springs) if (xi(q[0]) == c && zi(q[1]) >= zs - 3 && zi(q[1]) < zs) spring = true;
+                if (run > 5 && !spring) return z - z0;
+            }
+        }
+        return 14;
+    }
+
+    static void run(int id) {
+        World3D b = new World3D(new MemorySave(), id);
+        int lives0 = b.lives;
+        float stuck = 0, lastZ = b.pz, jt = 0, time = 0;
+        int cur = 2;
+        boolean won = false;
+        for (time = 0; time < 700; time += 1f / 60f) {
+            b.hp = 99; b.invuln = 5f;
+            if (b.state == World3D.PLAYING) {
+                int best = cur; float bs = -1e9f;
+                for (int c = 0; c < World3D.W; c++) {
+                    float s = freeRun(b, c, b.pz) - 0.4f * Math.abs(c - cur) + (c == cur ? 0.6f : 0);
+                    // un fiore a molla davanti attira
+                    for (float[] q : b.springs) if (xi(q[0]) == c && q[1] - b.pz > 0 && q[1] - b.pz < 8) s += 0.3f;
+                    if (s > bs) { bs = s; best = c; }
+                }
+                cur = best;
+            }
+            float tx = cur - World3D.HALF + 0.5f;
+            float jx = Math.max(-1f, Math.min(1f, (tx - b.px) * 2.5f));
+            boolean jump = false;
+            if (b.state == World3D.PLAYING) {
+                boolean pit = b.cell(xi(b.px), zi(b.pz + 0.45f)) == World3D.PIT && b.cell(xi(b.px), zi(b.pz)) != World3D.PIT;
+                boolean thorn = false;
+                for (float[] q : b.thorns) if (Math.abs(q[0] - b.px) < 0.9f && q[1] - b.pz > 0 && q[1] - b.pz < 1.0f) thorn = true;
+                boolean pad = false;
+                for (float[] q : b.springs) if (q[1] - b.pz > -0.6f && q[1] - b.pz < 2.5f && Math.abs(q[0] - b.px) < 2.6f) pad = true;
+                float ahead = b.topAt(b.px, b.pz + 0.65f);
+                boolean step = ahead > b.py + 0.3f && ahead <= b.py + 1.7f;
+                if (b.onGround && (pit || thorn || step) && !pad && jt <= 0) { int pl = pit ? pitRun(b, xi(b.px), zi(b.pz + 0.45f)) : 9; jt = pit && pl <= 1 ? 0.2f : pit && pl <= 2 ? 0.33f : 0.6f; }
+                if (jt > 0) { jump = true; jt -= 1f / 60f; }
+            }
+            b.setInput(jx, 1f, jump, false);
+            if (System.getProperty("tr") != null && b.pz > Float.parseFloat(System.getProperty("tr")) && b.pz < Float.parseFloat(System.getProperty("tr")) + 20 && ((int) (time * 60)) % 6 == 0) System.out.printf("z %.2f x %.2f cur %d y %.2f og %b jt %.2f%n", b.pz, b.px, cur, b.py, b.onGround, jt);
+            int lv0 = b.lives;
+            b.update(1f / 60f);
+            if (b.lives < lv0 && System.getProperty("dbg") != null) { System.out.printf("MORTE z %.2f x %.2f py %.2f%n", b.pz, b.px, b.py); for (int z = (int) b.pz + 10; z >= (int) b.pz - 4; z--) { StringBuilder sb = new StringBuilder(); for (int c = 0; c < 5; c++) { int h = b.cell(c, z); sb.append(h == World3D.PIT ? '~' : b.crate[z * 5 + c] ? 'C' : h > 0 ? (char) ('0' + h) : '.'); } System.out.println("  " + z + " " + sb + (z == (int) b.pz ? " <" : "")); } if (lv0 - b.lives > 0 && lives0 - b.lives >= 3) { System.out.println("... fermo"); break; } }
+            if (b.state == World3D.WON) { won = true; break; }
+            if (Math.abs(b.pz - lastZ) < 0.005f && b.state == World3D.PLAYING) { stuck += 1f / 60f; if (stuck > 6f) break; } else { stuck = 0; lastZ = b.pz; }
+        }
+        System.out.println("     livello " + id + ": lunghezza " + b.length + ", morti " + (lives0 - b.lives) + ", z finale " + b.pz + ", vinto " + won + ", t " + time + ", nemici " + b.enemies.size());
+        ok(won, "il robot automatico completa il livello " + id);
+        ok(lives0 - b.lives <= 2, "al massimo 2 cadute sul livello " + id + ": " + (lives0 - b.lives));
+    }
+
+    public static void main(String[] a) {
+        for (int id : new int[] {14, 16, 18, 20, 22, 24}) {
+            if (a.length > 0 && !a[0].equals("" + id)) continue;
+            run(id);
+        }
+        System.out.println(fails == 0 ? "TUTTO OK" : fails + " FALLITI");
+    }
+}

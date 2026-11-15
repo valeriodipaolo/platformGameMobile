@@ -52,7 +52,7 @@ public final class Hud3D {
         // joystick: compare dove si appoggia il dito, altrimenti resta nella posizione di riposo
         float jr = joyRadius(sw, sh);
         float cx = joyActive && !fixedStick ? joyCx : joyHomeX(sw, sh), cy = joyActive && !fixedStick ? joyCy : joyHomeY(sw, sh);
-        boolean sky = w.levelNo == 12;                       // sulle nuvole i comandi bianchi non si vedrebbero: fondo scuro
+        boolean sky = w.theme == 12;                       // sulle nuvole i comandi bianchi non si vedrebbero: fondo scuro
         if (sky) p.image(Img.HV_PAD, cx - jr * 1.05f, cy - jr * 1.05f, 2.1f * jr, 2.1f * jr, false, 1);
         p.image(Img.JOY_BASE, cx - jr, cy - jr, 2 * jr, 2 * jr, false, joyActive ? 1f : 0.7f);
         float kr = jr * 0.46f;

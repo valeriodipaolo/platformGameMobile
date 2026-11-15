@@ -41,3 +41,11 @@ Gioco platform 2D a scorrimento per Android (nome provvisorio: **Robo Jump**), s
 
 Ogni push su `main` compila l'APK con GitHub Actions e lo pubblica nella release `latest`:
 <https://github.com/valeriodipaolo/platformGameMobile/releases/latest/download/platformGame.apk>
+
+## Seconda serie di livelli (13–24)
+
+Per ogni livello esiste una versione nuova (stesso aspetto, lunghezza doppia, più difficile; i 3D hanno solo forme smussate):
+13 prato (talpe, lumache), 14 bosco (3D), 15 autunno (castagne, gufi), 16 querceto (3D), 17 inverno (pinguini, pupazzi di neve), 18 ghiaccio (3D),
+19 fuoco (lapilli, salamandre), 20 rogo (3D), 21 primavera (rane, piante carnivore), 22 giardino (3D), 23 cielo (stelle cadenti, solleoni), 24 cielo alto (3D).
+Livelli 2D in `core/LevelsB.java`, 3D in `core3d/Levels3B.java`, modelli dei nemici 3D in `core3d/FoeModels2.java`, sprite 2D da `tools/gen_foes2.py`.
+`tools/preview/check.sh` include i robot `CheckB` (2D) e `Check3B` (3D).

@@ -273,7 +273,7 @@ public final class Scene3D {
                 for (float z = z0; z < z1; z += (autumn && row < 2 ? 3.3f + row * 0.6f : 2.1f + row * 0.5f)) {
                     Tree t = new Tree();
                     t.row = row;
-                    t.x = side * (World3D.HALF + (lvl.levelNo == 4 || lvl.levelNo >= 10 ? 4.4f : 3.0f) + row * 2.6f + r.nextFloat() * 2.0f);
+                    t.x = side * (World3D.HALF + (lvl.theme == 4 || lvl.theme >= 10 ? 4.4f : 3.0f) + row * 2.6f + r.nextFloat() * 2.0f);
                     t.z = z + r.nextFloat() * 1.8f;
                     t.h = 5.0f + r.nextFloat() * 4.0f + row * 0.5f;
                     t.rad = t.h * 0.25f * (0.85f + 0.3f * r.nextFloat());
@@ -292,12 +292,12 @@ public final class Scene3D {
     private void build(World3D w) {
         builtFor = w.length;
         lvl = w;
-        heaven = w.levelNo == 12;
+        heaven = w.theme == 12;
         pitD = heaven ? 2.2f : PIT_DEPTH;
-        spring = w.levelNo == 10;
-        autumn = w.levelNo == 4 || spring;       // la primavera usa gli alberi a chioma larga dell'autunno, con altri colori
-        aurora = w.levelNo == 6;
-        fire = w.levelNo == 8;
+        spring = w.theme == 10;
+        autumn = w.theme == 4 || spring;       // la primavera usa gli alberi a chioma larga dell'autunno, con altri colori
+        aurora = w.theme == 6;
+        fire = w.theme == 8;
         ktex = heaven ? K_TEX_HEAVEN : spring ? K_TEX_SPRING : fire ? K_TEX_FIRE : aurora ? K_TEX_AURORA : autumn ? K_TEX_AUTUMN : K_TEX_SUMMER;
         if (heaven) { fogR = 0.86f; fogG = 0.93f; fogB = 1.0f; lip = 0.5f; }
         else if (spring) { fogR = 0.80f; fogG = 0.90f; fogB = 0.97f; lip = 0.5f; }
@@ -1432,6 +1432,7 @@ public final class Scene3D {
             foes.draw(g, m, e);
         }
 
+        for (float[] sh : w.shots) { Mat4.setIdentity(m); foes.drawShot(g, m, sh); }
         drawRobot(w, g);
         drawLeaves(w, g);
 

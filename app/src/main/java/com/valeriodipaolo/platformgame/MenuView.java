@@ -35,12 +35,12 @@ final class MenuView extends View {
         painter = new AndroidPainter(ctx);
     }
 
-    private static final int LEVELS = 12;
+    private static final int LEVELS = 24, PER_ROW = 12;
 
     private float btnW() { return getWidth() * 0.074f; }
-    private float btnH() { return getHeight() * 0.3f; }
-    private float btnY() { return getHeight() * 0.5f; }
-    private float btnX(int i) { return getWidth() * 0.5f + (i - LEVELS / 2f) * (btnW() + getWidth() * 0.0085f) + getWidth() * 0.004f; }
+    private float btnH() { return getHeight() * 0.185f; }
+    private float btnY(int i) { return getHeight() * (0.405f + 0.205f * (i / PER_ROW)); }
+    private float btnX(int i) { return getWidth() * 0.5f + (i % PER_ROW - PER_ROW / 2f) * (btnW() + getWidth() * 0.0085f) + getWidth() * 0.004f; }
 
     private float chipW() { return getHeight() * 0.1f; }
     private float chipX(int i) { return getWidth() * 0.5f + (i - 2.5f) * chipW() * 1.25f; }
@@ -55,15 +55,17 @@ final class MenuView extends View {
         float mh = h * 0.55f, mw = mh * painter.aspect(Img.MOUNTAINS);
         for (float x = (w - mw) / 2 - mw; x < w; x += mw) painter.image(Img.MOUNTAINS, x, h - mh, mw + 1, mh, false, 1);
         painter.rect(0, 0, w, h, 0x55000000);
-        painter.image(Img.HERO_SPIN + 3, w / 2 - 1.4f * s, 0.5f * s, 2.8f * s, 3.6f * s, false, 1);
-        painter.text("ROBO JUMP", w / 2, 5.3f * s, 1.3f * s, Painter.ALIGN_CENTER, 0xFFFFFFFF);
+        painter.image(Img.HERO_SPIN + 3, w / 2 - 1.0f * s, 0.25f * s, 2.0f * s, 2.6f * s, false, 1);
+        painter.text("ROBO JUMP", w / 2, 3.55f * s, 1.0f * s, Painter.ALIGN_CENTER, 0xFFFFFFFF);
         String[] subById = {null, "Il prato", "Bosco (3D)", "Prato d'autunno", "Bosco d'autunno (3D)", "Tundra boreale", "Lago gelato (3D)",
-                "Prato in fiamme", "Bosco in fiamme (3D)", "Primavera", "Primavera e api (3D)", "Il cielo", "Sulle nuvole (3D)"};
+                "Prato in fiamme", "Bosco in fiamme (3D)", "Primavera", "Primavera e api (3D)", "Il cielo", "Sulle nuvole (3D)",
+                "Talpe e lumache", "Radure (3D)", "Castagne e gufi", "Querceto (3D)", "Neve e pupazzi", "Ghiaccio (3D)",
+                "Brace e lapilli", "Rogo (3D)", "Rane e fiori", "Giardino (3D)", "Stelle e soli", "Cielo alto (3D)"};
         for (int i = 0; i < LEVELS; i++) {
-            float x = btnX(i), y = btnY();
+            float x = btnX(i), y = btnY(i);
             painter.rect(x, y, btnW(), btnH(), 0xCC14324A);
             painter.rect(x, y, btnW(), 0.08f * s, 0xFF4FC3F7);
-            painter.text("LIVELLO " + (i + 1), x + btnW() / 2, y + btnH() * 0.5f, 0.29f * s, Painter.ALIGN_CENTER, 0xFFFFFFFF);
+            painter.text("LIVELLO " + (i + 1), x + btnW() / 2, y + btnH() * 0.5f, 0.27f * s, Painter.ALIGN_CENTER, 0xFFFFFFFF);
             painter.text(subById[Levels.ORDER[i]], x + btnW() / 2, y + btnH() * 0.78f, 0.15f * s, Painter.ALIGN_CENTER, 0xFFB3E5FC);
         }
         painter.text("Comandi dei livelli 3D: " + CTRL_TEXT[ctrl - 1], w / 2, h * 0.855f, 0.38f * s, Painter.ALIGN_CENTER, 0xFFFFFFFF);
@@ -88,7 +90,7 @@ final class MenuView extends View {
                 }
             }
             for (int i = 0; i < LEVELS; i++) {
-                if (e.getX() >= btnX(i) && e.getX() <= btnX(i) + btnW() && e.getY() >= btnY() && e.getY() <= btnY() + btnH()) {
+                if (e.getX() >= btnX(i) && e.getX() <= btnX(i) + btnW() && e.getY() >= btnY(i) && e.getY() <= btnY(i) + btnH()) {
                     listener.onLevel(i);
                 }
             }

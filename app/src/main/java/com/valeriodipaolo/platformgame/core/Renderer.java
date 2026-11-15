@@ -172,13 +172,36 @@ public final class Renderer {
                     w = 1.7f * s; h = 1.36f * s;
                     break;
                 case Enemy.WHIRL: img = Img.HV_WHIRL + fr; w = 1.2f * s; h = 1.38f * s; break;
+                case Enemy.MOLE:
+                    if (e.mode == 2 || e.flatTime > 0) { img = Img.FX_MOLE; w = 1.0f * s; h = 1.0f * s; }
+                    else { img = Img.FX_MOUND; w = 1.0f * s; h = 0.43f * s; if (e.mode == 1) x += 0.05f * s * (float) Math.sin(g.time * 50f); }
+                    break;
+                case Enemy.SNAIL: img = e.mode == 1 ? Img.FX_SHELL : Img.FX_SNAIL; w = (e.mode == 1 ? 0.9f : 1.2f) * s; h = (e.mode == 1 ? 0.75f : 0.9f) * s; break;
+                case Enemy.CHESTNUT: img = Img.FX_CHESTNUT; w = 1.05f * s; h = 1.05f * s; if (e.mode == 1) x += 0.06f * s * (float) Math.sin(g.time * 45f); break;
+                case Enemy.OWL: img = Img.FX_OWL_0 + (e.mode == 1 ? 0 : fr); w = 1.5f * s; h = 1.3f * s; break;
+                case Enemy.PENGUIN: img = Img.FX_PENGUIN; w = 1.25f * s; h = 1.0f * s; break;
+                case Enemy.SNOWMAN: img = Img.FX_SNOWMAN; w = 1.05f * s; h = 1.5f * s; break;
+                case Enemy.LAPILLO: img = Img.FX_LAPILLO; w = 0.9f * s; h = 1.2f * s; break;
+                case Enemy.SALAMANDER: img = e.mode > 0 ? Img.FX_SALA_B : Img.FX_SALA; w = 1.6f * s; h = 0.93f * s; break;
+                case Enemy.FROG: img = e.onGround ? Img.FX_FROG : Img.FX_FROG_J; w = 1.1f * s; h = (e.onGround ? 0.8f : 1.1f) * s; break;
+                case Enemy.PLANT:
+                    img = e.mode == 2 && e.flatTime <= 0 ? Img.FX_PLANT_O : Img.FX_PLANT; w = 1.0f * s; h = (img == Img.FX_PLANT_O ? 1.92f : 1.0f) * s;
+                    if (e.mode == 1) x += 0.05f * s * (float) Math.sin(g.time * 50f);
+                    break;
+                case Enemy.STAR: img = Img.FX_STAR; w = 1.5f * s; h = 1.5f * s; break;
+                case Enemy.SUNNY: img = Img.FX_SUNNY; w = 1.25f * s; h = 1.25f * s; break;
                 case Enemy.ACORN:
                     img = e.flatTime > 0 ? Img.ACORN_FLAT : Img.ACORN + (e.onGround ? 0 : 1);
                     w = 0.95f * s; h = 1.05f * s;
                     break;
                 default: img = e.flatTime > 0 ? Img.ENEMY_FLAT : Img.ENEMY + fr; break;
             }
-            if ((e.type == Enemy.CROW || e.type == Enemy.STORM) && e.flatTime > 0) h *= 0.35f;      // schiacciato
+            if ((e.type == Enemy.CROW || e.type == Enemy.STORM || e.type >= Enemy.MOLE) && e.flatTime > 0) h *= 0.35f;      // schiacciato
+            if (e.type == Enemy.LAPILLO && e.mode == 0) continue;                                    // dentro la lava non si vede
+            if (e.type == Enemy.SALAMANDER && e.mode == 2 && e.flatTime <= 0) {                      // la fiammata davanti al muso
+                float fx0 = e.dir > 0 ? e.x + e.w : e.x - 2.2f;
+                p.image(Img.FX_BREATH, (fx0 - cam) * s, (e.y - 0.25f) * s, 2.2f * s, 0.8f * s, e.dir > 0, 0.85f + 0.15f * (float) Math.sin(g.time * 40f));
+            }
             if (e.type == Enemy.STORM && e.flatTime <= 0 && Game.stormPhase(e.hop) > 0) {            // fulmine: prima un avviso tremolante, poi la scarica
                 float bx = (e.x + e.w / 2 - cam) * s, by = (e.y + e.h) * s, bot = g.boltBottom(e) * s;
                 boolean strike = Game.stormPhase(e.hop) == 2;
@@ -188,6 +211,8 @@ public final class Renderer {
             }
             p.image(img, x - w / 2, (e.y + e.h + 0.03f) * s - h, w, h, e.dir > 0, 1);
         }
+
+        for (float[] q : g.shots) p.image(Img.FX_SNOWBALL, (q[0] - cam - 0.25f) * s, (q[1] - 0.25f) * s, 0.5f * s, 0.5f * s, false, 1);
 
         // ---- getti di fiamma a tempo e muro di fuoco
         for (float[] j : lv.jets) {

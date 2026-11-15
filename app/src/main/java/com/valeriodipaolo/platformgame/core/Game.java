@@ -101,7 +101,7 @@ public final class Game {
     }
 
     private void loadLevel() {
-        level = levelNo == 11 ? LevelEleven.build() : levelNo == 9 ? LevelNine.build() : levelNo == 7 ? LevelSeven.build() : levelNo == 5 ? LevelFive.build() : levelNo == 3 ? LevelThree.build() : LevelOne.build();
+        level = levelNo > 12 ? LevelsB.build(levelNo) : levelNo == 11 ? LevelEleven.build() : levelNo == 9 ? LevelNine.build() : levelNo == 7 ? LevelSeven.build() : levelNo == 5 ? LevelFive.build() : levelNo == 3 ? LevelThree.build() : LevelOne.build();
         enemies.clear();
         for (float[] e : level.enemies) {
             enemies.add(e.length > 2 ? new Enemy(e[0], e[1], (int) e[2], e[3], e[4]) : new Enemy(e[0], e[1]));
@@ -125,6 +125,7 @@ public final class Game {
         fireX = level.fireStart;
         crumbling.clear();
         collapsed.clear();
+        shots.clear();
         springBoost = 0;
         springAge = 9f;
         place(level.startX, level.startY);
@@ -459,7 +460,10 @@ public final class Game {
             if (!e.active) {
                 if (e.x < camX + viewW + 1.5f) e.active = true; else continue;
             }
-            if (e.type == Enemy.STORM) {                         // la nuvola temporalesca vaga lenta, poi si ferma, si carica e scaglia un fulmine in verticale
+            if (e.type >= Enemy.MOLE) {
+                stepNew(e, dt);
+                if (e.dead) continue;
+            } else if (e.type == Enemy.STORM) {                         // la nuvola temporalesca vaga lenta, poi si ferma, si carica e scaglia un fulmine in verticale
                 e.hop += dt;
                 if (stormPhase(e.hop) == 0) {
                     e.x += e.dir * 1.3f * dt;
@@ -492,24 +496,172 @@ public final class Game {
             }
 
             if (state != PLAYING) continue;
-            if (spinActive && touches(player, e, SPIN_REACH)) {      // la trottola travolge i nemici
+            if (harmless(e)) continue;
+            if (spinActive && spinnable(e) && touches(player, e, SPIN_REACH)) {      // la trottola travolge i nemici
                 e.flung = true;
                 e.vy = -11f;
                 e.vx = facing * 5f;
                 score += 100;
             } else if (player.overlaps(e)) {
-                if (e.type != Enemy.HOG && e.type != Enemy.WHIRL && player.vy > 0 && player.y + player.h - e.y < 0.75f) {
-                    e.flatTime = 0.45f;
+                if (stompable(e) && player.vy > 0 && player.y + player.h - e.y < 0.75f) {
+                    if (e.type == Enemy.SNAIL) { e.mode = 1; e.t = 2.6f; } else e.flatTime = 0.45f;     // la lumaca si chiude nel guscio
                     player.vy = jump ? -15f : -10f;
                     airJumps = 1;                       // rimbalzando su un nemico si può rifare il doppio salto
-                    score += 100;
-                } else {
+                    score += e.type == Enemy.SNAIL ? 0 : 100;
+                } else if (!(e.type == Enemy.SNAIL && e.mode == 1)) {
                     hurt();
                 }
             } else if (e.type == Enemy.STORM && stormPhase(e.hop) == 2) {
                 float bx = e.x + e.w / 2;
                 if (player.x + player.w > bx - 0.4f && player.x < bx + 0.4f && player.y + player.h > e.y + e.h && player.y < boltBottom(e)) hurt();
+            } else if (e.type == Enemy.SALAMANDER && e.mode == 2) {              // la fiammata: due caselle davanti al muso
+                float fx0 = e.dir > 0 ? e.x + e.w : e.x - 2.2f;
+                if (player.x + player.w > fx0 && player.x < fx0 + 2.2f && player.y + player.h > e.y - 0.3f && player.y < e.y + e.h) hurt();
+            } else if (e.type == Enemy.PLANT && e.mode == 2) {                   // il morso: una casella sopra la pianta
+                if (player.x + player.w > e.x - 0.1f && player.x < e.x + e.w + 0.1f && player.y + player.h > e.y - 0.9f && player.y < e.y + e.h) hurt();
             }
+        }
+        for (int i = shots.size() - 1; i >= 0; i--) {              // palle di neve
+            float[] q = shots.get(i);
+            q[3] += 30f * dt;
+            q[0] += q[2] * dt;
+            q[1] += q[3] * dt;
+            if (level.solid((int) Math.floor(q[0]), (int) Math.floor(q[1])) || q[1] > level.h + 2) { shots.remove(i); continue; }
+            if (state == PLAYING && q[0] > player.x - 0.25f && q[0] < player.x + player.w + 0.25f && q[1] > player.y - 0.25f && q[1] < player.y + player.h + 0.25f) {
+                shots.remove(i);
+                hurt();
+            }
+        }
+    }
+
+    /** Proiettili in volo: {x, y, vx, vy}. */
+    public final List<float[]> shots = new ArrayList<float[]>();
+
+    /** Non fa male in questo momento: talpa sottoterra, lapillo dentro la lava. */
+    private static boolean harmless(Enemy e) {
+        return (e.type == Enemy.MOLE && e.mode != 2) || (e.type == Enemy.LAPILLO && e.mode == 0);
+    }
+
+    private static boolean stompable(Enemy e) {
+        switch (e.type) {
+            case Enemy.HOG: case Enemy.WHIRL: case Enemy.CHESTNUT: case Enemy.LAPILLO: case Enemy.STAR: case Enemy.SUNNY: return false;
+            case Enemy.PLANT: return e.mode != 2;
+            default: return true;
+        }
+    }
+
+    private static boolean spinnable(Enemy e) {
+        switch (e.type) {
+            case Enemy.LAPILLO: case Enemy.STAR: return false;
+            case Enemy.CHESTNUT: return e.mode == 3;
+            case Enemy.PLANT: return e.mode != 2;
+            default: return true;
+        }
+    }
+
+    private boolean edgeAhead(Enemy e) {
+        return e.onGround && !level.solid((int) Math.floor(e.x + e.w / 2 + e.dir * 0.6f), (int) Math.floor(e.y + e.h + 0.1f));
+    }
+
+    private void walk(Enemy e, float speed, float dt, boolean keepOnLedge) {
+        e.vx = e.dir * speed;
+        e.vy = Math.min(MAX_FALL, e.vy + GRAVITY * dt);
+        e.move(level, dt);
+        if (e.hitWall) e.dir = -e.dir;
+        else if (keepOnLedge && edgeAhead(e)) e.dir = -e.dir;
+        if (e.hi > e.lo) { if (e.x > e.hi) e.dir = -1; else if (e.x < e.lo) e.dir = 1; }
+        if (e.y > level.h + 2) e.dead = true;
+    }
+
+    /** Comportamento dei nemici della seconda serie. */
+    private void stepNew(Enemy e, float dt) {
+        float pcx = player.x + player.w / 2, ecx = e.x + e.w / 2, dx = pcx - ecx;
+        e.anim += dt;
+        e.t += dt;
+        switch (e.type) {
+            case Enemy.MOLE: {                               // sottoterra, poi la terra trema, poi sbuca
+                float c = e.t % 3.4f;
+                e.mode = c < 1.5f ? 0 : c < 1.9f ? 1 : c < 3.1f ? 2 : 0;
+                break;
+            }
+            case Enemy.SNAIL:
+                if (e.mode == 1) {                           // chiusa nel guscio: ferma e innocua, poi riesce (il cronometro qui scende)
+                    e.t -= 2 * dt;
+                    if (e.t <= 0) { e.mode = 0; e.t = 0; }
+                    walk(e, 0, dt, false);
+                } else walk(e, 0.9f, dt, true);
+                break;
+            case Enemy.CHESTNUT:
+                if (e.mode == 0) { if (dx > -2.4f && dx < 1.4f && player.y > e.y) { e.mode = 1; e.t = 0; } }
+                else if (e.mode == 1) { if (e.t > 0.35f) e.mode = 2; }            // dondola un attimo, poi si stacca
+                else if (e.mode == 2) {
+                    walk(e, 0, dt, false);
+                    if (e.onGround) { e.mode = 3; e.dir = dx >= 0 ? 1 : -1; }
+                } else walk(e, 3.0f, dt, false);                                 // a terra rotola verso il robot
+                break;
+            case Enemy.OWL:
+                if (e.mode == 0) {                           // sorvola il suo tratto; se il robot passa sotto, picchia
+                    e.x += e.dir * 1.5f * dt;
+                    if (e.x > e.hi) { e.x = e.hi; e.dir = -1; } else if (e.x < e.lo) { e.x = e.lo; e.dir = 1; }
+                    e.y = e.baseY + 0.2f * (float) Math.sin(e.anim * 2f);
+                    if (Math.abs(dx) < 5f && player.y > e.baseY + 1f) { e.mode = 1; e.t = 0; e.dir = dx >= 0 ? 1 : -1; e.hop = Math.max(1f, player.y - e.baseY + 0.3f); }
+                } else if (e.mode == 1) {
+                    float u = e.t / 1.5f;
+                    e.x += e.dir * 3.4f * dt;
+                    e.y = e.baseY + e.hop * (float) Math.sin(Math.PI * Math.min(1f, u));
+                    if (u >= 1f) { e.mode = 2; e.t = 0; }
+                } else {                                     // risale e riprende fiato
+                    e.y = e.baseY;
+                    if (e.t > 1.3f) e.mode = 0;
+                }
+                break;
+            case Enemy.PENGUIN:
+                walk(e, 5.2f, dt, true);
+                break;
+            case Enemy.SNOWMAN:
+                walk(e, 0, dt, false);
+                e.dir = dx >= 0 ? 1 : -1;
+                if (e.t > 2.3f && Math.abs(dx) < 11f) {      // lancia una palla di neve a parabola dove si trova il robot
+                    e.t = 0;
+                    float T = 1.1f;
+                    shots.add(new float[] {ecx, e.y + 0.2f, Math.max(-9f, Math.min(9f, dx / T)), (player.y + 0.5f - e.y) / T - 15f * T});
+                }
+                break;
+            case Enemy.LAPILLO: {                            // salta fuori dal burrone a intervalli regolari
+                float per = e.lo > 0 ? e.lo : 2.6f, c = e.t % per, u = c / 1.5f;
+                e.mode = u < 1f ? 1 : 0;
+                e.y = e.baseY - (u < 1f ? e.hi * 4f * u * (1f - u) : 0f);
+                break;
+            }
+            case Enemy.SALAMANDER: {
+                float c = e.t % 3.0f;
+                e.mode = c < 2.0f ? 0 : c < 2.4f ? 1 : 2;    // cammina, si gonfia (avviso), sputa fuoco
+                walk(e, e.mode == 0 ? ENEMY_SPEED : 0, dt, true);
+                break;
+            }
+            case Enemy.FROG:
+                e.hop -= dt;
+                if (e.onGround && e.hop <= 0 && Math.abs(dx) < 7f) { e.dir = dx >= 0 ? 1 : -1; e.vy = -13f; e.hop = 1.4f; e.onGround = false; }
+                e.vx = e.onGround ? 0 : e.dir * 4.2f;
+                e.vy = Math.min(MAX_FALL, e.vy + GRAVITY * dt);
+                e.move(level, dt);
+                if (e.y > level.h + 2) e.dead = true;
+                break;
+            case Enemy.PLANT: {
+                float c = e.t % 3.0f;
+                e.mode = c < 1.4f ? 0 : c < 1.8f ? 1 : 2;    // chiusa, trema (avviso), scatta in alto e morde
+                break;
+            }
+            case Enemy.STAR:                                 // cade in diagonale lungo sempre la stessa scia, poi ricompare in alto
+                e.x += e.lo * dt;
+                e.y += e.hi * dt;
+                if (e.y > level.h + 1) { e.x = e.x0; e.y = e.y0; }
+                break;
+            case Enemy.SUNNY:                                // gira in cerchio attorno al suo punto
+                e.x = e.x0 + e.hi * (float) Math.cos(e.anim * e.lo);
+                e.y = e.y0 + e.hi * (float) Math.sin(e.anim * e.lo);
+                break;
+            default: break;
         }
     }
 

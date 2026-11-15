@@ -28,6 +28,7 @@ public final class FoeModels {
     private Mesh stormBody, stormEyes, stormBolt, whirlTier, whirlEyes;
     private Mesh beetleShell, beetleGloss, beetleEyes, beetleLeg, beetleJaw;
     private final float[] a = new float[16], b2 = new float[16], c2 = new float[16];
+    private FoeModels2 more;
 
     public FoeModels() {
         buildHog();
@@ -35,7 +36,11 @@ public final class FoeModels {
         buildAcorn();
         buildBeetle();
         buildSky();
+        more = new FoeModels2();
     }
+
+    /** Palla di neve in volo. */
+    public void drawShot(Gfx3D g, float[] m, float[] s) { more.drawShot(g, m, s); }
 
     // ------------------------------------------------------------------ attrezzi
 
@@ -845,7 +850,9 @@ public final class FoeModels {
             case Enemy3.STORM: drawStorm(g, m, e); break;
             case Enemy3.WHIRL: drawWhirl(g, m, e); break;
             case Enemy3.ACORN: drawAcorn(g, m, e); break;
-            default: drawBeetle(g, m, e); break;
+            default:
+                if (e.type >= Enemy3.MOLE) more.draw(g, m, e); else drawBeetle(g, m, e);
+                break;
         }
     }
 }
