@@ -35,9 +35,9 @@ final class MenuView extends View {
         painter = new AndroidPainter(ctx);
     }
 
-    private static final int LEVELS = 11;
+    private static final int LEVELS = 10;
 
-    private float btnW() { return getWidth() * 0.080f; }
+    private float btnW() { return getWidth() * 0.088f; }
     private float btnH() { return getHeight() * 0.3f; }
     private float btnY() { return getHeight() * 0.5f; }
     private float btnX(int i) { return getWidth() * 0.5f + (i - LEVELS / 2f) * (btnW() + getWidth() * 0.010f) + getWidth() * 0.005f; }
@@ -58,7 +58,7 @@ final class MenuView extends View {
         painter.image(Img.HERO_SPIN + 3, w / 2 - 1.4f * s, 0.5f * s, 2.8f * s, 3.6f * s, false, 1);
         painter.text("ROBO JUMP", w / 2, 5.3f * s, 1.3f * s, Painter.ALIGN_CENTER, 0xFFFFFFFF);
         String[] subById = {null, "Il prato", "Bosco (3D)", "Prato d'autunno", "Bosco d'autunno (3D)", "Tundra boreale", "Lago gelato (3D)",
-                "Prato in fiamme", "Bosco in fiamme (3D)", "Primavera", "Primavera (3D)", "Fuga dalle api (3D)"};
+                "Prato in fiamme", "Bosco in fiamme (3D)", "Primavera", "Primavera e api (3D)"};
         for (int i = 0; i < LEVELS; i++) {
             float x = btnX(i), y = btnY();
             painter.rect(x, y, btnW(), btnH(), 0xCC14324A);

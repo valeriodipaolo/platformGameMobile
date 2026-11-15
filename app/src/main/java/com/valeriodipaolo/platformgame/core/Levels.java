@@ -2,14 +2,14 @@ package com.valeriodipaolo.platformgame.core;
 
 /**
  * Ordine dei livelli nel gioco. Gli identificativi interni (1..11) restano quelli storici (salvataggi, test); qui si decide solo
- * in che ordine si giocano e quali sono 3D. Primavera (9, 10, 11), estate (1, 2), autunno (3, 4), aurora (5, 6), fuoco (7, 8).
+ * in che ordine si giocano e quali sono 3D. estate (1, 2), autunno (3, 4), inverno/aurora (5, 6), primavera (9, 10, con la fuga dalle api in coda), incendio (7, 8).
  */
 public final class Levels {
     private Levels() {}
 
-    public static final int[] ORDER = {9, 10, 11, 1, 2, 3, 4, 5, 6, 7, 8};
+    public static final int[] ORDER = {1, 2, 3, 4, 5, 6, 9, 10, 7, 8};
 
-    public static boolean is3D(int id) { return id % 2 == 0 || id == 11; }
+    public static boolean is3D(int id) { return id % 2 == 0; }
 
     /** Posizione (0..) di un livello nell'ordine di gioco. */
     public static int slot(int id) {

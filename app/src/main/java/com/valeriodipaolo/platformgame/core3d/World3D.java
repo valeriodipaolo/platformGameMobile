@@ -47,6 +47,8 @@ public final class World3D {
     public float[][] fireZones = new float[0][];
     /** Cosa insegue da dietro: 0 = muro di fuoco, 1 = sciame di api (livello 11). */
     public int chase;
+    /** Nido d'api appeso al ciliegio alla riga hiveZ (NaN = nessuno): quando il robot lo supera cade e parte lo sciame; hiveAt = istante del distacco. */
+    public float hiveZ = Float.NaN, hiveAt = -1f;
     public final List<float[]> jets = new ArrayList<float[]>();
     public final List<float[]> logs = new ArrayList<float[]>();
     /** Fiori a molla {x, z} (lanciano in alto chi ci salta sopra) e cespugli di rovi {x, z} (pungono); livelli di primavera. */
@@ -91,7 +93,7 @@ public final class World3D {
         score = 0;
         gems = 0;
         lives = START_LIVES;
-        if (levelNo == 11) LevelEleven.build(this); else if (levelNo == 10) LevelTen.build(this); else if (levelNo == 8) LevelEight.build(this); else if (levelNo == 6) LevelSix.build(this); else if (levelNo == 4) LevelFour.build(this); else LevelTwo.build(this);
+        if (levelNo == 10) LevelTen.build(this); else if (levelNo == 8) LevelEight.build(this); else if (levelNo == 6) LevelSix.build(this); else if (levelNo == 4) LevelFour.build(this); else LevelTwo.build(this);
         gemTotal = gemsList.size();
         for (boolean c : crate) if (c) gemTotal++;
         batteryOwned = gemOwned = false;
@@ -272,6 +274,10 @@ public final class World3D {
     }
 
     private void stepFire(float dt) {
+        if (!Float.isNaN(hiveZ) && hiveAt < 0 && pz >= hiveZ + 1.5f) {      // il nido cade: lo sciame esce e inizia l'inseguimento
+            hiveAt = time;
+            fireZ = hiveZ - 3f;
+        }
         if (!Float.isNaN(fireZ)) {
             float speed = 0, gap = 1e9f;
             for (float[] z : fireZones) if (pz >= z[0]) { speed = z[1]; gap = z.length > 2 ? z[2] : 1e9f; }

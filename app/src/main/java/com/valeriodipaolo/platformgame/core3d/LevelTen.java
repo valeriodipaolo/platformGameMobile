@@ -1,10 +1,10 @@
 package com.valeriodipaolo.platformgame.core3d;
 
 /**
- * Decimo livello, il giardino di primavera: ciliegi in fiori, tre fiumi larghi dieci metri (più del massimo di un doppio salto) che si
+ * Decimo livello, il giardino di primavera e la fuga dalle api: ciliegi in fiori, tre fiumi larghi dieci metri (più del massimo di un doppio salto) che si
  * superano solo rimbalzando sulla fila di fiori a molla in riva, due balconi di pietra a quattro metri (con la cella energetica) raggiungibili
  * dai fiori, e due campi di rovi a zigzag. I rovi sono pochi e lasciano sempre una corsia libera; ogni gemma sta in un punto sicuro,
- * lontano dai rovi e dall'acqua. Difficoltà come i livelli 6 e 8 al massimo.
+ * lontano dai rovi e dall'acqua. Passato l'ultimo ciliegio il nido d'api cade e si parte senza stacchi con la fuga (LevelEleven). Difficoltà come i livelli 6 e 8 al massimo.
  */
 public final class LevelTen {
     private LevelTen() {}
@@ -12,7 +12,7 @@ public final class LevelTen {
     private static final int W = World3D.W;
 
     public static void build(World3D w) {
-        int len = 178;
+        int len = 176 + 172;                       // il giardino (fino al ciliegio con il nido) e subito dopo la fuga dalle api
         w.length = len;
         w.height = new int[len * W];
         w.crate = new boolean[len * W];
@@ -22,6 +22,7 @@ public final class LevelTen {
         w.logs.clear();
         w.springs.clear();
         w.thorns.clear();
+        w.chase = 0;
         w.fireStart = Float.NaN;
         w.fireZones = new float[0][];
 
@@ -78,7 +79,8 @@ public final class LevelTen {
         gemLine3(w, 0, 0.7f, 160, 162);
         acorn(w, 0f, 166);
         gem(w, 0, 0.7f, 170.5f);
-        w.flagZ = 175;
+        w.hiveZ = 172;
+        LevelEleven.append(w, 176);
     }
 
     /** Fila di fiori a molla sulle colonne c0..c1 alla riga z. */

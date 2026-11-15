@@ -22,5 +22,7 @@ public class Scene10 {
         shot("s10_canopy.png", out, 0, 62, 1.0f, false);
         shot("s10_river2.png", out, 0, 95, 0.5f, false);
         shot("s10_field.png", out, 0, 137, 0.9f, false);
+        shot("s10_hive.png", out, 0, 166, 0.3f, false);
+        shot("s10_fall.png", out, 0, 175, 0.3f, false);
     }
 }

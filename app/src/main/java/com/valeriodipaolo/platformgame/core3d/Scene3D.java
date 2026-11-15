@@ -47,7 +47,7 @@ public final class Scene3D {
     private final float[] view = new float[16], proj = new float[16], m = new float[16], m2 = new float[16];
     private final float[] ident = Mat4.identity();
 
-    private Mesh sky, mountains, pitFloor, pitWater, padDome, padTop, thornMesh, beeBody, beeWings;
+    private Mesh sky, mountains, pitFloor, pitWater, padDome, padTop, thornMesh, beeBody, beeWings, hiveMesh, hiveTree, hiveBranch, hiveRope;
     private Mesh[][] land;                       // [tipo][blocco]
     private MeshBuilder[][] mbs;
     private int zBase, nChunks;
@@ -1035,6 +1035,33 @@ public final class Scene3D {
             b.quad(-0.04f, 0.1f, 0.02f, -0.04f, -0.02f, 0.02f, -0.3f, -0.02f, 0.1f, -0.3f, 0.12f, 0.1f, 0, 1, 0, 0, 0, 1, 1);
             b.quad(-0.04f, -0.02f, 0.02f, -0.04f, 0.1f, 0.02f, -0.3f, 0.12f, 0.1f, -0.3f, -0.02f, 0.1f, 0, -1, 0, 0, 0, 1, 1);
             beeWings = b.build(-1, true, true);
+            b = new MeshBuilder().color(226, 182, 104);                // nido: cesta di paglia a fasce, con l'ingresso scuro sul davanti (verso chi arriva)
+            float[] hr = {0.5f, 0.62f, 0.67f, 0.56f, 0.38f};
+            for (int i = 0; i < 5; i++) {
+                if (i % 2 == 0) b.color(226, 182, 104); else b.color(190, 140, 70);
+                b.ellipsoid(0, -0.62f + i * 0.31f, 0, hr[i], 0.2f, hr[i], 12, 6);
+            }
+            b.color(150, 108, 56);
+            b.ellipsoid(0, 0.95f, 0, 0.1f, 0.1f, 0.1f, 8, 5);
+            b.color(36, 24, 12);
+            b.ellipsoid(0, -0.18f, -0.6f, 0.19f, 0.15f, 0.09f, 10, 6);
+            hiveMesh = b.build(-1, false, true);
+            hiveMesh.spec = 0.05f; hiveMesh.shine = 6f;
+            b = new MeshBuilder().color(98, 68, 44);                   // ciliegio del nido: tronco e ramo, con grandi chiome di fiori
+            b.cylinder(0, 0, 7.2f, 0, 0.52f, 0.36f, 10, true, true);
+            b.colorf(1.0f, 0.76f, 0.84f);
+            b.ellipsoid(0, 7.2f, 0, 2.3f, 1.4f, 2.3f, 12, 7);
+            b.colorf(0.96f, 0.64f, 0.78f);
+            b.ellipsoid(-1.3f, 6.5f, 0.6f, 1.5f, 1.0f, 1.5f, 10, 6);
+            b.colorf(1.0f, 0.86f, 0.9f);
+            b.ellipsoid(0.9f, 6.9f, -0.8f, 1.5f, 1.0f, 1.5f, 10, 6);
+            hiveTree = b.build(-1, false, true);
+            b = new MeshBuilder().color(98, 68, 44);
+            b.cylinder(0, 0, 3.7f, 0, 0.22f, 0.13f, 8, true, true);
+            hiveBranch = b.build(-1, false, true);
+            b = new MeshBuilder().color(150, 120, 80);
+            b.cylinder(0, 0, 1.0f, 0, 0.035f, 0.035f, 6, false, false);
+            hiveRope = b.build(-1, false, true);
         }
         if (fire) {                                                    // casse di roccia incandescente
             b = new MeshBuilder();
@@ -1352,7 +1379,7 @@ public final class Scene3D {
         }
         if (fire) { drawTreeFlames(w, g); drawFireHazards(w, g); }
         if (spring) drawSpringProps(w, g);
-        if (w.chase == 1) drawBees(w, g);
+        if (w.chase == 1) { drawHive(w, g); drawBees(w, g); }
         for (int c = 0; c < nChunks; c++) {
             float cz0 = zBase + c * CH;
             if (land[K_RAY][c] != null && cz0 + CH > camZ - 6f && cz0 < camZ + 60f) g.draw(land[K_RAY][c], ident, 1, 1, 1, 0.15f, 1);
@@ -1478,6 +1505,47 @@ public final class Scene3D {
     }
 
     private Gfx3D gfxBee;
+
+    /** Il ciliegio con il nido d'api: il nido pende sul sentiero finché il robot non lo supera, poi cade e si schianta a terra. */
+    private void drawHive(World3D w, Gfx3D g) {
+        if (Float.isNaN(w.hiveZ) || Math.abs(w.hiveZ - w.pz) > 70f) return;
+        float z = w.hiveZ, gy = groundAt(0, z), gyT = groundAt(3.4f, z);
+        Mat4.setIdentity(m);
+        Mat4.translate(m, 3.4f, gyT - 0.1f, z);
+        g.draw(hiveTree, m, 1, 1, 1, 1, 0);
+        Mat4.setIdentity(m);
+        Mat4.translate(m, 3.3f, gy + 5.8f, z);
+        Mat4.rotateZ(m, (float) Math.PI / 2);
+        g.draw(hiveBranch, m, 1, 1, 1, 1, 0);
+        float hang = gy + 4.5f, y = hang, sx = 1f, sy = 1f, tilt = 0.06f * (float) Math.sin(w.time * 2f);
+        boolean released = w.hiveAt >= 0;
+        if (released) {
+            float t = w.time - w.hiveAt, land = gy + 0.62f;
+            y = Math.max(land, hang - 15f * t * t);
+            if (y <= land) {                                       // schianto: si schiaccia e resta inclinato
+                float k = Math.min(1f, (t - (float) Math.sqrt((hang - land) / 15f)) * 6f);
+                sx = 1f + 0.18f * k; sy = 1f - 0.25f * k; tilt = 0.4f * k;
+            } else tilt = 0.5f * (float) Math.sin(t * 9f);
+        } else {
+            Mat4.setIdentity(m);
+            Mat4.translate(m, 0, hang + 0.95f, z);
+            Mat4.scale(m, 1f, 1.2f, 1f);
+            g.draw(hiveRope, m, 1, 1, 1, 1, 0);
+        }
+        Mat4.setIdentity(m);
+        Mat4.translate(m, 0, y, z);
+        Mat4.rotateZ(m, tilt);
+        Mat4.scale(m, sx, sy, sx);
+        g.draw(hiveMesh, m, 1, 1, 1, 1, 0);
+        if (!released) {                                           // le api attorno al nido, ancora nervose
+            gfxBee = g;
+            for (int i = 0; i < 9; i++) {
+                float t = w.time * (3f + 0.5f * i) + i * 2.1f, r = 0.9f + 0.1f * i;
+                drawBee(r * (float) Math.cos(t), hang + 0.2f * (i % 4) + 0.2f * (float) Math.sin(t * 1.3f), z + r * 0.8f * (float) Math.sin(t),
+                        -(float) Math.sin(t), (float) Math.cos(t) * 0.8f, w.time + i, 0.8f);
+            }
+        }
+    }
 
     /** Lo sciame che insegue: una nuvola di api che vorticano attorno a fireZ, con le più coraggiose che arrivano fin quasi al robot. */
     private void drawBees(World3D w, Gfx3D g) {

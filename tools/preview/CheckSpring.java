@@ -112,18 +112,21 @@ public class CheckSpring {
         for (int i = 0; i < 10; i++) wt.update(1f / 60f);
         ok(wt.hp < h0, "3D: i rovi feriscono");
         bot3dCheck(10);
-        // ---- livello 11: la fuga dalle api
-        bot3dCheck(11);
-        World3D e = new World3D(new MemorySave(), 11);
+        // ---- livello 10, seconda parte: il nido cade e parte lo sciame
+        World3D e = new World3D(new MemorySave(), 10);
         e.enemies.clear();
-        ok(e.chase == 1 && !Float.isNaN(e.fireZ), "livello 11: lo sciame parte alle spalle (z " + e.fireZ + ")");
-        int livesE = e.lives;
+        ok(e.chase == 1 && Float.isNaN(e.fireZ) && !Float.isNaN(e.hiveZ), "livello 10: lo sciame non c'è finché non cade il nido");
+        placeAt(e, 0f, e.hiveZ + 2f);
         e.setInput(0, 0, false, false);
+        e.update(1f / 60f);
+        ok(e.hiveAt >= 0 && e.fireZ < e.hiveZ, "superato il ciliegio il nido cade e lo sciame parte alle spalle (z " + e.fireZ + ")");
+        int livesE = e.lives;
         for (int i = 0; i < 60 * 14; i++) e.update(1f / 60f);
         ok(e.lives < livesE, "fermi abbastanza a lungo lo sciame raggiunge e punge");
-        ok(e.gemsList.size() >= 40 && e.gemsList.size() <= 75, "livello 11: " + e.gemsList.size() + " gemme");
-        ok(Levels.ORDER.length == 11 && Levels.ORDER[0] == 9 && Levels.next(11) == 1 && Levels.next(8) == 0 && Levels.is3D(11) && !Levels.is3D(9),
-                "ordine dei livelli: primavera in testa");
+        ok(e.gemsList.size() >= 80 && e.gemsList.size() <= 140, "livello 10 intero: " + e.gemsList.size() + " gemme");
+        ok(e.flagZ > e.hiveZ + 100, "il traguardo è dopo la fuga (z " + e.flagZ + ")");
+        ok(Levels.ORDER.length == 10 && Levels.ORDER[0] == 1 && Levels.next(6) == 9 && Levels.next(10) == 7 && Levels.next(8) == 0 && !Levels.is3D(9),
+                "ordine dei livelli: estate, autunno, inverno, primavera, incendio");
         System.out.println(fails == 0 ? "TUTTO OK" : fails + " FALLITI");
     }
 
@@ -168,7 +171,6 @@ public class CheckSpring {
 
     /** Colonna di mondo verso cui puntare a ogni quota z (caselle libere dei campi di rovi, isolotti dei fiumi). */
     static float xTarget(int levelNo, float z) {
-        if (levelNo == 11) return 0f;
         if ((z >= 8 && z < 34) || (z >= 68 && z < 94)) return -1.8f;     // si aggira il balcone, senza salire
         if ((z >= 35 && z < 48) || (z >= 128 && z < 141)) return -1f;    // corsia libera dei campi di rovi
         return 0f;

@@ -1,7 +1,7 @@
 package com.valeriodipaolo.platformgame.core3d;
 
 /**
- * Undicesimo livello, la fuga dalle api (primavera, 3D): uno sciame inferocito insegue da dietro e non si ferma. Si corre a perdifiato
+ * Seconda parte del livello 10 (primavera, 3D), la fuga dalle api: dopo che il nido è caduto dal ciliegio, uno sciame inferocito insegue da dietro e non si ferma. Si corre a perdifiato
  * raccogliendo le gemme lungo il percorso: tre campi di rovi a zigzag con una corsia centrale sempre libera, tre fiumi larghi dieci metri
  * (la fila di fiori a molla in riva lancia dall'altra parte senza perdere un istante) e qualche ghianda e riccio di traverso. Lo sciame accelera
  * piano piano ma resta sempre più lento di chi corre: gli ostacoli sono l'unico modo per farsi raggiungere.
@@ -11,20 +11,14 @@ public final class LevelEleven {
 
     private static final int W = World3D.W;
 
-    public static void build(World3D w) {
-        int len = 172;
-        w.length = len;
-        w.height = new int[len * W];
-        w.crate = new boolean[len * W];
-        w.gemsList.clear();
-        w.enemies.clear();
-        w.jets.clear();
-        w.logs.clear();
-        w.springs.clear();
-        w.thorns.clear();
+    /** Zero della parte: tutte le quote z dei metodi sotto sono relative a questo valore. */
+    private static int base;
+
+    /** Aggiunge la fuga al livello 10 dalla riga zBase in avanti (le righe dell'array devono già esserci). */
+    public static void append(World3D w, int zBase) {
+        base = zBase;
         w.chase = 1;
-        w.fireStart = -14f;
-        w.fireZones = new float[][] {{0, 2.3f, 16}, {60, 2.8f, 15}, {120, 3.1f, 14}};
+        w.fireZones = new float[][] {{base - 4, 2.3f, 16}, {base + 60, 2.8f, 15}, {base + 120, 3.1f, 14}};
 
         // --- via: una fila di gemme per prendere il ritmo, due casse
         group(w, 0, 5f, 4);
@@ -82,18 +76,18 @@ public final class LevelEleven {
         group(w, 0, 159f, 3);
         acorn(w, 0f, 164);
         group(w, 0, 165.5f, 2);
-        w.flagZ = 168;
+        w.flagZ = base + 168;
     }
 
     /** Fila di fiori a molla su tutta la larghezza alla riga z. */
     private static void padRow(World3D w, int z) {
-        for (int c = 0; c < W; c++) w.springs.add(new float[] {c - World3D.HALF + 0.5f, z + 0.5f});
+        for (int c = 0; c < W; c++) w.springs.add(new float[] {c - World3D.HALF + 0.5f, base + z + 0.5f});
     }
 
     /** Due cespugli di rovi nelle colonne ca e cb alla riga z. */
     private static void thornRow(World3D w, int z, int ca, int cb) {
-        w.thorns.add(new float[] {ca - World3D.HALF + 0.5f, z + 0.5f});
-        w.thorns.add(new float[] {cb - World3D.HALF + 0.5f, z + 0.5f});
+        w.thorns.add(new float[] {ca - World3D.HALF + 0.5f, base + z + 0.5f});
+        w.thorns.add(new float[] {cb - World3D.HALF + 0.5f, base + z + 0.5f});
     }
 
     /** Gemme sulla traiettoria di un rimbalzo dai fiori alla riga z: alte, mai sull'acqua a pelo. */
@@ -108,31 +102,31 @@ public final class LevelEleven {
     }
 
     private static void pit(World3D w, int z0, int z1, int x0, int x1) {
-        for (int z = z0; z <= z1; z++) for (int x = x0; x <= x1; x++) w.height[z * W + x] = World3D.PIT;
+        for (int z = base + z0; z <= base + z1; z++) for (int x = x0; x <= x1; x++) w.height[z * W + x] = World3D.PIT;
     }
 
     private static void crate(World3D w, int x, int z) {
-        w.crate[z * W + x] = true;
+        w.crate[(base + z) * W + x] = true;
     }
 
     private static void gem(World3D w, float cx, float y, float z) {
-        w.gemsList.add(new float[] {cx, y, z});
+        w.gemsList.add(new float[] {cx, y, base + z});
     }
 
     private static void hog(World3D w, float x, float z, boolean alongZ, float lo, float hi) {
-        Enemy3 e = new Enemy3(x, z, alongZ, lo, hi);
+        Enemy3 e = new Enemy3(x, base + z, alongZ, lo, hi);
         e.type = Enemy3.HOG;
         w.enemies.add(e);
     }
 
     private static void acorn(World3D w, float x, float z) {
-        Enemy3 e = new Enemy3(x, z, false, -2f, 2f);
+        Enemy3 e = new Enemy3(x, base + z, false, -2f, 2f);
         e.type = Enemy3.ACORN;
         w.enemies.add(e);
     }
 
     private static void crow(World3D w, float x, float z, boolean alongZ, float lo, float hi, float y) {
-        Enemy3 e = new Enemy3(x, z, alongZ, lo, hi);
+        Enemy3 e = new Enemy3(x, base + z, alongZ, lo, hi);
         e.type = Enemy3.CROW;
         e.y = y;
         e.baseY = y;
