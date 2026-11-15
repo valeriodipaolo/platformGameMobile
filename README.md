@@ -49,3 +49,11 @@ Per ogni livello esiste una versione nuova (stesso aspetto, lunghezza doppia, pi
 19 fuoco (lapilli, salamandre), 20 rogo (3D), 21 primavera (rane, piante carnivore), 22 giardino (3D), 23 cielo (stelle cadenti, solleoni), 24 cielo alto (3D).
 Livelli 2D in `core/LevelsB.java`, 3D in `core3d/Levels3B.java`, modelli dei nemici 3D in `core3d/FoeModels2.java`, sprite 2D da `tools/gen_foes2.py`.
 `tools/preview/check.sh` include i robot `CheckB` (2D) e `Check3B` (3D).
+
+## Fine livello: portone, chiave e catapulta
+
+- La **cella di energia** presente in ogni livello è la chiave del portone di fine livello: senza, il portone resta chiuso (compare un avviso) e sopra di esso c'è un muro altissimo che non si supera saltando.
+- Con la cella il portone si apre all'avvicinarsi; il robot resta **libero di muoversi** e il livello termina solo qualche passo dopo l'ingresso.
+- Poco prima del portone c'è una **catapulta**: stando sopra e premendo la trottola il robot viene lanciato all'inizio del livello (tenendo la cella), utile se si è arrivati al portone senza chiave.
+- Ordine dei livelli per tema: ogni coppia della seconda serie segue la coppia dello stesso tema (1-2, 13-14, 3-4, 15-16, 5-6, 17-18, 9-10, 21-22, 7-8, 19-20, 11-12, 23-24).
+- Controlli: `tools/preview/CheckGate.java` (chiusura, apertura, vittoria oltre l'ingresso, catapulta) in `check.sh`.

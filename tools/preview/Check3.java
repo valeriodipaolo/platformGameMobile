@@ -64,6 +64,7 @@ public class Check3 {
     /** Bot: va avanti scegliendo una colonna percorribile, salta burroni e gradini, usa la giravolta sui nemici e sulle casse. */
     static boolean bot(boolean verbose) {
         World3D w = fresh();
+        w.batteryOwned = true;
         boolean jump = false, held = false;
         float jumpTimer = 0;
         for (int f = 0; f < 60 * 240; f++) {

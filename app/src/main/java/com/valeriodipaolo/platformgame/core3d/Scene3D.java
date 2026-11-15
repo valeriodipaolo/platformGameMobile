@@ -69,7 +69,7 @@ public final class Scene3D {
     /** Quanto il bordo dei burroni si arrotonda verso il basso (0 = spigolo vivo). */
     private float lip;
     private Mesh flame, ember, logMesh, vent;
-    private Mesh crate, gem, battery, batteryGlow, shadow, ring, gateStone, gateDoor;
+    private Mesh crate, gem, battery, batteryGlow, shadow, ring, gateStone, gateDoor, catapult;
     private final HeroModel hero = new HeroModel();
     private int builtFor = -1;
     private float camX, camY = 0, camZ;
@@ -1203,6 +1203,18 @@ public final class Scene3D {
         b = new MeshBuilder();                                                // battente: cardine sull'origine, si estende verso x positivo
         b.box(0.65f, 1.65f, 0, 1.3f, 3.6f, 0.12f);
         gateDoor = b.build(Img.R3_WOOD, false, true);
+        b = new MeshBuilder();                                                // catapulta: base di legno, montanti e braccio inclinato
+        b.colorf(0.55f, 0.36f, 0.2f);
+        b.roundBox(0, 0.2f, 0, 2.0f, 0.4f, 1.6f, 0.08f);
+        b.box(-0.8f, 0.9f, 0, 0.18f, 1.2f, 1.2f);
+        b.box(0.8f, 0.9f, 0, 0.18f, 1.2f, 1.2f);
+        b.box(0, 1.3f, 0, 1.8f, 0.16f, 0.16f);
+        b.colorf(0.45f, 0.28f, 0.14f);
+        b.box(0, 1.5f, -0.45f, 0.22f, 0.22f, 1.6f);
+        b.colorf(0.85f, 0.85f, 0.2f);
+        b.ellipsoid(0, 1.7f, 0.5f, 0.38f, 0.16f, 0.38f, 14, 8);
+        catapult = b.build(Img.R3_WOOD, false, true);
+        catapult.spec = 0.1f; catapult.shine = 16f;
         gateDoor.spec = 0.12f; gateDoor.shine = 18f;
 
     }
@@ -1370,9 +1382,12 @@ public final class Scene3D {
             }
         }
 
+        Mat4.setIdentity(m);
+        Mat4.translate(m, 0, 0, w.catZ + 0.7f);
+        g.draw(catapult, m, 1, 1, 1, 1, 0);
         // traguardo
         // traguardo: il portone si apre quando il livello è completato
-        float open = w.state == World3D.WON ? sm(w.stateTime / 1.1f) * 1.9f : 0, gz = w.flagZ + 0.5f;
+        float open = sm(w.gateOpen) * 1.9f, gz = w.flagZ + 0.5f;
         Mat4.setIdentity(m);
         Mat4.translate(m, 0, 0, gz);
         g.draw(gateStone, m, 1, 1, 1, 1, 0);

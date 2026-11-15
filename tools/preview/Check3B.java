@@ -39,6 +39,7 @@ public class Check3B {
 
     static void run(int id) {
         World3D b = new World3D(new MemorySave(), id);
+        b.batteryOwned = true;
         int lives0 = b.lives;
         float stuck = 0, lastZ = b.pz, jt = 0, time = 0;
         int cur = 2;

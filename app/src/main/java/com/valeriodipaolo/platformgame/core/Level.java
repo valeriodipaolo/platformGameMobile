@@ -9,7 +9,7 @@ public final class Level {
     /** Mattoncino identico agli altri, ma colpito da sotto rivela l'oggetto segreto. */
     public static final char SECRET = 'H';
     /** Piattaforma che crolla poco dopo essere stata toccata (livello dell'incendio). */
-    public static final char CRUMBLE = 'C';
+    public static final char CRUMBLE = 'C', DOOR = 'D';
     /** Fiore a molla: chi ci atterra sopra viene lanciato in alto (livello di primavera). */
     public static final char SPRING = 'P';
 
@@ -56,6 +56,25 @@ public final class Level {
 
     public void set(int x, int y, char c) {
         if (x >= 0 && x < w && y >= 0 && y < h) t[y * w + x] = c;
+    }
+
+    /** Colonna sinistra della catapulta vicino al portone (riporta a inizio livello). */
+    public int catX;
+
+    /**
+     * Chiude il fine livello: muro altissimo sopra il portone e fino al bordo (non si scavalca con il salto), battenti chiusi (casella DOOR) e
+     * una catapulta sul terreno piano poco prima dell'ingresso.
+     */
+    public void sealEnd() {
+        for (int y = 0; y <= flagBaseY - 4; y++) for (int x = Math.max(0, flagX - 2); x < w; x++) set(x, y, STONE);
+        for (int y = flagBaseY - 3; y < flagBaseY; y++) set(flagX, y, DOOR);
+        int cx = flagX - 9;
+        for (; cx > flagX - 30; cx--) {
+            boolean ok = true;
+            for (int x = cx; x < cx + 3 && ok; x++) if (!solid(x, flagBaseY) || solid(x, flagBaseY - 1) || solid(x, flagBaseY - 2)) ok = false;
+            if (ok) break;
+        }
+        catX = cx;
     }
 
     public boolean solid(int x, int y) {

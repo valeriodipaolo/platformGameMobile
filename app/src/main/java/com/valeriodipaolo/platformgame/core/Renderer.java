@@ -31,10 +31,17 @@ public final class Renderer {
         float gx = (lv.flagX + 0.5f - 1.5f - cam) * s, gy = (lv.flagBaseY - 4f) * s;
         if (gx > -3.5f * s && gx < sw + 0.5f * s) {
             p.image(Img.GATE, gx, gy, 3f * s, 4f * s, false, 1);
-            float t = g.state == Game.WON ? Math.max(0f, Math.min(1f, (g.stateTime - 0.1f) / 1.0f)) : 0f;
+            float t = Math.max(0f, Math.min(1f, g.gateOpen));
             float lw = 0.95f * s * (1f - 0.88f * t * t * (3f - 2f * t)), ly = (lv.flagBaseY - 3.05f) * s;
             p.image(Img.GATE_DOOR, gx + 0.55f * s, ly, lw, 3.05f * s, false, 1);
             p.image(Img.GATE_DOOR, gx + 2.45f * s - lw, ly, lw, 3.05f * s, true, 1);
+        }
+
+        // ---- catapulta vicino al portone: con la trottola riporta all'inizio del livello
+        float kx = (lv.catX - cam) * s;
+        if (kx > -4f * s && kx < sw + s) {
+            boolean shot = g.launching() && g.launchT < 0.6f;
+            p.image(shot ? Img.FX_CATAPULT_B : Img.FX_CATAPULT, kx, (lv.flagBaseY - 2.05f) * s, 3f * s, 2.05f * s, false, 1);
         }
 
         // ---- caselle
@@ -43,7 +50,7 @@ public final class Renderer {
             for (int tx = tx0; tx <= tx1; tx++) {
                 if (tx < 0 || tx >= lv.w) continue;
                 char c = lv.get(tx, ty);
-                if (c == Level.EMPTY) continue;
+                if (c == Level.EMPTY || c == Level.DOOR) continue;
                 int img;
                 boolean softEdge = false;
                 switch (c) {

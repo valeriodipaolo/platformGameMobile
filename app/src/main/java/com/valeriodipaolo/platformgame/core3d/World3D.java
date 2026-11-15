@@ -36,6 +36,11 @@ public final class World3D {
     /** Casse bonus ancora intere, per casella. */
     public boolean[] crate;
     public int flagZ;
+    /** Portone di fine livello: si apre (0..1) solo con la cella di energia; la catapulta (launchT >= 0) riporta all'inizio. */
+    public float gateOpen, launchT = -1;
+    public int catZ;
+    private boolean sealed;
+    private float lx, ly, lz;
     public final List<float[]> gemsList = new ArrayList<float[]>();
     public final List<Enemy3> enemies = new ArrayList<Enemy3>();
     /** Gemme che escono dalle casse rotte: {x, y, z, età}. */
@@ -96,7 +101,12 @@ public final class World3D {
         score = 0;
         gems = 0;
         lives = START_LIVES;
+        sealed = false;
         if (levelNo > 12) Levels3B.build(this, levelNo); else if (levelNo == 12) LevelTwelve.build(this); else if (levelNo == 10) LevelTen.build(this); else if (levelNo == 8) LevelEight.build(this); else if (levelNo == 6) LevelSix.build(this); else if (levelNo == 4) LevelFour.build(this); else LevelTwo.build(this);
+        gateOpen = 0;
+        launchT = -1;
+        sealed = true;
+        sealEnd();
         gemTotal = gemsList.size();
         for (boolean c : crate) if (c) gemTotal++;
         batteryOwned = gemOwned = false;
@@ -161,6 +171,7 @@ public final class World3D {
     /** Altezza della colonna (cassa compresa); fuori dai lati c'è un muro, oltre la fine il prato continua. */
     public int cell(int xi, int zi) {
         if (xi < 0 || xi >= W || zi < 0) return 99;
+        if (sealed && zi == flagZ && (gateOpen < 0.6f || xi == 0 || xi == W - 1)) return 99;      // portone chiuso e pilastri: muro altissimo
         if (zi >= length) return 0;
         int h = height[zi * W + xi];
         if (h == 0 && crate[zi * W + xi]) return 1;
@@ -214,12 +225,14 @@ public final class World3D {
             p[3] += dt;
             if (p[3] > 0.6f) pops.remove(i);
         }
-        if (state == PLAYING) {
+        if (state == PLAYING && launchT >= 0) {
+            stepLaunch(dt);
+        } else if (state == PLAYING) {
             stepPlayer(dt);
             stepFire(dt);
             stepEnemies(dt); stepShots(dt);
             pickups();
-            if (state == PLAYING && pz >= flagZ - 0.4f) win();
+            stepGate(dt);
         } else if (state == DYING) {
             vy -= 30f * dt;
             py += vy * dt;
@@ -789,6 +802,56 @@ public final class World3D {
         vx = vz = 0;
         vy = 9f;
     }
+
+    /** Cerca un tratto piano e libero davanti al portone dove mettere la catapulta. */
+    private void sealEnd() {
+        sealed = false;
+        int z = flagZ - 8;
+        for (; z > flagZ - 30 && z > 4; z--) {
+            boolean ok = true;
+            for (int k = 0; k < 3 && ok; k++) for (int x = 1; x <= 3; x++) if (cell(x, z + k) != 0) ok = false;
+            if (ok) break;
+        }
+        catZ = z;
+        sealed = true;
+    }
+
+    private void stepGate(float dt) {
+        if (batteryOwned && pz > flagZ - 6f && gateOpen < 1f) gateOpen = Math.min(1f, gateOpen + dt);
+        else if (!batteryOwned && pz > flagZ - 4f && toastTime <= 0) {
+            toast = "Serve la cella di energia per aprire il portone";
+            toastTime = 2.4f;
+        }
+        if (state == PLAYING && gateOpen > 0.6f && pz >= flagZ + 3.4f) win();
+        if (state == PLAYING && spin && !spinWas && onGround && Math.abs(px) < 1.5f && pz > catZ - 0.3f && pz < catZ + 2.3f && py < 0.3f) {
+            launchT = 0;
+            lx = px; ly = py; lz = pz;
+            spinActive = false;
+            spinCool = 0;
+            vx = vy = vz = 0;
+        }
+    }
+
+    private void stepLaunch(float dt) {
+        float dur = 2.2f + Math.min(1.5f, (lz - 1.5f) / 60f);
+        launchT += dt;
+        float u = Math.min(1f, launchT / dur);
+        px = lx * (1 - u);
+        pz = lz + (1.5f - lz) * u;
+        py = ly + 14f * u * (1f - u);
+        yaw = (float) Math.PI;
+        invuln = Math.max(invuln, 0.3f);
+        if (u >= 1f) {
+            launchT = -1;
+            cpX = 0;
+            cpZ = 1.5f;
+            place();
+            invuln = 1.5f;
+            if (!Float.isNaN(fireZ)) fireZ = Math.min(fireZ, cpZ - 14f);
+        }
+    }
+
+    public boolean launching() { return launchT >= 0; }
 
     private void win() {
         state = WON;

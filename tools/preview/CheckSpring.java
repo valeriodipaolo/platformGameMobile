@@ -21,6 +21,7 @@ public class CheckSpring {
     /** Robot 2D: corre a destra, salta davanti ai buchi, ai rovi e ai muri. Restituisce {morti, x finale, secondi}. */
     static float[] bot2d(Game g, float maxSec, float stopX) {
         g.enemies.clear();
+        g.batteryOwned = true;                       // la cella è la chiave del portone: senza, il robot si fermerebbe davanti
         int deaths = 0, lives0 = g.lives;
         float jt = 0, rel = 0, stuck = 0, lastX = g.player.x, at = 0; boolean wide = false;
         for (float t = 0; t < maxSec; t += 1f / 60f) {
@@ -150,14 +151,14 @@ public class CheckSpring {
         ok(e.lives < livesE, "fermi abbastanza a lungo lo sciame raggiunge e punge");
         ok(e.gemsList.size() >= 80 && e.gemsList.size() <= 140, "livello 10 intero: " + e.gemsList.size() + " gemme");
         ok(e.flagZ > e.hiveZ + 100, "il traguardo è dopo la fuga (z " + e.flagZ + ")");
-        ok(Levels.ORDER.length == 24 && Levels.ORDER[0] == 1 && Levels.next(6) == 9 && Levels.next(10) == 7 && Levels.next(8) == 11 && Levels.next(11) == 12
-                && Levels.next(12) == 13 && Levels.next(24) == 0 && Levels.is3D(24) && !Levels.is3D(23) && !Levels.is3D(9) && !Levels.is3D(11) && Levels.is3D(12),
+        ok(Levels.ORDER.length == 24 && Levels.ORDER[0] == 1 && Levels.next(2) == 13 && Levels.next(14) == 3 && Levels.next(6) == 17 && Levels.next(18) == 9 && Levels.next(10) == 21 && Levels.next(22) == 7 && Levels.next(8) == 19 && Levels.next(20) == 11 && Levels.next(12) == 23 && Levels.next(24) == 0 && Levels.is3D(24) && !Levels.is3D(23) && !Levels.is3D(9) && !Levels.is3D(11) && Levels.is3D(12),
                 "ordine dei livelli: estate, autunno, inverno, primavera, incendio, cielo");
         System.out.println(fails == 0 ? "TUTTO OK" : fails + " FALLITI");
     }
 
     static void bot3dCheck(int levelNo) {
         World3D b = new World3D(new MemorySave(), levelNo);
+        b.batteryOwned = true;
         b.enemies.clear();
         int lives0 = b.lives;
         float stuck = 0, lastZ = b.pz, jt = 0;

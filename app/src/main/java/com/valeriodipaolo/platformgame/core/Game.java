@@ -41,6 +41,9 @@ public final class Game {
     public final List<float[]> pops = new ArrayList<float[]>();
     /** Cella energetica ancora sul terreno: {x, y}, oppure null se già presa in questa partita. */
     public float[] battery;
+    /** Apertura del portone di fine livello (0..1): si apre solo con la cella di energia; la catapulta (t >= 0) riporta all'inizio. */
+    public float gateOpen, launchT = -1;
+    private float lfx, lfy;
     /** Posizione del muro di fuoco (NaN = nessun fuoco in questo livello). */
     public float fireX = Float.NaN;
     /** Piattaforme che crollano: {x, y, tempo trascorso da quando ci si sta sopra}; e quelle già crollate, da rimettere alla ripartenza. */
@@ -102,6 +105,9 @@ public final class Game {
 
     private void loadLevel() {
         level = levelNo > 12 ? LevelsB.build(levelNo) : levelNo == 11 ? LevelEleven.build() : levelNo == 9 ? LevelNine.build() : levelNo == 7 ? LevelSeven.build() : levelNo == 5 ? LevelFive.build() : levelNo == 3 ? LevelThree.build() : LevelOne.build();
+        level.sealEnd();
+        gateOpen = 0;
+        launchT = -1;
         enemies.clear();
         for (float[] e : level.enemies) {
             enemies.add(e.length > 2 ? new Enemy(e[0], e[1], (int) e[2], e[3], e[4]) : new Enemy(e[0], e[1]));
@@ -208,12 +214,16 @@ public final class Game {
         }
 
         if (state == PLAYING) {
-            stepPlayer(dt);
-            stepFire(dt);
-            updateCheckpoint();
-            stepEnemies(dt);
-            pickups();
-            if (state == PLAYING && player.x + player.w >= level.flagX - 0.45f) win();
+            if (launchT >= 0) {
+                stepLaunch(dt);
+            } else {
+                stepPlayer(dt);
+                stepFire(dt);
+                updateCheckpoint();
+                stepEnemies(dt);
+                pickups();
+                stepGate(dt);
+            }
         } else if (state == DYING) {
             player.vy += 60f * dt;
             player.y += player.vy * dt;
@@ -229,8 +239,6 @@ public final class Game {
         } else if (state == WON) {
             float target = level.flagBaseY - player.h;
             if (player.y < target) player.y = Math.min(target, player.y + 6f * dt);
-            float door = level.flagX + 0.5f - player.w / 2;          // il robot entra nel portone che si apre
-            if (stateTime > 0.5f && player.x < door) player.x = Math.min(door, player.x + 2.2f * dt);
         }
         jumpWas = jump;
         spinWas = spin;
@@ -729,6 +737,49 @@ public final class Game {
         player.vx = 0;
         player.vy = -15f;
     }
+
+    /** Portone: con la cella di energia si apre all'avvicinarsi; il livello finisce qualche passo dopo l'ingresso. */
+    private void stepGate(float dt) {
+        float fx = level.flagX;
+        if (batteryOwned && player.x > fx - 6f && gateOpen < 1f) {
+            gateOpen = Math.min(1f, gateOpen + dt);
+            if (gateOpen > 0.6f) for (int y = level.flagBaseY - 3; y < level.flagBaseY; y++) if (level.get(level.flagX, y) == Level.DOOR) level.set(level.flagX, y, Level.EMPTY);
+        } else if (!batteryOwned && player.x > fx - 4.5f && toastTime <= 0) {
+            toast = "Serve la cella di energia per aprire il portone";
+            toastTime = 2.4f;
+        }
+        if (state == PLAYING && gateOpen > 0.6f && player.x + player.w / 2 >= fx + 3.2f) win();
+        // catapulta: sopra la sua piattaforma, la trottola lancia il robot all'inizio del livello
+        float cx = level.catX;
+        if (state == PLAYING && spin && !spinWas && player.onGround && player.x + player.w > cx && player.x < cx + 3f && Math.abs(player.y + player.h - level.flagBaseY) < 0.2f) {
+            launchT = 0;
+            lfx = player.x;
+            lfy = player.y;
+            spinActive = false;
+            spinCool = 0;
+            player.vx = player.vy = 0;
+        }
+    }
+
+    private void stepLaunch(float dt) {
+        float dur = 2.4f;
+        launchT += dt;
+        float u = Math.min(1f, launchT / dur);
+        player.x = lfx + (level.startX - lfx) * u;
+        player.y = lfy + (level.startY - lfy) * u - 10f * 4f * u * (1f - u);
+        facing = -1;
+        invuln = Math.max(invuln, 0.3f);
+        if (u >= 1f) {
+            launchT = -1;
+            checkpointX = level.startX;
+            checkpointY = level.startY;
+            respawn();
+            invuln = 1.5f;
+        }
+    }
+
+    /** true mentre il robot vola verso l'inizio del livello. */
+    public boolean launching() { return launchT >= 0; }
 
     private void win() {
         state = WON;
