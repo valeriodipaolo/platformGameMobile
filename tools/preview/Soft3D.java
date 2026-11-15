@@ -269,6 +269,8 @@ public class Soft3D implements Gfx3D {
 
     static int c8(float f) { return Math.max(0, Math.min(255, Math.round(f * 255))); }
 
+    boolean covered(int x, int y) { return depth[y * W + x] != Float.MAX_VALUE; }
+
     BufferedImage image() {
         BufferedImage b = new BufferedImage(W, H, BufferedImage.TYPE_INT_RGB);
         b.setRGB(0, 0, W, H, color, 0, W);

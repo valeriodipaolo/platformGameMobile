@@ -192,7 +192,7 @@ public final class Renderer {
                 case Enemy.SALAMANDER: img = e.mode > 0 ? Img.FX_SALA_B : Img.FX_SALA; w = 1.6f * s; h = 0.93f * s; break;
                 case Enemy.FROG: img = e.onGround ? Img.FX_FROG : Img.FX_FROG_J; w = 1.1f * s; h = (e.onGround ? 0.8f : 1.1f) * s; break;
                 case Enemy.PLANT:
-                    img = e.mode == 2 && e.flatTime <= 0 ? Img.FX_PLANT_O : Img.FX_PLANT; w = 1.0f * s; h = (img == Img.FX_PLANT_O ? 1.92f : 1.0f) * s;
+                    img = e.mode == 2 && e.flatTime <= 0 ? Img.FX_PLANT_O : Img.FX_PLANT; w = 1.0f * s; h = 1.0f * s;
                     if (e.mode == 1) x += 0.05f * s * (float) Math.sin(g.time * 50f);
                     break;
                 case Enemy.STAR: img = Img.FX_STAR; w = 1.5f * s; h = 1.5f * s; break;
