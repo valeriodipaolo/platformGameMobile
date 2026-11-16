@@ -28,8 +28,8 @@ final class FoeModels2 {
         final float PI = (float) Math.PI;
         final float[] skinD = rgb(104, 90, 70), skinL = rgb(196, 176, 140);
         MeshBuilder b = new MeshBuilder();
-        float[][] c = {{0, .012f, -.54f}, {0, .05f, -.44f}, {0, .09f, -.27f}, {0, .115f, -.05f}, {0, .12f, .15f}, {0, .125f, .30f}, {0, .17f, .41f}, {0, .23f, .47f}, {0, .26f, .515f}};
-        float[] rx = {0, .05f, .13f, .18f, .19f, .18f, .15f, .11f, 0}, ry = {0, .055f, .115f, .15f, .16f, .165f, .17f, .15f, 0};
+        float[][] c = {{0, .03f, -.54f}, {0, .09f, -.44f}, {0, .14f, -.27f}, {0, .17f, -.05f}, {0, .18f, .15f}, {0, .18f, .30f}, {0, .21f, .41f}, {0, .27f, .47f}, {0, .30f, .515f}};
+        float[] rx = {0, .06f, .15f, .21f, .22f, .20f, .16f, .12f, 0}, ry = {0, .07f, .14f, .19f, .20f, .20f, .19f, .16f, 0};
         FoeModels.loft(b, c, rx, ry, 0, 1, 0, 20, 0.8f, FoeModels.ud(skinL, skinD), 2f, 4f);
         FoeModels.Paint tent = FoeModels.along(skinD, rgb(146, 126, 98));
         for (int sd = -1; sd <= 1; sd += 2) {
@@ -49,6 +49,8 @@ final class FoeModels2 {
             float phi = -0.95f * PI - (thMax - th);
             sc[i] = new float[] {0, 0.40f + R * (float) Math.sin(phi) * 0.9f, -0.12f + R * (float) Math.cos(phi)};
             sr[i] = rho;
+            int k = i - (n - 7);   // chiusura arrotondata della bocca: niente taglio netto
+            if (k > 0) sr[i] = rho * (float) Math.sqrt(Math.max(0f, 1f - (k / 6f) * (k / 6f)));
         }
         final float[] car = rgb(168, 108, 52), cre = rgb(226, 198, 146), drk = rgb(70, 40, 22);
         FoeModels.loft(b, sc, sr, sr, 1, 0, 0, 22, 1f, new FoeModels.Paint() {
