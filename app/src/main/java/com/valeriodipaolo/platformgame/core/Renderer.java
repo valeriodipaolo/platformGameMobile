@@ -179,7 +179,7 @@ public final class Renderer {
                     w = 1.7f * s; h = 1.36f * s;
                     break;
                 case Enemy.WHIRL: img = Img.HV_WHIRL + fr; w = 1.2f * s; h = 1.38f * s; break;
-                case Enemy.SNAIL: img = e.mode == 1 ? Img.FX_SHELL : Img.FX_SNAIL; w = (e.mode == 1 ? 0.9f : 1.2f) * s; h = (e.mode == 1 ? 0.75f : 0.9f) * s; break;
+                case Enemy.SNAIL: img = e.mode == 1 ? Img.FX_SHELL : Img.FX_SNAIL; w = (e.mode == 1 ? 0.78f : 1.2f) * s; h = (e.mode == 1 ? 0.65f : 0.9f) * s; break;
                 case Enemy.CHESTNUT: img = Img.FX_CHESTNUT; w = 1.05f * s; h = 1.05f * s; if (e.mode == 1) x += 0.06f * s * (float) Math.sin(g.time * 45f); break;
                 case Enemy.OWL: img = Img.FX_OWL_0 + (e.mode == 1 ? 0 : fr); w = 1.5f * s; h = 1.3f * s; break;
                 case Enemy.PENGUIN: img = Img.FX_PENGUIN; w = 1.25f * s; h = 1.0f * s; break;
