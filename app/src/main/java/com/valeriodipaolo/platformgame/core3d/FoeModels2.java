@@ -42,12 +42,12 @@ final class FoeModels2 {
         int n = 64;
         float[][] sc = new float[n][3];
         float[] sr = new float[n];
-        float thMax = 2.7f * PI, g = 0.185f, rho0 = 0.058f;
+        float thMax = 2.4f * PI, g = 0.17f, rho0 = 0.068f;
         for (int i = 0; i < n; i++) {
             float th = thMax * i / (n - 1);
             float rho = rho0 * (float) Math.exp(g * th), R = rho * 1.3f;
-            float phi = -0.95f * PI - (thMax - th);
-            sc[i] = new float[] {0, 0.40f + R * (float) Math.sin(phi) * 0.9f, -0.12f + R * (float) Math.cos(phi)};
+            float phi = -0.35f * PI - (thMax - th);   // la bocca (giro più grande) sta davanti, sul collo
+            sc[i] = new float[] {0, 0.46f + R * (float) Math.sin(phi) * 0.9f, -0.02f + R * (float) Math.cos(phi)};
             sr[i] = rho;
             int k = i - (n - 7);   // chiusura arrotondata della bocca: niente taglio netto
             if (k > 0) sr[i] = rho * (float) Math.sqrt(Math.max(0f, 1f - (k / 6f) * (k / 6f)));
