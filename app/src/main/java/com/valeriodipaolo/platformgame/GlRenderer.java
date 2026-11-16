@@ -103,7 +103,7 @@ final class GlRenderer implements GLSurfaceView.Renderer, Gfx3D {
             + "  c = mix(c, fogc, vFog);\n"
             + "  c = (c * (2.51 * c + 0.03)) / (c * (2.43 * c + 0.59) + 0.14);\n"
             + "  c = sqrt(clamp(c, 0.0, 1.0));\n"
-            + "  c = mix(vec3(dot(c, vec3(0.299, 0.587, 0.114))), c, 1.22);\n"
+            + "  c = mix(vec3(dot(c, vec3(0.299, 0.587, 0.114))), c, 1.0);\n"
             + "  c = mix(c, srgb, uEmissive);\n"
             + "  gl_FragColor = vec4(c, 1.0);\n"
             + "}\n";

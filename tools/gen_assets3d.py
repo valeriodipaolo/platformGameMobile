@@ -645,18 +645,31 @@ def gen_mountains():
         inside = (yy >= top[None, :])
         det = fbm(h, w, beta=3.0, seed=seed + 10)
         det2 = fbm(h, w, beta=2.0, seed=seed + 11)
-        dl, _ = lit_from_height(ndi.gaussian_filter(det * 70 + det2 * 22, 1.2), wrap=True)
+        # canaloni e costoloni: rumore a creste stirato lungo la linea di massima pendenza, a partire dal crinale
+        rid = 1.0 - np.abs(2.0 * fbm(h, w, beta=2.4, seed=seed + 13) - 1.0)
+        rid2 = 1.0 - np.abs(2.0 * fbm(h, w, beta=1.8, seed=seed + 14) - 1.0)
+        down = (yy - top[None, :])
+        sy = np.mod(down * 0.30, h)
+        sx = np.broadcast_to(xx, (h, w)) + down * 0.10 * np.sin(xx * 0.004 + seed)
+        gul = ndi.map_coordinates(rid, [sy, np.mod(sx, w)], order=1, mode="wrap")
+        gul2 = ndi.map_coordinates(rid2, [np.mod(down * 0.55, h), np.mod(sx * 1.7, w)], order=1, mode="wrap")
+        hgt = ndi.gaussian_filter(gul * 46 + gul2 * 13 + det * 26 + det2 * 5, 0.9)
+        dl, _ = lit_from_height(hgt, wrap=True)
         # pendenza dal profilo: luce da destra
         slope = np.roll(top, 1) - np.roll(top, -1)
         sl = ndi.gaussian_filter1d(slope, 2.0)[None, :]
-        light = np.clip(0.30 + 0.95 * dl + sl * 0.02, 0.2, 1.2)
-        rock = lerp(col((104, 98, 94)), col((176, 166, 152)), np.clip(det2 + (det - 0.5), 0, 1)[..., None]) * light[..., None]
+        light = np.clip(0.42 + 0.72 * dl + sl * 0.02, 0.22, 1.15)
+        strata = 0.5 + 0.5 * np.sin(yy * 0.11 + det * 9.0 + xx * 0.006)
+        rockc = lerp(col((96, 92, 92)), col((168, 156, 140)), np.clip(0.25 + 0.5 * det2 + 0.5 * (det - 0.5) + 0.12 * strata, 0, 1)[..., None])
+        sun_c, sky_c = np.array([1.06, 1.0, 0.9]), np.array([0.50, 0.60, 0.78])
+        lit3 = light[..., None] * sun_c[None, None, :] + (1 - np.clip(light, 0, 1))[..., None] * 0.38 * sky_c[None, None, :]
+        rock = rockc * lit3
         alt = np.clip((top.max() - yy) / (top.max() - top.min() + 1) * 0, 0, 1)
         relh = (h - yy) / h  # quota relativa
         # neve in cima, con confine frastagliato
-        snowmask = smooth(((relh - (snow * 0.55 + (det - 0.5) * 0.25)) * 16)) if snow < 1.5 else np.zeros_like(det)
+        snowmask = smooth(((relh - (snow * 0.55 + (det - 0.5) * 0.25 - (gul - 0.6) * 0.16)) * 14)) if snow < 1.5 else np.zeros_like(det)
         snowc = lerp(col((214, 224, 238)), col((255, 255, 255)), np.clip(light - 0.4, 0, 1)[..., None])
-        col_ = rock * (1 - snowmask[..., None]) + snowc * np.clip(light, 0.5, 1.1)[..., None] * snowmask[..., None]
+        col_ = rock * (1 - snowmask[..., None]) + snowc * (0.25 + 0.75 * lit3) * snowmask[..., None]
         if forest > 0:
             fm = smooth((0.42 - relh * 0.9 + (det - 0.5) * 0.5 - (1 - forest) * 0.6) * 8) * forest
             tr = fbm(h, w, beta=1.0, seed=seed + 12)

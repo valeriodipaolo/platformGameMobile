@@ -190,8 +190,8 @@ def main():
     mosaic("r3a_foliage", 256, 700, 30, kinds, 477, (40, 30, 14))
     card("r3a_crown", 256, 256, crown_region, 360, 32, kinds, 421)
     card("r3a_tree", 256, 512, tree_region, 900, 28, kinds, 431, trunk_fn)
-    mosaic("r3d_foliage", 256, 900, 17, [0], 1241, (70, 90, 40), flowers=True)
-    card("r3d_crown", 256, 256, crown_region, 420, 18, [0], 1221, flowers=True)
+    mosaic("r3d_foliage", 256, 1300, 19, [0], 1241, (188, 142, 160), flowers=True)
+    card("r3d_crown", 256, 256, crown_region, 620, 22, [0], 1221, flowers=True)
     card("r3d_tree", 256, 512, tree_region, 1100, 16, [0], 1231, trunk_fn, flowers=True)
     print("ok")
 

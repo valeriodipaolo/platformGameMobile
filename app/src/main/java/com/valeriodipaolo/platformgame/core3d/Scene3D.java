@@ -662,6 +662,9 @@ public final class Scene3D {
         }
     }
 
+    private boolean lcN;
+    private float lcNx, lcNy, lcNz;
+
     /** Un cartoncino di fogliame, centrato in (x,y,z), ruotato e inclinato; più scuro in basso. */
     private void leafCard(MeshBuilder cb, float x, float y, float z, float size, float yaw, float tilt, float[] tc, float tone, float swayK) {
         float ca = (float) Math.cos(yaw), sa = (float) Math.sin(yaw), ct = (float) Math.cos(tilt), st = (float) Math.sin(tilt);
@@ -672,6 +675,7 @@ public final class Scene3D {
         float[][] uv = {{0, 1}, {1, 1}, {1, 0}, {0, 0}};
         int[] ord = {0, 1, 2, 0, 2, 3};
         float nx = sa * ct, ny = st, nz = -ca * ct;
+        if (lcN) { nx = lcNx; ny = lcNy; nz = lcNz; }                  // normale della chioma: la fronda prende la luce come il lobo a cui appartiene
         for (int k : ord) {
             float a = q[k][0], b = q[k][1];
             float low = 0.84f + 0.16f * (b + h) / size;
@@ -739,7 +743,7 @@ public final class Scene3D {
         tb.cylinder(x, y0 + 0.7f, top, z, r0 * 1.1f, r0 * 0.45f, 7, false, false);
         float rh = rad * 1.3f + 0.3f, rv = h * 0.26f;
         float wind = Math.min(1.4f, 0.4f + h * 0.1f);
-        int segs = lobes >= 4 ? 10 : 7, rings = lobes >= 4 ? 6 : 4;
+        int segs = lobes >= 4 ? 14 : 9, rings = lobes >= 4 ? 9 : 6;
         float[][] centers = new float[lobes][3];
         for (int i = 0; i < lobes; i++) {
             float a = r.nextFloat() * 6.283f + i * 2.4f;
@@ -753,12 +757,18 @@ public final class Scene3D {
             float tone = (0.92f + 0.2f * r.nextFloat()) * (0.9f + 0.15f * tint);
             foliageLobe(bb, cx, cy, cz, lr, lr * 1.0f, lr, segs, rings, ct, tone, wind, r);
             // foglie sciolte sul contorno del lobo
-            int fringe = lobes >= 4 ? 10 : 3;
+            // fronde sul contorno: grappoli di foglie che rompono il profilo del lobo e ne nascondono le facce
+            int fringe = lobes >= 4 ? 44 : 16;
             for (int f = 0; f < fringe; f++) {
-                float fa = r.nextFloat() * 6.283f, fu = r.nextFloat() * 1.6f - 0.7f, fl = (float) Math.sqrt(1 - fu * fu);
-                float fx = cx + (float) Math.cos(fa) * fl * lr * 1.02f, fy = cy + fu * lr * 0.85f, fz = cz + (float) Math.sin(fa) * fl * lr * 1.02f;
-                float ts = (0.95f + 0.3f * (fu * 0.5f + 0.5f)) * (0.92f + 0.15f * r.nextFloat());
-                leafCard(cb, fx, fy, fz, 0.55f + 0.35f * r.nextFloat(), r.nextFloat() * 3.14f, (r.nextFloat() - 0.5f) * 1.2f, ct, ts, wind);
+                float fa = r.nextFloat() * 6.283f, fu = r.nextFloat() * 1.75f - 0.75f, fl = (float) Math.sqrt(1 - fu * fu);
+                float out = 0.9f + 0.2f * r.nextFloat();
+                float fx = cx + (float) Math.cos(fa) * fl * lr * out, fy = cy + fu * lr * 0.9f * out, fz = cz + (float) Math.sin(fa) * fl * lr * out;
+                float ts = (0.8f + 0.42f * (fu * 0.5f + 0.5f)) * (0.86f + 0.26f * r.nextFloat());
+                float[] lt2 = {ct[0] * (0.92f + 0.16f * r.nextFloat()), ct[1] * (0.88f + 0.22f * r.nextFloat()), ct[2] * (0.85f + 0.25f * r.nextFloat())};
+                float ox = fx - cx, oy = fy - cy + 0.25f * lr, oz = fz - cz, ol = (float) Math.sqrt(ox * ox + oy * oy + oz * oz) + 1e-4f;
+                lcN = true; lcNx = ox / ol; lcNy = oy / ol - 0.3f; lcNz = oz / ol;
+                leafCard(cb, fx, fy, fz, lr * (0.4f + 0.3f * r.nextFloat()), r.nextFloat() * 3.14f, (r.nextFloat() - 0.5f) * 1.4f, lt2, ts, wind);
+                lcN = false;
             }
         }
     }
@@ -1325,8 +1335,9 @@ public final class Scene3D {
         Mat4.lookAt(view, camX, camY + 3.3f + lift, camZ - 6.0f, camX * 0.9f, camY + 1.0f + lift, camZ + 5f);
         Mat4.perspective(proj, 58f, aspect, 0.3f, 400f);
         g.begin(view, proj, fogR, fogG, fogB, 30f, 115f, 0.9f);
+        g.grade(1.04f, 0.95f, 0.86f);                                   // estate: verde meno acido, luce più calda
         if (heaven) g.grade(1.08f, 1.04f, 0.98f);
-        else if (spring) g.grade(1.02f, 1.02f, 0.97f);
+        else if (spring) g.grade(1.04f, 0.97f, 0.90f);
         else if (autumn) g.grade(1.07f, 0.96f, 0.82f);
         if (aurora) g.grade(0.34f, 0.52f, 0.88f);
         if (fire) g.grade(1.0f, 0.74f, 0.58f);

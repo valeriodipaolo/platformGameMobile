@@ -264,7 +264,7 @@ public class Soft3D implements Gfx3D {
 
     static void sat(float[] c) {
         float g = 0.299f * c[0] + 0.587f * c[1] + 0.114f * c[2];
-        for (int i = 0; i < 3; i++) c[i] = Math.max(0, Math.min(1, g + (c[i] - g) * 1.22f));
+        for (int i = 0; i < 3; i++) c[i] = Math.max(0, Math.min(1, g + (c[i] - g) * 1.0f));
     }
 
     static int c8(float f) { return Math.max(0, Math.min(255, Math.round(f * 255))); }
