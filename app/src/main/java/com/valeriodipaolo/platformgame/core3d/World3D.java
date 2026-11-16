@@ -485,7 +485,7 @@ public final class World3D {
             }
             if (Math.abs(e.z - pz) > 45) continue;
             e.anim += dt;
-            float speed = e.type == Enemy3.HOG ? ENEMY_SPEED * 0.8f : e.type == Enemy3.CROW ? ENEMY_SPEED * 1.5f : e.type == Enemy3.WHIRL ? ENEMY_SPEED * 1.7f
+            float speed = e.type == Enemy3.HOG ? ENEMY_SPEED * 0.8f : e.type == Enemy3.CROW ? ENEMY_SPEED * 2.7f : e.type == Enemy3.WHIRL ? ENEMY_SPEED * 1.7f
                     : e.type == Enemy3.STORM ? ENEMY_SPEED * 0.7f : e.type == Enemy3.SNAIL ? (e.mode == 1 ? 0f : ENEMY_SPEED * 0.4f) : e.type == Enemy3.PENGUIN ? ENEMY_SPEED * 2.3f
                     : e.type == Enemy3.SALAMANDER ? (e.mode == 0 ? ENEMY_SPEED * 0.8f : 0f) : ENEMY_SPEED;
             if (e.type >= Enemy3.MOLE && stepNew3(e, dt)) continue;
@@ -501,7 +501,7 @@ public final class World3D {
                     speed = ENEMY_SPEED * 1.7f;
                 }
             } else if (e.type == Enemy3.CROW) {
-                e.y = e.baseY + 0.45f * (float) Math.sin(e.anim * 2.4f);
+                e.y = Math.min(e.baseY, 1.7f) + 0.45f * (float) Math.sin(e.anim * 3.4f);
             } else if (e.type == Enemy3.STORM) {                // la nuvola vaga lenta, poi si ferma, si carica e scaglia un fulmine verso il basso
                 e.hopT += dt;
                 e.y = e.baseY + 0.2f * (float) Math.sin(e.anim * 1.8f);

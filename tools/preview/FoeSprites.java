@@ -48,7 +48,7 @@ public class FoeSprites {
             Soft3D g = new Soft3D(S, S, Preview.imgs);
             float[] view = new float[16], proj = new float[16], m = Mat4.identity();
             float dist = 9f, ext = 3.6f;
-            float camY = type == Enemy3.OWL ? 3.6f : type == Enemy3.PLANT ? 1.8f : 0.9f;
+            float camY = type == Enemy3.SNAIL ? 1.7f : type == Enemy3.OWL ? 3.6f : type == Enemy3.PLANT ? 1.8f : 0.9f;
             Mat4.lookAt(view, 0, camY, -dist, 0, 0.9f, 0);
             Mat4.perspective(proj, 2f * (float) Math.toDegrees(Math.atan(ext / 2f / dist)), 1f, 0.2f, 50f);
             g.begin(view, proj, 0f, 0f, 0f, 1000f, 2000f, 0f);

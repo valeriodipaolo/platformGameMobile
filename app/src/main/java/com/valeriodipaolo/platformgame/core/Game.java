@@ -111,6 +111,15 @@ public final class Game {
         enemies.clear();
         for (float[] e : level.enemies) {
             enemies.add(e.length > 2 ? new Enemy(e[0], e[1], (int) e[2], e[3], e[4]) : new Enemy(e[0], e[1]));
+            Enemy last = enemies.get(enemies.size() - 1);
+            if (last.type == Enemy.CROW) {                      // il corvo vola basso: a poco più di un'altezza d'uomo sopra il terreno sotto di lui
+                int gy = level.h;                                // il punto più alto del terreno lungo il suo percorso (i burroni non contano)
+                for (int cx = (int) Math.floor(last.lo); cx <= (int) Math.floor(last.hi); cx++)
+                    for (int y = Math.max(8, (int) Math.floor(last.baseY)); y < level.h - 1; y++) if (level.solid(cx, y)) { gy = Math.min(gy, y); break; }
+                if (gy >= level.h) gy = 10;
+                last.baseY = Math.max(last.baseY, gy - 2.6f);
+                last.y = last.baseY;
+            }
         }
         shards.clear();
         for (float[] c : level.shards) shards.add(new float[] {c[0], c[1]});
@@ -480,9 +489,9 @@ public final class Game {
                 e.y = e.baseY + (float) Math.sin(e.anim * 1.8f) * 0.25f;
                 e.anim += dt;
             } else if (e.type == Enemy.CROW) {                          // il corvo vola a onde sopra il percorso, senza urtare nulla
-                e.x += e.dir * 2.3f * dt;
+                e.x += e.dir * 4.6f * dt;
                 if (e.x > e.hi) { e.x = e.hi; e.dir = -1; } else if (e.x < e.lo) { e.x = e.lo; e.dir = 1; }
-                e.y = e.baseY + (float) Math.sin(e.anim * 2.6f) * 1.15f;
+                e.y = e.baseY + (float) Math.sin(e.anim * 3.6f) * 0.8f;
                 e.anim += dt;
             } else {
                 float speed = e.type == Enemy.HOG ? ENEMY_SPEED * 0.75f : e.type == Enemy.WHIRL ? ENEMY_SPEED * 1.7f : ENEMY_SPEED;

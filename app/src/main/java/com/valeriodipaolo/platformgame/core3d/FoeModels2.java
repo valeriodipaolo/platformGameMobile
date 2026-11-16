@@ -22,6 +22,50 @@ final class FoeModels2 {
     }
 
 
+
+    /** Lumaca di giardino: piede lungo, umido e rugoso con coda a punta, testa che si alza e quattro tentacoli, guscio a spirale rigato. */
+    private void buildSnail() {
+        final float PI = (float) Math.PI;
+        final float[] skinD = rgb(104, 90, 70), skinL = rgb(196, 176, 140);
+        MeshBuilder b = new MeshBuilder();
+        float[][] c = {{0, .012f, -.54f}, {0, .05f, -.44f}, {0, .09f, -.27f}, {0, .115f, -.05f}, {0, .12f, .15f}, {0, .125f, .30f}, {0, .17f, .41f}, {0, .23f, .47f}, {0, .26f, .515f}};
+        float[] rx = {0, .05f, .13f, .18f, .19f, .18f, .15f, .11f, 0}, ry = {0, .055f, .115f, .15f, .16f, .165f, .17f, .15f, 0};
+        FoeModels.loft(b, c, rx, ry, 0, 1, 0, 20, 0.8f, FoeModels.ud(skinL, skinD), 2f, 4f);
+        FoeModels.Paint tent = FoeModels.along(skinD, rgb(146, 126, 98));
+        for (int sd = -1; sd <= 1; sd += 2) {
+            FoeModels.tube(b, new float[][] {{sd * .045f, .27f, .48f}, {sd * .075f, .40f, .54f}, {sd * .095f, .52f, .60f}}, new float[] {.02f, .015f, .011f}, 8, tent);
+            FoeModels.tube(b, sd * .07f, .21f, .52f, sd * .115f, .27f, .66f, .014f, .007f, 6, tent);
+        }
+        snailBody = fin2(b, Img.FOE_SKIN, 0.55f, 30f);
+
+        b = new MeshBuilder();
+        int n = 64;
+        float[][] sc = new float[n][3];
+        float[] sr = new float[n];
+        float thMax = 2.7f * PI, g = 0.185f, rho0 = 0.058f;
+        for (int i = 0; i < n; i++) {
+            float th = thMax * i / (n - 1);
+            float rho = rho0 * (float) Math.exp(g * th), R = rho * 1.3f;
+            float phi = -0.95f * PI - (thMax - th);
+            sc[i] = new float[] {0, 0.40f + R * (float) Math.sin(phi) * 0.9f, -0.12f + R * (float) Math.cos(phi)};
+            sr[i] = rho;
+        }
+        final float[] car = rgb(168, 108, 52), cre = rgb(226, 198, 146), drk = rgb(70, 40, 22);
+        FoeModels.loft(b, sc, sr, sr, 1, 0, 0, 22, 1f, new FoeModels.Paint() {
+            @Override void col(float t, float an, float x, float y, float z, float[] o) {
+                float sn = (float) Math.sin(an * 3f + 0.7f);
+                FoeModels.mix(car, cre, FoeModels.sm(sn * 2.2f + 0.4f), o);
+                if (sn < -0.8f) FoeModels.mix(o, drk, 0.85f, o);
+                for (int k = 0; k < 3; k++) o[k] *= 0.8f + 0.2f * t;
+            }
+        }, 3f, 2f);
+        snailShell = fin2(b, Img.FOE_SHELL, 0.75f, 46f);
+
+        b = new MeshBuilder();
+        for (int sd = -1; sd <= 1; sd += 2) FoeModels.ball(b, sd * .095f, .525f, .605f, .022f, .022f, .022f, rgb(10, 8, 8));
+        snailEyes = fin2(b, -1, 0.9f, 48f);
+    }
+
     private static Mesh fin2(MeshBuilder b, int tex, float spec, float shine) {
         Mesh m = b.build(tex, false, true);
         m.spec = spec; m.shine = shine;
@@ -45,19 +89,7 @@ final class FoeModels2 {
     FoeModels2() {
         MeshBuilder b = new MeshBuilder();
 
-        // lumaca: corpo lungo e chiaro con le antenne, guscio a spirale arancio
-        b = new MeshBuilder();
-        b.colorf(0.82f, 0.80f, 0.55f); b.ellipsoid(0, 0.14f, -0.05f, 0.17f, 0.14f, 0.52f, 12, 8);
-        b.ellipsoid(0, 0.26f, 0.45f, 0.14f, 0.15f, 0.16f, 10, 7);
-        b.colorf(0.72f, 0.70f, 0.42f); b.ellipsoid(0, 0.35f, 0.5f, 0.02f, 0.14f, 0.02f, 6, 4);
-        snailBody = fin(b, 0.4f, 24f);
-        b = new MeshBuilder();
-        b.colorf(0.86f, 0.44f, 0.22f); b.ellipsoid(0, 0.46f, -0.12f, 0.27f, 0.30f, 0.30f, 14, 9);
-        b.colorf(0.96f, 0.72f, 0.42f); b.ellipsoid(0, 0.47f, -0.09f, 0.22f, 0.24f, 0.31f, 12, 8);
-        b.colorf(0.82f, 0.38f, 0.18f); b.ellipsoid(0, 0.48f, -0.06f, 0.16f, 0.17f, 0.32f, 12, 8);
-        b.colorf(0.96f, 0.72f, 0.42f); b.ellipsoid(0, 0.48f, -0.03f, 0.09f, 0.1f, 0.33f, 10, 6);
-        snailShell = fin(b, 0.7f, 50f);
-        b = new MeshBuilder(); eyes(b, 0.48f, 0.55f, 0.07f, 0.04f, 0f); snailEyes = fin(b, 0.6f, 30f);
+        buildSnail();
 
         // castagna: sfera lucida con la macchia chiara e due occhi truci
         b = new MeshBuilder();
@@ -192,8 +224,8 @@ final class FoeModels2 {
             case Enemy3.SNAIL: {
                 boolean shell = e.mode == 1;
                 System.arraycopy(m, 0, a, 0, 16);
-                if (shell) { Mat4.scale(a, 0.8f, 0.8f, 0.8f); } else Mat4.scale(a, 1f + 0.05f * (float) Math.sin(an * 3f), 1f, 1f);
-                if (!shell) { g.draw(snailBody, a, 1, 1, 1, 1, 0); g.draw(snailEyes, a, 1, 1, 1, 1, 0.3f); }
+                if (shell) { Mat4.translate(a, 0, -0.1f, 0); Mat4.scale(a, 0.85f, 0.85f, 0.85f); } else Mat4.scale(a, 1f + 0.04f * (float) Math.sin(an * 3f), 1f, 1f + 0.03f * (float) Math.sin(an * 3f + 1f));
+                if (!shell) { g.draw(snailBody, a, 1, 1, 1, 1, 0); g.draw(snailEyes, a, 1, 1, 1, 1, 0); }
                 g.draw(snailShell, a, 1, 1, 1, 1, 0);
                 return;
             }
