@@ -42,44 +42,44 @@ public final class Levels3B {
         gemLine(w, 0, 0, 5); crate(w, 1, 9); crate(w, 3, 9);
         snail(w, 1, 12, 8, 20); gemLine(w, -2, 14, 18);
         // primo burrone corto: una talpa abita proprio dove si atterra
-        pit(w, 26, 28, 0, 4); arc(w, 0, 26, 28); mole(w, 2, 31); gemLine(w, -1, 30, 33);
+        pit(w, 26, 28, 0, 4); arc(w, 0, 26, 28); gemLine(w, -1, 30, 33);
         // il campo delle talpe: tre tane sfasate tra le casse, le gemme stanno nel mezzo
-        crate(w, 1, 36); crate(w, 3, 36); mole(w, 0, 39); mole(w, 2, 41); mole(w, 4, 43); mole(w, 1, 45);
+        crate(w, 1, 36); crate(w, 3, 36);
         gem(w, 1, 0.7f, 40); gem(w, 3, 0.7f, 42); gem(w, 1, 0.7f, 44);
         // muretti di pietra con una lumaca che pattuglia tra l'uno e l'altro
         stones(w, 50, new int[] {1, 1, 0, 1, 1}); stones(w, 58, new int[] {1, 0, 1, 1, 1});
         snail(w, 2, 54, 51, 57); hog(w, -1, 62, false, -2f, 2f); gem(w, 0, 1.8f, 50.5f); gem(w, -1, 1.8f, 58.5f);
         // burrone con ponte stretto: la talpa fa da dogana a metà ponte
-        pit(w, 66, 72, 0, 1); pit(w, 66, 72, 3, 4); mole(w, 2, 69); gemLine(w, 2, 66, 68); gemLine(w, 2, 70, 72);
+        pit(w, 66, 72, 0, 1); pit(w, 66, 72, 3, 4); gemLine(w, 2, 66, 68); gemLine(w, 2, 70, 72);
         // radura con la cella energetica sopra una terrazza, sorvegliata da un corvo
         for (int x = 1; x <= 3; x++) { set(w, x, 80, 1); for (int z = 81; z <= 86; z++) set(w, x, z, 2); set(w, x, 87, 1); }
         w.battery = new float[] {0, 2.6f, 83.5f}; crow(w, 0, 83, false, -2f, 2f, 3.6f); gemLine3(w, 0, 2.7f, 81, 82); gemLine3(w, 0, 2.7f, 85, 86);
         snail(w, -2, 90, 88, 96); snail(w, 2, 94, 90, 99); crate(w, 0, 98); crate(w, 4, 98);
         // secondo campo di talpe, questa volta con ghiande tra le tane
-        mole(w, 0, 104); mole(w, 4, 104); acorn(w, 0f, 108); mole(w, 2, 111); mole(w, 1, 115); acorn(w, 1f, 118); gemLine(w, 2, 103, 119);
+        acorn(w, 0f, 108); acorn(w, 1f, 118); gemLine(w, 2, 103, 119);
         // doppio burrone, isolotto in mezzo con una lumaca immobile nella tana
         pit(w, 124, 126, 0, 4); pit(w, 130, 132, 0, 4); snail(w, 2, 128, 127, 129); arc(w, 0, 124, 126); arc(w, 0, 130, 132);
         // scalinata e terrazza lunga: in cima due lumache e una talpa
         for (int x = 0; x < W; x++) { set(w, x, 138, 1); for (int z = 139; z <= 150; z++) set(w, x, z, 2); set(w, x, 151, 1); }
-        snail(w, -1, 144, 140, 149, 2f); snail(w, 1, 147, 140, 149, 2f); mole(w, 2, 142, 2f); gemLine3(w, 0, 2.7f, 140, 149);
+        snail(w, -1, 144, 140, 149, 2f); snail(w, 1, 147, 140, 149, 2f); gemLine3(w, 0, 2.7f, 140, 149);
         // corsa dei muri: ogni muro ha il varco dal lato opposto; i nemici stanno proprio nei varchi
         crate(w, 1, 156); crate(w, 3, 156);
         wall(w, 160, 4); wall(w, 164, 0); wall(w, 168, 3); wall(w, 172, 1); wall(w, 176, 4);
-        mole(w, 4, 162); snail(w, -2, 166, 164, 168); hog(w, 0, 170, false, -2f, 2f); mole(w, 1, 174);
+        snail(w, -2, 166, 164, 168); hog(w, 0, 170, false, -2f, 2f);
         gem(w, 2, 0.7f, 160.5f); gem(w, -2, 0.7f, 164.5f); gem(w, 1, 0.7f, 168.5f); gem(w, -1, 0.7f, 172.5f); gem(w, 2, 0.7f, 176.5f);
         // zig-zag sopra il vuoto, come nel livello di prima ma più stretto, con corvi e lumache sul ciglio
         pit(w, 184, 192, 2, 4); pit(w, 195, 203, 0, 2); pit(w, 206, 214, 0, 0); pit(w, 206, 214, 4, 4); pit(w, 217, 225, 0, 4);
         for (int z = 217; z <= 225; z++) set(w, 2, z, 0);
         gemLine(w, -2, 185, 191); gemLine(w, 2, 196, 202); gemLine(w, 0, 207, 213); gemLine(w, 2, 218, 224);
-        crow(w, 0, 188, true, 184f, 192f, 2.3f); crow(w, 2, 199, true, 195f, 203f, 2.3f); snail(w, 2, 210, 206, 214); mole(w, 2, 228);
+        crow(w, 0, 188, true, 184f, 192f, 2.3f); crow(w, 2, 199, true, 195f, 203f, 2.3f); snail(w, 2, 210, 206, 214);
         // fattoria di casse: sei casse piene di gemme, ognuna con un guardiano
         for (int x = 0; x < W; x += 2) { crate(w, x, 236); crate(w, x, 240); }
-        snail(w, 1, 238, 233, 243); mole(w, 1, 244); mole(w, 3, 246); hog(w, 2, 249, false, -2f, 2f);
+        snail(w, 1, 238, 233, 243); hog(w, 2, 249, false, -2f, 2f);
         // gli ultimi tre burroni, a distanza di due caselle: serve ritmo, e al terzo aspetta una talpa
-        pit(w, 256, 258, 0, 4); pit(w, 262, 264, 0, 4); pit(w, 268, 270, 0, 4); mole(w, 2, 272); arc(w, 0, 256, 258); arc(w, 0, 262, 264); arc(w, 0, 268, 270);
+        pit(w, 256, 258, 0, 4); pit(w, 262, 264, 0, 4); pit(w, 268, 270, 0, 4); arc(w, 0, 256, 258); arc(w, 0, 262, 264); arc(w, 0, 268, 270);
         // prato finale: lumache a ritroso e una barriera di pietra con le talpe dietro
         snail(w, 0, 276, 273, 281); snail(w, 4, 280, 273, 283);
-        stones(w, 285, new int[] {1, 1, 1, 0, 1}); mole(w, 3, 287); stones(w, 289, new int[] {1, 0, 1, 1, 1}); mole(w, 1, 291);
+        stones(w, 285, new int[] {1, 1, 1, 0, 1}); stones(w, 289, new int[] {1, 0, 1, 1, 1});
         gemLine(w, 0, 292, 295);
         w.flagZ = 296;
     }
@@ -386,9 +386,7 @@ public final class Levels3B {
 
     private static void whirl(World3D w, float x, float z, boolean alongZ, float lo, float hi) { add(w, Enemy3.WHIRL, x, z, alongZ, lo, hi, 0); }
 
-    private static void mole(World3D w, int col, int z) { mole(w, col, z, 0f); }
 
-    private static void mole(World3D w, int col, int z, float y) { Enemy3 e = add(w, Enemy3.MOLE, cx(col), z + 0.5f, false, cx(col), cx(col), y); e.t = (z * 0.37f) % 3f; }
 
     private static void snail(World3D w, int col, int z, int z0, int z1) { snail(w, col, z, z0, z1, 0f); }
 

@@ -36,15 +36,15 @@ public final class LevelsB {
         // prato d'ingresso: la prima lumaca insegna che saltarle sopra la chiude solo nel guscio
         b.sh(6, 9, 4); b.row(10, 6, "B?B"); b.en(18, Enemy.SNAIL); b.sh(22, 7, 3); b.en(30, Enemy.BEETLE); b.en(36, Enemy.SNAIL, 32, 39);
         // primo burrone, corto: dall'altra parte una talpa sbuca proprio dove si atterra di slancio
-        b.arc(41, 4); b.en(47, Enemy.MOLE);
+        b.arc(41, 4);
         // il campo delle talpe: tre tane sotto una fila di casse; le gemme a terra stanno tra una tana e l'altra
-        b.row(52, 6, "?B?B?"); b.en(52, Enemy.MOLE); b.en(56, Enemy.MOLE); b.sh(54, 9, 1); b.sh(58, 9, 2);
+        b.row(52, 6, "?B?B?"); b.sh(54, 9, 1); b.sh(58, 9, 2);
         b.hill(62, 72, 3); b.en(67, Enemy.BEETLE); b.sh(65, 5, 4); b.en(76, Enemy.SNAIL, 73, 79);
         // burrone largo sei con un solo masso sospeso come appiglio: sopra vola un corvo
         b.plat(83, 8, 1); b.gem(83, 6); b.crow(84, 4.5f, 80, 88);
         // altopiano e galleria: sopra una lumaca su un passaggio stretto, sotto due talpe a guardia delle gemme
         b.up(89, 3); b.plat(94, 6, 18); b.down(113, 3); b.en(100, 5, Enemy.SNAIL, 95, 110); b.row(101, 2, "B?B"); b.sh(96, 4, 3); b.sh(106, 4, 3);
-        b.sh(95, 9, 16); b.en(98, Enemy.MOLE); b.en(106, Enemy.MOLE); b.en(120, Enemy.HOG); b.sh(123, 9, 3);
+        b.sh(95, 9, 16); b.en(120, Enemy.HOG); b.sh(123, 9, 3);
         // burrone di cinque e bosco di colonne: tra una colonna e l'altra un riccio, quindi si resta in alto
         b.arc(131, 5);
         b.col(140, 2); b.col(145, 3); b.col(150, 4); b.col(155, 3); b.col(160, 2);
@@ -52,28 +52,28 @@ public final class LevelsB {
         b.gem(140, 6); b.gem(145, 5); b.gem(150, 4); b.gem(155, 5); b.gem(160, 6); b.crow(150, 2.4f, 141, 160);
         b.row(167, 6, "B?B"); b.en(172, Enemy.SNAIL, 164, 179); b.en(177, Enemy.BEETLE);
         // isolotto tra due burroni: la talpa obbliga a scegliere il momento del salto
-        b.en(185, Enemy.MOLE); b.gem(182, 6); b.gem(189, 6);
+        b.gem(182, 6); b.gem(189, 6);
         // il recinto: due lumache e uno scarabeo chiusi tra due colonne; in mezzo le casse e il mattone segreto
         b.sh(193, 9, 3); b.col(199, 2); b.col(216, 2); b.en(203, Enemy.SNAIL, 200, 215); b.en(211, Enemy.SNAIL, 200, 215); b.en(207, Enemy.BEETLE);
-        b.row(204, 6, "B?H?B"); b.sh(205, 4, 3); b.hill(222, 232, 2); b.en(227, Enemy.ACORN); b.en(236, Enemy.MOLE);
+        b.row(204, 6, "B?H?B"); b.sh(205, 4, 3); b.hill(222, 232, 2); b.en(227, Enemy.ACORN);
         // burrone di sette con una mensola a metà: una talpa ci abita
-        b.plat(243, 9, 3); b.en(244, 8, Enemy.MOLE, 0, 0); b.gem(241, 6); b.gem(246, 6);
+        b.plat(243, 9, 3); b.gem(241, 6); b.gem(246, 6);
         // tre dossi: in cima le ghiande, nelle conche (dove si atterra) le talpe
         b.hill(250, 258, 3); b.hill(263, 271, 4); b.hill(276, 284, 3); b.en(254, Enemy.ACORN); b.en(267, Enemy.ACORN); b.en(280, Enemy.ACORN);
-        b.en(260, Enemy.MOLE); b.en(273, Enemy.MOLE); b.sh(252, 5, 5); b.sh(265, 4, 5); b.sh(278, 5, 5); b.row(290, 6, "?B?"); b.en(294, Enemy.SNAIL, 287, 299);
+        b.sh(252, 5, 5); b.sh(265, 4, 5); b.sh(278, 5, 5); b.row(290, 6, "?B?"); b.en(294, Enemy.SNAIL, 287, 299);
         // burrone di sei, poi la piramide: la cella energetica è sulle casse più alte, sorvegliate da un corvo
         b.arc(301, 5);
         b.up(312, 5); b.down(318, 5); b.plat(317, 5, 1); b.row(316, 1, "B?B"); lvBattery(b, 317, 3.6f); b.crow(317, 2.2f, 309, 326);
-        b.en(309, Enemy.HOG, 307, 311); b.en(326, Enemy.MOLE); b.sh(328, 9, 4); b.en(336, Enemy.SNAIL, 330, 345); b.en(342, Enemy.BEETLE);
-        b.row(338, 6, "B?B"); b.col(348, 2); b.col(352, 3); b.en(356, Enemy.MOLE); b.gem(348, 6); b.gem(352, 5);
+        b.en(309, Enemy.HOG, 307, 311); b.sh(328, 9, 4); b.en(336, Enemy.SNAIL, 330, 345); b.en(342, Enemy.BEETLE);
+        b.row(338, 6, "B?B"); b.col(348, 2); b.col(352, 3); b.gem(348, 6); b.gem(352, 5);
         // due burroni e un isolotto stretto, con un corvo che fa la spola
         b.crow(368, 5f, 362, 375); b.gem(368, 7); b.gem(364.5f, 6); b.gem(371.5f, 6);
         // l'ultima corsa: talpa, lumaca, riccio, talpa, separati da muretti da scavalcare
-        b.en(378, Enemy.MOLE); b.col(382, 2); b.en(386, Enemy.SNAIL, 383, 391); b.col(392, 2); b.en(397, Enemy.HOG, 393, 401); b.col(402, 3);
-        b.en(406, Enemy.MOLE); b.en(410, Enemy.MOLE); b.sh(385, 9, 5); b.sh(395, 6, 3); b.sh(404, 6, 6); b.row(415, 6, "B?B?B"); b.en(420, Enemy.SNAIL, 413, 429);
+        b.col(382, 2); b.en(386, Enemy.SNAIL, 383, 391); b.col(392, 2); b.en(397, Enemy.HOG, 393, 401); b.col(402, 3);
+        b.sh(385, 9, 5); b.sh(395, 6, 3); b.sh(404, 6, 6); b.row(415, 6, "B?B?B"); b.en(420, Enemy.SNAIL, 413, 429);
         b.en(425, Enemy.ACORN);
         // ultimo burrone: sei caselle, una talpa sull'altra sponda
-        b.arc(431, 5); b.en(439, Enemy.MOLE);
+        b.arc(431, 5);
         b.sh(444, 9, 5); b.row(452, 6, "B?B"); b.en(458, Enemy.SNAIL, 450, 468); b.en(464, Enemy.BEETLE);
         b.lv.flagX = 478; b.lv.flagBaseY = G;
         return b.lv;

@@ -598,14 +598,6 @@ public final class World3D {
         float dxp = px - e.x, dzp = pz - e.z;
         float floorY = Float.isNaN(e.floor) ? e.y : e.floor;
         switch (e.type) {
-            case Enemy3.MOLE: {                                // sotto terra 1,5 s, trema 0,4 s, esce 1,2 s
-                float c = e.t % 3.4f;
-                e.mode = c < 1.5f ? 0 : c < 1.9f ? 1 : 2;
-                if (Float.isNaN(e.floor)) e.floor = e.y;
-                if (e.mode != 2) return true;
-                touch(e, true);
-                return true;
-            }
             case Enemy3.CHESTNUT: {                            // pende immobile, trema quando si passa sotto, cade e rotola
                 if (Float.isNaN(e.floor)) { e.floor = Math.max(0, topAt(e.x, e.z)); e.y0 = e.y; }
                 if (e.mode == 0) {

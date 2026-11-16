@@ -6,7 +6,7 @@ package com.valeriodipaolo.platformgame.core3d;
  */
 public final class Enemy3 {
     public static final int BEETLE = 0, HOG = 1, CROW = 2, ACORN = 3, STORM = 4, WHIRL = 5,
-            MOLE = 6, SNAIL = 7, CHESTNUT = 8, OWL = 9, PENGUIN = 10, SNOWMAN = 11, LAPILLO = 12, SALAMANDER = 13, FROG = 14, PLANT = 15, STAR = 16, SUNNY = 17;
+            MOLE = 6 /* non più usato */, SNAIL = 7, CHESTNUT = 8, OWL = 9, PENGUIN = 10, SNOWMAN = 11, LAPILLO = 12, SALAMANDER = 13, FROG = 14, PLANT = 15, STAR = 16, SUNNY = 17;
     public int type;
     /** Quota di partenza (ghianda) o quota media del volo (corvo). */
     public float baseY, hopT;

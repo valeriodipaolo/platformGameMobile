@@ -10,8 +10,7 @@ import com.valeriodipaolo.platformgame.core.Img;
 final class FoeModels2 {
     private static float[] rgb(int r, int g, int b) { return FoeModels.rgb(r, g, b); }
 
-    private Mesh[] moleFur;
-    private Mesh moleEyes, moleBits, mound, snailBody, snailShell, snailEyes, chestBody, chestEyes, owlBody, owlWing, owlEyes,
+    private Mesh snailBody, snailShell, snailEyes, chestBody, chestEyes, owlBody, owlWing, owlEyes,
             pengBody, pengBelly, pengBits, pengWing, snowBody, snowBits, snowball, lapBody, lapEyes, salaBody, salaEyes, flame,
             frogBody, frogEyes, frogLeg, plantStem, plantHead, plantJaw, plantEyes, starBody, sunBody, sunRay, sunEyes;
     private final float[] a = new float[16], b2 = new float[16];
@@ -22,124 +21,6 @@ final class FoeModels2 {
         return m;
     }
 
-
-    // ---- talpa: forma tonda e piena come nella foto di riferimento; le texture sono ritagli della foto (tools/gen_mole.py)
-    private static final float PC = (float) Math.cos(0.45f), PS = (float) Math.sin(0.45f);
-    private static final float MCY = 0.42f, MRX = 0.46f, MRY = 0.37f, MRZ = 0.43f;
-    /** Dove cade il naso sul davanti (in frazioni dei raggi): la foto è presa leggermente di lato. */
-    private static final float NOSE_X = 0.36f, NOSE_Y = 0.07f;
-
-    /** Punto della superficie della talpa: lon 0 = davanti (+z), lat = quota. Sul davanti il muso sporge, con il naso in punta. */
-    private static void molePoint(float lon, float lat, float[] o) {
-        float cl = (float) Math.cos(lat), x = cl * (float) Math.sin(lon), y = (float) Math.sin(lat), z = cl * (float) Math.cos(lon);
-        float bump = 0f;
-        if (z > 0) {
-            float dx = x - NOSE_X, dy = y - NOSE_Y, d2 = dx * dx + dy * dy;
-            bump = (0.13f * (float) Math.exp(-d2 / 0.09f) + 0.045f * (float) Math.exp(-d2 / 0.012f)) * FoeModels.sm(z * 2.5f);
-        }
-        float flat = y < -0.55f ? 1f - 0.5f * FoeModels.sm((-0.55f - y) / 0.45f) : 1f;          // pancia appoggiata
-        o[0] = x * MRX; o[1] = MCY + y * MRY * (y < 0 ? flat : 1f); o[2] = z * MRZ + bump;
-    }
-
-    /** Metà della pelle della talpa (davanti o dietro), gonfiata di off lungo la normale. Davanti la foto è proiettata dritta, dietro il pelo si ripete. */
-    private static Mesh moleSkin(boolean front, float off, int tex, float lum, boolean cut) {
-        MeshBuilder b = new MeshBuilder();
-        b.colorf(lum, lum, lum);
-        int nu = 22, nv = 20;
-        float[][][] P = new float[nu + 1][nv + 1][], Nn = new float[nu + 1][nv + 1][];
-        float[] p0 = new float[3], p1 = new float[3], p2 = new float[3], p3 = new float[3];
-        float e = 0.02f, lon0 = front ? -1.5708f : 1.5708f;
-        for (int i = 0; i <= nu; i++) for (int j = 0; j <= nv; j++) {
-            float lon = lon0 + 3.14159f * i / nu, lat = -1.5708f + 3.14159f * j / nv;
-            float[] p = new float[5];
-            molePoint(lon, lat, p);
-            molePoint(lon - e, lat, p0); molePoint(lon + e, lat, p1);
-            molePoint(lon, Math.max(lat - e, -1.57f), p2); molePoint(lon, Math.min(lat + e, 1.57f), p3);
-            float ax = p1[0] - p0[0], ay = p1[1] - p0[1], az = p1[2] - p0[2], bx = p3[0] - p2[0], by = p3[1] - p2[1], bz = p3[2] - p2[2];
-            float nx = bz * ay - by * az, ny = bx * az - bz * ax, nz = by * ax - bx * ay, nl = (float) Math.sqrt(nx * nx + ny * ny + nz * nz);
-            if (nl < 1e-6f || j == 0 || j == nv) { nx = 0; ny = j == 0 ? -1 : 1; nz = 0; nl = 1; }
-            nx /= nl; ny /= nl; nz /= nl;
-            // texture aperta sulla mezza sfera: centro = davanti (o dietro), raggio = angolo. Davanti è la foto, dietro il pelo ripetuto due volte
-            float cl = (float) Math.cos(lat), ux = cl * (float) Math.sin(lon), uy = (float) Math.sin(lat), uz = cl * (float) Math.cos(lon);
-            if (!front) { ux = -ux; uz = -uz; }
-            float th = (float) Math.acos(Math.max(-1f, Math.min(1f, uz))), sn = (float) Math.sin(th), r = th / 1.5708f, rep = front ? 1f : 2f;
-            p[3] = rep * (0.5f + (sn < 1e-4f ? 0f : 0.5f * r * ux / sn));
-            p[4] = rep * (0.5f - (sn < 1e-4f ? 0f : 0.5f * r * uy / sn));
-            // la talpa esce dal buco con il muso all'insù: tutto il corpo è inclinato all'indietro attorno al suo centro
-            float py = p[1] - MCY, pz = p[2];
-            p[1] = MCY + py * PC - pz * -PS; p[2] = pz * PC + py * -PS;
-            float qy = ny, qz = nz;
-            ny = qy * PC + qz * PS; nz = qz * PC - qy * PS;
-            p[0] += nx * off; p[1] += ny * off; p[2] += nz * off;
-            P[i][j] = p; Nn[i][j] = new float[] {nx, ny, nz};
-        }
-        for (int i = 0; i < nu; i++) for (int j = 0; j < nv; j++) {
-            int[][] q = {{i, j}, {i + 1, j}, {i + 1, j + 1}, {i, j}, {i + 1, j + 1}, {i, j + 1}};
-            for (int[] k : q) {
-                float[] p = P[k[0]][k[1]], n = Nn[k[0]][k[1]];
-                b.vert(p[0], p[1], p[2], n[0], n[1], n[2], p[3], p[4]);
-            }
-        }
-        Mesh m = b.build(tex, false, true);
-        m.spec = 0.04f; m.shine = 10f; m.cutout = cut;
-        return m;
-    }
-
-    /** Mano a pala dalla foto: un cartoncino scontornato, in tre fogli ravvicinati per dargli spessore, appoggiato sul bordo del cumulo. */
-    private static Mesh moleHand(int sd) {
-        MeshBuilder b = new MeshBuilder();
-        b.colorf(0.25f, 0.215f, 0.21f);
-        float cx = sd * 0.41f, cy = 0.35f, cz = 0.31f, hw = 0.23f, hh = 0.23f;
-        float yaw = sd * 0.32f, tilt = 0.45f;                                // aperta verso l'esterno, il polso affondato nel pelo del fianco
-        float cyw = (float) Math.cos(yaw), syw = (float) Math.sin(yaw), ct = (float) Math.cos(tilt), st = (float) Math.sin(tilt);
-        float rx = cyw, rz = -syw;                                           // destra del cartoncino
-        float ux = syw * st, uy = ct, uz = cyw * st * -1f;                   // su del cartoncino (in basso sporge in avanti)
-        float nx = 0f, ny = 0.6f, nz = 0.8f;                                 // stessa luce per le due mani
-        for (int k = 0; k < 3; k++) {
-            float o = (k - 1) * 0.012f, px = cx + nx * o, py = cy + ny * o, pz = cz + nz * o;
-            float[][] q = {{-1, -1}, {1, -1}, {1, 1}, {-1, -1}, {1, 1}, {-1, 1}};
-            for (float[] c : q)
-                b.vert(px + rx * c[0] * hw + ux * c[1] * hh, py + uy * c[1] * hh, pz + rz * c[0] * hw + uz * c[1] * hh, nx, ny, nz, 0.5f + 0.5f * c[0], 0.5f - 0.5f * c[1]);
-        }
-        Mesh m = b.build(sd < 0 ? Img.MOLE_HAND_L : Img.MOLE_HAND_R, false, true);
-        m.spec = 0.04f; m.shine = 16f; m.cutout = true;
-        return m;
-    }
-
-    private void buildMole() {
-        MeshBuilder b = new MeshBuilder();
-        // cumulo di terra smossa attorno al buco
-        FoeModels.Paint dirt = FoeModels.ud(rgb(64, 46, 32), rgb(118, 90, 64));
-        FoeModels.ballY(b, 0, 0.02f, 0, 0.70f, 0.2f, 0.70f, 20, 8, dirt, 3f, 3f);
-        for (int i = 0; i < 11; i++) {
-            float an = i * 0.62f + 0.4f * (float) Math.sin(i * 2.3f), rr = 0.56f + 0.08f * (float) Math.sin(i * 1.7f);
-            float lr = 0.09f + 0.05f * (0.5f + 0.5f * (float) Math.sin(i * 3.1f));
-            FoeModels.ballY(b, (float) Math.cos(an) * rr, 0.09f, (float) Math.sin(an) * rr, lr, lr * 0.7f, lr, 8, 5, dirt, 1f, 1f);
-        }
-        FoeModels.ball(b, 0, 0.17f, 0, 0.40f, 0.03f, 0.40f, rgb(12, 9, 7));
-        mound = fin2(b, Img.R3_DIRT, 0.05f, 6f);
-
-        int L = Img.MOLE_LAYERS;
-        moleFur = new Mesh[2 * (L + 1) + 2];
-        int n = 0;
-        float lum = 0.46f;                                  // le texture sono foto (già scure): si attenuano per non bruciarle sotto il sole del gioco
-        moleFur[n++] = moleSkin(true, 0f, Img.MOLE_FRONT, lum, false);
-        moleFur[n++] = moleSkin(false, 0f, Img.MOLE_FUR, lum, false);
-        for (int k = 0; k < L; k++) {
-            float off = (k + 1) * 0.0055f;
-            moleFur[n++] = moleSkin(true, off, Img.MOLE_SHELL + k, lum, true);
-            moleFur[n++] = moleSkin(false, off, Img.MOLE_BSHELL + k, lum, true);
-        }
-        moleFur[n++] = moleHand(-1);
-        moleFur[n] = moleHand(1);
-    }
-
-    /** Raggi di una sezione gonfiati di off (non dove la forma si chiude a punta). */
-    private static float[] swell(float[] r, float off) {
-        float[] o = new float[r.length];
-        for (int i = 0; i < r.length; i++) o[i] = r[i] + off * Math.min(1f, r[i] / 0.08f);
-        return o;
-    }
 
     private static Mesh fin2(MeshBuilder b, int tex, float spec, float shine) {
         Mesh m = b.build(tex, false, true);
@@ -163,7 +44,6 @@ final class FoeModels2 {
 
     FoeModels2() {
         MeshBuilder b = new MeshBuilder();
-        buildMole();
 
         // lumaca: corpo lungo e chiaro con le antenne, guscio a spirale arancio
         b = new MeshBuilder();
@@ -309,15 +189,6 @@ final class FoeModels2 {
     void draw(Gfx3D g, float[] m, Enemy3 e) {
         float an = e.anim;
         switch (e.type) {
-            case Enemy3.MOLE: {
-                g.draw(mound, m, 1, 1, 1, 1, 0);
-                if (e.mode == 0) return;
-                float up = e.mode == 1 ? 0.25f + 0.05f * (float) Math.sin(an * 50f) : 1f;
-                System.arraycopy(m, 0, a, 0, 16);
-                Mat4.translate(a, 0, -0.5f + 0.5f * up, 0);
-                for (Mesh fm : moleFur) g.draw(fm, a, 1, 1, 1, 1, 0);
-                return;
-            }
             case Enemy3.SNAIL: {
                 boolean shell = e.mode == 1;
                 System.arraycopy(m, 0, a, 0, 16);

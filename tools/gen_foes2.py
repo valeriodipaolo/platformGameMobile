@@ -261,6 +261,6 @@ def sunny():
 
 
 if __name__ == "__main__":
-    for f in (mole, snail, chestnut, owl, penguin, snowman, lapillo, salamander, frog, plant, star, sunny):
+    for f in (snail, chestnut, owl, penguin, snowman, lapillo, salamander, frog, plant, star, sunny):
         f()
     print("ok")

@@ -545,9 +545,9 @@ public final class Game {
     /** Proiettili in volo: {x, y, vx, vy}. */
     public final List<float[]> shots = new ArrayList<float[]>();
 
-    /** Non fa male in questo momento: talpa sottoterra, lapillo dentro la lava. */
+    /** Non fa male in questo momento: lapillo dentro la lava. */
     private static boolean harmless(Enemy e) {
-        return (e.type == Enemy.MOLE && e.mode != 2) || (e.type == Enemy.LAPILLO && e.mode == 0);
+        return e.type == Enemy.LAPILLO && e.mode == 0;
     }
 
     private static boolean stompable(Enemy e) {
@@ -587,11 +587,6 @@ public final class Game {
         e.anim += dt;
         e.t += dt;
         switch (e.type) {
-            case Enemy.MOLE: {                               // sottoterra, poi la terra trema, poi sbuca
-                float c = e.t % 3.4f;
-                e.mode = c < 1.5f ? 0 : c < 1.9f ? 1 : c < 3.1f ? 2 : 0;
-                break;
-            }
             case Enemy.SNAIL:
                 if (e.mode == 1) {                           // chiusa nel guscio: ferma e innocua, poi riesce (il cronometro qui scende)
                     e.t -= 2 * dt;

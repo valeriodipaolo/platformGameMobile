@@ -10,7 +10,7 @@ public class FoeShot2 {
         String res = a[0], out = a[1];
         for (int i = 0; i < Img.COUNT; i++) Preview.imgs[i] = ImageIO.read(new File(res, Img.NAMES[i] + ".png"));
         int zz = a.length > 3 ? 2 : 1, cw = 420 * zz, ch = 380 * zz, cols = 6;
-        int[] ids = a.length > 2 ? java.util.Arrays.stream(a[2].split(",")).mapToInt(Integer::parseInt).toArray() : new int[] {6,7,8,9,10,11,12,13,14,15,16,17};
+        int[] ids = a.length > 2 ? java.util.Arrays.stream(a[2].split(",")).mapToInt(Integer::parseInt).toArray() : new int[] {7,8,9,10,11,12,13,14,15,16,17};
         BufferedImage sheet = new BufferedImage(cw * cols, ch * ((ids.length * 2 + cols - 1) / cols), BufferedImage.TYPE_INT_RGB);
         FoeModels fm = new FoeModels();
         MeshBuilder gb = new MeshBuilder().color(150, 170, 120);
