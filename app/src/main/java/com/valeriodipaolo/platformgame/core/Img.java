@@ -57,7 +57,11 @@ public final class Img {
     public static final int FX_MOLE = 221, FX_MOUND = 222, FX_SNAIL = 223, FX_SHELL = 224, FX_CHESTNUT = 225, FX_OWL_0 = 226, FX_OWL_1 = 227, FX_PENGUIN = 228, FX_SNOWMAN = 229, FX_SNOWBALL = 230, FX_LAPILLO = 231, FX_SALA = 232, FX_SALA_B = 233, FX_BREATH = 234, FX_FROG = 235, FX_FROG_J = 236, FX_PLANT = 237, FX_PLANT_O = 238, FX_STAR = 239, FX_SUNNY = 240, FX_CATAPULT = 241, FX_CATAPULT_B = 242;
     public static final int FOE_SKIN = 243, FOE_SCALE = 244, FOE_SHELL = 245, FOE_SNOW = 246, FOE_DOWN = 247, FOE_EMBER = 248, FOE_PLASMA = 249, FOE_PETAL = 250, FOE_MAHOGANY = 251;
     public static final int HERO_METAL = 252, HERO_LEATHER = 253;
-    public static final int COUNT = 254;
+    /** Pelo a strati: sei sezioni dalla radice (FUR_SHELL) alla punta (FUR_SHELL + 5). */
+    public static final int FUR_SHELL = 254, FUR_LAYERS = 6;
+    /** Talpa dalla foto: corpo da davanti, pelo ripetibile, mani, e cinque sezioni di pelo a strati (MOLE_SHELL..+4). */
+    public static final int MOLE_FRONT = 260, MOLE_FUR = 261, MOLE_HAND_L = 262, MOLE_HAND_R = 263, MOLE_SHELL = 264, MOLE_BSHELL = 269, MOLE_LAYERS = 5;
+    public static final int COUNT = 274;
 
     public static final String[] NAMES = {
         "bg_sky", "bg_mountains", "bg_hills",
@@ -95,6 +99,9 @@ public final class Img {
         "r3h_cloud", "r3h_body", "r3h_sea", "r3h_marble", "r3h_sky", "r3h_mountains", "r3h_spring", "hv_storm", "hv_storm_c", "hv_whirl", "hv_whirl_b", "hv_bolt", "hv_sun", "hv_pad",
         "fx_mole", "fx_mound", "fx_snail", "fx_shell", "fx_chestnut", "fx_owl_0", "fx_owl_1", "fx_penguin", "fx_snowman", "fx_snowball", "fx_lapillo", "fx_sala", "fx_sala_b", "fx_breath", "fx_frog", "fx_frog_j", "fx_plant", "fx_plant_o", "fx_star", "fx_sunny", "fx_catapult", "fx_catapult_b",
         "foe_skin", "foe_scale", "foe_shell", "foe_snow", "foe_down", "foe_ember", "foe_plasma", "foe_petal", "foe_mahogany",
-        "hero_metal", "hero_leather"
+        "hero_metal", "hero_leather",
+        "fur_shell_0", "fur_shell_1", "fur_shell_2", "fur_shell_3", "fur_shell_4", "fur_shell_5",
+        "mole_front", "mole_fur", "mole_hand_l", "mole_hand_r", "mole_shell_0", "mole_shell_1", "mole_shell_2", "mole_shell_3", "mole_shell_4",
+        "mole_bshell_0", "mole_bshell_1", "mole_bshell_2", "mole_bshell_3", "mole_bshell_4"
     };
 }
