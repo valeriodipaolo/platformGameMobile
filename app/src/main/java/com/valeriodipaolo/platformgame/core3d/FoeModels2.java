@@ -26,45 +26,56 @@ final class FoeModels2 {
     /** Lumaca di giardino: piede lungo, umido e rugoso con coda a punta, testa che si alza e quattro tentacoli, guscio a spirale rigato. */
     private void buildSnail() {
         final float PI = (float) Math.PI;
-        final float[] skinD = rgb(104, 90, 70), skinL = rgb(196, 176, 140);
+        final float[] skinD = rgb(176, 160, 136), skinL = rgb(230, 220, 202);
         MeshBuilder b = new MeshBuilder();
-        float[][] c = {{0, .03f, -.54f}, {0, .09f, -.44f}, {0, .14f, -.27f}, {0, .17f, -.05f}, {0, .18f, .15f}, {0, .18f, .30f}, {0, .21f, .41f}, {0, .27f, .47f}, {0, .30f, .515f}};
-        float[] rx = {0, .06f, .15f, .21f, .22f, .20f, .16f, .12f, 0}, ry = {0, .07f, .14f, .19f, .20f, .20f, .19f, .16f, 0};
-        FoeModels.loft(b, c, rx, ry, 0, 1, 0, 20, 0.8f, FoeModels.ud(skinL, skinD), 2f, 4f);
-        FoeModels.Paint tent = FoeModels.along(skinD, rgb(146, 126, 98));
+        // corpo chiaro con collo sollevato e testa piccola (lumaca di vigna)
+        float[][] c = {{0, .02f, -.60f}, {0, .07f, -.48f}, {0, .12f, -.30f}, {0, .16f, -.08f}, {0, .17f, .12f}, {0, .20f, .30f}, {0, .27f, .46f}, {0, .36f, .58f}, {0, .42f, .66f}};
+        float[] rx = {0, .05f, .13f, .19f, .20f, .17f, .13f, .11f, 0}, ry = {0, .06f, .12f, .17f, .17f, .15f, .12f, .11f, 0};
+        // pelle a rete di piccole creste, senza peluria
+        FoeModels.loft(b, c, rx, ry, 0, 1, 0, 22, 0.8f, new FoeModels.Paint() {
+            @Override void col(float t, float an, float x, float y, float z, float[] o) {
+                float u = (float) Math.sin(t * 74f + an * 6f), v = (float) Math.sin(t * 74f - an * 6f);
+                FoeModels.mix(skinD, skinL, FoeModels.sm(Math.abs(u * v) * 5f), o);
+                float sh = 0.86f + 0.14f * (float) Math.sin(an + 1.57f);
+                for (int k = 0; k < 3; k++) o[k] *= sh;
+            }
+        }, 2f, 4f);
+        FoeModels.Paint tent = FoeModels.along(rgb(150, 136, 116), rgb(226, 216, 198));
         for (int sd = -1; sd <= 1; sd += 2) {
-            FoeModels.tube(b, new float[][] {{sd * .045f, .27f, .48f}, {sd * .075f, .40f, .54f}, {sd * .095f, .52f, .60f}}, new float[] {.02f, .015f, .011f}, 8, tent);
-            FoeModels.tube(b, sd * .07f, .21f, .52f, sd * .115f, .27f, .66f, .014f, .007f, 6, tent);
+            // tentacoli superiori lunghi con l'occhio in punta, inferiori corti
+            FoeModels.tube(b, new float[][] {{sd * .05f, .47f, .62f}, {sd * .08f, .62f, .70f}, {sd * .105f, .80f, .84f}}, new float[] {.016f, .011f, .008f}, 8, tent);
+            FoeModels.tube(b, sd * .06f, .38f, .68f, sd * .10f, .43f, .84f, .012f, .006f, 6, tent);
         }
-        snailBody = fin2(b, Img.FOE_SKIN, 0.55f, 30f);
+        snailBody = fin2(b, -1, 0.5f, 26f);
 
         b = new MeshBuilder();
         int n = 64;
         float[][] sc = new float[n][3];
         float[] sr = new float[n];
-        float thMax = 2.4f * PI, g = 0.17f, rho0 = 0.068f;
+        float thMax = 2.2f * PI, g = 0.24f, rho0 = 0.07f;
         for (int i = 0; i < n; i++) {
             float th = thMax * i / (n - 1);
-            float rho = rho0 * (float) Math.exp(g * th), R = rho * 1.3f;
-            float phi = -0.35f * PI - (thMax - th);   // la bocca (giro più grande) sta davanti, sul collo
-            sc[i] = new float[] {0, 0.46f + R * (float) Math.sin(phi) * 0.9f, -0.02f + R * (float) Math.cos(phi)};
+            float rho = rho0 * (float) Math.exp(g * th), R = rho * 0.6f;
+            float phi = -0.55f * PI - (thMax - th);   // la bocca (giro più grande) sta davanti, sul collo
+            sc[i] = new float[] {0, 0.50f + R * (float) Math.sin(phi) * 0.9f, -0.06f + R * (float) Math.cos(phi)};
             sr[i] = rho;
             int k = i - (n - 7);   // chiusura arrotondata della bocca: niente taglio netto
-            if (k > 0) sr[i] = rho * (float) Math.sqrt(Math.max(0f, 1f - (k / 6f) * (k / 6f)));
+            if (k > 0) sr[i] = rho * (1f - 0.55f * (k / 6f) * (k / 6f));
         }
-        final float[] car = rgb(168, 108, 52), cre = rgb(226, 198, 146), drk = rgb(70, 40, 22);
+        final float[] car = rgb(158, 90, 42), cre = rgb(212, 166, 100), drk = rgb(74, 40, 20), lip = rgb(238, 228, 200);
         FoeModels.loft(b, sc, sr, sr, 1, 0, 0, 22, 1f, new FoeModels.Paint() {
             @Override void col(float t, float an, float x, float y, float z, float[] o) {
-                float sn = (float) Math.sin(an * 3f + 0.7f);
-                FoeModels.mix(car, cre, FoeModels.sm(sn * 2.2f + 0.4f), o);
-                if (sn < -0.8f) FoeModels.mix(o, drk, 0.85f, o);
-                for (int k = 0; k < 3; k++) o[k] *= 0.8f + 0.2f * t;
+                float sn = (float) Math.sin(an * 1.0f + 0.7f);
+                FoeModels.mix(car, cre, FoeModels.sm(sn * 1.4f + 0.3f), o);
+                if (sn < -0.85f) FoeModels.mix(o, drk, 0.8f, o);   // fascia scura lungo la spirale
+                float ridge = 0.93f + 0.07f * (float) Math.sin(t * 150f);   // linee di accrescimento
+                for (int k = 0; k < 3; k++) o[k] *= ridge * (0.82f + 0.18f * t);
             }
         }, 3f, 2f);
-        snailShell = fin2(b, Img.FOE_SHELL, 0.75f, 46f);
+        snailShell = fin2(b, Img.FOE_SHELL, 0.7f, 40f);
 
         b = new MeshBuilder();
-        for (int sd = -1; sd <= 1; sd += 2) FoeModels.ball(b, sd * .095f, .525f, .605f, .022f, .022f, .022f, rgb(10, 8, 8));
+        for (int sd = -1; sd <= 1; sd += 2) FoeModels.ball(b, sd * .105f, .81f, .845f, .019f, .019f, .019f, rgb(46, 38, 34));
         snailEyes = fin2(b, -1, 0.9f, 48f);
     }
 
