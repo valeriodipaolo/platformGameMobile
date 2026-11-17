@@ -524,10 +524,10 @@ def gen_chip():
 
 def gen_spinfx():
     cv = Cv(128, 128, 3)
-    for (cy, rx, ry) in [(14, 36, 8), (34, 52, 12), (64, 62, 15), (94, 52, 12), (114, 36, 8)]:
-        ring = cv.ell(64, cy, rx, ry) & ~cv.ell(64, cy, rx - 5.5, ry - 3.8)
-        cv.glow(ring, (150, 215, 255), radius=4, strength=0.75)
-        cv.glow(ring, (235, 247, 255), radius=1.0, strength=1.6)
+    for (cy, rx, ry) in [(30, 50, 11), (64, 58, 14), (98, 50, 11)]:
+        ring = cv.ell(64, cy, rx, ry) & ~cv.ell(64, cy, rx - 6.5, ry - 4.6)
+        cv.glow(ring, (150, 215, 255), radius=3.5, strength=0.9)
+        cv.glow(ring, (235, 247, 255), radius=1.0, strength=1.8)
     save("spin_fx", cv.result())
 
 

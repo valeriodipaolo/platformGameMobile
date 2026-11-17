@@ -278,16 +278,10 @@ public final class Renderer {
             hw *= 0.8f + 0.2f * f2; hh *= 0.8f + 0.2f * f2;
         }
         p.image(img, cx - hw / 2, by - hh, hw, hh, flip, al);
-        if (g.spinning()) {
-            float pul = 1f + 0.1f * (float) Math.sin(g.time * 40f);
-            float k = 2.7f * s * pul, wy = by - 0.7f * s;
-            p.image(Img.SPIN_FX, cx - k / 2, wy - k / 2, k, k, false, 0.9f);                    // colonna di anelli attorno al robot
-            float k2 = 2.1f * s * (2f - pul);
-            p.image(Img.SPIN_FX, cx - k2 / 2, wy - k2 / 2 - 0.1f * s, k2, k2, false, 0.55f);
-            for (int i = 0; i < 2; i++) {                                                        // onda d'urto a terra
-                float u = (g.spinT * 3.2f + i * 0.5f) % 1f, ww = (1.2f + 3.2f * u) * s, hh2 = 0.5f * s;
-                p.image(Img.SPIN_FX, cx - ww / 2, by - hh2 / 2, ww, hh2, false, 0.85f * (1f - u));
-            }
+        if (g.spinning()) {                         // stessa estensione di prima, ma anelli piu' spessi, luminosi e vivi
+            float k = 1.9f * s * (1f + 0.1f * (float) Math.sin(g.time * 45f));
+            p.image(Img.SPIN_FX, cx - k / 2, by - 0.55f * s - k / 2, k, k, false, 1f);
+            p.image(Img.SPIN_FX, cx - k / 2, by - 0.55f * s - k / 2, k, k, false, 0.5f);
         }
         if (g.djTime > 0) {                         // anello sotto i piedi dopo il doppio salto
             float f = g.djTime / 0.3f, w = (2.2f - 1.2f * f) * s, h = 0.55f * s;

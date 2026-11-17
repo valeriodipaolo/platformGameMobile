@@ -1500,24 +1500,15 @@ public final class Scene3D {
             float cz0 = zBase + c * CH;
             if (land[K_RAY][c] != null && cz0 + CH > camZ - 6f && cz0 < camZ + 60f) g.draw(land[K_RAY][c], ident, 1, 1, 1, 0.15f, 1);
         }
-        if (w.spinning()) {
-            float gy = w.py + bumpAt(w.px, w.pz);
-            for (int i = 0; i < 6; i++) {
-                float wob = (float) Math.sin(w.time * 40f + i * 1.7f);
-                float k = (0.7f + 0.2f * (float) Math.sin(i * 1.05f + 0.6f) + 0.05f * i) * (1f + 0.1f * wob);
+        if (w.spinning()) {                             // stessa estensione di prima: anelli piu' fitti, opachi e vivaci
+            for (int i = 0; i < 4; i++) {
+                float wob = (float) Math.sin(w.time * 45f + i * 1.7f);
+                float k = (0.66f + 0.1f * (i == 1 || i == 2 ? 1 : 0)) * (1f + 0.09f * wob);
                 Mat4.setIdentity(m);
-                Mat4.translate(m, w.px, gy + 0.12f + i * 0.3f, w.pz);
-                Mat4.rotateY(m, w.spinAngle * (i % 2 == 0 ? 1f : -1f) * 0.6f);
-                Mat4.rotateX(m, 0.14f * wob);
+                Mat4.translate(m, w.px, w.py + bumpAt(w.px, w.pz) + 0.2f + i * 0.3f, w.pz);
+                Mat4.rotateX(m, 0.1f * wob);
                 Mat4.scale(m, k, 1, k);
-                g.draw(ring, m, 1, 1, 1, 0.9f, 1);
-            }
-            for (int i = 0; i < 2; i++) {                                   // onda d'urto che si allarga a terra
-                float u = (w.spinT * 3.2f + i * 0.5f) % 1f, k = 0.8f + 1.5f * u;
-                Mat4.setIdentity(m);
-                Mat4.translate(m, w.px, gy + 0.04f, w.pz);
-                Mat4.scale(m, k, 1, k);
-                g.draw(ring, m, 1, 1, 1, 0.8f * (1f - u), 1);
+                g.draw(ring, m, 1, 1, 1, 1f, 1);
             }
         }
         if (w.djTime > 0) {

@@ -341,7 +341,7 @@ public final class HeroModel {
         float amp = Math.min(1f, sp / 4.2f), ph = w.runPhase * phK;
         float tLegA, tLegB, tArmA, tArmB, tSpread = 0.16f, tLegSpread = 0f, tTuck = 0f;
         if (spin) {
-            tLegA = 0.15f; tLegB = -0.15f; tArmA = tArmB = 0; tSpread = pick(st, 1.45f, 1.55f, 1.75f); tLegSpread = pick(st, 0f, 0.15f, 0.3f);
+            tLegA = 0.15f; tLegB = -0.15f; tArmA = tArmB = 0; tSpread = 1.45f;
         } else if (air) {
             float up = Math.max(0f, Math.min(1f, (w.vy + 6f) / 12f));          // 1 = in salita, 0 = in caduta
             boolean dj = w.djTime > 0;
