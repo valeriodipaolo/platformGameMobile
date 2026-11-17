@@ -50,7 +50,7 @@ public class Check3 {
                 for (float dx = -hw; dx <= hw && !clip; dx += hw)
                     for (float dz = -hw; dz <= hw; dz += hw) {
                         int h = w.cell((int) Math.floor(e.x + dx + World3D.HALF), (int) Math.floor(e.z + dz));
-                        float feet = e.type == Enemy3.CROW ? e.y - 0.75f : floor;
+                        float feet = e.type == Enemy3.CROW ? e.y - 0.1f : floor;
                         if (h == 99 || (h != World3D.PIT && h > feet + 0.05f)) { clip = true; break; }
                     }
                 int hc = w.cell((int) Math.floor(e.x + World3D.HALF), (int) Math.floor(e.z));

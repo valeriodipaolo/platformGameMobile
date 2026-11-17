@@ -510,7 +510,9 @@ public final class World3D {
                 float gnd = Math.max(0f, Math.max(topAt(e.x, e.z), topAt(Math.max(-HALF, Math.min(HALF, ax)), az)));
                 if (Float.isNaN(e.floor)) e.t = gnd;
                 e.t = gnd > e.t ? gnd : Math.max(gnd, e.t - 4f * dt);        // sale subito, scende gradualmente
-                e.y = e.t + Math.max(1.3f, Math.min(e.baseY, 1.7f)) + 0.45f * (float) Math.sin(e.anim * 3.4f);
+                // sale e scende in picchiata fino all'altezza del robot (e poco sopra la sua testa), poi risale
+                float mid = Math.max(0.95f, Math.min(e.baseY, 1.7f) * 0.65f), amp = mid - 0.15f;
+                e.y = e.t + mid + amp * (float) Math.sin(e.anim * 2.7f);
             } else if (e.type == Enemy3.STORM) {                // la nuvola vaga lenta, poi si ferma, si carica e scaglia un fulmine verso il basso
                 e.hopT += dt;
                 e.y = e.baseY + 0.2f * (float) Math.sin(e.anim * 1.8f);
