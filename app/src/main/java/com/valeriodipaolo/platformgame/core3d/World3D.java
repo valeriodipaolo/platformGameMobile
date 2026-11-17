@@ -536,11 +536,8 @@ public final class World3D {
             float ax = Math.abs(e.x - px), az = Math.abs(e.z - pz);
             boolean vertical = py < e.y + 0.6f && py + PLAYER_H > e.y;
             boolean spinNear = spinActive && ax < 0.75f + SPIN_REACH && az < 0.75f + SPIN_REACH && vertical;
-            if (snail && e.mode == 1) {                 // chiusa nel guscio: la giravolta la lascia senza
-                if (spinNear && e.grace <= 0) { e.mode = 2; e.t = 0; e.grace = 0.6f; score += 100; }
-                continue;
-            }
-            if (spinNear && !(snail && e.mode == 0)) {   // la lumaca col guscio è invulnerabile alla giravolta
+            if (snail && e.mode == 1 && !spinNear) continue;      // chiusa nel guscio è innocua
+            if (spinNear && !(snail && e.mode == 0)) {   // la lumaca col guscio è invulnerabile; chiusa nel guscio la giravolta la uccide
                 if (e.grace > 0) continue;
                 e.flung = true;                       // la giravolta lo fa volare via
                 float l = Math.max(0.01f, (float) Math.sqrt((e.x - px) * (e.x - px) + (e.z - pz) * (e.z - pz)));

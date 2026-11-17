@@ -516,11 +516,9 @@ public final class Game {
             if (harmless(e)) continue;
             boolean snail = e.type == Enemy.SNAIL;
             if (e.grace > 0) e.grace -= dt;
-            // la lumaca col guscio è invulnerabile alla giravolta; chiusa nel guscio la perde, e senza guscio muore a ogni colpo
+            // la lumaca col guscio è invulnerabile alla giravolta; chiusa nel guscio (dopo il salto in testa) la giravolta la uccide
             boolean spinHit = spinActive && spinnable(e) && !(snail && e.mode == 0) && touches(player, e, SPIN_REACH);
-            if (spinHit && snail && e.mode == 1) {
-                if (e.grace <= 0) { e.mode = 2; e.t = 0; e.grace = 0.6f; score += 100; }
-            } else if (spinHit) {                      // la trottola travolge i nemici
+            if (spinHit) {                             // saltata in testa e poi travolta nel guscio: muore con due colpi                      // la trottola travolge i nemici
                 if (e.grace <= 0) {
                     e.flung = true;
                     e.vy = -11f;
