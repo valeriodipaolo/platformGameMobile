@@ -367,10 +367,10 @@ public final class HeroModel {
             if (nu) {
                 // corsa nuova: le gambe si portano soprattutto indietro (poco avanti), le braccia stanno più avanti che dietro con un'ampia oscillazione
                 float gg = (0.18f + 0.82f * amp) * (amp > 0.03f ? 1f : 0f), sn = (float) Math.sin(ph);
-                tLegA = -0.35f * amp + 0.75f * gg * sn;
-                tLegB = -0.35f * amp - 0.75f * gg * sn;
-                tArmA = 0.45f * amp - 0.85f * gg * sn;
-                tArmB = 0.45f * amp + 0.85f * gg * sn;
+                tLegA = -0.12f * amp + 0.72f * gg * sn;
+                tLegB = -0.12f * amp - 0.72f * gg * sn;
+                tArmA = -0.55f * amp - 0.75f * gg * sn;
+                tArmB = -0.55f * amp + 0.75f * gg * sn;
             }
         }
         float k = first ? 1f : Math.min(1f, dt * (st == 2 ? (air || spin ? 28f : 32f) : nu ? (air || spin ? 34f : 40f) : (air || spin ? 16f : 22f)));
@@ -417,7 +417,7 @@ public final class HeroModel {
         float liftB = (!air && !spin) ? Math.max(0f, -(float) Math.cos(ph)) * 0.05f * liftK * amp : 0f;
         limb(g, mb, leg, -0.1f, 0.37f + liftA, 0, -sLegSpread, sLegA);
         limb(g, mb, leg, 0.1f, 0.37f + liftB, 0, sLegSpread, sLegB);
-        float circ = (nu && !air && !spin) ? 0.32f * amp * (float) Math.cos(ph) : 0f;      // il braccio descrive un cerchio: oscillazione e apertura sfasate di un quarto
+        float circ = (nu && !air && !spin) ? 0.10f * amp * (float) Math.cos(ph) : 0f;      // il braccio descrive un cerchio: oscillazione e apertura sfasate di un quarto
         limb(g, mt, arm, -0.275f, 0.79f, 0, -(sSpread - circ), sArmA);
         limb(g, mt, arm, 0.275f, 0.79f, 0, sSpread + circ, sArmB);
     }
