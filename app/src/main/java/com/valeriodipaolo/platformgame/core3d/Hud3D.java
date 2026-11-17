@@ -73,7 +73,7 @@ public final class Hud3D {
                 float sz = 1.1f * s, step = 3.6f * s, y0 = 5.3f * s;
                 int[] icons = {Img.BATTERY, Img.GEM_FULL};
                 boolean[] owned = {w.batteryOwned, w.gemOwned};
-                String[] names = {"Cella", "Gemma " + w.gems + "/" + w.gemTotal};
+                String[] names = {"Chiave", "Gemma " + w.gems + "/" + w.gemTotal};
                 for (int i = 0; i < 2; i++) {
                     float x = sw / 2 + (i - 0.5f) * step;
                     p.image(icons[i], x - sz / 2, y0, sz, sz, false, owned[i] ? 1f : 0.25f);

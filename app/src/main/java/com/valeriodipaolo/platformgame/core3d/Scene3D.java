@@ -1171,14 +1171,24 @@ public final class Scene3D {
         gem = b.build(-1, false, true);
         gem.spec = 0.9f; gem.shine = 60f;
 
-        b = new MeshBuilder().color(62, 68, 80);
-        b.cylinder(0, -0.24f, 0.24f, 0, 0.17f, 0.17f, 12, true, true);
-        b.color(196, 202, 212);
-        b.cylinder(0, 0.24f, 0.31f, 0, 0.08f, 0.08f, 8, true, false);
+        b = new MeshBuilder().color(236, 192, 66);                            // chiave dorata: anello in alto, gambo, due denti
+        for (int i = 0; i < 12; i++) {
+            double an = i * Math.PI * 2 / 12;
+            b.ellipsoid((float) Math.cos(an) * 0.13f, 0.34f + (float) Math.sin(an) * 0.13f, 0, 0.055f, 0.055f, 0.045f, 8, 5);
+        }
+        b.box(0, 0.02f, 0, 0.07f, 0.44f, 0.07f);
+        b.color(252, 214, 92);
+        b.box(0, 0.2f, 0, 0.14f, 0.05f, 0.09f);
+        b.color(236, 192, 66);
+        b.box(0.065f, -0.12f, 0, 0.12f, 0.07f, 0.07f);
+        b.box(0.05f, -0.01f, 0, 0.09f, 0.06f, 0.07f);
         battery = b.build(-1, false, true);
-        battery.spec = 0.55f; battery.shine = 40f;
-        b = new MeshBuilder().color(120, 236, 66);
-        b.cylinder(0, -0.15f, 0.15f, 0, 0.176f, 0.176f, 12, false, false);
+        battery.spec = 0.95f; battery.shine = 60f;
+        b = new MeshBuilder().color(255, 240, 170);
+        for (int i = 0; i < 12; i++) {
+            double an = i * Math.PI * 2 / 12;
+            b.ellipsoid((float) Math.cos(an) * 0.13f, 0.34f + (float) Math.sin(an) * 0.13f, 0, 0.03f, 0.03f, 0.052f, 6, 4);
+        }
         batteryGlow = b.build(-1, false, true);
 
         b = new MeshBuilder();
@@ -1396,7 +1406,9 @@ public final class Scene3D {
         }
 
         Mat4.setIdentity(m);
-        Mat4.translate(m, 0, 0, w.catZ + 0.7f);
+        Mat4.translate(m, -1.75f, 0, w.catZ + 0.6f);                 // piccola e defilata, ai bordi del percorso
+        Mat4.rotateY(m, 0.25f);
+        Mat4.scale(m, 0.62f, 0.62f, 0.62f);
         g.draw(catapult, m, 1, 1, 1, 1, 0);
         // traguardo
         // traguardo: il portone si apre quando il livello è completato
@@ -1442,9 +1454,9 @@ public final class Scene3D {
         }
         if (w.battery != null) {
             Mat4.setIdentity(m);
-            Mat4.translate(m, w.battery[0], w.battery[1] + 0.07f * (float) Math.sin(w.time * 3f), w.battery[2]);
+            Mat4.translate(m, w.battery[0], w.battery[1] + 0.07f * (float) Math.sin(w.time * 3f) - 0.05f, w.battery[2]);
             Mat4.rotateY(m, w.time * 1.8f);
-            Mat4.scale(m, 1.5f, 1.5f, 1.5f);
+            Mat4.scale(m, 1.45f, 1.45f, 1.45f);
             g.draw(battery, m, 1, 1, 1, 1, 0.1f);
             g.draw(batteryGlow, m, 1, 1, 1, 1, 0.9f);
         }
@@ -1489,12 +1501,23 @@ public final class Scene3D {
             if (land[K_RAY][c] != null && cz0 + CH > camZ - 6f && cz0 < camZ + 60f) g.draw(land[K_RAY][c], ident, 1, 1, 1, 0.15f, 1);
         }
         if (w.spinning()) {
-            for (int i = 0; i < 3; i++) {
-                float k = (0.62f + 0.14f * (i == 1 ? 1 : 0)) * (1f + 0.07f * (float) Math.sin(w.time * 40f + i));
+            float gy = w.py + bumpAt(w.px, w.pz);
+            for (int i = 0; i < 6; i++) {
+                float wob = (float) Math.sin(w.time * 40f + i * 1.7f);
+                float k = (0.7f + 0.2f * (float) Math.sin(i * 1.05f + 0.6f) + 0.05f * i) * (1f + 0.1f * wob);
                 Mat4.setIdentity(m);
-                Mat4.translate(m, w.px, w.py + bumpAt(w.px, w.pz) + 0.25f + i * 0.42f, w.pz);
+                Mat4.translate(m, w.px, gy + 0.12f + i * 0.3f, w.pz);
+                Mat4.rotateY(m, w.spinAngle * (i % 2 == 0 ? 1f : -1f) * 0.6f);
+                Mat4.rotateX(m, 0.14f * wob);
                 Mat4.scale(m, k, 1, k);
-                g.draw(ring, m, 1, 1, 1, 0.75f, 1);
+                g.draw(ring, m, 1, 1, 1, 0.9f, 1);
+            }
+            for (int i = 0; i < 2; i++) {                                   // onda d'urto che si allarga a terra
+                float u = (w.spinT * 3.2f + i * 0.5f) % 1f, k = 0.8f + 1.5f * u;
+                Mat4.setIdentity(m);
+                Mat4.translate(m, w.px, gy + 0.04f, w.pz);
+                Mat4.scale(m, k, 1, k);
+                g.draw(ring, m, 1, 1, 1, 0.8f * (1f - u), 1);
             }
         }
         if (w.djTime > 0) {

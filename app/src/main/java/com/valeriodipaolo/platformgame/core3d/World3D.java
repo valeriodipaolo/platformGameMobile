@@ -753,7 +753,7 @@ public final class World3D {
             batteryOwned = true;
             save.set(id + "_battery");
             score += 500;
-            showToast("Cella energetica trovata!");
+            showToast("Chiave trovata!");
         }
         if (spinActive) {                             // la giravolta rompe le casse vicine
             float m = R + SPIN_REACH;
@@ -817,7 +817,7 @@ public final class World3D {
         int z = flagZ - 8;
         for (; z > flagZ - 30 && z > 4; z--) {
             boolean ok = true;
-            for (int k = 0; k < 3 && ok; k++) for (int x = 1; x <= 3; x++) if (cell(x, z + k) != 0) ok = false;
+            for (int k = 0; k < 3 && ok; k++) for (int x = 0; x <= 2; x++) if (cell(x, z + k) != 0) ok = false;
             if (ok) break;
         }
         catZ = z;
@@ -827,11 +827,11 @@ public final class World3D {
     private void stepGate(float dt) {
         if (batteryOwned && pz > flagZ - 6f && gateOpen < 1f) gateOpen = Math.min(1f, gateOpen + dt);
         else if (!batteryOwned && pz > flagZ - 4f && toastTime <= 0) {
-            toast = "Serve la cella di energia per aprire il portone";
+            toast = "Serve la chiave per aprire il portone";
             toastTime = 2.4f;
         }
         if (state == PLAYING && gateOpen > 0.6f && pz >= flagZ + 3.4f) win();
-        if (state == PLAYING && spin && !spinWas && onGround && Math.abs(px) < 1.5f && pz > catZ - 0.3f && pz < catZ + 2.3f && py < 0.3f) {
+        if (state == PLAYING && spin && !spinWas && onGround && Math.abs(px + 1.75f) < 1.0f && pz > catZ - 0.2f && pz < catZ + 1.6f && py < 0.3f) {
             launchT = 0;
             lx = px; ly = py; lz = pz;
             spinActive = false;

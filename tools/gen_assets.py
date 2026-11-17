@@ -488,15 +488,18 @@ def gen_gem():
 
 
 def gen_battery():
+    """Chiave dorata (il file resta battery.png): serve ad aprire il portone di fine livello."""
     cv = Cv(64, 64, 3)
-    n = cv.w
-    cv.add(cv.rrect(18, 10, 46, 59, 7), (62, 68, 80), ao=0.45, bevel=7, spec=0.7, shin=22)
-    cv.add(cv.rrect(25, 3, 39, 12, 3), (196, 202, 212), bevel=3, spec=0.8)
-    win = cv.rrect(22, 20, 42, 49, 4.5)
-    cv.glow(win, (130, 250, 80), radius=5, strength=0.55)
-    cv.add(win, (120, 236, 66), bevel=4, spec=0.6, amb=0.8, dif=0.4)
-    bolt = cv.poly([(35, 22), (26, 37), (31, 37), (29, 47), (39, 31), (34, 31)])
-    cv.add(bolt, (255, 255, 228), bevel=1, amb=1.0, dif=0.0, spec=0.0)
+    gold, dark = (236, 192, 66), (150, 108, 30)
+    bow = cv.ell(32, 17, 13, 13)
+    hole = cv.ell(32, 17, 6, 6)
+    cv.glow(bow, (255, 226, 120), radius=5, strength=0.5)
+    cv.add(cv.rrect(28.5, 28, 35.5, 58, 2.5), gold, ao=0.4, bevel=3, spec=0.9, shin=30)
+    for (y0, y1, w) in [(44, 50, 12), (52, 58, 9)]:
+        cv.add(cv.rrect(33, y0, 33 + w, y1, 1.8), gold, bevel=2.2, spec=0.9, shin=30)
+    cv.add(cv.rrect(25, 27, 39, 32, 2.2), (252, 214, 92), bevel=2.4, spec=0.9)
+    cv.add(bow & ~hole, gold, ao=0.4, bevel=5, spec=0.95, shin=34)
+    cv.add(cv.ell(32, 17, 12.4, 12.4) & ~cv.ell(32, 17, 6.6, 6.6) & cv.ell(28, 12, 9, 7), (255, 246, 190), bevel=1, amb=1.0, dif=0.0, spec=0.0)
     save("battery", cv.result())
 
 
@@ -521,10 +524,10 @@ def gen_chip():
 
 def gen_spinfx():
     cv = Cv(128, 128, 3)
-    for (cy, rx, ry) in [(30, 50, 11), (64, 58, 14), (98, 50, 11)]:
-        ring = cv.ell(64, cy, rx, ry) & ~cv.ell(64, cy, rx - 4.5, ry - 3.2)
-        cv.glow(ring, (150, 215, 255), radius=3, strength=0.6)
-        cv.glow(ring, (235, 247, 255), radius=0.8, strength=1.4)
+    for (cy, rx, ry) in [(14, 36, 8), (34, 52, 12), (64, 62, 15), (94, 52, 12), (114, 36, 8)]:
+        ring = cv.ell(64, cy, rx, ry) & ~cv.ell(64, cy, rx - 5.5, ry - 3.8)
+        cv.glow(ring, (150, 215, 255), radius=4, strength=0.75)
+        cv.glow(ring, (235, 247, 255), radius=1.0, strength=1.6)
     save("spin_fx", cv.result())
 
 

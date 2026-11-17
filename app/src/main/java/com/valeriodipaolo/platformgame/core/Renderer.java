@@ -41,7 +41,7 @@ public final class Renderer {
         float kx = (lv.catX - cam) * s;
         if (kx > -4f * s && kx < sw + s) {
             boolean shot = g.launching() && g.launchT < 0.6f;
-            p.image(shot ? Img.FX_CATAPULT_B : Img.FX_CATAPULT, kx, (lv.flagBaseY - 2.05f) * s, 3f * s, 2.05f * s, false, 1);
+            p.image(shot ? Img.FX_CATAPULT_B : Img.FX_CATAPULT, kx + 0.7f * s, (lv.flagBaseY - 1.2f) * s, 1.75f * s, 1.2f * s, false, 1);      // piccola e discreta
         }
 
         // ---- caselle
@@ -271,10 +271,23 @@ public final class Renderer {
             flip = false;
             al = 1f;
         }
+        float inGate = pl.x + pl.w / 2 - (lv.flagX + 0.5f);                  // dentro al portone: si rimpicciolisce e svanisce nel buio
+        if (g.gateOpen > 0.5f && inGate > 0f) {
+            float f2 = Math.max(0f, 1f - inGate / 1.0f);
+            al *= f2;
+            hw *= 0.8f + 0.2f * f2; hh *= 0.8f + 0.2f * f2;
+        }
         p.image(img, cx - hw / 2, by - hh, hw, hh, flip, al);
         if (g.spinning()) {
-            float k = 1.9f * s * (1f + 0.08f * (float) Math.sin(g.time * 40f));
-            p.image(Img.SPIN_FX, cx - k / 2, by - 0.55f * s - k / 2, k, k, false, 0.8f);
+            float pul = 1f + 0.1f * (float) Math.sin(g.time * 40f);
+            float k = 2.7f * s * pul, wy = by - 0.7f * s;
+            p.image(Img.SPIN_FX, cx - k / 2, wy - k / 2, k, k, false, 0.9f);                    // colonna di anelli attorno al robot
+            float k2 = 2.1f * s * (2f - pul);
+            p.image(Img.SPIN_FX, cx - k2 / 2, wy - k2 / 2 - 0.1f * s, k2, k2, false, 0.55f);
+            for (int i = 0; i < 2; i++) {                                                        // onda d'urto a terra
+                float u = (g.spinT * 3.2f + i * 0.5f) % 1f, ww = (1.2f + 3.2f * u) * s, hh2 = 0.5f * s;
+                p.image(Img.SPIN_FX, cx - ww / 2, by - hh2 / 2, ww, hh2, false, 0.85f * (1f - u));
+            }
         }
         if (g.djTime > 0) {                         // anello sotto i piedi dopo il doppio salto
             float f = g.djTime / 0.3f, w = (2.2f - 1.2f * f) * s, h = 0.55f * s;
@@ -326,7 +339,7 @@ public final class Renderer {
                 float sz = 1.1f * s, step = 3.6f * s, x0 = sw / 2 - step, y0 = 5.3f * s;
                 int[] icons = {Img.BATTERY, Img.CHIP, Img.GEM_FULL};
                 boolean[] owned = {g.batteryOwned, g.secretOwned, g.gemOwned};
-                String[] names = {"Cella", "Chip segreto", "Gemma " + g.gems + "/" + g.gemTotal};
+                String[] names = {"Chiave", "Chip segreto", "Gemma " + g.gems + "/" + g.gemTotal};
                 for (int i = 0; i < 3; i++) {
                     float ix2 = x0 + i * step;
                     p.image(icons[i], ix2 - sz / 2, y0, sz, sz, false, owned[i] ? 1f : 0.25f);

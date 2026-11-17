@@ -719,7 +719,7 @@ public final class Game {
                 batteryOwned = true;
                 save.set(level.id + "_battery");
                 score += 500;
-                showToast("Cella energetica trovata!");
+                showToast("Chiave trovata!");
             }
         }
     }
@@ -756,13 +756,13 @@ public final class Game {
             gateOpen = Math.min(1f, gateOpen + dt);
             if (gateOpen > 0.6f) for (int y = level.flagBaseY - 3; y < level.flagBaseY; y++) if (level.get(level.flagX, y) == Level.DOOR) level.set(level.flagX, y, Level.EMPTY);
         } else if (!batteryOwned && player.x > fx - 4.5f && toastTime <= 0) {
-            toast = "Serve la cella di energia per aprire il portone";
+            toast = "Serve la chiave per aprire il portone";
             toastTime = 2.4f;
         }
-        if (state == PLAYING && gateOpen > 0.6f && player.x + player.w / 2 >= fx + 3.2f) win();
+        if (state == PLAYING && gateOpen > 0.6f && player.x + player.w / 2 >= fx + 1.5f) win();      // il robot entra nel varco e sparisce nell'oscurità del portone
         // catapulta: sopra la sua piattaforma, la trottola lancia il robot all'inizio del livello
         float cx = level.catX;
-        if (state == PLAYING && spin && !spinWas && player.onGround && player.x + player.w > cx && player.x < cx + 3f && Math.abs(player.y + player.h - level.flagBaseY) < 0.2f) {
+        if (state == PLAYING && spin && !spinWas && player.onGround && player.x + player.w > cx + 0.7f && player.x < cx + 2.45f && Math.abs(player.y + player.h - level.flagBaseY) < 0.2f) {
             launchT = 0;
             lfx = player.x;
             lfy = player.y;
