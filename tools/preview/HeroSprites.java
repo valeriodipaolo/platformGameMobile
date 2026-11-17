@@ -26,7 +26,7 @@ public class HeroSprites {
             w.time = 3.1f + n * 0.07f;
             w.onGround = true;
             float rot = (float) Math.PI * 0.5f;                       // profilo, rivolto a destra
-            if (n >= 1 && n <= 4) { w.vz = 5f; w.runPhase = (n - 1) * (float) Math.PI * 0.5f; }
+            if (n >= 1 && n <= 4) { w.vz = 5f; w.runPhase = (n - 1) * (float) Math.PI * 0.5f / HeroModel.phaseScale(HeroModel.style); }      // quattro fasi uguali del ciclo
             if (n == 5) { w.onGround = false; w.vy = 3f; w.vz = 2.5f; }
             if (n >= 6) {
                 w.setInput(0, 0, false, true); w.update(1f / 60f); w.time = 3.1f;

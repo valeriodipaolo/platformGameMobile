@@ -315,6 +315,8 @@ public final class HeroModel {
 
     private static float lerp(float a, float b, float k) { return a + (b - a) * k; }
     private static float pick(int st, float a, float b, float c) { return st == 0 ? a : st == 1 ? b : c; }
+    /** Velocità del ciclo di corsa rispetto a World3D.runPhase (serve anche a ricavare gli sprite 2D a fasi uguali). */
+    public static float phaseScale(int st) { return pick(st, 1f, 1.5f, 0.72f); }
 
     /** base = posizione e orientamento del robot nel mondo. */
     public void draw(Gfx3D g, float[] base, World3D w) {
@@ -327,8 +329,8 @@ public final class HeroModel {
         final int st = style;
         final boolean nu = st >= 1;
         // coefficienti: 1 = animazione originale; le nuove sono più rapide e accentuate, le scattanti ancora di più
-        final float phK = pick(st, 1f, 1.5f, 0.72f), swK = pick(st, 1f, 1.4f, 2.3f), bobK = pick(st, 1f, 2f, 3.6f), leanK = pick(st, 1f, 1.8f, 2.8f),
-                rollK = pick(st, 1f, 2f, 3f), twK = pick(st, 1f, 2f, 3f), liftK = pick(st, 1f, 2.4f, 5.5f), airK = pick(st, 1f, 1.3f, 1.55f),
+        final float phK = phaseScale(st), swK = pick(st, 1f, 1.4f, 1.55f), bobK = pick(st, 1f, 2f, 2.3f), leanK = pick(st, 1f, 1.8f, 1.9f),
+                rollK = pick(st, 1f, 2f, 2f), twK = pick(st, 1f, 2f, 2f), liftK = pick(st, 1f, 2.4f, 3f), airK = pick(st, 1f, 1.3f, 1.55f),
                 landDur = pick(st, 0.22f, 0.17f, 0.12f), landSq = pick(st, 1f, 1.8f, 2.6f), liftDur = pick(st, 0.14f, 0.1f, 0.07f);
         if (!wasGround && w.onGround) landT = landDur;        // appena atterrato: ammortizza piegandosi
         if (wasGround && !w.onGround && w.vy > 3f) liftT = liftDur;   // appena staccato: si allunga
