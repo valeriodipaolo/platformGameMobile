@@ -1500,15 +1500,14 @@ public final class Scene3D {
             float cz0 = zBase + c * CH;
             if (land[K_RAY][c] != null && cz0 + CH > camZ - 6f && cz0 < camZ + 60f) g.draw(land[K_RAY][c], ident, 1, 1, 1, 0.15f, 1);
         }
-        if (w.spinning()) {                             // stessa estensione di prima: anelli piu' fitti, opachi e vivaci
-            for (int i = 0; i < 4; i++) {
-                float wob = (float) Math.sin(w.time * 45f + i * 1.7f);
-                float k = (0.66f + 0.1f * (i == 1 || i == 2 ? 1 : 0)) * (1f + 0.09f * wob);
+        if (w.spinning()) {                             // dieci anelli tenui, stessa estensione di prima
+            for (int i = 0; i < 10; i++) {
+                float wob = (float) Math.sin(w.time * 45f + i * 1.3f);
+                float k = (0.62f + 0.14f * (float) Math.sin(Math.PI * (i + 0.5f) / 10f)) * (1f + 0.07f * wob);
                 Mat4.setIdentity(m);
-                Mat4.translate(m, w.px, w.py + bumpAt(w.px, w.pz) + 0.2f + i * 0.3f, w.pz);
-                Mat4.rotateX(m, 0.1f * wob);
+                Mat4.translate(m, w.px, w.py + bumpAt(w.px, w.pz) + 0.2f + i * 0.1f, w.pz);
                 Mat4.scale(m, k, 1, k);
-                g.draw(ring, m, 1, 1, 1, 1f, 1);
+                g.draw(ring, m, 1, 1, 1, 0.45f, 1);
             }
         }
         if (w.djTime > 0) {

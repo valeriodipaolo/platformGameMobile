@@ -524,10 +524,13 @@ def gen_chip():
 
 def gen_spinfx():
     cv = Cv(128, 128, 3)
-    for (cy, rx, ry) in [(30, 50, 11), (64, 58, 14), (98, 50, 11)]:
-        ring = cv.ell(64, cy, rx, ry) & ~cv.ell(64, cy, rx - 6.5, ry - 4.6)
-        cv.glow(ring, (150, 215, 255), radius=3.5, strength=0.9)
-        cv.glow(ring, (235, 247, 255), radius=1.0, strength=1.8)
+    for i in range(10):                      # dieci anelli sottili e tenui, stessa altezza e larghezza di prima
+        cy = 18 + i * 10.2
+        sc = 0.8 + 0.2 * math.sin(math.pi * (i + 0.5) / 10)
+        rx, ry = 56 * sc, 11 * sc
+        ring = cv.ell(64, cy, rx, ry) & ~cv.ell(64, cy, rx - 2.6, ry - 1.9)
+        cv.glow(ring, (150, 215, 255), radius=2.0, strength=0.5)
+        cv.glow(ring, (235, 247, 255), radius=0.6, strength=0.9)
     save("spin_fx", cv.result())
 
 

@@ -278,10 +278,9 @@ public final class Renderer {
             hw *= 0.8f + 0.2f * f2; hh *= 0.8f + 0.2f * f2;
         }
         p.image(img, cx - hw / 2, by - hh, hw, hh, flip, al);
-        if (g.spinning()) {                         // stessa estensione di prima, ma anelli piu' spessi, luminosi e vivi
+        if (g.spinning()) {                         // dieci anelli tenui, stessa estensione di prima
             float k = 1.9f * s * (1f + 0.1f * (float) Math.sin(g.time * 45f));
-            p.image(Img.SPIN_FX, cx - k / 2, by - 0.55f * s - k / 2, k, k, false, 1f);
-            p.image(Img.SPIN_FX, cx - k / 2, by - 0.55f * s - k / 2, k, k, false, 0.5f);
+            p.image(Img.SPIN_FX, cx - k / 2, by - 0.55f * s - k / 2, k, k, false, 0.8f);
         }
         if (g.djTime > 0) {                         // anello sotto i piedi dopo il doppio salto
             float f = g.djTime / 0.3f, w = (2.2f - 1.2f * f) * s, h = 0.55f * s;
