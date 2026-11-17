@@ -15,6 +15,9 @@ public final class World3D {
     public static final float HALF = W / 2f;
     public static final int PIT = -99;
     public static final float R = 0.3f, PLAYER_H = 1.25f;
+    /** Animazioni scattanti: dopo il salto il robot torna a terra più in fretta. */
+    public static boolean fastFall;
+    private static final float FAST_FALL_G = 1.6f;
     public static final int MAX_HP = 3;
 
     private static final float STEP = 1f / 120f;
@@ -103,6 +106,7 @@ public final class World3D {
         lives = START_LIVES;
         sealed = false;
         if (levelNo > 12) Levels3B.build(this, levelNo); else if (levelNo == 12) LevelTwelve.build(this); else if (levelNo == 10) LevelTen.build(this); else if (levelNo == 8) LevelEight.build(this); else if (levelNo == 6) LevelSix.build(this); else if (levelNo == 4) LevelFour.build(this); else LevelTwo.build(this);
+        LevelFix.apply(this);
         gateOpen = 0;
         launchT = -1;
         sealed = true;
@@ -380,7 +384,7 @@ public final class World3D {
             if (vy < -GLIDE_FALL) vy = Math.min(-GLIDE_FALL, vy + 40f * dt);
             else vy = Math.max(-GLIDE_FALL, vy - GRAVITY * dt);
         } else {
-            vy = Math.max(-MAX_FALL, vy - ((vy > 0 && (jump || springBoost > 0)) ? GRAVITY_HOLD : GRAVITY) * dt);
+            vy = Math.max(-MAX_FALL * (fastFall ? 1.3f : 1f), vy - ((vy > 0 && (jump || springBoost > 0)) ? GRAVITY_HOLD : GRAVITY * (fastFall && vy <= 0 ? FAST_FALL_G : 1f)) * dt);
         }
 
         // spostamento: un asse alla volta, fermandosi contro blocchi e casse più alti dei piedi
@@ -446,7 +450,7 @@ public final class World3D {
      */
     public boolean enemyBlocked(Enemy3 e, float x, float z) {
         float floor = Float.isNaN(e.floor) ? (e.type == Enemy3.ACORN ? e.baseY : e.y) : e.floor;
-        float feet = e.flies() ? e.baseY - 0.75f : floor;
+        float feet = e.type == Enemy3.CROW ? 1e9f : e.flies() ? e.baseY - 0.75f : floor;      // il corvo sale sopra le terrazze: lo ferma solo il muro
         for (int cz = zi(z - ENEMY_R); cz <= zi(z + ENEMY_R); cz++) {
             for (int cx = xi(x - ENEMY_R); cx <= xi(x + ENEMY_R); cx++) {
                 int h = cell(cx, cz);
@@ -491,17 +495,22 @@ public final class World3D {
             if (e.type >= Enemy3.MOLE && stepNew3(e, dt)) continue;
             if (e.type == Enemy3.ACORN) {                       // la ghianda aspetta ferma, poi balza in avanti
                 e.hopT += dt;
-                float t = e.hopT % 1.7f;
-                if (t < 0.9f) {
+                float t = e.hopT % 0.85f;                       // balzi ravvicinati e rapidi
+                if (t < 0.25f) {
                     e.y = e.baseY;
                     speed = 0;
                 } else {
-                    float u = (t - 0.9f) / 0.8f;
+                    float u = (t - 0.25f) / 0.6f;
                     e.y = e.baseY + 1.5f * 4f * u * (1f - u);
-                    speed = ENEMY_SPEED * 1.7f;
+                    speed = ENEMY_SPEED * 2.1f;
                 }
             } else if (e.type == Enemy3.CROW) {
-                e.y = Math.min(e.baseY, 1.7f) + 0.45f * (float) Math.sin(e.anim * 3.4f);
+                // vola bassa rispetto a ciò che ha sotto: segue il profilo del terreno (anche le terrazze davanti a sé) senza attraversarlo
+                float ax = e.alongZ ? e.x : e.x + e.dir * 1.3f, az = e.alongZ ? e.z + e.dir * 1.3f : e.z;
+                float gnd = Math.max(0f, Math.max(topAt(e.x, e.z), topAt(Math.max(-HALF, Math.min(HALF, ax)), az)));
+                if (Float.isNaN(e.floor)) e.t = gnd;
+                e.t = gnd > e.t ? gnd : Math.max(gnd, e.t - 4f * dt);        // sale subito, scende gradualmente
+                e.y = e.t + Math.max(1.3f, Math.min(e.baseY, 1.7f)) + 0.45f * (float) Math.sin(e.anim * 3.4f);
             } else if (e.type == Enemy3.STORM) {                // la nuvola vaga lenta, poi si ferma, si carica e scaglia un fulmine verso il basso
                 e.hopT += dt;
                 e.y = e.baseY + 0.2f * (float) Math.sin(e.anim * 1.8f);

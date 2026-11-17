@@ -96,7 +96,7 @@ public class CheckFire {
             for (float[] gm : v.gemsList) {
                 boolean seen = false;
                 for (float pz = gm[2] - 12f; pz <= gm[2] - 1.5f && !seen; pz += 0.5f) for (float pxx = -2f; pxx <= 2.01f && !seen; pxx += 1f) {
-                    float cx = pxx * 0.9f, cy = 3.3f + 0.0f, cz = pz - 6f;
+                    float cx = pxx * 0.9f, cz = pz - 6f, cy = 3.3f + Math.max(0f, v.topAt(Math.max(-2.4f, Math.min(2.4f, cx)), cz));
                     boolean blocked = false;
                     for (int k = 1; k < 40 && !blocked; k++) {
                         float t = k / 40f, x = cx + (gm[0] - cx) * t, y = cy + (gm[1] - cy) * t, z = cz + (gm[2] - cz) * t;

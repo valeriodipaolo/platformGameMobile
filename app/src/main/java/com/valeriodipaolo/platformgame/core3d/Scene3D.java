@@ -1330,7 +1330,9 @@ public final class Scene3D {
         if (!camInit) { camX = tx; camZ = tz; camY = w.groundY; camInit = true; }
         camX += (tx - camX) * 0.25f;
         camZ = tz;
-        camY += (Math.max(0, w.groundY) - camY) * 0.06f;
+        // la camera sta sopra anche a ciò che c'è sotto di lei (6 m dietro il robot): niente terrazze che le passano attraverso
+        float behind = Math.max(0f, w.topAt(Math.max(-2.4f, Math.min(2.4f, camX)), camZ - 6.0f));
+        camY += (Math.max(Math.max(0, w.groundY), behind) - camY) * 0.06f;
         float lift = Math.max(0, w.py - camY) * 0.35f;
         Mat4.lookAt(view, camX, camY + 3.3f + lift, camZ - 6.0f, camX * 0.9f, camY + 1.0f + lift, camZ + 5f);
         Mat4.perspective(proj, 58f, aspect, 0.3f, 400f);

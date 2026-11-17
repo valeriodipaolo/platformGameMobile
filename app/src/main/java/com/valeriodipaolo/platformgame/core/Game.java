@@ -498,8 +498,8 @@ public final class Game {
                 e.vx = e.dir * speed;
                 if (e.type == Enemy.ACORN) {                       // la ghianda sta ferma, poi spicca un balzo in avanti
                     e.hop -= dt;
-                    if (e.onGround && e.hop <= 0) { e.vy = -14f; e.hop = 1.5f; }
-                    e.vx = e.onGround ? 0 : e.dir * 2.6f;
+                    if (e.onGround && e.hop <= 0) { e.vy = -15.5f; e.hop = 0.4f; }      // balzi ravvicinati e rapidi
+                    e.vx = e.onGround ? 0 : e.dir * 3.4f;
                 }
                 e.vy = Math.min(MAX_FALL, e.vy + GRAVITY * dt);
                 e.move(level, dt);

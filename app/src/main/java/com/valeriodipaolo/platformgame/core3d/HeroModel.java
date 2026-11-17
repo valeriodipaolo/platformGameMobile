@@ -306,14 +306,15 @@ public final class HeroModel {
     // ------------------------------------------------------------------ disegno
 
     // stato dell'animazione: i valori si inseguono dolcemente, così passare da corsa a salto non è uno scatto
-    /** true = animazioni nuove (più rapide e marcate); false = quelle originali. Scelta dal menu. */
-    public static boolean newAnim = true;
+    /** Animazioni scelte dal menu: 0 = originali, 1 = nuove (più rapide e marcate), 2 = scattanti (ancora più marcate, con caduta più rapida). */
+    public static int style = 1;
     private float animT = -1, landT = 0, liftT = 0;
     private float sLegA, sLegB, sArmA, sArmB, sSpread, sLegSpread, sTuck;
     private boolean wasGround = true;
     private final float[] mb = new float[16], mt = new float[16];
 
     private static float lerp(float a, float b, float k) { return a + (b - a) * k; }
+    private static float pick(int st, float a, float b, float c) { return st == 0 ? a : st == 1 ? b : c; }
 
     /** base = posizione e orientamento del robot nel mondo. */
     public void draw(Gfx3D g, float[] base, World3D w) {
@@ -323,10 +324,12 @@ public final class HeroModel {
         animT = w.time;
         float sp = (float) Math.sqrt(w.vx * w.vx + w.vz * w.vz);
         boolean spin = w.spinning(), air = !w.onGround && !spin;
-        final boolean nu = newAnim;
-        // coefficienti: 1 = animazione originale; le nuove sono più rapide e più accentuate
-        final float phK = nu ? 1.5f : 1f, swK = nu ? 1.4f : 1f, bobK = nu ? 2f : 1f, leanK = nu ? 1.8f : 1f, rollK = nu ? 2f : 1f, twK = nu ? 2f : 1f,
-                liftK = nu ? 2.4f : 1f, airK = nu ? 1.3f : 1f, landDur = nu ? 0.17f : 0.22f, landSq = nu ? 1.8f : 1f, liftDur = nu ? 0.1f : 0.14f;
+        final int st = style;
+        final boolean nu = st >= 1;
+        // coefficienti: 1 = animazione originale; le nuove sono più rapide e accentuate, le scattanti ancora di più
+        final float phK = pick(st, 1f, 1.5f, 2.1f), swK = pick(st, 1f, 1.4f, 1.8f), bobK = pick(st, 1f, 2f, 3.2f), leanK = pick(st, 1f, 1.8f, 2.6f),
+                rollK = pick(st, 1f, 2f, 3f), twK = pick(st, 1f, 2f, 3f), liftK = pick(st, 1f, 2.4f, 4f), airK = pick(st, 1f, 1.3f, 1.55f),
+                landDur = pick(st, 0.22f, 0.17f, 0.12f), landSq = pick(st, 1f, 1.8f, 2.6f), liftDur = pick(st, 0.14f, 0.1f, 0.07f);
         if (!wasGround && w.onGround) landT = landDur;        // appena atterrato: ammortizza piegandosi
         if (wasGround && !w.onGround && w.vy > 3f) liftT = liftDur;   // appena staccato: si allunga
         wasGround = w.onGround;
@@ -349,8 +352,8 @@ public final class HeroModel {
                 tTuck = up * 0.5f;
             }
             if (nu) {                                          // salto più espressivo: ginocchia e braccia più decisi
-                tLegA *= airK; tLegB *= airK; tArmA *= 1.15f; tArmB *= 1.15f;
-                if (w.vy > 0) { tLegA += 0.25f; tSpread += 0.15f; }
+                tLegA *= airK; tLegB *= airK; tArmA *= pick(st, 1f, 1.15f, 1.3f); tArmB *= pick(st, 1f, 1.15f, 1.3f);
+                if (w.vy > 0) { tLegA += pick(st, 0f, 0.25f, 0.45f); tSpread += pick(st, 0f, 0.15f, 0.3f); }
             }
         } else {
             float swing = (float) Math.sin(ph) * (0.18f + 0.82f * amp) * (amp > 0.03f ? 1f : 0f) * swK;
@@ -360,7 +363,7 @@ public final class HeroModel {
             tArmB = -tLegB * (0.75f + 0.25f * amp);
             tSpread = 0.16f + 0.05f * amp + 0.02f * (float) Math.sin(w.time * 2.2f) * (1f - amp);
         }
-        float k = first ? 1f : Math.min(1f, dt * (nu ? (air || spin ? 34f : 40f) : (air || spin ? 16f : 22f)));
+        float k = first ? 1f : Math.min(1f, dt * (st == 2 ? (air || spin ? 55f : 60f) : nu ? (air || spin ? 34f : 40f) : (air || spin ? 16f : 22f)));
         sLegA = lerp(sLegA, tLegA, k); sLegB = lerp(sLegB, tLegB, k);
         sArmA = lerp(sArmA, tArmA, k); sArmB = lerp(sArmB, tArmB, k);
         sSpread = lerp(sSpread, tSpread, k); sLegSpread = lerp(sLegSpread, tLegSpread, k); sTuck = lerp(sTuck, tTuck, k);

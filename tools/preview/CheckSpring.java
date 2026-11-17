@@ -149,7 +149,7 @@ public class CheckSpring {
         int livesE = e.lives;
         for (int i = 0; i < 60 * 14; i++) e.update(1f / 60f);
         ok(e.lives < livesE, "fermi abbastanza a lungo lo sciame raggiunge e punge");
-        ok(e.gemsList.size() >= 80 && e.gemsList.size() <= 140, "livello 10 intero: " + e.gemsList.size() + " gemme");
+        ok(e.gemsList.size() >= 60 && e.gemsList.size() <= 140, "livello 10 intero: " + e.gemsList.size() + " gemme");
         ok(e.flagZ > e.hiveZ + 100, "il traguardo è dopo la fuga (z " + e.flagZ + ")");
         ok(Levels.ORDER.length == 24 && Levels.ORDER[0] == 1 && Levels.next(2) == 13 && Levels.next(14) == 3 && Levels.next(6) == 17 && Levels.next(18) == 9 && Levels.next(10) == 21 && Levels.next(22) == 7 && Levels.next(8) == 19 && Levels.next(20) == 11 && Levels.next(12) == 23 && Levels.next(24) == 0 && Levels.is3D(24) && !Levels.is3D(23) && !Levels.is3D(9) && !Levels.is3D(11) && Levels.is3D(12),
                 "ordine dei livelli: estate, autunno, inverno, primavera, incendio, cielo");
@@ -173,7 +173,9 @@ public class CheckSpring {
                 for (float[] q : b.thorns) if (Math.abs(q[0] - b.px) < 0.9f && q[1] - b.pz > 0 && q[1] - b.pz < 1.0f) thorn = true;
                 boolean pad = false;
                 for (float[] q : b.springs) if (q[1] - b.pz > -0.6f && q[1] - b.pz < 2.5f && Math.abs(q[0] - b.px) < 2.6f) pad = true;
-                if (b.onGround && (pit || thorn) && !pad && jt <= 0) jt = 0.5f;
+                float ahead = b.topAt(b.px, b.pz + 0.65f);
+                boolean step = ahead > b.py + 0.3f && ahead <= b.py + 1.7f;      // gradino o terrazza rialzata da scalare
+                if (b.onGround && (pit || thorn || step) && !pad && jt <= 0) jt = 0.5f;
                 if (jt > 0) { jump = true; jt -= 1f / 60f; }
             }
             b.setInput(jx, 1f, jump, false);

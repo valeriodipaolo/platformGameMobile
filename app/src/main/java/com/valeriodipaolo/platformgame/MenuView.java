@@ -32,7 +32,7 @@ final class MenuView extends View {
         this.listener = listener;
         prefs = ctx.getSharedPreferences("platformgame", Context.MODE_PRIVATE);
         ctrl = Math.max(1, Math.min(6, prefs.getInt("ctrl3d", 2)));
-        anim = prefs.getInt("anim3d", 1) == 0 ? 0 : 1;
+        anim = Math.max(0, Math.min(2, prefs.getInt("anim3d", 1)));
         painter = new AndroidPainter(ctx);
     }
 
@@ -46,8 +46,8 @@ final class MenuView extends View {
     private float chipW() { return getHeight() * 0.1f; }
     private float chipX(int i) { return getWidth() * 0.5f + (i - 2.5f) * chipW() * 1.25f; }
     private float chipY() { return getHeight() * 0.87f; }
-    private float animW() { return getWidth() * 0.14f; }
-    private float animX(int i) { return getWidth() * (0.02f + 0.155f * i); }
+    private float animW() { return getWidth() * 0.1f; }
+    private float animX(int i) { return getWidth() * (0.02f + 0.105f * i); }
 
     @Override
     protected void onDraw(Canvas canvas) {
@@ -77,9 +77,9 @@ final class MenuView extends View {
             painter.rect(chipX(i), chipY(), chipW(), chipW(), on ? 0xFF4FC3F7 : 0xCC14324A);
             painter.text(String.valueOf(i + 1), chipX(i) + chipW() / 2, chipY() + chipW() * 0.7f, 0.6f * s, Painter.ALIGN_CENTER, on ? 0xFF0B2233 : 0xFFFFFFFF);
         }
-        painter.text("Animazioni eroe 3D", animX(0) + animW() + w * 0.0075f, h * 0.855f, 0.3f * s, Painter.ALIGN_CENTER, 0xFFFFFFFF);
-        String[] an = {"ATTUALI", "NUOVE"};
-        for (int i = 0; i < 2; i++) {
+        painter.text("Animazioni eroe 3D", animX(0) + 1.5f * animW() + w * 0.005f, h * 0.855f, 0.3f * s, Painter.ALIGN_CENTER, 0xFFFFFFFF);
+        String[] an = {"ATTUALI", "NUOVE", "SCATTANTI"};
+        for (int i = 0; i < 3; i++) {
             boolean on = i == anim;
             painter.rect(animX(i), chipY(), animW(), chipW(), on ? 0xFF4FC3F7 : 0xCC14324A);
             painter.text(an[i], animX(i) + animW() / 2, chipY() + chipW() * 0.68f, 0.34f * s, Painter.ALIGN_CENTER, on ? 0xFF0B2233 : 0xFFFFFFFF);
@@ -89,7 +89,7 @@ final class MenuView extends View {
     @Override
     public boolean onTouchEvent(MotionEvent e) {
         if (e.getActionMasked() == MotionEvent.ACTION_UP) {
-            for (int i = 0; i < 2; i++) {
+            for (int i = 0; i < 3; i++) {
                 if (e.getX() >= animX(i) && e.getX() <= animX(i) + animW() && e.getY() >= chipY() && e.getY() <= chipY() + chipW()) {
                     anim = i;
                     prefs.edit().putInt("anim3d", anim).apply();
