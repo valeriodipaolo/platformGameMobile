@@ -239,7 +239,7 @@ final class FoeModels2 {
                 System.arraycopy(m, 0, a, 0, 16);
                 if (shell) { Mat4.translate(a, 0, -0.1f, 0); Mat4.scale(a, 0.85f, 0.85f, 0.85f); } else Mat4.scale(a, 1f + 0.04f * (float) Math.sin(an * 3f), 1f, 1f + 0.03f * (float) Math.sin(an * 3f + 1f));
                 if (!shell) { g.draw(snailBody, a, 1, 1, 1, 1, 0); g.draw(snailEyes, a, 1, 1, 1, 1, 0); }
-                g.draw(snailShell, a, 1, 1, 1, 1, 0);
+                if (e.mode != 2) g.draw(snailShell, a, 1, 1, 1, 1, 0);      // senza guscio resta la lumaca nuda
                 return;
             }
             case Enemy3.CHESTNUT: {

@@ -449,7 +449,7 @@ public final class Game {
             }
         }
         for (Enemy e : enemies) {                          // chi sta sopra la casella colpita vola via
-            if (e.dead || e.flung || e.flatTime > 0) continue;
+            if (e.dead || e.flung || e.flatTime > 0 || (e.type == Enemy.SNAIL && e.mode < 2)) continue;
             if (Math.abs(e.y + e.h - ty) < 0.1f && e.x + e.w > tx && e.x < tx + 1) {
                 e.flung = true;
                 e.vy = -11f;
@@ -514,18 +514,26 @@ public final class Game {
 
             if (state != PLAYING) continue;
             if (harmless(e)) continue;
-            if (spinActive && spinnable(e) && touches(player, e, SPIN_REACH)) {      // la trottola travolge i nemici
-                e.flung = true;
-                e.vy = -11f;
-                e.vx = facing * 5f;
-                score += 100;
+            boolean snail = e.type == Enemy.SNAIL;
+            if (e.grace > 0) e.grace -= dt;
+            // la lumaca col guscio è invulnerabile alla giravolta; chiusa nel guscio la perde, e senza guscio muore a ogni colpo
+            boolean spinHit = spinActive && spinnable(e) && !(snail && e.mode == 0) && touches(player, e, SPIN_REACH);
+            if (spinHit && snail && e.mode == 1) {
+                if (e.grace <= 0) { e.mode = 2; e.t = 0; e.grace = 0.6f; score += 100; }
+            } else if (spinHit) {                      // la trottola travolge i nemici
+                if (e.grace <= 0) {
+                    e.flung = true;
+                    e.vy = -11f;
+                    e.vx = facing * 5f;
+                    score += 100;
+                }
             } else if (player.overlaps(e)) {
                 if (stompable(e) && player.vy > 0 && player.y + player.h - e.y < 0.75f) {
-                    if (e.type == Enemy.SNAIL) { e.mode = 1; e.t = 2.6f; } else e.flatTime = 0.45f;     // la lumaca si chiude nel guscio
+                    if (snail && e.mode < 2) { e.mode = 1; e.t = 4f; } else e.flatTime = 0.45f;     // la lumaca si chiude nel guscio
                     player.vy = jump ? -15f : -10f;
                     airJumps = 1;                       // rimbalzando su un nemico si può rifare il doppio salto
-                    score += e.type == Enemy.SNAIL ? 0 : 100;
-                } else if (!(e.type == Enemy.SNAIL && e.mode == 1)) {
+                    score += snail && e.mode == 1 ? 0 : 100;
+                } else if (!(snail && (e.mode == 1 || e.grace > 0))) {
                     hurt();
                 }
             } else if (e.type == Enemy.STORM && stormPhase(e.hop) == 2) {
@@ -597,11 +605,11 @@ public final class Game {
         e.t += dt;
         switch (e.type) {
             case Enemy.SNAIL:
-                if (e.mode == 1) {                           // chiusa nel guscio: ferma e innocua, poi riesce (il cronometro qui scende)
+                if (e.mode == 1) {                           // chiusa nel guscio: ferma e innocua; se non la si travolge in tempo, riesce (il cronometro qui scende)
                     e.t -= 2 * dt;
                     if (e.t <= 0) { e.mode = 0; e.t = 0; }
                     walk(e, 0, dt, false);
-                } else walk(e, 0.9f, dt, true);
+                } else walk(e, e.mode == 2 ? 1.5f : 0.9f, dt, true);      // senza guscio è più svelta e vulnerabile
                 break;
             case Enemy.CHESTNUT:
                 if (e.mode == 0) { if (dx > -2.4f && dx < 1.4f && player.y > e.y) { e.mode = 1; e.t = 0; } }

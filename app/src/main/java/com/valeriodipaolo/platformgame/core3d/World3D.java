@@ -486,7 +486,7 @@ public final class World3D {
             if (Math.abs(e.z - pz) > 45) continue;
             e.anim += dt;
             float speed = e.type == Enemy3.HOG ? ENEMY_SPEED * 0.8f : e.type == Enemy3.CROW ? ENEMY_SPEED * 2.7f : e.type == Enemy3.WHIRL ? ENEMY_SPEED * 1.7f
-                    : e.type == Enemy3.STORM ? ENEMY_SPEED * 0.7f : e.type == Enemy3.SNAIL ? (e.mode == 1 ? 0f : ENEMY_SPEED * 0.4f) : e.type == Enemy3.PENGUIN ? ENEMY_SPEED * 2.3f
+                    : e.type == Enemy3.STORM ? ENEMY_SPEED * 0.7f : e.type == Enemy3.SNAIL ? (e.mode == 1 ? 0f : ENEMY_SPEED * (e.mode == 2 ? 0.65f : 0.4f)) : e.type == Enemy3.PENGUIN ? ENEMY_SPEED * 2.3f
                     : e.type == Enemy3.SALAMANDER ? (e.mode == 0 ? ENEMY_SPEED * 0.8f : 0f) : ENEMY_SPEED;
             if (e.type >= Enemy3.MOLE && stepNew3(e, dt)) continue;
             if (e.type == Enemy3.ACORN) {                       // la ghianda aspetta ferma, poi balza in avanti
@@ -522,10 +522,17 @@ public final class World3D {
                 if (e.x > e.hi) { e.x = e.hi; e.dir = -1; } else if (e.x < e.lo) { e.x = e.lo; e.dir = 1; }
             }
             if (state != PLAYING) continue;
-            if (e.type == Enemy3.SNAIL && e.mode == 1) continue;
+            boolean snail = e.type == Enemy3.SNAIL;
+            if (e.grace > 0) e.grace -= dt;
             float ax = Math.abs(e.x - px), az = Math.abs(e.z - pz);
             boolean vertical = py < e.y + 0.6f && py + PLAYER_H > e.y;
-            if (spinActive && ax < 0.75f + SPIN_REACH && az < 0.75f + SPIN_REACH && vertical) {
+            boolean spinNear = spinActive && ax < 0.75f + SPIN_REACH && az < 0.75f + SPIN_REACH && vertical;
+            if (snail && e.mode == 1) {                 // chiusa nel guscio: la giravolta la lascia senza
+                if (spinNear && e.grace <= 0) { e.mode = 2; e.t = 0; e.grace = 0.6f; score += 100; }
+                continue;
+            }
+            if (spinNear && !(snail && e.mode == 0)) {   // la lumaca col guscio è invulnerabile alla giravolta
+                if (e.grace > 0) continue;
                 e.flung = true;                       // la giravolta lo fa volare via
                 float l = Math.max(0.01f, (float) Math.sqrt((e.x - px) * (e.x - px) + (e.z - pz) * (e.z - pz)));
                 e.vx = (e.x - px) / l * 6f;
@@ -534,11 +541,11 @@ public final class World3D {
                 score += 100;
             } else if (ax < 0.75f && az < 0.75f && vertical) {
                 if (stompable3(e) && vy < 0 && py > e.y + 0.25f) {     // schiacciato dall'alto (il riccio punge)
-                    if (e.type == Enemy3.SNAIL) { e.mode = 1; e.t = 2.6f; } else e.flatTime = 0.45f;
+                    if (snail && e.mode < 2) { e.mode = 1; e.t = 4f; } else e.flatTime = 0.45f;
                     vy = jump ? 9f : 6.5f;
                     airJumps = 1;
-                    score += 100;
-                } else {
+                    score += snail && e.mode == 1 ? 0 : 100;
+                } else if (!(snail && e.grace > 0)) {
                     hurt();
                 }
             } else if (e.type == Enemy3.STORM && Enemy3.stormPhase(e.hopT) == 2 && ax < 0.55f && az < 0.55f && py < e.y) {

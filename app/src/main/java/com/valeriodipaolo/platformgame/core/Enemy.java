@@ -11,6 +11,8 @@ public final class Enemy extends Body {
             FROG = 14, PLANT = 15, STAR = 16, SUNNY = 17;
     /** Stato e cronometro del comportamento, e punto di partenza. */
     public int mode;
+    /** Lumaca appena uscita dal guscio: per un attimo non subisce né fa danno (evita che la stessa giravolta la uccida subito). */
+    public float grace;
     public float t, x0, y0;
 
     public final int type;

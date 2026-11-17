@@ -19,6 +19,8 @@ public final class Enemy3 {
     public float flatTime, vx, vy, vz;
     /** Fase del comportamento dei nemici nuovi (talpa, lumaca, castagna...) e punto di partenza. */
     public int mode;
+    /** Lumaca appena uscita dal guscio: per un attimo non subisce né fa danno. */
+    public float grace;
     public float x0, y0, z0, t;
     /** Quota del suolo su cui cammina (fissata alla prima mossa): niente salti nel vuoto né attraversamenti di blocchi. */
     public float floor = Float.NaN;

@@ -56,8 +56,8 @@ public final class Img {
     public static final int HV_STORM = 214, HV_STORM_C = 215, HV_WHIRL = 216, HV_WHIRL_B = 217, HV_BOLT = 218, HV_SUN = 219, HV_PAD = 220;
     public static final int FX_MOLE = 221, FX_MOUND = 222, FX_SNAIL = 223, FX_SHELL = 224, FX_CHESTNUT = 225, FX_OWL_0 = 226, FX_OWL_1 = 227, FX_PENGUIN = 228, FX_SNOWMAN = 229, FX_SNOWBALL = 230, FX_LAPILLO = 231, FX_SALA = 232, FX_SALA_B = 233, FX_BREATH = 234, FX_FROG = 235, FX_FROG_J = 236, FX_PLANT = 237, FX_PLANT_O = 238, FX_STAR = 239, FX_SUNNY = 240, FX_CATAPULT = 241, FX_CATAPULT_B = 242;
     public static final int FOE_SKIN = 243, FOE_SCALE = 244, FOE_SHELL = 245, FOE_SNOW = 246, FOE_DOWN = 247, FOE_EMBER = 248, FOE_PLASMA = 249, FOE_PETAL = 250, FOE_MAHOGANY = 251;
-    public static final int HERO_METAL = 252, HERO_LEATHER = 253;
-    public static final int COUNT = 254;
+    public static final int HERO_METAL = 252, HERO_LEATHER = 253, FX_SLUG = 254;
+    public static final int COUNT = 255;
 
     public static final String[] NAMES = {
         "bg_sky", "bg_mountains", "bg_hills",
@@ -95,6 +95,6 @@ public final class Img {
         "r3h_cloud", "r3h_body", "r3h_sea", "r3h_marble", "r3h_sky", "r3h_mountains", "r3h_spring", "hv_storm", "hv_storm_c", "hv_whirl", "hv_whirl_b", "hv_bolt", "hv_sun", "hv_pad",
         "fx_mole", "fx_mound", "fx_snail", "fx_shell", "fx_chestnut", "fx_owl_0", "fx_owl_1", "fx_penguin", "fx_snowman", "fx_snowball", "fx_lapillo", "fx_sala", "fx_sala_b", "fx_breath", "fx_frog", "fx_frog_j", "fx_plant", "fx_plant_o", "fx_star", "fx_sunny", "fx_catapult", "fx_catapult_b",
         "foe_skin", "foe_scale", "foe_shell", "foe_snow", "foe_down", "foe_ember", "foe_plasma", "foe_petal", "foe_mahogany",
-        "hero_metal", "hero_leather"
+        "hero_metal", "hero_leather", "fx_slug"
     };
 }

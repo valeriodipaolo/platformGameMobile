@@ -22,7 +22,7 @@ public class FoeSprites {
         {"acorn_0", Enemy3.ACORN, 0, 0.30f, R, 1f, 0f}, {"acorn_1", Enemy3.ACORN, 0, 0.62f, R, 1f, 0.6f}, {"acorn_flat", Enemy3.ACORN, 0, 0.30f, R, 0.22f, 0f},
         {"hv_storm", Enemy3.STORM, 0, 0.30f, F, 1f, 0f}, {"hv_storm_c", Enemy3.STORM, 1, 0.30f, F, 1f, 0f},
         {"hv_whirl", Enemy3.WHIRL, 0, 0.10f, F, 1f, 0f}, {"hv_whirl_b", Enemy3.WHIRL, 0, 0.35f, F, 1f, 0f},
-        {"fx_snail", Enemy3.SNAIL, 0, 0.3f, R, 1f, 0f}, {"fx_shell", Enemy3.SNAIL, 1, 0.3f, R, 1f, 0f},
+        {"fx_snail", Enemy3.SNAIL, 0, 0.3f, R, 1f, 0f}, {"fx_shell", Enemy3.SNAIL, 1, 0.3f, R, 1f, 0f}, {"fx_slug", Enemy3.SNAIL, 2, 0.3f, R, 1f, 0f},
         {"fx_chestnut", Enemy3.CHESTNUT, 0, 0.3f, F, 1f, 0f},
         {"fx_owl_0", Enemy3.OWL, 0, 0.4f, F, 1f, 0f}, {"fx_owl_1", Enemy3.OWL, 0, 1.0f, F, 1f, 0f},
         {"fx_penguin", Enemy3.PENGUIN, 0, 0.25f, F, 1f, 0f},
