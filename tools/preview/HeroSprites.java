@@ -16,19 +16,24 @@ public class HeroSprites {
     public static void main(String[] a) throws Exception {
         String res = a[0], out = a[1];
         for (int i = 0; i < Img.COUNT; i++) Preview.imgs[i] = ImageIO.read(new File(res, Img.NAMES[i] + ".png"));
-        String[] names = new String[18];
+        String[] names = new String[18 + 20];
+        for (int i = 0; i < 20; i++) names[18 + i] = "hero_run_" + (i + 4);
         names[0] = "hero_idle"; names[5] = "hero_jump";
         for (int i = 0; i < 4; i++) names[1 + i] = "hero_run_" + i;
         for (int i = 0; i < 12; i++) names[6 + i] = "hero_spin_" + i;
-        for (int n = 0; n < 18; n++) {
+        for (int n = 0; n < names.length; n++) {
             World3D w = new World3D(new MemorySave());
             HeroModel hm = new HeroModel();
             w.time = 3.1f + n * 0.07f;
             w.onGround = true;
             float rot = (float) Math.PI * 0.5f;                       // profilo, rivolto a destra
-            if (n >= 1 && n <= 4) { w.vz = 5f; w.runPhase = (n - 1) * (float) Math.PI * 0.5f / HeroModel.phaseScale(HeroModel.style); }      // quattro fasi uguali del ciclo
+            if ((n >= 1 && n <= 4) || n >= 18) {      // 24 fasi uguali del ciclo di corsa
+                int j = n <= 4 ? n - 1 : n - 18 + 4;
+                w.vz = 5f;
+                w.runPhase = j * 2f * (float) Math.PI / 24f / HeroModel.phaseScale(HeroModel.style);
+            }
             if (n == 5) { w.onGround = false; w.vy = 3f; w.vz = 2.5f; }
-            if (n >= 6) {
+            if (n >= 6 && n < 18) {
                 w.setInput(0, 0, false, true); w.update(1f / 60f); w.time = 3.1f;
                 rot += (n - 6) * (float) Math.PI / 6f;
             }

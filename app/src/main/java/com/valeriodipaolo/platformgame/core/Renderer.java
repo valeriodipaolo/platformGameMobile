@@ -258,7 +258,7 @@ public final class Renderer {
         Body pl = g.player;
         int img;
         if (g.state == Game.DYING || (!pl.onGround && g.state == Game.PLAYING)) img = Img.HERO_JUMP;
-        else if (Math.abs(pl.vx) > 0.3f) img = Img.HERO_RUN + ((int) g.runPhase % 4);
+        else if (Math.abs(pl.vx) > 0.3f) img = Img.runFrame((int) (g.runPhase * (Img.RUN_FRAMES / 4f)) % Img.RUN_FRAMES);      // ciclo fluido a 24 fotogrammi
         else img = Img.HERO_IDLE;
         float hw = 1.167f * s, hh = 1.5f * s;
         float cx = (pl.x + pl.w / 2 - cam) * s, by = (pl.y + pl.h + 0.03f) * s;

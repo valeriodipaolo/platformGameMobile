@@ -365,7 +365,7 @@ public final class HeroModel {
             tArmB = -tLegB * (0.75f + 0.25f * amp);
             tSpread = 0.16f + 0.05f * amp + 0.02f * (float) Math.sin(w.time * 2.2f) * (1f - amp);
         }
-        float k = first ? 1f : Math.min(1f, dt * (st == 2 ? (air || spin ? 55f : 60f) : nu ? (air || spin ? 34f : 40f) : (air || spin ? 16f : 22f)));
+        float k = first ? 1f : Math.min(1f, dt * (st == 2 ? (air || spin ? 28f : 32f) : nu ? (air || spin ? 34f : 40f) : (air || spin ? 16f : 22f)));
         sLegA = lerp(sLegA, tLegA, k); sLegB = lerp(sLegB, tLegB, k);
         sArmA = lerp(sArmA, tArmA, k); sArmB = lerp(sArmB, tArmB, k);
         sSpread = lerp(sSpread, tSpread, k); sLegSpread = lerp(sLegSpread, tLegSpread, k); sTuck = lerp(sTuck, tTuck, k);
