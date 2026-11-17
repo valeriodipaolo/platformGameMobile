@@ -306,6 +306,8 @@ public final class HeroModel {
     // ------------------------------------------------------------------ disegno
 
     // stato dell'animazione: i valori si inseguono dolcemente, così passare da corsa a salto non è uno scatto
+    /** true = animazioni nuove (più rapide e marcate); false = quelle originali. Scelta dal menu. */
+    public static boolean newAnim = true;
     private float animT = -1, landT = 0, liftT = 0;
     private float sLegA, sLegB, sArmA, sArmB, sSpread, sLegSpread, sTuck;
     private boolean wasGround = true;
@@ -321,13 +323,17 @@ public final class HeroModel {
         animT = w.time;
         float sp = (float) Math.sqrt(w.vx * w.vx + w.vz * w.vz);
         boolean spin = w.spinning(), air = !w.onGround && !spin;
-        if (!wasGround && w.onGround) landT = 0.22f;          // appena atterrato: ammortizza piegandosi
-        if (wasGround && !w.onGround && w.vy > 3f) liftT = 0.14f;   // appena staccato: si allunga
+        final boolean nu = newAnim;
+        // coefficienti: 1 = animazione originale; le nuove sono più rapide e più accentuate
+        final float phK = nu ? 1.5f : 1f, swK = nu ? 1.4f : 1f, bobK = nu ? 2f : 1f, leanK = nu ? 1.8f : 1f, rollK = nu ? 2f : 1f, twK = nu ? 2f : 1f,
+                liftK = nu ? 2.4f : 1f, airK = nu ? 1.3f : 1f, landDur = nu ? 0.17f : 0.22f, landSq = nu ? 1.8f : 1f, liftDur = nu ? 0.1f : 0.14f;
+        if (!wasGround && w.onGround) landT = landDur;        // appena atterrato: ammortizza piegandosi
+        if (wasGround && !w.onGround && w.vy > 3f) liftT = liftDur;   // appena staccato: si allunga
         wasGround = w.onGround;
         landT = Math.max(0, landT - dt);
         liftT = Math.max(0, liftT - dt);
 
-        float amp = Math.min(1f, sp / 4.2f), ph = w.runPhase;
+        float amp = Math.min(1f, sp / 4.2f), ph = w.runPhase * phK;
         float tLegA, tLegB, tArmA, tArmB, tSpread = 0.16f, tLegSpread = 0f, tTuck = 0f;
         if (spin) {
             tLegA = 0.15f; tLegB = -0.15f; tArmA = tArmB = 0; tSpread = 1.45f;
@@ -342,15 +348,19 @@ public final class HeroModel {
                 tLegSpread = lerp(0.2f, 0.05f, up);
                 tTuck = up * 0.5f;
             }
+            if (nu) {                                          // salto più espressivo: ginocchia e braccia più decisi
+                tLegA *= airK; tLegB *= airK; tArmA *= 1.15f; tArmB *= 1.15f;
+                if (w.vy > 0) { tLegA += 0.25f; tSpread += 0.15f; }
+            }
         } else {
-            float swing = (float) Math.sin(ph) * (0.18f + 0.82f * amp) * (amp > 0.03f ? 1f : 0f);
+            float swing = (float) Math.sin(ph) * (0.18f + 0.82f * amp) * (amp > 0.03f ? 1f : 0f) * swK;
             tLegA = swing * 0.95f;
             tLegB = -tLegA;
             tArmA = -tLegA * (0.75f + 0.25f * amp);
             tArmB = -tLegB * (0.75f + 0.25f * amp);
             tSpread = 0.16f + 0.05f * amp + 0.02f * (float) Math.sin(w.time * 2.2f) * (1f - amp);
         }
-        float k = first ? 1f : Math.min(1f, dt * (air || spin ? 16f : 22f));
+        float k = first ? 1f : Math.min(1f, dt * (nu ? (air || spin ? 34f : 40f) : (air || spin ? 16f : 22f)));
         sLegA = lerp(sLegA, tLegA, k); sLegB = lerp(sLegB, tLegB, k);
         sArmA = lerp(sArmA, tArmA, k); sArmB = lerp(sArmB, tArmB, k);
         sSpread = lerp(sSpread, tSpread, k); sLegSpread = lerp(sLegSpread, tLegSpread, k); sTuck = lerp(sTuck, tTuck, k);
@@ -359,21 +369,21 @@ public final class HeroModel {
         float bob = 0, lean = 0, roll = 0, twist = 0, sy = 1f, sxz = 1f;
         if (!air && !spin) {
             float step = (float) Math.abs(Math.sin(ph)) * amp;
-            bob = 0.055f * step + 0.007f * (float) Math.sin(w.time * 2.2f) * (1f - amp);
-            lean = 0.17f * amp;
-            roll = (float) Math.sin(ph) * 0.06f * amp;
-            twist = (float) Math.sin(ph) * 0.14f * amp;
+            bob = 0.055f * bobK * step + 0.007f * (nu ? 2.5f : 1f) * (float) Math.sin(w.time * (nu ? 3.2f : 2.2f)) * (1f - amp);
+            lean = 0.17f * leanK * amp;
+            roll = (float) Math.sin(ph) * 0.06f * rollK * amp;
+            twist = (float) Math.sin(ph) * 0.14f * twK * amp;
         } else if (air) {
-            lean = 0.08f + 0.12f * (1f - Math.max(0f, Math.min(1f, (w.vy + 6f) / 12f)));
+            lean = (0.08f + 0.12f * (1f - Math.max(0f, Math.min(1f, (w.vy + 6f) / 12f)))) * (nu ? 1.6f : 1f);
         }
         if (landT > 0) {                                      // schiacciamento all'atterraggio
-            float u = (float) Math.sin(Math.PI * (1f - landT / 0.22f));
-            sy = 1f - 0.13f * u; sxz = 1f + 0.07f * u;
-            bob -= 0.02f * u;
-            lean += 0.1f * u;
+            float u = (float) Math.sin(Math.PI * (1f - landT / landDur));
+            sy = 1f - 0.13f * landSq * u; sxz = 1f + 0.07f * landSq * u;
+            bob -= 0.02f * landSq * u;
+            lean += 0.1f * landSq * u;
         } else if (liftT > 0) {
-            float u = liftT / 0.14f;
-            sy = 1f + 0.07f * u; sxz = 1f - 0.04f * u;
+            float u = liftT / liftDur;
+            sy = 1f + 0.07f * landSq * u; sxz = 1f - 0.04f * landSq * u;
         }
         System.arraycopy(base, 0, mb, 0, 16);                 // mb = bacino: rimbalzo e schiacciamento, le gambe partono da qui
         Mat4.translate(mb, 0, bob, 0);
@@ -390,8 +400,8 @@ public final class HeroModel {
         g.draw(glow, mt, 1, 1, 1, 1, 1);
         g.draw(cape, mt, 1, 1, 1, 1, 0);
         // gambe: la gamba che avanza si solleva, quella che spinge resta a terra
-        float liftA = (!air && !spin) ? Math.max(0f, (float) Math.cos(ph)) * 0.05f * amp : 0f;
-        float liftB = (!air && !spin) ? Math.max(0f, -(float) Math.cos(ph)) * 0.05f * amp : 0f;
+        float liftA = (!air && !spin) ? Math.max(0f, (float) Math.cos(ph)) * 0.05f * liftK * amp : 0f;
+        float liftB = (!air && !spin) ? Math.max(0f, -(float) Math.cos(ph)) * 0.05f * liftK * amp : 0f;
         limb(g, mb, leg, -0.1f, 0.37f + liftA, 0, -sLegSpread, sLegA);
         limb(g, mb, leg, 0.1f, 0.37f + liftB, 0, sLegSpread, sLegB);
         limb(g, mt, arm, -0.275f, 0.79f, 0, -sSpread, sArmA);

@@ -9,6 +9,7 @@ import javax.imageio.ImageIO;
 public class HeroGait {
     public static void main(String[] a) throws Exception {
         String res = a[0], out = a[1];
+        HeroModel.newAnim = a.length < 3 || !a[2].equals("0");
         for (int i = 0; i < Img.COUNT; i++) Preview.imgs[i] = ImageIO.read(new File(res, Img.NAMES[i] + ".png"));
         int cw = 300, ch = 360, n = 8;
         BufferedImage sheet = new BufferedImage(cw * n, ch * 2, BufferedImage.TYPE_INT_RGB);
@@ -42,6 +43,6 @@ public class HeroGait {
                 sheet.getGraphics().drawImage(g.image(), v * cw, row * ch, null);
             }
         }
-        ImageIO.write(sheet, "png", new File(out, "gait.png"));
+        ImageIO.write(sheet, "png", new File(out, HeroModel.newAnim ? "gait_new.png" : "gait_old.png"));
     }
 }
