@@ -9,7 +9,7 @@ import javax.imageio.ImageIO;
 public class HeroGait {
     public static void main(String[] a) throws Exception {
         String res = a[0], out = a[1];
-        HeroModel.style = a.length < 3 ? 1 : Integer.parseInt(a[2]);
+        HeroModel.style = a.length < 3 ? 2 : Integer.parseInt(a[2]);
         for (int i = 0; i < Img.COUNT; i++) Preview.imgs[i] = ImageIO.read(new File(res, Img.NAMES[i] + ".png"));
         int cw = 300, ch = 360, n = 8;
         BufferedImage sheet = new BufferedImage(cw * n, ch * 2, BufferedImage.TYPE_INT_RGB);

@@ -306,8 +306,8 @@ public final class HeroModel {
     // ------------------------------------------------------------------ disegno
 
     // stato dell'animazione: i valori si inseguono dolcemente, così passare da corsa a salto non è uno scatto
-    /** Animazioni scelte dal menu: 0 = originali, 1 = nuove (più rapide e marcate), 2 = scattanti (ancora più marcate, con caduta più rapida). */
-    public static int style = 1;
+    /** Animazioni scelte dal menu: 0 = originali, 2 = nuove (corsa lenta e molto marcata, salto scattante con caduta più rapida); 1 non è più offerto. */
+    public static int style = 2;
     private float animT = -1, landT = 0, liftT = 0;
     private float sLegA, sLegB, sArmA, sArmB, sSpread, sLegSpread, sTuck;
     private boolean wasGround = true;
@@ -327,8 +327,8 @@ public final class HeroModel {
         final int st = style;
         final boolean nu = st >= 1;
         // coefficienti: 1 = animazione originale; le nuove sono più rapide e accentuate, le scattanti ancora di più
-        final float phK = pick(st, 1f, 1.5f, 2.1f), swK = pick(st, 1f, 1.4f, 1.8f), bobK = pick(st, 1f, 2f, 3.2f), leanK = pick(st, 1f, 1.8f, 2.6f),
-                rollK = pick(st, 1f, 2f, 3f), twK = pick(st, 1f, 2f, 3f), liftK = pick(st, 1f, 2.4f, 4f), airK = pick(st, 1f, 1.3f, 1.55f),
+        final float phK = pick(st, 1f, 1.5f, 1.05f), swK = pick(st, 1f, 1.4f, 2.3f), bobK = pick(st, 1f, 2f, 3.6f), leanK = pick(st, 1f, 1.8f, 2.8f),
+                rollK = pick(st, 1f, 2f, 3f), twK = pick(st, 1f, 2f, 3f), liftK = pick(st, 1f, 2.4f, 5.5f), airK = pick(st, 1f, 1.3f, 1.55f),
                 landDur = pick(st, 0.22f, 0.17f, 0.12f), landSq = pick(st, 1f, 1.8f, 2.6f), liftDur = pick(st, 0.14f, 0.1f, 0.07f);
         if (!wasGround && w.onGround) landT = landDur;        // appena atterrato: ammortizza piegandosi
         if (wasGround && !w.onGround && w.vy > 3f) liftT = liftDur;   // appena staccato: si allunga

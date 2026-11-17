@@ -538,6 +538,7 @@ public final class World3D {
             float ax = Math.abs(e.x - px), az = Math.abs(e.z - pz);
             boolean vertical = py < e.y + 0.6f && py + PLAYER_H > e.y;
             boolean spinNear = spinActive && ax < 0.75f + SPIN_REACH && az < 0.75f + SPIN_REACH && vertical;
+            if (spinNear && snail && e.mode == 0 && !(vy < 0 && py > e.y + 0.25f)) continue;      // la giravolta contro il guscio non fa male né a lei né al robot
             if (snail && e.mode == 1 && !spinNear) continue;      // chiusa nel guscio è innocua
             if (spinNear && !(snail && e.mode == 0)) {   // la lumaca col guscio è invulnerabile; chiusa nel guscio la giravolta la uccide
                 if (e.grace > 0) continue;

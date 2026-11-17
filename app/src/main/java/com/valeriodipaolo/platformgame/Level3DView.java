@@ -36,7 +36,7 @@ final class Level3DView extends FrameLayout {
     Level3DView(Context ctx, int levelNo, Runnable onExit) {
         super(ctx);
         this.onExit = onExit;
-        int animStyle = Math.max(0, Math.min(2, ctx.getSharedPreferences("platformgame", Context.MODE_PRIVATE).getInt("anim3d", 1)));
+        int animStyle = ctx.getSharedPreferences("platformgame", Context.MODE_PRIVATE).getInt("anim3d", 1) == 0 ? 0 : 2;
         com.valeriodipaolo.platformgame.core3d.HeroModel.style = animStyle;
         com.valeriodipaolo.platformgame.core3d.World3D.fastFall = animStyle == 2;
         int mode = ctx.getSharedPreferences("platformgame", Context.MODE_PRIVATE).getInt("ctrl3d", 2);
