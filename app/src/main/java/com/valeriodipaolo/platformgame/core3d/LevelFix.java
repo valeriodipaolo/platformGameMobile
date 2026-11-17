@@ -36,16 +36,53 @@ final class LevelFix {
             Enemy3 e = it.next();
             int xi = World3D.xi(e.x), zi = World3D.zi(e.z);
             // chi fa la ronda di traverso può partire fuori dal corridoio (le stelle cadenti): conta il tratto che percorre, non il punto di partenza
-            boolean out = e.alongZ ? (e.x < -edge || e.x > edge) : (Math.max(e.lo, e.hi) < -edge || Math.min(e.lo, e.hi) > edge);
+            boolean patrol = e.type == Enemy3.BEETLE || e.type == Enemy3.HOG || e.type == Enemy3.CROW || e.type == Enemy3.ACORN || e.type == Enemy3.STAR
+                    || e.type == Enemy3.SNAIL || e.type == Enemy3.PENGUIN;       // lo e hi sono gli estremi della ronda (negli altri tipi hanno altri significati)
+            boolean out = e.alongZ || !patrol ? (e.x < -edge || e.x > edge) : (Math.max(e.lo, e.hi) < -edge || Math.min(e.lo, e.hi) > edge);
             out |= e.z < 0 || e.z >= w.length;
             if (!out && !e.flies() && e.type != Enemy3.LAPILLO) {      // il lapillo nasce dalla lava: parte per forza nel vuoto
                 xi = Math.max(0, Math.min(World3D.W - 1, xi));
                 int h = w.cell(xi, zi);
                 out = h == World3D.PIT || h == 99;
             }
+            if (!out && (e.type == Enemy3.CROW || e.type == Enemy3.STORM || e.type == Enemy3.OWL) && !placeOnPath(w, e)) out = true;
             if (out) { if (DEBUG) System.out.println("  - nemico t" + e.type + " x" + e.x + " z" + e.z + " cella " + w.cell(xi, zi)); it.remove(); foesOut++; }
         }
         last = "terrazze allargate: " + widened + " righe; gemme fuori area: " + gemsOut + ", su burroni lunghi: " + gemsPit + ", alzate: " + gemsRaised + "; nemici fuori area: " + foesOut;
+    }
+
+    /** Quota (0..1) del tratto di ronda che passa sopra terreno percorribile. */
+    private static float walkable(World3D w, Enemy3 e, int col, int row) {
+        int n = 0, ok = 0;
+        float a = Math.min(e.lo, e.hi), b = Math.max(e.lo, e.hi);
+        for (float t = a; t <= b + 0.001f; t += 0.5f) {
+            int h = e.alongZ ? w.cell(col, World3D.zi(t)) : w.cell(World3D.xi(t), row);
+            n++;
+            if (h != World3D.PIT && h != 99) ok++;
+        }
+        return n == 0 ? 1f : ok / (float) n;
+    }
+
+    /**
+     * Un nemico volante deve stare sul percorso, sopra terreno che il robot può calpestare: se la sua ronda passa sul vuoto lo si sposta sulla corsia (o riga)
+     * vicina più percorribile; se non ce n'è, si toglie. Restituisce false se va tolto.
+     */
+    private static boolean placeOnPath(World3D w, Enemy3 e) {
+        int col = Math.max(0, Math.min(World3D.W - 1, World3D.xi(e.x))), row = World3D.zi(e.z);
+        if (walkable(w, e, col, row) >= 0.85f) return true;
+        if (e.alongZ) {
+            int best = -1;
+            for (int c = 0; c < World3D.W; c++) if (walkable(w, e, c, row) >= 0.85f && (best < 0 || Math.abs(c - col) < Math.abs(best - col))) best = c;
+            if (best < 0) return false;
+            e.x = e.x0 = best - World3D.HALF + 0.5f;
+            return true;
+        }
+        for (int d = 1; d <= 8; d++) for (int sg = -1; sg <= 1; sg += 2) {
+            int r = row + sg * d;
+            if (r < 0 || r >= w.length) continue;
+            if (walkable(w, e, col, r) >= 0.85f) { e.z = e.z0 = r + 0.5f; return true; }
+        }
+        return false;
     }
 
     /** Lunghezza (in righe) della striscia di vuoto che contiene la casella, lungo il corridoio. */

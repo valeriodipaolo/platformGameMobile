@@ -395,7 +395,7 @@ public final class Game {
                 break;
             }
         }
-        if (p.onGround && Math.abs(p.vx) > 0.3f) runPhase += Math.abs(p.vx) * dt * 1.6f;
+        if (p.onGround && Math.abs(p.vx) > 0.3f) runPhase += Math.abs(p.vx) * dt * 1.0f;
         if (p.y > level.h + 1) die();
     }
 

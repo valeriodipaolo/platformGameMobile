@@ -327,7 +327,7 @@ public final class HeroModel {
         final int st = style;
         final boolean nu = st >= 1;
         // coefficienti: 1 = animazione originale; le nuove sono più rapide e accentuate, le scattanti ancora di più
-        final float phK = pick(st, 1f, 1.5f, 1.05f), swK = pick(st, 1f, 1.4f, 2.3f), bobK = pick(st, 1f, 2f, 3.6f), leanK = pick(st, 1f, 1.8f, 2.8f),
+        final float phK = pick(st, 1f, 1.5f, 0.72f), swK = pick(st, 1f, 1.4f, 2.3f), bobK = pick(st, 1f, 2f, 3.6f), leanK = pick(st, 1f, 1.8f, 2.8f),
                 rollK = pick(st, 1f, 2f, 3f), twK = pick(st, 1f, 2f, 3f), liftK = pick(st, 1f, 2.4f, 5.5f), airK = pick(st, 1f, 1.3f, 1.55f),
                 landDur = pick(st, 0.22f, 0.17f, 0.12f), landSq = pick(st, 1f, 1.8f, 2.6f), liftDur = pick(st, 0.14f, 0.1f, 0.07f);
         if (!wasGround && w.onGround) landT = landDur;        // appena atterrato: ammortizza piegandosi
