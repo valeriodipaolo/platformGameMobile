@@ -104,7 +104,7 @@ public final class Game {
     }
 
     private void loadLevel() {
-        level = levelNo > 12 ? LevelsB.build(levelNo) : levelNo == 11 ? LevelEleven.build() : levelNo == 9 ? LevelNine.build() : levelNo == 7 ? LevelSeven.build() : levelNo == 5 ? LevelFive.build() : levelNo == 3 ? LevelThree.build() : LevelOne.build();
+        level = levelNo > 24 ? LevelsC.build(levelNo) : levelNo > 12 ? LevelsB.build(levelNo) : levelNo == 11 ? LevelEleven.build() : levelNo == 9 ? LevelNine.build() : levelNo == 7 ? LevelSeven.build() : levelNo == 5 ? LevelFive.build() : levelNo == 3 ? LevelThree.build() : LevelOne.build();
         level.sealEnd();
         gateOpen = 0;
         launchT = -1;

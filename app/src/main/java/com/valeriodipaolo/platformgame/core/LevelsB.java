@@ -6,10 +6,10 @@ package com.valeriodipaolo.platformgame.core;
  * un atterraggio da scegliere. Il terreno base occupa le righe 10 e 11.
  */
 public final class LevelsB {
-    private static final int H = 12, G = 10;
-    private final Level lv;
+    static final int H = 12, G = 10;
+    final Level lv;
 
-    private LevelsB(int w, int id, int theme) {
+    LevelsB(int w, int id, int theme) {
         lv = new Level(w, H);
         lv.id = "l" + id;
         lv.theme = theme;
@@ -79,7 +79,7 @@ public final class LevelsB {
         return b.lv;
     }
 
-    private static void lvBattery(LevelsB b, float x, float y) {
+    static void lvBattery(LevelsB b, float x, float y) {
         b.lv.battery = new float[] {x, y};
     }
 
@@ -320,67 +320,67 @@ public final class LevelsB {
 
     // ------------------------------------------------------------------ attrezzi
 
-    private void g(int x0, int x1) {
+    void g(int x0, int x1) {
         for (int x = x0; x <= x1; x++) for (int y = G; y < H; y++) lv.set(x, y, Level.GROUND);
     }
 
-    private void hill(int x0, int x1, int maxRise) {
+    void hill(int x0, int x1, int maxRise) {
         for (int x = x0; x <= x1; x++) {
             int rise = Math.max(1, Math.round(maxRise * (float) Math.sin(Math.PI * (x - x0 + 0.5) / (x1 - x0 + 1))));
             for (int i = 1; i <= rise; i++) lv.set(x, G - i, Level.GROUND);
         }
     }
 
-    private void col(int x, int h) { for (int i = 1; i <= h; i++) lv.set(x, G - i, Level.STONE); }
-    private void up(int x, int n) { for (int i = 0; i < n; i++) col(x + i, i + 1); }
-    private void down(int x, int n) { for (int i = 0; i < n; i++) col(x + i, n - i); }
-    private void plat(int x, int y, int n) { for (int i = 0; i < n; i++) lv.set(x + i, y, Level.STONE); }
-    private void cr(int x, int y, int n) { for (int i = 0; i < n; i++) lv.set(x + i, y, Level.CRUMBLE); }
-    private void row(int x, int y, String s) { for (int i = 0; i < s.length(); i++) lv.set(x + i, y, s.charAt(i)); }
-    private void gem(float x, float y) { lv.shards.add(new float[] {x, y}); }
-    private void sh(int x, float y, int n) { for (int i = 0; i < n; i++) gem(x + i, y); }
+    void col(int x, int h) { for (int i = 1; i <= h; i++) lv.set(x, G - i, Level.STONE); }
+    void up(int x, int n) { for (int i = 0; i < n; i++) col(x + i, i + 1); }
+    void down(int x, int n) { for (int i = 0; i < n; i++) col(x + i, n - i); }
+    void plat(int x, int y, int n) { for (int i = 0; i < n; i++) lv.set(x + i, y, Level.STONE); }
+    void cr(int x, int y, int n) { for (int i = 0; i < n; i++) lv.set(x + i, y, Level.CRUMBLE); }
+    void row(int x, int y, String s) { for (int i = 0; i < s.length(); i++) lv.set(x + i, y, s.charAt(i)); }
+    void gem(float x, float y) { lv.shards.add(new float[] {x, y}); }
+    void sh(int x, float y, int n) { for (int i = 0; i < n; i++) gem(x + i, y); }
 
     /** Gemme ad arco sopra un burrone che comincia in x ed è largo n: indicano il salto. */
-    private void arc(int x, int n) {
+    void arc(int x, int n) {
         for (int i = 0; i < n; i++) {
             float u = (i + 0.5f) / n;
             gem(x + i, 7.2f - 1.4f * 4f * u * (1f - u));
         }
     }
 
-    private int stand(int x) {
+    int stand(int x) {
         int y = 0;
         while (y < H && !lv.solid(x, y)) y++;
         return y - 1;
     }
 
-    private void en(float x, int type) { en(x, type, 0, 0); }
-    private void en(float x, int type, float lo, float hi) { lv.enemies.add(new float[] {x, stand((int) x), type, lo, hi}); }
-    private void en(float x, int row, int type, float lo, float hi) { lv.enemies.add(new float[] {x, row, type, lo, hi}); }
-    private void crow(float x, float y, float lo, float hi) { lv.enemies.add(new float[] {x, y, Enemy.CROW, lo, hi}); }
-    private void storm(float x, float y, float lo, float hi) { lv.enemies.add(new float[] {x, y, Enemy.STORM, lo, hi}); }
-    private void whirl(float x, float lo, float hi) { en(x, Enemy.WHIRL, lo, hi); }
-    private void owl(float x, float y, float lo, float hi) { lv.enemies.add(new float[] {x, y, Enemy.OWL, lo, hi}); }
+    void en(float x, int type) { en(x, type, 0, 0); }
+    void en(float x, int type, float lo, float hi) { lv.enemies.add(new float[] {x, stand((int) x), type, lo, hi}); }
+    void en(float x, int row, int type, float lo, float hi) { lv.enemies.add(new float[] {x, row, type, lo, hi}); }
+    void crow(float x, float y, float lo, float hi) { lv.enemies.add(new float[] {x, y, Enemy.CROW, lo, hi}); }
+    void storm(float x, float y, float lo, float hi) { lv.enemies.add(new float[] {x, y, Enemy.STORM, lo, hi}); }
+    void whirl(float x, float lo, float hi) { en(x, Enemy.WHIRL, lo, hi); }
+    void owl(float x, float y, float lo, float hi) { lv.enemies.add(new float[] {x, y, Enemy.OWL, lo, hi}); }
     /** Riccio di castagna appeso alla quota y (di solito subito sotto una cassa o una mensola). */
-    private void chest(float x, float y) { lv.enemies.add(new float[] {x + 0.1f, y, Enemy.CHESTNUT, 0, 0}); }
+    void chest(float x, float y) { lv.enemies.add(new float[] {x + 0.1f, y, Enemy.CHESTNUT, 0, 0}); }
     /** Lapillo che salta dal burrone alla colonna x: periodo in secondi e altezza del salto in caselle. */
-    private void lap(float x, float period, float height) { lv.enemies.add(new float[] {x + 0.15f, 11.6f, Enemy.LAPILLO, period, height}); }
+    void lap(float x, float period, float height) { lv.enemies.add(new float[] {x + 0.15f, 11.6f, Enemy.LAPILLO, period, height}); }
     /** Stella cadente: parte sopra lo schermo alla colonna x e scende in diagonale verso sinistra. */
-    private void star(float x, float y) { lv.enemies.add(new float[] {x, y, Enemy.STAR, -3.2f, 4.6f}); }
+    void star(float x, float y) { lv.enemies.add(new float[] {x, y, Enemy.STAR, -3.2f, 4.6f}); }
     /** Solleone che gira attorno a (x, y) con raggio r e velocità angolare w. */
-    private void sun(float x, float y, float r, float w) { lv.enemies.add(new float[] {x, y, Enemy.SUNNY, w, r}); }
+    void sun(float x, float y, float r, float w) { lv.enemies.add(new float[] {x, y, Enemy.SUNNY, w, r}); }
 
-    private void jet(int x, float phase, float period) { lv.jets.add(new float[] {x, stand(x) + 1, period, phase}); }
-    private void thorn(int x) { lv.thorns.add(new float[] {x, stand(x)}); }
-    private void pad(int x) { lv.set(x, stand(x) + 1, Level.SPRING); }
+    void jet(int x, float phase, float period) { lv.jets.add(new float[] {x, stand(x) + 1, period, phase}); }
+    void thorn(int x) { lv.thorns.add(new float[] {x, stand(x)}); }
+    void pad(int x) { lv.set(x, stand(x) + 1, Level.SPRING); }
 
-    private void flight(int x) {
+    void flight(int x) {
         float[][] q = {{2f, 4.7f}, {3.5f, 3.0f}, {5f, 2.0f}, {6.4f, 1.6f}, {8f, 2.2f}, {9.4f, 4.1f}};
         for (float[] p : q) gem(x + 0.5f + p[0], p[1]);
     }
 
     /** Ponte di nuvole o tavole che cedono: larghe tre caselle, una ogni cinque da x0, alla riga indicata; una gemma sopra ognuna. */
-    private void bridge(int x0, int[] rows) {
+    void bridge(int x0, int[] rows) {
         for (int i = 0; i < rows.length; i++) {
             cr(x0 + i * 5, rows[i], 3);
             gem(x0 + i * 5 + 1, rows[i] - 2);

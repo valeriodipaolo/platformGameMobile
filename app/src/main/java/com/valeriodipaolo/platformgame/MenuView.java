@@ -36,11 +36,11 @@ final class MenuView extends View {
         painter = new AndroidPainter(ctx);
     }
 
-    private static final int LEVELS = 24, PER_ROW = 12;
+    private static final int LEVELS = 34, PER_ROW = 12;
 
     private float btnW() { return getWidth() * 0.074f; }
-    private float btnH() { return getHeight() * 0.185f; }
-    private float btnY(int i) { return getHeight() * (0.405f + 0.205f * (i / PER_ROW)); }
+    private float btnH() { return getHeight() * 0.14f; }
+    private float btnY(int i) { return getHeight() * (0.335f + 0.158f * (i / PER_ROW)); }
     private float btnX(int i) { return getWidth() * 0.5f + (i % PER_ROW - PER_ROW / 2f) * (btnW() + getWidth() * 0.0085f) + getWidth() * 0.004f; }
 
     private float chipW() { return getHeight() * 0.1f; }
@@ -63,13 +63,15 @@ final class MenuView extends View {
         String[] subById = {null, "Il prato", "Bosco (3D)", "Prato d'autunno", "Bosco d'autunno (3D)", "Tundra boreale", "Lago gelato (3D)",
                 "Prato in fiamme", "Bosco in fiamme (3D)", "Primavera", "Primavera e api (3D)", "Il cielo", "Sulle nuvole (3D)",
                 "Talpe e lumache", "Radure (3D)", "Castagne e gufi", "Querceto (3D)", "Neve e pupazzi", "Ghiaccio (3D)",
-                "Brace e lapilli", "Rogo (3D)", "Rane e fiori", "Giardino (3D)", "Stelle e soli", "Cielo alto (3D)"};
+                "Brace e lapilli", "Rogo (3D)", "Rane e fiori", "Giardino (3D)", "Stelle e soli", "Cielo alto (3D)",
+                "Valle delle molle", "Labirinto (3D)", "Ghiaccio fragile", "Arcipelago (3D)", "Le due strade", "Rovi (3D)",
+                "Pioggia di ricci", "Fuga dal rogo (3D)", "Scala celeste", "La vetta (3D)"};
         for (int i = 0; i < LEVELS; i++) {
             float x = btnX(i), y = btnY(i);
             painter.rect(x, y, btnW(), btnH(), 0xCC14324A);
             painter.rect(x, y, btnW(), 0.08f * s, 0xFF4FC3F7);
-            painter.text("LIVELLO " + (i + 1), x + btnW() / 2, y + btnH() * 0.5f, 0.27f * s, Painter.ALIGN_CENTER, 0xFFFFFFFF);
-            painter.text(subById[Levels.ORDER[i]], x + btnW() / 2, y + btnH() * 0.78f, 0.15f * s, Painter.ALIGN_CENTER, 0xFFB3E5FC);
+            painter.text("LIVELLO " + (i + 1), x + btnW() / 2, y + btnH() * 0.47f, 0.27f * s, Painter.ALIGN_CENTER, 0xFFFFFFFF);
+            painter.text(subById[Levels.ORDER[i]], x + btnW() / 2, y + btnH() * 0.8f, 0.15f * s, Painter.ALIGN_CENTER, 0xFFB3E5FC);
         }
         painter.text("Comandi dei livelli 3D: " + CTRL_TEXT[ctrl - 1], w / 2, h * 0.855f, 0.38f * s, Painter.ALIGN_CENTER, 0xFFFFFFFF);
         for (int i = 0; i < 6; i++) {

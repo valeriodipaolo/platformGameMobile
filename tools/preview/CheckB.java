@@ -4,7 +4,7 @@ public class CheckB {
     static int fails;
     static void ok(boolean c, String m) { System.out.println((c ? "OK   " : "FALLITO ") + m); if (!c) fails++; }
     public static void main(String[] a) {
-        for (int id : new int[]{13,15,17,19,21,23}) {
+        for (int id : (a.length > 0 ? new int[]{Integer.parseInt(a[0])} : new int[]{13,15,17,19,21,23,25,27,29,31,33})) {
             Game g = new Game(new MemorySave(), id);
             Level lv = g.level;
             int bad=0;

@@ -95,7 +95,7 @@ public final class World3D {
     public World3D(Save save, int levelNo) {
         this.save = save;
         this.levelNo = levelNo;
-        this.theme = levelNo > 12 ? levelNo - 12 : levelNo;
+        this.theme = levelNo > 24 ? Levels3C.theme(levelNo) : levelNo > 12 ? levelNo - 12 : levelNo;
         this.id = "l" + levelNo;
         newGame();
     }
@@ -105,7 +105,7 @@ public final class World3D {
         gems = 0;
         lives = START_LIVES;
         sealed = false;
-        if (levelNo > 12) Levels3B.build(this, levelNo); else if (levelNo == 12) LevelTwelve.build(this); else if (levelNo == 10) LevelTen.build(this); else if (levelNo == 8) LevelEight.build(this); else if (levelNo == 6) LevelSix.build(this); else if (levelNo == 4) LevelFour.build(this); else LevelTwo.build(this);
+        if (levelNo > 24) Levels3C.build(this, levelNo); else if (levelNo > 12) Levels3B.build(this, levelNo); else if (levelNo == 12) LevelTwelve.build(this); else if (levelNo == 10) LevelTen.build(this); else if (levelNo == 8) LevelEight.build(this); else if (levelNo == 6) LevelSix.build(this); else if (levelNo == 4) LevelFour.build(this); else LevelTwo.build(this);
         LevelFix.apply(this);
         gateOpen = 0;
         launchT = -1;

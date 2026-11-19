@@ -8,12 +8,13 @@ public class Check3B {
     static int xi(float x) { return (int) Math.floor(x + World3D.HALF); }
     static int zi(float z) { return (int) Math.floor(z); }
 
+    static int base; static boolean rel;
     static boolean blocked(World3D w, int c, int z) {
         if (z < 0 || z >= w.length) return false;
         int h = w.cell(c, z);
         if (h == 99) return true;
         if (h == World3D.PIT) return false;
-        if (h >= 1) return true;
+        if (h - base >= 1) return true;
         if (w.crate[z * World3D.W + c]) return true;
         for (float[] t : w.thorns) if (xi(t[0]) == c && zi(t[1]) == z) return true;
         return false;
@@ -38,6 +39,7 @@ public class Check3B {
     }
 
     static void run(int id) {
+        rel = id > 24;            // la terza serie ha piani rialzati: gli ostacoli si misurano rispetto al piano su cui si corre
         World3D b = new World3D(new MemorySave(), id);
         b.batteryOwned = true;
         int lives0 = b.lives;
@@ -47,6 +49,7 @@ public class Check3B {
         for (time = 0; time < 700; time += 1f / 60f) {
             b.hp = 99; b.invuln = 5f;
             if (b.state == World3D.PLAYING) {
+                int bh = b.cell(xi(b.px), zi(b.pz)); base = bh == World3D.PIT || !rel ? 0 : bh;
                 int best = cur; float bs = -1e9f;
                 for (int c = 0; c < World3D.W; c++) {
                     float s = freeRun(b, c, b.pz) - 0.4f * Math.abs(c - cur) + (c == cur ? 0.6f : 0);
@@ -84,7 +87,7 @@ public class Check3B {
     }
 
     public static void main(String[] a) {
-        for (int id : new int[] {14, 16, 18, 20, 22, 24}) {
+        for (int id : new int[] {14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34}) {
             if (a.length > 0 && !a[0].equals("" + id)) continue;
             run(id);
         }

@@ -320,53 +320,53 @@ public final class Levels3B {
     }
 
     // ------------------------------------------------------------------ attrezzi
-    private static void set(World3D w, int x, int z, int h) { w.height[z * W + x] = h; }
+    static void set(World3D w, int x, int z, int h) { w.height[z * W + x] = h; }
 
-    private static void pit(World3D w, int z0, int z1, int x0, int x1) {
+    static void pit(World3D w, int z0, int z1, int x0, int x1) {
         for (int z = z0; z <= z1; z++) for (int x = x0; x <= x1; x++) set(w, x, z, World3D.PIT);
     }
 
-    private static void island(World3D w, int z0, int z1, int x0, int x1) {
+    static void island(World3D w, int z0, int z1, int x0, int x1) {
         for (int z = z0; z <= z1; z++) for (int x = x0; x <= x1; x++) set(w, x, z, 0);
     }
 
-    private static void stones(World3D w, int z, int[] h) { for (int x = 0; x < W; x++) set(w, x, z, h[x]); }
+    static void stones(World3D w, int z, int[] h) { for (int x = 0; x < W; x++) set(w, x, z, h[x]); }
 
-    private static void wall(World3D w, int z, int gap) { for (int x = 0; x < W; x++) set(w, x, z, x == gap ? 0 : 1); }
+    static void wall(World3D w, int z, int gap) { for (int x = 0; x < W; x++) set(w, x, z, x == gap ? 0 : 1); }
 
-    private static void crate(World3D w, int x, int z) { w.crate[z * W + x] = true; }
+    static void crate(World3D w, int x, int z) { w.crate[z * W + x] = true; }
 
-    private static void gem(World3D w, float cx, float y, float z) { w.gemsList.add(new float[] {cx, y, z}); }
+    static void gem(World3D w, float cx, float y, float z) { w.gemsList.add(new float[] {cx, y, z}); }
 
-    private static void gemLine(World3D w, float cx, int z0, int z1) { for (int z = z0; z <= z1; z++) gem(w, cx, 0.7f, z + 0.5f); }
+    static void gemLine(World3D w, float cx, int z0, int z1) { for (int z = z0; z <= z1; z++) gem(w, cx, 0.7f, z + 0.5f); }
 
-    private static void gemLine3(World3D w, float cx, float y, int z0, int z1) { for (int z = z0; z <= z1; z++) gem(w, cx, y, z + 0.5f); }
+    static void gemLine3(World3D w, float cx, float y, int z0, int z1) { for (int z = z0; z <= z1; z++) gem(w, cx, y, z + 0.5f); }
 
     /** Arco di gemme sopra un burrone da z0 a z1. */
-    private static void arc(World3D w, float cx, int z0, int z1) {
+    static void arc(World3D w, float cx, int z0, int z1) {
         int n = z1 - z0 + 1;
         for (int i = 0; i < n; i++) { float u = (i + 0.5f) / n; gem(w, cx, 0.9f + 1.5f * 4f * u * (1f - u), z0 + i + 0.5f); }
     }
 
-    private static void flight(World3D w, int z) {
+    static void flight(World3D w, int z) {
         float[][] g = {{2.7f, 3.9f}, {5.3f, 5.2f}, {7.9f, 5.6f}, {10.5f, 4.5f}};
         for (float[] q : g) gem(w, 0, q[1], z + 0.5f + q[0]);
     }
 
-    private static void padRow(World3D w, int z, int c0, int c1) {
+    static void padRow(World3D w, int z, int c0, int c1) {
         for (int c = c0; c <= c1; c++) w.springs.add(new float[] {c - World3D.HALF + 0.5f, z + 0.5f});
     }
 
-    private static void thorn(World3D w, int xi, int z) { w.thorns.add(new float[] {xi - World3D.HALF + 0.5f, z + 0.5f}); }
+    static void thorn(World3D w, int xi, int z) { w.thorns.add(new float[] {xi - World3D.HALF + 0.5f, z + 0.5f}); }
 
-    private static void jet(World3D w, int xi, int z, float period, float phase) { w.jets.add(new float[] {xi - World3D.HALF + 0.5f, z + 0.5f, period, phase}); }
+    static void jet(World3D w, int xi, int z, float period, float phase) { w.jets.add(new float[] {xi - World3D.HALF + 0.5f, z + 0.5f, period, phase}); }
 
-    private static void log(World3D w, int z, float period, float phase) {
+    static void log(World3D w, int z, float period, float phase) {
         pit(w, z, z, 4, 4);
         w.logs.add(new float[] {z + 0.5f, period, phase});
     }
 
-    private static Enemy3 add(World3D w, int type, float x, float z, boolean alongZ, float lo, float hi, float y) {
+    static Enemy3 add(World3D w, int type, float x, float z, boolean alongZ, float lo, float hi, float y) {
         Enemy3 e = new Enemy3(x, z, alongZ, lo, hi);
         e.type = type; e.y = y; e.baseY = y; e.y0 = y;
         w.enemies.add(e);
@@ -374,56 +374,56 @@ public final class Levels3B {
     }
 
     /** x è una colonna 0..4: le colonne dei livelli sono indicate da -2 a 2 nelle gemme e nei pattugliamenti, qui da 0 a 4. */
-    private static float cx(int col) { return col - 2f; }
+    static float cx(int col) { return col - 2f; }
 
-    private static void hog(World3D w, float x, float z, boolean alongZ, float lo, float hi) { add(w, Enemy3.HOG, x, z, alongZ, lo, hi, 0); }
+    static void hog(World3D w, float x, float z, boolean alongZ, float lo, float hi) { add(w, Enemy3.HOG, x, z, alongZ, lo, hi, 0); }
 
-    private static void acorn(World3D w, float x, float z) { add(w, Enemy3.ACORN, x, z, false, -2f, 2f, 0); }
+    static void acorn(World3D w, float x, float z) { add(w, Enemy3.ACORN, x, z, false, -2f, 2f, 0); }
 
-    private static void crow(World3D w, float x, float z, boolean alongZ, float lo, float hi, float y) { add(w, Enemy3.CROW, x, z, alongZ, lo, hi, y); }
+    static void crow(World3D w, float x, float z, boolean alongZ, float lo, float hi, float y) { add(w, Enemy3.CROW, x, z, alongZ, lo, hi, y); }
 
-    private static void storm(World3D w, float x, float z, boolean alongZ, float lo, float hi, float y) { add(w, Enemy3.STORM, x, z, alongZ, lo, hi, y); }
+    static void storm(World3D w, float x, float z, boolean alongZ, float lo, float hi, float y) { add(w, Enemy3.STORM, x, z, alongZ, lo, hi, y); }
 
-    private static void whirl(World3D w, float x, float z, boolean alongZ, float lo, float hi) { add(w, Enemy3.WHIRL, x, z, alongZ, lo, hi, 0); }
+    static void whirl(World3D w, float x, float z, boolean alongZ, float lo, float hi) { add(w, Enemy3.WHIRL, x, z, alongZ, lo, hi, 0); }
 
 
 
-    private static void snail(World3D w, int col, int z, int z0, int z1) { snail(w, col, z, z0, z1, 0f); }
+    static void snail(World3D w, int col, int z, int z0, int z1) { snail(w, col, z, z0, z1, 0f); }
 
-    private static void snail(World3D w, int col, int z, int z0, int z1, float y) { add(w, Enemy3.SNAIL, cx(col), z + 0.5f, true, z0 + 0.5f, z1 + 0.5f, y); }
+    static void snail(World3D w, int col, int z, int z0, int z1, float y) { add(w, Enemy3.SNAIL, cx(col), z + 0.5f, true, z0 + 0.5f, z1 + 0.5f, y); }
 
-    private static void chest(World3D w, int col, int z, float y) { add(w, Enemy3.CHESTNUT, cx(col), z + 0.5f, true, z, z, y); }
+    static void chest(World3D w, int col, int z, float y) { add(w, Enemy3.CHESTNUT, cx(col), z + 0.5f, true, z, z, y); }
 
-    private static void owl(World3D w, int col, int z0, int z1, float y) { add(w, Enemy3.OWL, cx(col), (z0 + z1) / 2f, true, z0 + 0.5f, z1 + 0.5f, y); }
+    static void owl(World3D w, int col, int z0, int z1, float y) { add(w, Enemy3.OWL, cx(col), (z0 + z1) / 2f, true, z0 + 0.5f, z1 + 0.5f, y); }
 
     /** Pinguino che scivola di traverso nella corsia, tra le colonne lo e hi. */
-    private static void peng(World3D w, int z, float lo, float hi) { add(w, Enemy3.PENGUIN, 0, z + 0.5f, false, lo, hi, 0); }
+    static void peng(World3D w, int z, float lo, float hi) { add(w, Enemy3.PENGUIN, 0, z + 0.5f, false, lo, hi, 0); }
 
     /** Pinguino che scivola lungo il corridoio tra z0 e z1 nella colonna col. */
-    private static void peng2(World3D w, int col, int z0, int z1) { add(w, Enemy3.PENGUIN, cx(col), (z0 + z1) / 2f + 0.5f, true, z0 + 0.5f, z1 + 0.5f, 0); }
+    static void peng2(World3D w, int col, int z0, int z1) { add(w, Enemy3.PENGUIN, cx(col), (z0 + z1) / 2f + 0.5f, true, z0 + 0.5f, z1 + 0.5f, 0); }
 
-    private static void snowman(World3D w, int col, int z) { snowman(w, col, z, 0f); }
+    static void snowman(World3D w, int col, int z) { snowman(w, col, z, 0f); }
 
-    private static void snowman(World3D w, int col, int z, float y) { add(w, Enemy3.SNOWMAN, cx(col), z + 0.5f, false, cx(col), cx(col), y); }
+    static void snowman(World3D w, int col, int z, float y) { add(w, Enemy3.SNOWMAN, cx(col), z + 0.5f, false, cx(col), cx(col), y); }
 
-    private static void lap(World3D w, int col, int z, float period, float height) { add(w, Enemy3.LAPILLO, cx(col), z + 0.5f, false, period, height, 0); }
+    static void lap(World3D w, int col, int z, float period, float height) { add(w, Enemy3.LAPILLO, cx(col), z + 0.5f, false, period, height, 0); }
 
-    private static void sala(World3D w, int col, int z, int z0, int z1) { sala(w, col, z, z0, z1, 0f); }
+    static void sala(World3D w, int col, int z, int z0, int z1) { sala(w, col, z, z0, z1, 0f); }
 
-    private static void sala(World3D w, int col, int z, int z0, int z1, float y) { add(w, Enemy3.SALAMANDER, cx(col), z + 0.5f, true, z0 + 0.5f, z1 + 0.5f, y); }
+    static void sala(World3D w, int col, int z, int z0, int z1, float y) { add(w, Enemy3.SALAMANDER, cx(col), z + 0.5f, true, z0 + 0.5f, z1 + 0.5f, y); }
 
-    private static void frog(World3D w, int col, int z) { add(w, Enemy3.FROG, cx(col), z + 0.5f, false, -2f, 2f, 0); }
+    static void frog(World3D w, int col, int z) { add(w, Enemy3.FROG, cx(col), z + 0.5f, false, -2f, 2f, 0); }
 
-    private static void plant(World3D w, int col, int z) { plant(w, col, z, 0f); }
+    static void plant(World3D w, int col, int z) { plant(w, col, z, 0f); }
 
-    private static void plant(World3D w, int col, int z, float y) { add(w, Enemy3.PLANT, cx(col), z + 0.5f, false, cx(col), cx(col), y); }
+    static void plant(World3D w, int col, int z, float y) { add(w, Enemy3.PLANT, cx(col), z + 0.5f, false, cx(col), cx(col), y); }
 
     /** Stella cadente: parte da (x, y, z) e si muove con velocità (vx, vy); lo si dà in colonne -4..4. */
-    private static void star(World3D w, float x, float y, float z, float vx, float vy) { add(w, Enemy3.STAR, x, z, false, vx, vy, y); }
+    static void star(World3D w, float x, float y, float z, float vx, float vy) { add(w, Enemy3.STAR, x, z, false, vx, vy, y); }
 
-    private static void sun(World3D w, int col, float y, float z, float r, float speed) { sun(w, cx(col), y, z, r, speed); }
+    static void sun(World3D w, int col, float y, float z, float r, float speed) { sun(w, cx(col), y, z, r, speed); }
 
-    private static void sun(World3D w, float x, float y, float z, float r, float speed) {
+    static void sun(World3D w, float x, float y, float z, float r, float speed) {
         Enemy3 e = add(w, Enemy3.SUNNY, x, z, false, speed, r, y);
         e.x0 = x; e.y0 = y;
     }

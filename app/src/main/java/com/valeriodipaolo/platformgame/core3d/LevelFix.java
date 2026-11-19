@@ -36,9 +36,9 @@ final class LevelFix {
             Enemy3 e = it.next();
             int xi = World3D.xi(e.x), zi = World3D.zi(e.z);
             // chi fa la ronda di traverso può partire fuori dal corridoio (le stelle cadenti): conta il tratto che percorre, non il punto di partenza
-            boolean patrol = e.type == Enemy3.BEETLE || e.type == Enemy3.HOG || e.type == Enemy3.CROW || e.type == Enemy3.ACORN || e.type == Enemy3.STAR
+            boolean patrol = e.type == Enemy3.BEETLE || e.type == Enemy3.HOG || e.type == Enemy3.CROW || e.type == Enemy3.ACORN
                     || e.type == Enemy3.SNAIL || e.type == Enemy3.PENGUIN;       // lo e hi sono gli estremi della ronda (negli altri tipi hanno altri significati)
-            boolean out = e.alongZ || !patrol ? (e.x < -edge || e.x > edge) : (Math.max(e.lo, e.hi) < -edge || Math.min(e.lo, e.hi) > edge);
+            boolean out = e.type == Enemy3.STAR ? false : e.alongZ || !patrol ? (e.x < -edge || e.x > edge) : (Math.max(e.lo, e.hi) < -edge || Math.min(e.lo, e.hi) > edge);
             out |= e.z < 0 || e.z >= w.length;
             if (!out && !e.flies() && e.type != Enemy3.LAPILLO) {      // il lapillo nasce dalla lava: parte per forza nel vuoto
                 xi = Math.max(0, Math.min(World3D.W - 1, xi));
