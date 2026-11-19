@@ -30,6 +30,10 @@ public final class Scene3D {
             Img.R3B_BRANCH, Img.R3B_TUFT, Img.R3B_TUFT, Img.R3B_FLOWERS, Img.R3_ROCK, Img.R3_RAY, Img.R3B_TREE, Img.R3B_ICE};
     private static final int[] K_TEX_FIRE = {Img.R3C_GRASS, Img.R3C_LAVA, Img.R3_ROCK, Img.R3C_GRASS, Img.R3C_FOREST, Img.R3_BARK,
             Img.R3C_BRANCH, Img.R3C_TUFT, Img.R3C_TUFT, Img.R3C_FLOWERS, Img.R3_ROCK, Img.R3_RAY, Img.R3C_TREE, Img.R3C_BRANCH};
+    private static final int[] K_TEX_JUNGLE = {Img.R3J_GRASS, Img.R3J_SAND, Img.R3J_TEMPLE, Img.R3J_GRASS, Img.R3J_FOREST, Img.R3_BARK,
+            Img.R3J_CROWN, Img.R3J_TUFT, Img.R3_FERN, Img.R3J_FLOWERS, Img.R3_ROCK, Img.R3_RAY, Img.R3J_TREE, Img.R3J_FOLIAGE};
+    /** Chiome della giungla: verdi profondi, qualche verde acido e un albero in fiore. */
+    static final float[][] JUNGLE_TINT = {{0.55f, 0.95f, 0.5f}, {0.4f, 0.8f, 0.42f}, {0.7f, 1.0f, 0.45f}, {0.45f, 0.9f, 0.6f}, {0.62f, 0.86f, 0.38f}, {1.0f, 0.62f, 0.5f}};
     private static final int[] K_TEX_HEAVEN = {Img.R3H_CLOUD, Img.R3H_BODY, Img.R3H_MARBLE, Img.R3H_CLOUD, Img.R3H_SEA, Img.R3_BARK,
             Img.R3D_CROWN, Img.R3D_TUFT, Img.R3_FERN, Img.R3D_FLOWERS, Img.R3_ROCK, Img.R3_RAY, Img.R3D_TREE, Img.R3D_FOLIAGE};
     /** Tinte delle chiome d'autunno: arancio, rosso, giallo, ruggine, verde, zucca. */
@@ -39,7 +43,7 @@ public final class Scene3D {
     /** Tinte delle chiome di primavera: ciliegi rosa e bianchi, qualche albero verde tenero. */
     static final float[][] SPRING_TINT = {{1.0f, 0.78f, 0.88f}, {1.0f, 0.92f, 0.96f}, {1.0f, 0.70f, 0.82f},
             {0.80f, 1.0f, 0.60f}, {1.0f, 0.96f, 0.98f}, {0.72f, 1.0f, 0.55f}};
-    float[][] tints() { return spring ? SPRING_TINT : AUTUMN_TINT; }
+    float[][] tints() { return jungle ? JUNGLE_TINT : spring ? SPRING_TINT : AUTUMN_TINT; }
 
     private static final class Tree {
         float x, y, z, h, rad, tint;
@@ -59,7 +63,9 @@ public final class Scene3D {
     private int fadeZ0, fadeNz;
     private Mesh leaf, crateStar;
     private final FoeModels foes = new FoeModels();
-    boolean autumn, aurora, fire, spring, heaven;
+    boolean autumn, aurora, fire, spring, heaven, jungle;
+    /** Isola tropicale: 14 giungla di giorno, 16 tempio al tramonto, 18 fiume di notte. */
+    int isle;
     private final Decor decor = new Decor(this);
     private Mesh wing;
     private Mesh flake, curtain;
@@ -73,6 +79,8 @@ public final class Scene3D {
     private final HeroModel hero = new HeroModel();
     private int builtFor = -1;
     private float camX, camY = 0, camZ;
+    private float backK, nearZ, farZ;
+    private boolean back;
     private boolean camInit;
     final float[] lt = new float[3];
 
@@ -295,15 +303,20 @@ public final class Scene3D {
         heaven = w.theme == 12;
         pitD = heaven ? 2.2f : PIT_DEPTH;
         spring = w.theme == 10;
-        autumn = w.theme == 4 || spring;       // la primavera usa gli alberi a chioma larga dell'autunno, con altri colori
+        jungle = w.theme == 14 || w.theme == 16 || w.theme == 18;
+        isle = jungle ? w.theme : 0;
+        autumn = w.theme == 4 || spring || jungle;       // la primavera (e la giungla) usano gli alberi a chioma larga dell'autunno, con altri colori
         aurora = w.theme == 6;
         fire = w.theme == 8;
-        ktex = heaven ? K_TEX_HEAVEN : spring ? K_TEX_SPRING : fire ? K_TEX_FIRE : aurora ? K_TEX_AURORA : autumn ? K_TEX_AUTUMN : K_TEX_SUMMER;
+        ktex = jungle ? K_TEX_JUNGLE : heaven ? K_TEX_HEAVEN : spring ? K_TEX_SPRING : fire ? K_TEX_FIRE : aurora ? K_TEX_AURORA : autumn ? K_TEX_AUTUMN : K_TEX_SUMMER;
         if (heaven) { fogR = 0.86f; fogG = 0.93f; fogB = 1.0f; lip = 0.5f; }
         else if (spring) { fogR = 0.80f; fogG = 0.90f; fogB = 0.97f; lip = 0.5f; }
         else if (autumn) { fogR = 0.90f; fogG = 0.79f; fogB = 0.64f; lip = 0.5f; }
         if (aurora) { fogR = 0.05f; fogG = 0.10f; fogB = 0.22f; lip = 0.5f; }
         if (fire) { fogR = 0.36f; fogG = 0.15f; fogB = 0.08f; lip = 0.5f; }
+        if (isle == 14) { fogR = 0.70f; fogG = 0.88f; fogB = 0.86f; }
+        if (isle == 16) { fogR = 0.86f; fogG = 0.56f; fogB = 0.44f; }
+        if (isle == 18) { fogR = 0.06f; fogG = 0.10f; fogB = 0.18f; }
         MeshBuilder b;
         int z0 = -8, z1 = w.length + 40;
         zBase = z0;
@@ -315,11 +328,11 @@ public final class Scene3D {
         b = new MeshBuilder();                                         // cielo: occupa la parte alta dello schermo, con la foschia all'orizzonte
         float skyLow = heaven ? -1f : 0.18f;                           // in cielo il fondale riempie tutto lo schermo, anche sotto l'orizzonte
         b.quad(-1, skyLow, 0.999f, 1, skyLow, 0.999f, 1, 1, 0.999f, -1, 1, 0.999f, 0, 0, -1, 0, 0, 1, 1);
-        sky = b.build(heaven ? Img.R3H_SKY : spring ? Img.R3D_SKY : fire ? Img.R3C_SKY : aurora ? Img.R3B_SKY : autumn ? Img.R3A_SKY : Img.R3_SKY, false, false);
+        sky = b.build(isle == 16 ? Img.R3J_DUSK : isle == 18 ? Img.R3J_NIGHT : jungle ? Img.R3J_SKY : heaven ? Img.R3H_SKY : spring ? Img.R3D_SKY : fire ? Img.R3C_SKY : aurora ? Img.R3B_SKY : autumn ? Img.R3A_SKY : Img.R3_SKY, false, false);
 
         b = new MeshBuilder();                                         // montagne lontane
         b.quad(-330, -4, 0, 330, -4, 0, 330, 78, 0, -330, 78, 0, 0, 0, -1, 0, 0, 2, 1);
-        mountains = b.build(heaven ? Img.R3H_MOUNTAINS : spring ? Img.R3D_MOUNTAINS : fire ? Img.R3C_MOUNTAINS : aurora ? Img.R3B_MOUNTAINS : autumn ? Img.R3A_MOUNTAINS : Img.R3_MOUNTAINS, true, false);
+        mountains = b.build(jungle ? Img.R3J_MOUNTAINS : heaven ? Img.R3H_MOUNTAINS : spring ? Img.R3D_MOUNTAINS : fire ? Img.R3C_MOUNTAINS : aurora ? Img.R3B_MOUNTAINS : autumn ? Img.R3A_MOUNTAINS : Img.R3_MOUNTAINS, true, false);
         b = new MeshBuilder();                                         // tenda d'aurora, molto alta e lontana
         b.quad(-350, 0, 0, 350, 0, 0, 350, 105, 0, -350, 105, 0, 0, 0, -1, 0, 0, 2.4f, 1);
         curtain = b.build(Img.R3B_AURORA, true, false);
@@ -415,14 +428,14 @@ public final class Scene3D {
                    0, 1, 0, 0, 0, 90f, 150f);
             seaPlane = b.build(Img.R3H_SEA, false, true);
         }
-        if (spring) {                                              // nei burroni scorre un fiume: due piani d'acqua, quello sopra trasparente e mosso
+        if (spring || jungle) {                                    // nei burroni scorre un fiume: due piani d'acqua, quello sopra trasparente e mosso
             float wy = -0.75f, zl = (z1 - z0) / 3f;
             b = new MeshBuilder();
             b.quad(-World3D.HALF, wy, z0, World3D.HALF, wy, z0, World3D.HALF, wy, z1, -World3D.HALF, wy, z1, 0, 1, 0, 0, 0, 2.2f, zl);
-            pitFloor = b.build(Img.R3D_WATER, false, true);
+            pitFloor = b.build(jungle ? Img.R3J_WATER : Img.R3D_WATER, false, true);
             b = new MeshBuilder();
             b.quad(-World3D.HALF, 0, z0, World3D.HALF, 0, z0, World3D.HALF, 0, z1, -World3D.HALF, 0, z1, 0, 1, 0, 0.3f, 0.2f, 2.0f, zl * 1.3f);
-            pitWater = b.build(Img.R3D_WATER, true, true);
+            pitWater = b.build(jungle ? Img.R3J_WATER : Img.R3D_WATER, true, true);
         }
 
         // ---- lati: un'unica superficie continua dal bordo del sentiero al bosco. Il prato sfuma nel sottobosco:
@@ -833,7 +846,7 @@ public final class Scene3D {
         MeshBuilder b = mb(K_FERN, z);
         lightAt(x, z, 1f);
         float lr = lt[0], lg = lt[1], lb = lt[2];
-        if (autumn && !spring) { lr *= 1.25f; lg *= 0.8f; lb *= 0.45f; }
+        if (autumn && !spring && !jungle) { lr *= 1.25f; lg *= 0.8f; lb *= 0.45f; }
         int nf = 9 + r.nextInt(4), segs = 3;
         float rot = r.nextFloat() * 6.283f;
         for (int k = 0; k < nf; k++) {
@@ -932,7 +945,8 @@ public final class Scene3D {
             // abeti giovani
             for (float z = z0; z < z1; z += 3.5f + r.nextFloat() * 5f) {
                 float d = 1.4f + r.nextFloat() * 3.2f, x = side * (World3D.HALF + d), h = 1.0f + r.nextFloat() * 1.6f;
-                if (autumn) broadleaf(x, groundAt(x, z) - 0.05f, z, h + 0.6f, h * 0.35f, 0.95f + 0.2f * r.nextFloat(), 3, r);
+                if (jungle) palm(x, groundAt(x, z) - 0.05f, z, h * 1.6f + 1.4f, r);
+                else if (autumn) broadleaf(x, groundAt(x, z) - 0.05f, z, h + 0.6f, h * 0.35f, 0.95f + 0.2f * r.nextFloat(), 3, r);
                 else fir(x, groundAt(x, z) - 0.05f, z, h, h * 0.3f, 0.95f + 0.2f * r.nextFloat(), false, r);
             }
             // massi muschiati: appoggiati sulla quota più bassa della maglia di terreno sotto di loro e affondati
@@ -1080,7 +1094,8 @@ public final class Scene3D {
         b.box(0, 0.5f, 0, 0.96f, 0.96f, 0.96f);
         crate = b.build(Img.BONUS, false, true);
         crate.spec = 0.1f; crate.shine = 20f;
-        if ((autumn && !spring) || aurora) buildPumpkin();
+        if ((autumn && !spring && !jungle) || aurora) buildPumpkin();
+        if (jungle) buildIsland();
         if (spring || heaven) {                                        // casse gialle con la stella rosa; fiori a molla e rovi
             b = new MeshBuilder();
             b.roundBox(0, 0.5f, 0, 0.96f, 0.96f, 0.96f, 0.16f);
@@ -1348,22 +1363,32 @@ public final class Scene3D {
 
         // camera dietro le spalle: segue il giocatore, un po' meno di traverso, e l'altezza del terreno con dolcezza
         float tx = w.px * 0.6f, tz = w.pz;
-        if (!camInit) { camX = tx; camZ = tz; camY = w.groundY; camInit = true; }
+        boolean wantBack = w.pz < w.camBackUntil;
+        if (!camInit) { camX = tx; camZ = tz; camY = w.groundY; camInit = true; backK = wantBack ? 1 : 0; }
+        backK += ((wantBack ? 1f : 0f) - backK) * 0.035f;            // si gira con calma alla fine della fuga
+        back = backK > 0.5f;
         camX += (tx - camX) * 0.25f;
         camZ = tz;
         // la camera sta sopra anche a ciò che c'è sotto di lei (6 m dietro il robot): niente terrazze che le passano attraverso
-        float behind = Math.max(0f, w.topAt(Math.max(-2.4f, Math.min(2.4f, camX)), camZ - 6.0f));
+        float behind = Math.max(0f, w.topAt(Math.max(-2.4f, Math.min(2.4f, camX)), camZ + (back ? 7.5f : -6.0f)));
         camY += (Math.max(Math.max(0, w.groundY), behind) - camY) * 0.06f;
         float lift = Math.max(0, w.py - camY) * 0.35f;
-        Mat4.lookAt(view, camX, camY + 3.3f + lift, camZ - 6.0f, camX * 0.9f, camY + 1.0f + lift, camZ + 5f);
+        float bk = backK * backK * (3 - 2 * backK);
+        // davanti al robot, più in alto, guardando indietro: si vede il masso che arriva e il robot che corre verso lo schermo
+        Mat4.lookAt(view, camX, camY + 3.3f + lift + 1.6f * bk, camZ - 6.0f + 13.5f * bk, camX * 0.9f, camY + 1.0f + lift, camZ + 5f - 9f * bk);
+        nearZ = back ? w.pz - 60f : w.pz - 4f;
+        farZ = back ? w.pz + 3f : w.pz + 120f;
         Mat4.perspective(proj, 58f, aspect, 0.3f, 400f);
-        g.begin(view, proj, fogR, fogG, fogB, 30f, 115f, 0.9f);
+        g.begin(view, proj, fogR, fogG, fogB, isle == 18 ? 16f : 30f, isle == 18 ? 70f : 115f, isle == 18 ? 0.95f : 0.9f);
         g.grade(1.04f, 0.95f, 0.86f);                                   // estate: verde meno acido, luce più calda
         if (heaven) g.grade(1.08f, 1.04f, 0.98f);
         else if (spring) g.grade(1.04f, 0.97f, 0.90f);
         else if (autumn) g.grade(1.07f, 0.96f, 0.82f);
         if (aurora) g.grade(0.34f, 0.52f, 0.88f);
         if (fire) g.grade(1.0f, 0.74f, 0.58f);
+        if (isle == 14) g.grade(1.02f, 1.0f, 0.92f);
+        if (isle == 16) g.grade(1.2f, 0.86f, 0.66f);
+        if (isle == 18) g.grade(0.24f, 0.32f, 0.58f);
         g.time(w.time);
 
         g.backdrop(sky);
@@ -1378,22 +1403,22 @@ public final class Scene3D {
             }
         }
         Mat4.setIdentity(m);
-        Mat4.translate(m, camX * 0.3f, heaven ? -34f : 0f, camZ + 230f);
+        Mat4.translate(m, camX * 0.3f, heaven ? -34f : 0f, camZ + (back ? -230f : 230f));
         if (aurora) Mat4.scale(m, 1f, 0.5f, 1f);          // montagne basse: lasciano vedere l'aurora tra gli alberi
-        g.draw(mountains, m, 1, 1, 1, 1, aurora ? 0.35f : 1);
+        g.draw(mountains, m, 1, 1, 1, 1, aurora ? 0.35f : isle == 18 ? 0.15f : 1);
         // (le montagne sono già ritoccate nella texture)
 
-        if (!heaven) g.draw(pitFloor, ident, 1, 1, 1, 1, spring ? 0.45f : 1);
-        if (spring) {
+        if (!heaven) g.draw(pitFloor, ident, 1, 1, 1, 1, isle == 18 ? 0.1f : spring || jungle ? 0.45f : 1);
+        if (spring || jungle) {
             Mat4.setIdentity(m);
             Mat4.translate(m, 0.18f * (float) Math.sin(w.time * 0.7f), -0.7f + 0.03f * (float) Math.sin(w.time * 1.9f), 0.25f * (float) Math.sin(w.time * 0.5f));
-            g.draw(pitWater, m, 1, 1, 1, 0.5f, 0.7f);
+            g.draw(pitWater, m, 1, 1, 1, 0.5f, isle == 18 ? 0.2f : 0.7f);
         }
-        float vz0 = camZ - 10f, vz1 = camZ + 105f;
+        float vz0 = back ? camZ - 105f : camZ - 10f, vz1 = back ? camZ + 14f : camZ + 105f;
         for (int c = 0; c < nChunks; c++) {
             float cz0 = zBase + c * CH, cz1 = cz0 + CH;
             if (cz1 < vz0 || cz0 > vz1) continue;
-            boolean farChunk = cz0 > camZ + 68f;          // in lontananza erba, fiori e piccoli oggetti non si distinguono: non si disegnano
+            boolean farChunk = back ? cz1 < camZ - 68f : cz0 > camZ + 68f;          // in lontananza erba, fiori e piccoli oggetti non si distinguono: non si disegnano
             for (int k = 0; k < K_N; k++) {
                 if (farChunk && (k == K_TUFT || k == K_FERN || k == K_FLOWER || k == K_PROP || k == K_GLOW)) continue;
                 if (k != K_RAY && k != K_TRAIL && land[k][c] != null) g.draw(land[k][c], ident, 1, 1, 1, 1, k == K_GLOW ? 0.6f : fire && k == K_DIRT ? 0.45f : 0);
@@ -1405,12 +1430,13 @@ public final class Scene3D {
             if (land[K_TRAIL][c] != null && cz0 + CH >= vz0 && cz0 <= vz1) g.draw(land[K_TRAIL][c], ident, 1, 1, 1, 1, 0);
         }
 
-        float near = w.pz - 4, far = w.pz + 120;      // gli oggetti tra la camera e il robot finirebbero enormi in primo piano
+        float near = nearZ, far = farZ;      // gli oggetti tra la camera e il robot finirebbero enormi in primo piano
         for (int z = Math.max(0, (int) near); z < Math.min(w.length, (int) far); z++) {
             for (int x = 0; x < World3D.W; x++) {
                 if (!w.crate[z * World3D.W + x]) continue;
                 Mat4.setIdentity(m);
                 Mat4.translate(m, x - World3D.HALF + 0.5f, bumpAt(x - World3D.HALF + 0.5f, z + 0.5f) - 0.03f, z + 0.5f);
+                if (jungle && w.crateKind != null) { drawIslandCrate(w, g, z * World3D.W + x); continue; }
                 g.draw(crate, m, 1, 1, 1, 1, fire ? 0.3f : spring || heaven ? 0.1f : autumn ? 0 : aurora ? 0.12f : 0.15f);
                 if (crateStar != null) g.draw(crateStar, m, 1, 1, 1, 1, 0.92f);
             }
@@ -1506,10 +1532,11 @@ public final class Scene3D {
         }
         if (fire) { drawTreeFlames(w, g); drawFireHazards(w, g); }
         if (spring || heaven) drawSpringProps(w, g);
+        if (jungle) drawIslandProps(w, g);
         if (w.chase == 1) { drawHive(w, g); drawBees(w, g); }
         for (int c = 0; c < nChunks; c++) {
             float cz0 = zBase + c * CH;
-            if (land[K_RAY][c] != null && cz0 + CH > camZ - 6f && cz0 < camZ + 60f) g.draw(land[K_RAY][c], ident, 1, 1, 1, 0.15f, 1);
+            if (!back && land[K_RAY][c] != null && cz0 + CH > camZ - 6f && cz0 < camZ + 60f) g.draw(land[K_RAY][c], ident, 1, 1, 1, 0.15f, 1);
         }
         if (w.spinning()) {                             // dieci anelli tenui, stessa estensione di prima
             for (int i = 0; i < 10; i++) {
@@ -1538,6 +1565,7 @@ public final class Scene3D {
     /** Foglie che cadono dagli alberi, portate dal vento: si ripetono ogni 34 m attorno al giocatore. */
     private void drawLeaves(World3D w, Gfx3D g) {
         if (fire) { drawEmbers(w, g); return; }
+        if (isle == 18) { drawFireflies(w, g); return; }
         final int n = aurora ? 260 : heaven ? 120 : spring ? 150 : autumn ? 190 : 90;
         final float span = 34f;
         for (int i = 0; i < n; i++) {
@@ -1562,8 +1590,26 @@ public final class Scene3D {
             }
             float sz = (spring ? 0.1f : 0.15f) + (spring ? 0.07f : 0.11f) * hs;
             Mat4.scale(m, sz, sz, sz);
-            float[] c = heaven ? GOLD_TINT[(int) (hv * 3.999f)] : spring ? PETAL_TINT[(int) (hv * 3.999f)] : LEAF_TINT[(int) (hv * 4.999f)];
+            float[] c = jungle ? JUNGLE_TINT[(int) (hv * 4.999f)] : heaven ? GOLD_TINT[(int) (hv * 3.999f)] : spring ? PETAL_TINT[(int) (hv * 3.999f)] : LEAF_TINT[(int) (hv * 4.999f)];
             g.draw(leaf, m, c[0], c[1], c[2], 1, 0.15f);
+        }
+    }
+
+    /** Lucciole sul fiume di notte: puntini che si accendono e si spengono, vagando lenti attorno al giocatore. */
+    private void drawFireflies(World3D w, Gfx3D g) {
+        final float span = 30f;
+        for (int i = 0; i < 90; i++) {
+            float hx = hash(i, 1, 301), hy = hash(i, 2, 302), hz = hash(i, 3, 303), hs = hash(i, 4, 304);
+            float zr = hz * span, z = zr + span * (float) Math.floor(((back ? camZ - 26f : camZ - 4f) - zr) / span + 1f);
+            float x = (hx * 2f - 1f) * 7f + 0.6f * (float) Math.sin(w.time * 0.7f + hs * 9f);
+            float y = Math.max(0f, groundAt(Math.max(-2.4f, Math.min(2.4f, x)), z)) + 0.4f + 2.2f * hy + 0.3f * (float) Math.sin(w.time * 1.1f + hs * 7f);
+            float on = Math.max(0f, (float) Math.sin(w.time * (1.2f + hs) + hs * 40f));
+            if (on < 0.05f) continue;
+            Mat4.setIdentity(m);
+            Mat4.translate(m, x, y, z);
+            float sz = 0.05f + 0.04f * on;
+            Mat4.scale(m, sz, sz, sz);
+            g.draw(boomBall, m, 0.8f, 1f, 0.4f, on, 1f);
         }
     }
 
@@ -1779,6 +1825,169 @@ public final class Scene3D {
                 g.draw(flame, m, 1f, 1f, 1f, 0.95f, 1f);
             }
         }
+    }
+
+    // ------------------------------------------------------------------ isola tropicale
+
+    private Mesh[] crateKinds;
+    private Mesh boomBall, boomRing, crusherBlock, crusherChain, raftMesh, boulderMesh;
+
+    private void buildIsland() {
+        crateKinds = new Mesh[5];
+        int[] tex = {Img.R3J_CRATE, Img.R3J_TNT, Img.R3J_NITRO, Img.R3J_BOUNCE, Img.R3J_CHECK};
+        for (int k = 0; k < 5; k++) {
+            MeshBuilder b = new MeshBuilder();
+            b.box(0, 0.5f, 0, 0.94f, 0.94f, 0.94f);
+            crateKinds[k] = b.build(tex[k], false, true);
+            crateKinds[k].spec = 0.15f; crateKinds[k].shine = 18f;
+        }
+        MeshBuilder b = new MeshBuilder().color(255, 190, 70);
+        b.ellipsoid(0, 0, 0, 1, 1, 1, 18, 12);
+        boomBall = b.build(-1, true, false);
+        b = new MeshBuilder().color(255, 240, 200);
+        b.cylinder(0, -0.04f, 0.04f, 0, 1f, 0.82f, 24, true, false);
+        boomRing = b.build(-1, true, false);
+        b = new MeshBuilder();                                          // pestello: blocco di pietra scolpita con la faccia di un idolo
+        b.roundBox(0, 0.8f, 0, 0.98f, 1.6f, 0.98f, 0.08f);
+        crusherBlock = b.build(Img.R3J_TEMPLE, false, true);
+        crusherBlock.spec = 0.1f; crusherBlock.shine = 12f;
+        b = new MeshBuilder().color(70, 66, 60);
+        b.cylinder(0, 0, 9f, 0, 0.06f, 0.06f, 6, false, false);
+        crusherChain = b.build(-1, false, true);
+        b = new MeshBuilder();                                          // zattera: quattro tronchi legati
+        for (int i = 0; i < 4; i++) {
+            float x = -0.36f + i * 0.24f;
+            b.colorf(0.62f + 0.06f * (i % 2), 0.44f, 0.26f);
+            FoeModels.tube(b, new float[][] {{x, 0.08f, -0.46f}, {x, 0.1f, 0f}, {x, 0.08f, 0.46f}}, new float[] {0.12f, 0.13f, 0.12f}, 8, FoeModels.flat(new float[] {0.62f + 0.06f * (i % 2), 0.44f, 0.26f}));
+        }
+        b.colorf(0.86f, 0.78f, 0.5f);
+        b.box(0, 0.2f, -0.28f, 0.9f, 0.05f, 0.08f);
+        b.box(0, 0.2f, 0.28f, 0.9f, 0.05f, 0.08f);
+        raftMesh = b.build(-1, false, true);
+        raftMesh.spec = 0.05f; raftMesh.shine = 8f;
+        b = new MeshBuilder();                                          // il masso del tempio: una sfera di pietra scolpita
+        b.ellipsoid(0, 0, 0, 1, 1, 1, 22, 16);
+        boulderMesh = b.build(Img.R3J_TEMPLE, false, true);
+        boulderMesh.spec = 0.08f; boulderMesh.shine = 10f;
+    }
+
+    /** Palma: tronco ad arco a anelli e una corona di fronde che ricadono, fatte di foglioline. */
+    private void palm(float x, float y, float z, float h, Random r) {
+        MeshBuilder tb = mb(K_TRUNK, z), fb = mb(K_BLOB, z);
+        float lean = (x > 0 ? 1 : -1) * (0.4f + 0.5f * r.nextFloat()), rz = (r.nextFloat() - 0.5f) * 0.8f;
+        int n = 7;
+        float[][] c = new float[n][];
+        float[] rad = new float[n];
+        for (int i = 0; i < n; i++) {
+            float t = i / (float) (n - 1);
+            c[i] = new float[] {x + lean * t * t * h * 0.35f, y + t * h, z + rz * t * t};
+            rad[i] = 0.16f - 0.06f * t;
+        }
+        lightAt(x, z, 1f);
+        float[] bark = {lt[0] * 1.15f, lt[1] * 1.0f, lt[2] * 0.8f};
+        FoeModels.tube(tb, c, rad, 7, FoeModels.flat(bark));
+        float[] top = c[n - 1];
+        int fronds = 7 + r.nextInt(3);
+        float rot = r.nextFloat() * 6.283f;
+        for (int k = 0; k < fronds; k++) {
+            float az = rot + k * 6.283f / fronds, ca = (float) Math.cos(az), sa = (float) Math.sin(az);
+            float len = 1.6f + 0.6f * r.nextFloat(), up = 0.5f + 0.4f * r.nextFloat();
+            int seg = 8;
+            float tone = 0.8f + 0.35f * r.nextFloat();
+            for (int i = 0; i < seg; i++) {
+                float t0 = i / (float) seg, t1 = (i + 1) / (float) seg;
+                float x0 = top[0] + ca * len * t0, z0 = top[2] + sa * len * t0, y0 = top[1] + up * t0 - 1.5f * t0 * t0 * len * 0.5f;
+                float x1 = top[0] + ca * len * t1, z1 = top[2] + sa * len * t1, y1 = top[1] + up * t1 - 1.5f * t1 * t1 * len * 0.5f;
+                float wl = 0.5f * (1 - t0 * 0.7f);
+                for (int sgn = -1; sgn <= 1; sgn += 2) {                 // fogliolina pendente da ogni lato del rachide
+                    float px2 = (x0 + x1) / 2 - sa * sgn * wl, pz2 = (z0 + z1) / 2 + ca * sgn * wl, py2 = (y0 + y1) / 2 - wl * 0.7f;
+                    fb.colorf(0.32f * tone * lt[0] * 2.4f, 0.62f * tone * lt[1] * 2.0f, 0.24f * tone * lt[2] * 2.2f);
+                    fb.sway(0.25f + 0.7f * t0);
+                    fb.vert(x0, y0, z0, 0, 1, 0, 0.1f, 0.1f);
+                    fb.vert(x1, y1, z1, 0, 1, 0, 0.9f, 0.1f);
+                    fb.vert(px2, py2, pz2, 0, 1, 0, 0.5f, 0.9f);
+                }
+            }
+        }
+        fb.sway(0);
+    }
+
+    private void drawIslandCrate(World3D w, Gfx3D g, int k) {
+        int kind = w.crateKind[k];
+        float t = w.crateT[k];
+        if (kind == World3D.C_NITRO) {                                  // l'instabile saltella e trema da sola
+            float j = (float) Math.max(0, Math.sin(w.time * 7f + k * 1.3f));
+            Mat4.translate(m, 0, 0.08f * j * j * j, 0);
+            Mat4.rotateY(m, 0.08f * (float) Math.sin(w.time * 31f + k));
+            g.draw(crateKinds[kind], m, 1, 1, 1, 1, 0.35f + 0.25f * (float) Math.sin(w.time * 9f));
+        } else if (kind == World3D.C_TNT && t > 0) {                    // accesa: lampeggia sempre più in fretta e si gonfia
+            float rate = 4f + 10f * t / World3D.TNT_FUSE, fl = (float) Math.sin(t * rate * 6.283f) > 0 ? 1f : 0f, sw = 1f + 0.12f * t / World3D.TNT_FUSE;
+            Mat4.scale(m, sw, sw, sw);
+            g.draw(crateKinds[kind], m, 1, 1, 1, 1, 0.15f + 0.6f * fl);
+        } else if (kind == World3D.C_BOUNCE && t > 0 && w.time - t < 0.3f) {
+            float u = (w.time - t) / 0.3f, sq = 1f - 0.3f * (float) Math.sin(Math.PI * u);
+            Mat4.scale(m, 1f + (1f - sq) * 0.5f, sq, 1f + (1f - sq) * 0.5f);
+            g.draw(crateKinds[kind], m, 1, 1, 1, 1, 0.1f);
+        } else {
+            g.draw(crateKinds[kind], m, 1, 1, 1, 1, kind == World3D.C_CHECK ? 0.25f : 0.08f);
+        }
+    }
+
+    private void drawIslandProps(World3D w, Gfx3D g) {
+        for (float[] c : w.crushers) {
+            float z = c[1] + 0.5f;
+            if (z < nearZ || z > farZ + (back ? 0 : 4)) continue;
+            float floor = Math.max(0, w.height[(int) c[1] * World3D.W + (int) c[0]]), bot = floor + World3D.crusherBottom(c, w.time), warn = World3D.crusherWarn(c, w.time);
+            float x = c[0] - World3D.HALF + 0.5f + 0.03f * warn * (float) Math.sin(w.time * 60f);
+            Mat4.setIdentity(m);
+            Mat4.translate(m, x, bot, z);
+            g.draw(crusherBlock, m, 1, 1, 1, 1, 0.05f + 0.25f * warn);
+            Mat4.setIdentity(m);
+            Mat4.translate(m, x, bot + 1.6f, z);
+            g.draw(crusherChain, m, 1, 1, 1, 1, 0);
+            Mat4.setIdentity(m);                                         // ombra che si stringe mentre il blocco scende
+            Mat4.translate(m, x, groundAt(x, z) + 0.03f, z);
+            float sc = 1.6f - 0.25f * Math.min(1f, (bot - floor) / 3.1f);
+            Mat4.scale(m, sc, 1, sc);
+            g.draw(shadow, m, 1, 1, 1, 0.9f, 1);
+        }
+        for (float[] r : w.rafts) {
+            float z = r[1] + 0.5f;
+            if (z < nearZ || z > farZ + 4) continue;
+            float sink = World3D.raftSink(r, w.time);
+            if (sink >= 0.999f) continue;
+            Mat4.setIdentity(m);
+            Mat4.translate(m, r[0] - World3D.HALF + 0.5f, -0.18f - 0.9f * sink + 0.04f * (float) Math.sin(w.time * 2f + z), z);
+            Mat4.rotateZ(m, 0.04f * (float) Math.sin(w.time * 1.6f + z * 0.7f) + (r[2] >= 0 ? 0.1f * (float) Math.sin(w.time * 30f) * (1 - sink) : 0));
+            g.draw(raftMesh, m, 1, 1, 1, 1, isle == 18 ? 0.25f : 0);
+        }
+        for (float[] bm : w.booms) {                                    // esplosione: palla di fuoco che si gonfia e svanisce, anello d'urto a terra
+            float u = bm[2] / 0.7f, r = 0.4f + 1.9f * (float) Math.sqrt(u);
+            Mat4.setIdentity(m);
+            Mat4.translate(m, bm[0], 0.6f, bm[1]);
+            Mat4.scale(m, r, r * 0.85f, r);
+            g.draw(boomBall, m, 1, 1f - 0.5f * u, 0.6f - 0.5f * u, 1f - u, 1);
+            Mat4.setIdentity(m);
+            Mat4.translate(m, bm[0], 0.08f, bm[1]);
+            Mat4.scale(m, r * 1.3f, 1, r * 1.3f);
+            g.draw(boomRing, m, 1, 1, 1, 0.7f * (1f - u), 1);
+        }
+        if (w.chase == 2) drawBoulder(w, g);
+    }
+
+    /** Il masso del tempio: rotola alle spalle del robot (che lo vede arrivare, con la camera girata). */
+    private void drawBoulder(World3D w, Gfx3D g) {
+        if (Float.isNaN(w.fireZ) || w.fireZ < w.pz - 40f) return;
+        float rad = 2.3f, z = w.fireZ - rad * 0.3f;
+        Mat4.setIdentity(m);
+        Mat4.translate(m, 0, Math.max(0f, groundAt(0, Math.max(0f, z))) + rad - 0.15f, z);
+        Mat4.rotateX(m, w.fireZ / rad);
+        Mat4.scale(m, rad, rad, rad);
+        g.draw(boulderMesh, m, 1, 1, 1, 1, 0.05f);
+        Mat4.setIdentity(m);
+        Mat4.translate(m, 0, Math.max(0f, groundAt(0, Math.max(0f, z))) + 0.05f, z);
+        Mat4.scale(m, rad * 2.2f, 1, rad * 1.6f);
+        g.draw(shadow, m, 1, 1, 1, 1, 1);
     }
 
     private static float hgtBase(float pw, float warn) { return pw > 0 ? 1f : warn > 0 ? 0.5f : 0f; }

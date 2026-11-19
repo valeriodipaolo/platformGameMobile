@@ -40,8 +40,8 @@ public final class Hud3D {
             if (d < 20f) {
                 float k = (float) Math.pow(1f - Math.max(0f, d) / 20f, 1.5f);
                 boolean bees = w.chase == 1;
-                for (int i = 0; i < 8; i++) p.rect(0, sh - (i + 1) * 0.16f * s, sw, 0.16f * s, ((int) (k * (150 - i * 17)) << 24) | (bees ? 0xE0A800 : 0xFF4A10));
-                if (d < 12f) p.text(bees ? "API!" : "FUOCO!", sw / 2, sh - 0.6f * s, 0.55f * s, Painter.ALIGN_CENTER, ((int) (k * 255) << 24) | (bees ? 0xFFF176 : 0xFFD54F));
+                for (int i = 0; i < 8; i++) p.rect(0, sh - (i + 1) * 0.16f * s, sw, 0.16f * s, ((int) (k * (150 - i * 17)) << 24) | (bees ? 0xE0A800 : w.chase == 2 ? 0x6A5A44 : 0xFF4A10));
+                if (d < 12f) p.text(bees ? "API!" : w.chase == 2 ? "IL MASSO!" : "FUOCO!", sw / 2, sh - 0.6f * s, 0.55f * s, Painter.ALIGN_CENTER, ((int) (k * 255) << 24) | (bees ? 0xFFF176 : 0xFFD54F));
             }
         }
         if (w.toast != null && w.toastTime > 0) {

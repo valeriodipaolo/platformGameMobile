@@ -40,7 +40,10 @@ public final class FoeModels {
     }
 
     /** Palla di neve in volo. */
-    public void drawShot(Gfx3D g, float[] m, float[] s) { more.drawShot(g, m, s); }
+    public void drawShot(Gfx3D g, float[] m, float[] s) {
+        if (s.length > 6 && s[6] == Enemy3.SKIN_TIKI) { if (island == null) island = new FoeIsland(); island.drawShot(g, m, s); return; }
+        more.drawShot(g, m, s);
+    }
 
     // ------------------------------------------------------------------ attrezzi
 
@@ -843,7 +846,10 @@ public final class FoeModels {
     }
 
     /** Disegna un nemico; m è la matrice già posizionata e orientata (ed eventualmente schiacciata). */
+    private FoeIsland island;
+
     public void draw(Gfx3D g, float[] m, Enemy3 e) {
+        if (e.skin != 0) { if (island == null) island = new FoeIsland(); island.draw(g, m, e); return; }
         switch (e.type) {
             case Enemy3.HOG: drawHog(g, m, e); break;
             case Enemy3.CROW: drawCrow(g, m, e); break;

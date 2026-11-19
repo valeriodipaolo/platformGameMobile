@@ -78,7 +78,8 @@ final class Level3DView extends FrameLayout {
             }
         }
         boolean j = latchJump.getAndSet(false), s = latchSpin.getAndSet(false);
-        w.setInput(joyX, joyY, inJump || j, inSpin || s);
+        boolean facing = w.pz < w.camBackUntil;          // fuga dal masso: la camera guarda il robot da davanti, i comandi si girano con lei
+        w.setInput(facing ? -joyX : joyX, facing ? -joyY : joyY, inJump || j, inSpin || s);
         w.update(dt);
     }
 

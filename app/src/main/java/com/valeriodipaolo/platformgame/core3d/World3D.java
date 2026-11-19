@@ -38,6 +38,23 @@ public final class World3D {
     public int[] height;
     /** Casse bonus ancora intere, per casella. */
     public boolean[] crate;
+    // ---- isola tropicale (livelli 35-37)
+    /** Tipo di ogni cassa (null = tutte normali, come nei livelli di prima): legno, esplosiva a tempo, instabile, a molla, ripartenza. */
+    public byte[] crateKind;
+    public static final byte C_WOOD = 0, C_TNT = 1, C_NITRO = 2, C_BOUNCE = 3, C_CHECK = 4;
+    /** Esplosiva accesa: secondi dall'accensione (0 = spenta). Cassa a molla: istante dell'ultimo rimbalzo. */
+    public float[] crateT;
+    public static final float TNT_FUSE = 3f, BOOM_R = 1.75f;
+    /** Esplosioni in corso: {x, z, età}. */
+    public final List<float[]> booms = new ArrayList<float[]>();
+    /** Pestelli di pietra del tempio: {colonna 0..4, z, periodo, fase}. */
+    public final List<float[]> crushers = new ArrayList<float[]>();
+    /** Zattere sul fiume: {colonna, z, istante in cui qualcuno ci è salito (-1 = mai), periodo di riemersione}. */
+    public final List<float[]> rafts = new ArrayList<float[]>();
+    private int[] raftIdx;
+    /** La camera guarda il robot da davanti (fuga dal masso) finché pz < camBackUntil. */
+    public float camBackUntil = -1f;
+    private float bounceBoost;
     public int flagZ;
     /** Portone di fine livello: si apre (0..1) solo con la cella di energia; la catapulta (launchT >= 0) riporta all'inizio. */
     public float gateOpen, launchT = -1;
@@ -95,7 +112,7 @@ public final class World3D {
     public World3D(Save save, int levelNo) {
         this.save = save;
         this.levelNo = levelNo;
-        this.theme = levelNo > 24 ? Levels3C.theme(levelNo) : levelNo > 12 ? levelNo - 12 : levelNo;
+        this.theme = levelNo > 34 ? Levels3J.theme(levelNo) : levelNo > 24 ? Levels3C.theme(levelNo) : levelNo > 12 ? levelNo - 12 : levelNo;
         this.id = "l" + levelNo;
         newGame();
     }
@@ -105,14 +122,21 @@ public final class World3D {
         gems = 0;
         lives = START_LIVES;
         sealed = false;
-        if (levelNo > 24) Levels3C.build(this, levelNo); else if (levelNo > 12) Levels3B.build(this, levelNo); else if (levelNo == 12) LevelTwelve.build(this); else if (levelNo == 10) LevelTen.build(this); else if (levelNo == 8) LevelEight.build(this); else if (levelNo == 6) LevelSix.build(this); else if (levelNo == 4) LevelFour.build(this); else LevelTwo.build(this);
+        crateKind = null; crateT = null; booms.clear(); crushers.clear(); rafts.clear(); raftIdx = null; camBackUntil = -1f;
+        if (levelNo > 34) Levels3J.build(this, levelNo); else if (levelNo > 24) Levels3C.build(this, levelNo); else if (levelNo > 12) Levels3B.build(this, levelNo); else if (levelNo == 12) LevelTwelve.build(this); else if (levelNo == 10) LevelTen.build(this); else if (levelNo == 8) LevelEight.build(this); else if (levelNo == 6) LevelSix.build(this); else if (levelNo == 4) LevelFour.build(this); else LevelTwo.build(this);
+        if (!rafts.isEmpty()) {                          // prima delle rifiniture: le zattere a galla contano come terreno
+            raftIdx = new int[length * W];
+            java.util.Arrays.fill(raftIdx, -1);
+            for (int i = 0; i < rafts.size(); i++) raftIdx[(int) rafts.get(i)[1] * W + (int) rafts.get(i)[0]] = i;
+        }
         LevelFix.apply(this);
         gateOpen = 0;
         launchT = -1;
         sealed = true;
         sealEnd();
         gemTotal = gemsList.size();
-        for (boolean c : crate) if (c) gemTotal++;
+        for (int k = 0; k < crate.length; k++) if (crate[k] && (crateKind == null || crateKind[k] != C_BOUNCE)) gemTotal++;
+        if (crateKind != null) crateT = new float[crate.length];
         batteryOwned = gemOwned = false;
         pops.clear();
         toast = null;
@@ -179,6 +203,7 @@ public final class World3D {
         if (zi >= length) return 0;
         int h = height[zi * W + xi];
         if (h == 0 && crate[zi * W + xi]) return 1;
+        if (h == PIT && raftIdx != null && raftIdx[zi * W + xi] >= 0 && raftSink(rafts.get(raftIdx[zi * W + xi]), time) < 0.5f) return 0;
         return h;
     }
 
@@ -234,6 +259,7 @@ public final class World3D {
         } else if (state == PLAYING) {
             stepPlayer(dt);
             stepFire(dt);
+            stepIsland(dt);
             stepEnemies(dt); stepShots(dt);
             pickups();
             stepGate(dt);
@@ -260,6 +286,36 @@ public final class World3D {
         }
         jumpWas = jump;
         spinWas = spin;
+    }
+
+    /** Zattera: 0 a galla, poi affonda (0..1 durante 0,9 s dopo che ci si è saliti), 1 sott'acqua; riemerge dopo il suo periodo. */
+    public static float raftSink(float[] r, float t) {
+        if (r[2] < 0) return 0;
+        float a = t - r[2];
+        if (a < 0.55f) return 0;
+        if (a < 0.95f) return (a - 0.55f) / 0.4f;
+        if (a < r[3]) return 1;
+        if (a < r[3] + 0.5f) return 1 - (a - r[3]) / 0.5f;
+        r[2] = -1;
+        return 0;
+    }
+
+    /** Quota della faccia inferiore del pestello: in alto fermo, cade di colpo, resta giù, risale piano. */
+    public static float crusherBottom(float[] c, float t) {
+        float per = c[2], ph = ((t + c[3]) % per + per) % per, up = per * 0.5f;
+        if (ph < up) return 3.1f;
+        ph -= up;
+        if (ph < 0.18f) return 3.1f * (1 - ph / 0.18f);
+        ph -= 0.18f;
+        if (ph < 0.55f) return 0f;
+        ph -= 0.55f;
+        return Math.min(3.1f, 3.1f * ph / Math.max(0.2f, per - up - 0.73f));
+    }
+
+    /** Il pestello sta per cadere (tremolio d'avviso nell'ultimo mezzo secondo in alto). */
+    public static float crusherWarn(float[] c, float t) {
+        float per = c[2], ph = ((t + c[3]) % per + per) % per, up = per * 0.5f;
+        return ph < up && ph > up - 0.5f ? (ph - (up - 0.5f)) / 0.5f : 0f;
     }
 
     /** Quanto è acceso un getto (0..1), e quanto manca all'accensione (avviso). */
@@ -384,7 +440,7 @@ public final class World3D {
             if (vy < -GLIDE_FALL) vy = Math.min(-GLIDE_FALL, vy + 40f * dt);
             else vy = Math.max(-GLIDE_FALL, vy - GRAVITY * dt);
         } else {
-            vy = Math.max(-MAX_FALL * (fastFall ? 1.3f : 1f), vy - ((vy > 0 && (jump || springBoost > 0)) ? GRAVITY_HOLD : GRAVITY * (fastFall && vy <= 0 ? FAST_FALL_G : 1f)) * dt);
+            vy = Math.max(-MAX_FALL * (fastFall ? 1.3f : 1f), vy - ((vy > 0 && (jump || springBoost > 0 || bounceBoost > 0)) ? GRAVITY_HOLD : GRAVITY * (fastFall && vy <= 0 ? FAST_FALL_G : 1f)) * dt);
         }
 
         // spostamento: un asse alla volta, fermandosi contro blocchi e casse più alti dei piedi
@@ -403,7 +459,13 @@ public final class World3D {
         }
         if (g > -500f) groundY = g;
         if (springBoost > 0) springBoost -= dt;
+        if (bounceBoost > 0) bounceBoost -= dt;
         if (onGround) {                                  // fiore a molla: rimbalzo alto
+            if (crateKind != null && g >= 1f && g < 1.5f) landCrate();
+            if (raftIdx != null) {                           // salire su una zattera la fa affondare poco dopo
+                int rc = raftIdx[Math.max(0, Math.min(length - 1, zi(pz))) * W + Math.max(0, Math.min(W - 1, xi(px)))];
+                if (rc >= 0 && rafts.get(rc)[2] < 0) rafts.get(rc)[2] = time;
+            }
             for (int i = 0; i < springs.size(); i++) {
                 float[] sp2 = springs.get(i);
                 if (Math.abs(sp2[1] - pz) > 0.8f || Math.abs(sp2[0] - px) > 0.62f || Math.abs(sp2[1] - pz) > 0.62f) continue;
@@ -491,7 +553,7 @@ public final class World3D {
             e.anim += dt;
             float speed = e.type == Enemy3.HOG ? ENEMY_SPEED * 0.8f : e.type == Enemy3.CROW ? ENEMY_SPEED * 2.7f : e.type == Enemy3.WHIRL ? ENEMY_SPEED * 1.7f
                     : e.type == Enemy3.STORM ? ENEMY_SPEED * 0.7f : e.type == Enemy3.SNAIL ? (e.mode == 1 ? 0f : ENEMY_SPEED * (e.mode == 2 ? 0.65f : 0.4f)) : e.type == Enemy3.PENGUIN ? ENEMY_SPEED * 2.3f
-                    : e.type == Enemy3.SALAMANDER ? (e.mode == 0 ? ENEMY_SPEED * 0.8f : 0f) : ENEMY_SPEED;
+                    : e.type == Enemy3.SALAMANDER ? (e.mode == 0 ? ENEMY_SPEED * 0.8f : 0f) : e.skin == Enemy3.SKIN_CRAB ? ENEMY_SPEED * 1.8f : ENEMY_SPEED;
             if (e.type >= Enemy3.MOLE && stepNew3(e, dt)) continue;
             if (e.type == Enemy3.ACORN) {                       // la ghianda aspetta ferma, poi balza in avanti
                 e.hopT += dt;
@@ -660,7 +722,7 @@ public final class World3D {
                 if (Math.abs(dzp) < 11f && dzp > -2f && e.t > 2.3f) {
                     e.t = 0;
                     float l = Math.max(0.5f, (float) Math.sqrt(dxp * dxp + dzp * dzp));
-                    shots.add(new float[] {e.x, e.y + 1.3f, e.z, dxp / l * 5.5f, 3.2f, dzp / l * 5.5f});
+                    shots.add(new float[] {e.x, e.y + 1.3f, e.z, dxp / l * 5.5f, 3.2f, dzp / l * 5.5f, e.skin});
                 }
                 if (state == PLAYING) touch(e, true);
                 return true;
@@ -762,14 +824,108 @@ public final class World3D {
                     if (cx < 0 || cx >= W || cz < 0 || cz >= length) continue;
                     int k = cz * W + cx;
                     if (crate[k] && py < 1.2f) {
-                        crate[k] = false;
-                        gems++;
-                        score += 200;
-                        pops.add(new float[] {cx - HALF + 0.5f, 0.8f, cz + 0.5f, 0});
-                        checkGem();
+                        byte kind = crateKind == null ? C_WOOD : crateKind[k];
+                        if (kind == C_BOUNCE) continue;
+                        if (kind == C_TNT || kind == C_NITRO) { explode(k); continue; }    // la giravolta su una cassa esplosiva: scoppia subito
+                        breakCrate(k);
                     }
                 }
             }
+        }
+    }
+
+    // ------------------------------------------------------------------ isola tropicale
+
+    /** Cassa rotta (salto o giravolta): gemma, punti, e se è di ripartenza si riparte da qui. */
+    private void breakCrate(int k) {
+        crate[k] = false;
+        gems++;
+        score += 200;
+        float cx = k % W - HALF + 0.5f, cz = k / W + 0.5f;
+        pops.add(new float[] {cx, 0.8f, cz, 0});
+        if (crateKind != null && crateKind[k] == C_CHECK) {
+            cpX = cx; cpZ = cz;
+            if (!Float.isNaN(fireZ)) fireZ = Math.min(fireZ, cz - 14f);
+            showToast("Si riparte da qui!");
+        }
+        checkGem();
+    }
+
+    /** Esplosione di una cassa: rompe le vicine (le esplosive scoppiano a catena), ferisce il robot e i nemici nel raggio. */
+    private void explode(int k) {
+        if (!crate[k]) return;
+        crate[k] = false;
+        gems++;
+        checkGem();
+        float cx = k % W - HALF + 0.5f, cz = k / W + 0.5f;
+        booms.add(new float[] {cx, cz, 0});
+        float dx = px - cx, dz = pz - cz;
+        if (dx * dx + dz * dz < BOOM_R * BOOM_R && py < 2.2f) hurt();
+        for (Enemy3 e : enemies) {
+            float ex = e.x - cx, ez = e.z - cz;
+            if (!e.dead && ex * ex + ez * ez < BOOM_R * BOOM_R) { e.dead = true; e.flung = true; e.vy = 6f; score += 100; }
+        }
+        int kx = k % W, kz = k / W;
+        for (int z = kz - 1; z <= kz + 1; z++) for (int x = kx - 1; x <= kx + 1; x++) {
+            if (x < 0 || x >= W || z < 0 || z >= length) continue;
+            int j = z * W + x;
+            if (!crate[j] || crateKind[j] == C_BOUNCE) continue;
+            if (crateKind[j] == C_TNT || crateKind[j] == C_NITRO) { if (crateT[j] <= 0 || crateT[j] < TNT_FUSE - 0.15f) crateT[j] = TNT_FUSE - 0.15f; }   // a catena, con un attimo di ritardo
+            else breakCrate(j);
+        }
+    }
+
+    /** Il robot è atterrato sopra una cassa: la rompe (legno, ripartenza), ci rimbalza (molla), la accende (TNT) o la fa scoppiare. */
+    private void landCrate() {
+        int best = -1; float bd = 9;
+        for (int cz = zi(pz - R); cz <= zi(pz + R); cz++) for (int cx = xi(px - R); cx <= xi(px + R); cx++) {
+            if (cx < 0 || cx >= W || cz < 0 || cz >= length) continue;
+            int k = cz * W + cx;
+            if (!crate[k] || height[k] != 0) continue;
+            float d = Math.abs(cx - HALF + 0.5f - px) + Math.abs(cz + 0.5f - pz);
+            if (d < bd) { bd = d; best = k; }
+        }
+        if (best < 0) return;
+        switch (crateKind[best]) {
+            case C_BOUNCE:
+                vy = 12.5f; crateT[best] = time; bounceBoost = 0.6f;     // stessa altezza che si tenga premuto il salto o no
+                break;
+            case C_TNT:
+                if (crateT[best] <= 0) crateT[best] = 0.001f;
+                vy = 7.5f;
+                break;
+            case C_NITRO:
+                explode(best);
+                return;
+            default:
+                breakCrate(best);
+                vy = 7.5f;
+                break;
+        }
+        onGround = false;
+        coyote = jumpBuffer = 0;
+        airJumps = 1;
+    }
+
+    private void stepIsland(float dt) {
+        for (int i = booms.size() - 1; i >= 0; i--) if ((booms.get(i)[2] += dt) > 0.7f) booms.remove(i);
+        if (crateKind != null) {
+            int z0 = Math.max(0, zi(pz) - 30), z1 = Math.min(length - 1, zi(pz) + 30);
+            for (int k = z0 * W; k < (z1 + 1) * W; k++) {
+                if (!crate[k]) continue;
+                if (crateKind[k] == C_TNT || crateKind[k] == C_NITRO) {
+                    if (crateT[k] > 0 && (crateT[k] += dt) >= TNT_FUSE) explode(k);
+                }
+                if (crateKind[k] == C_NITRO && crate[k]) {      // l'instabile scoppia anche solo sfiorandola di lato
+                    float dx = Math.abs(k % W - HALF + 0.5f - px), dz = Math.abs(k / W + 0.5f - pz);
+                    if (dx < 0.5f + R + 0.04f && dz < 0.5f + R + 0.04f && py < 0.98f) explode(k);
+                }
+            }
+        }
+        for (float[] c : crushers) {                         // pestello: schiaccia chi è sotto quando cade
+            if (Math.abs(c[1] + 0.5f - pz) > 1.5f) continue;
+            float bx = c[0] - HALF + 0.5f, bz = c[1] + 0.5f, bot = Math.max(0, height[(int) c[1] * W + (int) c[0]]) + crusherBottom(c, time);
+            if (Math.abs(px - bx) < 0.5f + R - 0.05f && Math.abs(pz - bz) < 0.5f + R - 0.05f && bot < py + PLAYER_H - 0.1f) hurt();
         }
     }
 

@@ -55,6 +55,8 @@ public class Check3B {
                     float s = freeRun(b, c, b.pz) - 0.4f * Math.abs(c - cur) + (c == cur ? 0.6f : 0);
                     // un fiore a molla davanti attira
                     for (float[] q : b.springs) if (xi(q[0]) == c && q[1] - b.pz > 0 && q[1] - b.pz < 8) s += 0.3f;
+                    // una cassa a molla davanti attira: è l'unico modo di passare un muro alto o un fiume largo
+                    if (b.crateKind != null) for (int z = zi(b.pz) + 1; z <= zi(b.pz) + 6 && z < b.length; z++) if (b.crate[z * World3D.W + c] && b.crateKind[z * World3D.W + c] == World3D.C_BOUNCE) s += 6f;
                     if (s > bs) { bs = s; best = c; }
                 }
                 cur = best;
@@ -70,10 +72,13 @@ public class Check3B {
                 for (float[] q : b.springs) if (q[1] - b.pz > -0.6f && q[1] - b.pz < 2.5f && Math.abs(q[0] - b.px) < 2.6f) pad = true;
                 float ahead = b.topAt(b.px, b.pz + 0.65f);
                 boolean step = ahead > b.py + 0.3f && ahead <= b.py + 1.7f;
-                if (b.onGround && (pit || thorn || step) && !pad && jt <= 0) { int pl = pit ? pitRun(b, xi(b.px), zi(b.pz + 0.45f)) : 9; jt = pit && pl <= 1 ? 0.2f : pit && pl <= 2 ? 0.33f : 0.6f; }
+                if (b.onGround && (pit || thorn || step) && !pad && jt <= 0) { int pl = pit ? pitRun(b, xi(b.px), zi(b.pz + 0.45f)) : 9; jt = pit && pl <= 1 ? 0.2f : pit && pl <= 2 ? (rel ? 0.12f : 0.33f) : 0.6f;
+                    if (rel && step && !pit && b.crateKind != null && b.crate[Math.min(b.length - 1, zi(b.pz + 0.95f)) * World3D.W + xi(b.px)]) jt = 0.15f; }
                 if (jt > 0) { jump = true; jt -= 1f / 60f; }
             }
-            b.setInput(jx, 1f, jump, false);
+            float fwd = 1f;                                  // davanti a una cassa a molla rallenta, per atterrarci sopra
+            if (rel && b.crateKind != null) for (int z = zi(b.pz); z <= zi(b.pz) + 2 && z < b.length; z++) { int k = z * World3D.W + xi(b.px); if (k >= 0 && k < b.crate.length && b.crate[k] && b.crateKind[k] == World3D.C_BOUNCE && b.time - b.crateT[k] > 0.5f) fwd = 0.3f; }
+            b.setInput(jx, fwd, jump, false);
             if (System.getProperty("tr") != null && b.pz > Float.parseFloat(System.getProperty("tr")) && b.pz < Float.parseFloat(System.getProperty("tr")) + 20 && ((int) (time * 60)) % 6 == 0) System.out.printf("z %.2f x %.2f cur %d y %.2f og %b jt %.2f%n", b.pz, b.px, cur, b.py, b.onGround, jt);
             int lv0 = b.lives;
             b.update(1f / 60f);
@@ -87,7 +92,7 @@ public class Check3B {
     }
 
     public static void main(String[] a) {
-        for (int id : new int[] {14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34}) {
+        for (int id : new int[] {14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 35, 36, 37}) {
             if (a.length > 0 && !a[0].equals("" + id)) continue;
             run(id);
         }

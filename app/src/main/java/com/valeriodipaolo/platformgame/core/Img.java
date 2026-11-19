@@ -59,7 +59,11 @@ public final class Img {
     public static final int HERO_METAL = 252, HERO_LEATHER = 253, FX_SLUG = 254;
     /** Ciclo di corsa fluido a 24 fotogrammi: i primi quattro sono HERO_RUN, gli altri venti seguono da HERO_RUN_X (hero_run_4 .. hero_run_23). */
     public static final int RUN_FRAMES = 24, HERO_RUN_X = 255;
-    public static final int COUNT = 275;
+    // isola tropicale (tools/gen_jungle.py)
+    public static final int R3J_GRASS = 275, R3J_FOREST = 276, R3J_TUFT = 277, R3J_FLOWERS = 278, R3J_CROWN = 279, R3J_TREE = 280, R3J_FOLIAGE = 281,
+            R3J_SKY = 282, R3J_MOUNTAINS = 283, R3J_SAND = 284, R3J_WATER = 285, R3J_TEMPLE = 286, R3J_DUSK = 287, R3J_NIGHT = 288,
+            R3J_CRATE = 289, R3J_TNT = 290, R3J_NITRO = 291, R3J_BOUNCE = 292, R3J_CHECK = 293, R3J_FROND = 294;
+    public static final int COUNT = 295;
 
     /** Fotogramma j (0..23) del ciclo di corsa. */
     public static int runFrame(int j) {
@@ -103,6 +107,8 @@ public final class Img {
         "fx_mole", "fx_mound", "fx_snail", "fx_shell", "fx_chestnut", "fx_owl_0", "fx_owl_1", "fx_penguin", "fx_snowman", "fx_snowball", "fx_lapillo", "fx_sala", "fx_sala_b", "fx_breath", "fx_frog", "fx_frog_j", "fx_plant", "fx_plant_o", "fx_star", "fx_sunny", "fx_catapult", "fx_catapult_b",
         "foe_skin", "foe_scale", "foe_shell", "foe_snow", "foe_down", "foe_ember", "foe_plasma", "foe_petal", "foe_mahogany",
         "hero_metal", "hero_leather", "fx_slug",
-        "hero_run_4", "hero_run_5", "hero_run_6", "hero_run_7", "hero_run_8", "hero_run_9", "hero_run_10", "hero_run_11", "hero_run_12", "hero_run_13", "hero_run_14", "hero_run_15", "hero_run_16", "hero_run_17", "hero_run_18", "hero_run_19", "hero_run_20", "hero_run_21", "hero_run_22", "hero_run_23"
+        "hero_run_4", "hero_run_5", "hero_run_6", "hero_run_7", "hero_run_8", "hero_run_9", "hero_run_10", "hero_run_11", "hero_run_12", "hero_run_13", "hero_run_14", "hero_run_15", "hero_run_16", "hero_run_17", "hero_run_18", "hero_run_19", "hero_run_20", "hero_run_21", "hero_run_22", "hero_run_23",
+        "r3j_grass", "r3j_forest", "r3j_tuft", "r3j_flowers", "r3j_crown", "r3j_tree", "r3j_foliage", "r3j_sky", "r3j_mountains", "r3j_sand",
+        "r3j_water", "r3j_temple", "r3j_dusk", "r3j_night", "r3j_crate", "r3j_tnt", "r3j_nitro", "r3j_bounce", "r3j_check", "r3j_frond"
     };
 }

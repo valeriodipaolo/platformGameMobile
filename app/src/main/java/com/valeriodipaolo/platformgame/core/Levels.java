@@ -7,9 +7,9 @@ package com.valeriodipaolo.platformgame.core;
 public final class Levels {
     private Levels() {}
 
-    public static final int[] ORDER = {1, 2, 13, 14, 3, 4, 15, 16, 5, 6, 17, 18, 9, 10, 21, 22, 7, 8, 19, 20, 11, 12, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34};
+    public static final int[] ORDER = {1, 2, 13, 14, 3, 4, 15, 16, 5, 6, 17, 18, 9, 10, 21, 22, 7, 8, 19, 20, 11, 12, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37};
 
-    public static boolean is3D(int id) { return id % 2 == 0; }
+    public static boolean is3D(int id) { return id % 2 == 0 || id >= 35; }      // l'isola tropicale è tutta in 3D
 
     /** Posizione (0..) di un livello nell'ordine di gioco. */
     public static int slot(int id) {
