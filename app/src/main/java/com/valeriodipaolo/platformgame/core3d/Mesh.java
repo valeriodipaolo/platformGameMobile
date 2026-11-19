@@ -4,7 +4,9 @@ package com.valeriodipaolo.platformgame.core3d;
 public final class Mesh {
     public static final int STRIDE = 12;
 
-    public final float[] v;
+    public float[] v;
+    /** Dopo il caricamento sulla scheda grafica i vertici si possono buttare (i pezzi di terreno, che sono la gran parte della memoria). */
+    public boolean releasable;
     /** Numero di vertici (multiplo di 3). */
     public final int count;
     /** Indice dell'immagine in Img, oppure -1 per nessuna texture (solo colore). */

@@ -111,7 +111,7 @@ final class GlRenderer implements GLSurfaceView.Renderer, Gfx3D {
     private final Bitmap[] bitmaps;
     private final World3D world;
     private final Level3DView host;
-    private final Scene3D scene = new Scene3D();
+    private Scene3D scene = new Scene3D();
 
     private int program, generation, whiteTex;
     private int aPos, aNormal, aUV, aColor, aSway, uTime, uGrade;
@@ -132,6 +132,7 @@ final class GlRenderer implements GLSurfaceView.Renderer, Gfx3D {
     @Override
     public void onSurfaceCreated(GL10 unused, EGLConfig config) {
         generation++;                                  // buffer e texture di prima non valgono più
+        if (generation > 1) scene = new Scene3D();     // il terreno caricato ha buttato i vertici: si ricostruisce la scena
         java.util.Arrays.fill(textures, 0);
         program = buildProgram();
         whiteTex = makeWhite();
@@ -269,11 +270,12 @@ final class GlRenderer implements GLSurfaceView.Renderer, Gfx3D {
         }
         int[] id = new int[1];
         GLES20.glGenBuffers(1, id, 0);
-        FloatBuffer fb = ByteBuffer.allocateDirect(m.v.length * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
+        FloatBuffer fb = dynBuffer(m.v.length);       // un solo buffer di appoggio, riusato: niente memoria nativa che si accumula
         fb.put(m.v).position(0);
         GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, id[0]);
         GLES20.glBufferData(GLES20.GL_ARRAY_BUFFER, m.v.length * 4, fb, m.dynamic ? GLES20.GL_DYNAMIC_DRAW : GLES20.GL_STATIC_DRAW);
         m.handle = new int[] {generation, id[0], m.version};
+        if (m.releasable && !m.dynamic) m.v = null;
         return id[0];
     }
 

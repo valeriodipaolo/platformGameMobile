@@ -366,8 +366,17 @@ public final class Scene3D {
                     s.colorf(0.24f, 0.23f, 0.22f);
                     s.box(fx + 0.5f, -0.2f, z + 0.5f, 0.94f, 0.7f, 0.94f);
                     for (int k = 0; k < h; k++) {
+                        // masso sepolto: coperto sopra e su tutti e quattro i lati, non si vede mai (nelle torri alte sono la maggior parte)
+                        if (k + 1 < h && x > 0 && x + 1 < World3D.W && vis(w, x - 1, z) > k && vis(w, x + 1, z) > k
+                                && z > 0 && vis(w, x, z - 1) > k && vis(w, x, z + 1) > k) continue;
                         s.colorf(0.96f + 0.08f * hash(x, z, k), 0.96f + 0.06f * hash(x, z, k + 7), 0.96f);
-                        if (round) s.roundBox(fx + 0.5f, k + 0.5f, z + 0.5f, 0.98f, 0.98f, 0.98f, rr);
+                        int faces = 63 & ~8;                              // la faccia di sotto poggia sempre su qualcosa
+                        if (x + 1 < World3D.W && vis(w, x + 1, z) > k) faces &= ~1;
+                        if (x > 0 && vis(w, x - 1, z) > k) faces &= ~2;
+                        if (k + 1 < h) faces &= ~4;
+                        if (vis(w, x, z + 1) > k) faces &= ~16;
+                        if (z > 0 && vis(w, x, z - 1) > k) faces &= ~32;
+                        if (round) s.roundBox(fx + 0.5f, k + 0.5f, z + 0.5f, 0.98f, 0.98f, 0.98f, rr, faces);
                         else s.box(fx + 0.5f, k + 0.5f, z + 0.5f, 1, 1, 1);
                         if (round) {       // nucleo scuro e giunti pieni: tra un masso arrotondato e l'altro non si vede attraverso
                             s.colorf(0.26f, 0.25f, 0.24f);
@@ -456,6 +465,8 @@ public final class Scene3D {
             for (int c = 0; c < nChunks; c++) {
                 if (mbs[k][c] == null) continue;
                 Mesh mesh = mbs[k][c].build(k == K_TRAIL ? Img.R3_TRAIL : k < ktex.length ? ktex[k] : -1, k == K_RAY || k == K_TRAIL, true);
+                mbs[k][c] = null;                       // il builder non serve più: la memoria si libera subito, non a fine costruzione
+                mesh.releasable = true;
                 if (k == K_CROWN || k == K_TUFT || k == K_FERN || k == K_FLOWER || k == K_FIR) mesh.cutout = true;
                 switch (k) {
                     case K_GRASS: case K_BANK: mesh.spec = 0.05f; mesh.shine = 10f; break;
@@ -743,7 +754,7 @@ public final class Scene3D {
         tb.cylinder(x, y0 + 0.7f, top, z, r0 * 1.1f, r0 * 0.45f, 7, false, false);
         float rh = rad * 1.3f + 0.3f, rv = h * 0.26f;
         float wind = Math.min(1.4f, 0.4f + h * 0.1f);
-        int segs = lobes >= 4 ? 14 : 9, rings = lobes >= 4 ? 9 : 6;
+        int segs = lobes >= 4 ? 11 : 8, rings = lobes >= 4 ? 7 : 5;      // abbastanza per la sagoma, le fronde nascondono gli spigoli
         float[][] centers = new float[lobes][3];
         for (int i = 0; i < lobes; i++) {
             float a = r.nextFloat() * 6.283f + i * 2.4f;

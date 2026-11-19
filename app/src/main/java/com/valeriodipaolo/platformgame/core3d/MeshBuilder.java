@@ -66,10 +66,14 @@ public final class MeshBuilder {
      * Cubo con gli spigoli arrotondati (raggio r). Ogni faccia è una griglia 3x3 i cui bordi si piegano sugli spigoli, con
      * normali morbide. La texture si ripete una volta per metro.
      */
-    public void roundBox(float cx, float cy, float cz, float sx, float sy, float sz, float r) {
+    public void roundBox(float cx, float cy, float cz, float sx, float sy, float sz, float r) { roundBox(cx, cy, cz, sx, sy, sz, r, 63); }
+
+    /** Come sopra, ma disegna solo le facce indicate dai bit di faces (0 +x, 1 -x, 2 +y, 3 -y, 4 +z, 5 -z): quelle coperte non servono. */
+    public void roundBox(float cx, float cy, float cz, float sx, float sy, float sz, float r, int faces) {
         float hx = sx / 2, hy = sy / 2, hz = sz / 2, ax = hx - r, ay = hy - r, az = hz - r;
         float[] gx = {-hx, -ax, ax, hx}, gy = {-hy, -ay, ay, hy}, gz = {-hz, -az, az, hz};
         for (int face = 0; face < 6; face++) {
+            if ((faces & (1 << face)) == 0) continue;
             int axis = face / 2;
             float sg = (face % 2 == 0) ? 1 : -1;
             float[] ga = axis == 0 ? gy : gx, gb = axis == 2 ? gy : gz;
