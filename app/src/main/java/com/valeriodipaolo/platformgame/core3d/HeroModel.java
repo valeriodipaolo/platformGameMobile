@@ -19,15 +19,30 @@ public final class HeroModel {
     private final float[][][] cp = new float[CR + 1][CC + 1][3], cn = new float[CR + 1][CC + 1][3];
     private float lift, flare, lastTime = -1;
 
+    /** Personaggio scelto nel menu: 0 robot, 1 volpe, 2 pinguino, 3 cavaliere, 4 astronauta (vedi HeroSkins). */
+    public static int character = 0;
+    public static String characterName(int c) { return HeroSkins.NAMES[Math.max(0, Math.min(4, c))]; }
+
     public HeroModel() {
-        robe = buildRobe();
-        gear = buildGear();
-        glow = buildGlow();
-        arm = buildArm();
-        leg = buildLeg();
-        cape = new Mesh(new float[CC * CR * 6 * 2 * Mesh.STRIDE], CC * CR * 6 * 2, Img.R3_CLOTH, false, true);
-        cape.dynamic = true;
-        cape.spec = 0.06f; cape.shine = 12f;
+        int c = Math.max(0, Math.min(4, character));
+        if (c == 0) {
+            robe = buildRobe();
+            gear = buildGear();
+            glow = buildGlow();
+            arm = buildArm();
+            leg = buildLeg();
+            cape = new Mesh(new float[CC * CR * 6 * 2 * Mesh.STRIDE], CC * CR * 6 * 2, Img.R3_CLOTH, false, true);
+            cape.dynamic = true;
+            cape.spec = 0.06f; cape.shine = 12f;
+        } else {                                              // gli altri personaggi: stesso scheletro, senza mantello
+            Mesh[][] p = HeroSkins.build(c);
+            robe = p[0][0];
+            gear = new Mesh[] {p[0][1]};
+            glow = null;
+            arm = p[1];
+            leg = p[2];
+            cape = null;
+        }
     }
 
     private static float[] rgb(int r, int g, int b) {
@@ -230,6 +245,7 @@ public final class HeroModel {
 
     /** Ricalcola la stoffa: catena di segmenti per ogni colonna, fissata al colletto e libera sotto lo zaino. */
     private void updateCape(World3D w) {
+        if (cape == null) return;
         boolean first = lastTime < 0 || w.time < lastTime;
         float dt = first ? 1f : Math.min(0.1f, w.time - lastTime);
         lastTime = w.time;
@@ -306,21 +322,9 @@ public final class HeroModel {
     // ------------------------------------------------------------------ disegno
 
     // stato dell'animazione: i valori si inseguono dolcemente, così passare da corsa a salto non è uno scatto
-    /** Stile di corsa scelto nel menu (0..4): possente e quattro corse alla maniera dei platform anni '90 (busto in avanti, braccia sciolte, piedi rapidi). */
-    public static int run = 0;
-    //                                       possente scatto  indietro saltella dinoccol.
-    private static final float[] R_SWING =  {1.3f,    1.35f,  1.3f,    1.0f,    1.15f};  // ampiezza del passo
-    private static final float[] R_ARM =    {0.85f,   1.5f,   0.2f,    1.1f,    1.3f};   // quanto le braccia seguono le gambe
-    private static final float[] R_BOB =    {1.7f,    1.3f,   0.9f,    2.4f,    1.4f};   // rimbalzo
-    private static final float[] R_HOP =    {0f,      0f,     0f,      1f,      0f};     // rimbalzo a molla: più secco e più a lungo in alto
-    private static final float[] R_LEAN =   {1.25f,   2.2f,   2.5f,    0.9f,    1.4f};   // inclinazione in avanti
-    private static final float[] R_ROLL =   {1.8f,    1.2f,   0.6f,    1.0f,    2.3f};   // ondeggio delle spalle
-    private static final float[] R_TWIST =  {1.5f,    1.6f,   0.5f,    1.0f,    1.8f};   // torsione del busto
-    private static final float[] R_LIFT =   {1.2f,    2.0f,   1.9f,    2.2f,    1.4f};   // ginocchio che sale
-    private static final float[] R_SPREAD = {0.12f,   0.25f,  0.3f,    0.15f,   0.3f};   // braccia larghe o strette
-    private static final float[] R_ARMFWD = {0f,      0f,     1.05f,   0f,      0f};     // braccia portate (negativo) avanti o (positivo) tese all'indietro
-    private static final float[] R_CIRC =   {0f,      0.55f,  0f,      0.2f,    0.35f};  // braccia che girano in tondo invece di oscillare dritte
-    private static final float[] R_LAG =    {0f,      0.2f,   0f,      0f,      0.7f};   // ritardo delle braccia sulle gambe: sciolte, si trascinano
+    /** Corsa possente: falcata lunga e pesante, molto rimbalzo, spalle che ondeggiano, braccia larghe. Cadenza rispetto al ciclo base. */
+    public static final float RUN_CADENCE = 0.8f;
+    private static final float R_SWING = 1.3f, R_ARM = 0.85f, R_BOB = 1.7f, R_LEAN = 1.25f, R_ROLL = 1.8f, R_TWIST = 1.5f, R_LIFT = 1.2f, R_SPREAD = 0.12f;
     private float animT = -1, landT = 0, liftT = 0;
     private float sLegA, sLegB, sArmA, sArmB, sSpread, sLegSpread, sTuck;
     private boolean wasGround = true;
@@ -348,8 +352,7 @@ public final class HeroModel {
         landT = Math.max(0, landT - dt);
         liftT = Math.max(0, liftT - dt);
 
-        final int rs = Math.max(0, Math.min(4, run));
-        float amp = Math.min(1f, sp / 4.2f), ph = w.runPhase * phK * Img.RUN_CADENCE[rs];
+        float amp = Math.min(1f, sp / 4.2f), ph = w.runPhase * phK * RUN_CADENCE;
         float tLegA, tLegB, tArmA, tArmB, tSpread = 0.16f, tLegSpread = 0f, tTuck = 0f;
         if (spin) {
             tLegA = 0.15f; tLegB = -0.15f; tArmA = tArmB = 0; tSpread = 1.45f;
@@ -370,13 +373,13 @@ public final class HeroModel {
             }
         } else {
             float gate = (0.18f + 0.82f * amp) * (amp > 0.03f ? 1f : 0f) * swK;
-            float swing = (float) Math.sin(ph) * gate * R_SWING[rs];
+            float swing = (float) Math.sin(ph) * gate * R_SWING;
             tLegA = swing * 0.95f;
             tLegB = -tLegA;
-            float armSw = (float) Math.sin(ph - R_LAG[rs]) * gate * R_SWING[rs] * 0.95f * (0.75f + 0.25f * amp) * R_ARM[rs];
-            tArmA = -armSw + R_ARMFWD[rs] * amp;
-            tArmB = armSw + R_ARMFWD[rs] * amp;
-            tSpread = 0.16f + (0.05f + R_SPREAD[rs]) * amp + 0.02f * (float) Math.sin(w.time * 2.2f) * (1f - amp);
+            float armSw = (float) Math.sin(ph) * gate * R_SWING * 0.95f * (0.75f + 0.25f * amp) * R_ARM;
+            tArmA = -armSw;
+            tArmB = armSw;
+            tSpread = 0.16f + (0.05f + R_SPREAD) * amp + 0.02f * (float) Math.sin(w.time * 2.2f) * (1f - amp);
         }
         float k = first ? 1f : Math.min(1f, dt * (air || spin ? 28f : 32f));
         sLegA = lerp(sLegA, tLegA, k); sLegB = lerp(sLegB, tLegB, k);
@@ -386,11 +389,11 @@ public final class HeroModel {
         // corpo: rimbalzo a ogni passo, inclinazione in avanti con la velocità, ondeggio di bacino e spalle
         float bob = 0, lean = 0, roll = 0, twist = 0, sy = 1f, sxz = 1f;
         if (!air && !spin) {
-            float step = (float) Math.pow(Math.abs(Math.sin(ph)), 1f - 0.65f * R_HOP[rs]) * amp;
-            bob = 0.055f * bobK * R_BOB[rs] * step + 0.0175f * (float) Math.sin(w.time * 3.2f) * (1f - amp);
-            lean = 0.17f * leanK * R_LEAN[rs] * amp;
-            roll = (float) Math.sin(ph) * 0.06f * rollK * R_ROLL[rs] * amp;
-            twist = (float) Math.sin(ph) * 0.14f * twK * R_TWIST[rs] * amp;
+            float step = (float) Math.abs(Math.sin(ph)) * amp;
+            bob = 0.055f * bobK * R_BOB * step + 0.0175f * (float) Math.sin(w.time * 3.2f) * (1f - amp);
+            lean = 0.17f * leanK * R_LEAN * amp;
+            roll = (float) Math.sin(ph) * 0.06f * rollK * R_ROLL * amp;
+            twist = (float) Math.sin(ph) * 0.14f * twK * R_TWIST * amp;
         } else if (air) {
             lean = (0.08f + 0.12f * (1f - Math.max(0f, Math.min(1f, (w.vy + 6f) / 12f)))) * 1.6f;
         }
@@ -415,17 +418,15 @@ public final class HeroModel {
 
         g.draw(robe, mt, 1, 1, 1, 1, 0);
         for (Mesh gm : gear) g.draw(gm, mt, 1, 1, 1, 1, 0);
-        g.draw(glow, mt, 1, 1, 1, 1, 1);
-        g.draw(cape, mt, 1, 1, 1, 1, 0);
+        if (glow != null) g.draw(glow, mt, 1, 1, 1, 1, 1);
+        if (cape != null) g.draw(cape, mt, 1, 1, 1, 1, 0);
         // gambe: la gamba che avanza si solleva, quella che spinge resta a terra
-        float liftA = (!air && !spin) ? Math.max(0f, (float) Math.cos(ph)) * 0.05f * liftK * R_LIFT[rs] * amp : 0f;
-        float liftB = (!air && !spin) ? Math.max(0f, -(float) Math.cos(ph)) * 0.05f * liftK * R_LIFT[rs] * amp : 0f;
+        float liftA = (!air && !spin) ? Math.max(0f, (float) Math.cos(ph)) * 0.05f * liftK * R_LIFT * amp : 0f;
+        float liftB = (!air && !spin) ? Math.max(0f, -(float) Math.cos(ph)) * 0.05f * liftK * R_LIFT * amp : 0f;
         limb(g, mb, leg, -0.1f, 0.37f + liftA, 0, -sLegSpread, sLegA);
         limb(g, mb, leg, 0.1f, 0.37f + liftB, 0, sLegSpread, sLegB);
-        // braccia che girano: l'apertura laterale va in quadratura con l'oscillazione, così la mano disegna un cerchio
-        float circ = (!air && !spin) ? R_CIRC[run < 0 || run > 4 ? 0 : run] * amp : 0f, cph = ph - R_LAG[run < 0 || run > 4 ? 0 : run];
-        limb(g, mt, arm, -0.275f, 0.79f, 0, -(sSpread + circ * (0.5f + 0.5f * (float) Math.cos(cph))), sArmA);
-        limb(g, mt, arm, 0.275f, 0.79f, 0, sSpread + circ * (0.5f - 0.5f * (float) Math.cos(cph)), sArmB);
+        limb(g, mt, arm, -0.275f, 0.79f, 0, -sSpread, sArmA);
+        limb(g, mt, arm, 0.275f, 0.79f, 0, sSpread, sArmB);
     }
 
     private void limb(Gfx3D g, float[] base, Mesh[] mesh, float x, float y, float z, float rz, float rx) {

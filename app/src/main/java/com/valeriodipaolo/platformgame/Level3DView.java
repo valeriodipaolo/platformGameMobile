@@ -25,6 +25,8 @@ final class Level3DView extends FrameLayout {
     /** Schema di movimento (1..5, vedi MenuView): fisso = joystick sempre nello stesso punto; 4 direzioni = niente diagonali. */
 
     // schema 6: angolo entro cui si blocca sull'asse, guadagno sulle diagonali, corsa del joystick per la piena velocità
+    /** Comandi digitali: la levetta dà solo otto direzioni, sempre a piena velocità (niente pressione intermedia). */
+    private final boolean digital;
     private static final float SNAP_DEG = 20f, DIAG_GAIN = 0.6f, FULL_X = 0.7f, FULL_Y = 0.5f;
 
     // comandi: scritti dal thread dei tocchi, letti dal thread grafico
@@ -36,7 +38,8 @@ final class Level3DView extends FrameLayout {
         super(ctx);
         this.onExit = onExit;
         com.valeriodipaolo.platformgame.core3d.World3D.fastFall = true;     // dopo il salto si torna a terra in fretta
-        com.valeriodipaolo.platformgame.core3d.HeroModel.run = Math.max(0, Math.min(4, ctx.getSharedPreferences("platformgame", Context.MODE_PRIVATE).getInt("run3d", 0)));
+        com.valeriodipaolo.platformgame.core3d.HeroModel.character = Math.max(0, Math.min(4, ctx.getSharedPreferences("platformgame", Context.MODE_PRIVATE).getInt("hero", 0)));
+        digital = ctx.getSharedPreferences("platformgame", Context.MODE_PRIVATE).getInt("ctrlmode", 0) == 1;
         world = new World3D(new AndroidSave(ctx), levelNo);
         gl = new GLSurfaceView(ctx);
         gl.setEGLContextClientVersion(2);
@@ -159,8 +162,15 @@ final class Level3DView extends FrameLayout {
             joyDx = dx;
             joyDy = dy;
             // zona morta piccola e piena velocità già a poco più di metà corsa: risposta pronta
-            if (len < 0.12f) {
+            if (len < (digital ? 0.3f : 0.12f)) {
                 joyX = joyY = 0;
+            } else if (digital) {
+                // otto direzioni, tutto o niente: l'angolo si arrotonda al multiplo di 45° più vicino e la velocità è sempre piena
+                double ang = Math.round(Math.atan2(-dy, dx) / (Math.PI / 4)) * (Math.PI / 4);
+                joyX = (float) Math.cos(ang);
+                joyY = (float) Math.sin(ang);
+                if (Math.abs(joyX) < 1e-3f) joyX = 0;
+                if (Math.abs(joyY) < 1e-3f) joyY = 0;
             } else {
                 // comandi: gli assi principali si "calamitano" e vanno a piena velocità; le diagonali sono più dolci.
                 // Il verticale arriva al massimo con poca corsa, l'orizzontale ne chiede di più (movimento laterale più fine).
