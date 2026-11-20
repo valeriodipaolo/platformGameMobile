@@ -308,6 +308,18 @@ public final class HeroModel {
     // stato dell'animazione: i valori si inseguono dolcemente, così passare da corsa a salto non è uno scatto
     /** Animazioni scelte dal menu: 0 = originali, 2 = nuove (corsa lenta e molto marcata, salto scattante con caduta più rapida); 1 non è più offerto. */
     public static int style = 2;
+    /** Stile di corsa scelto nel menu (0..4): classica, atletica, corsetta, meccanica, possente. */
+    public static int run = 0;
+    //                                     classica atletica corsetta meccanica possente
+    private static final float[] R_SWING = {1f,     1.2f,    0.6f,    0.9f,     1.3f};   // ampiezza del passo
+    private static final float[] R_ARM =   {1f,     1.35f,   0.55f,   1.0f,     0.85f};  // quanto le braccia seguono le gambe
+    private static final float[] R_BOB =   {1f,     0.8f,    0.55f,   0.25f,    1.7f};   // rimbalzo
+    private static final float[] R_LEAN =  {1f,     1.9f,    0.55f,   0.4f,     1.25f};  // inclinazione in avanti
+    private static final float[] R_ROLL =  {1f,     0.6f,    0.8f,    0f,       1.8f};   // ondeggio delle spalle
+    private static final float[] R_TWIST = {1f,     1.3f,    0.6f,    0.15f,    1.5f};   // torsione del busto
+    private static final float[] R_LIFT =  {1f,     1.8f,    0.5f,    1.4f,     1.2f};   // ginocchio che sale
+    private static final float[] R_SPREAD = {0f,    -0.04f,  0.1f,    0f,       0.12f};  // braccia larghe o strette
+    private static final float[] R_ARMFWD = {0f,    -0.15f,  -0.2f,   0f,       0f};     // braccia portate un po' avanti (negativo = avanti)
     private float animT = -1, landT = 0, liftT = 0;
     private float sLegA, sLegB, sArmA, sArmB, sSpread, sLegSpread, sTuck;
     private boolean wasGround = true;
@@ -338,7 +350,8 @@ public final class HeroModel {
         landT = Math.max(0, landT - dt);
         liftT = Math.max(0, liftT - dt);
 
-        float amp = Math.min(1f, sp / 4.2f), ph = w.runPhase * phK;
+        final int rs = Math.max(0, Math.min(4, run));
+        float amp = Math.min(1f, sp / 4.2f), ph = w.runPhase * phK * Img.RUN_CADENCE[rs];
         float tLegA, tLegB, tArmA, tArmB, tSpread = 0.16f, tLegSpread = 0f, tTuck = 0f;
         if (spin) {
             tLegA = 0.15f; tLegB = -0.15f; tArmA = tArmB = 0; tSpread = 1.45f;
@@ -358,12 +371,14 @@ public final class HeroModel {
                 if (w.vy > 0) { tLegA += pick(st, 0f, 0.25f, 0.45f); tSpread += pick(st, 0f, 0.15f, 0.3f); }
             }
         } else {
-            float swing = (float) Math.sin(ph) * (0.18f + 0.82f * amp) * (amp > 0.03f ? 1f : 0f) * swK;
+            float wave = (float) Math.sin(ph);
+            if (rs == 3) wave = Math.signum(wave) * (float) Math.pow(Math.abs(wave), 0.35f);     // meccanica: scatta e si ferma agli estremi
+            float swing = wave * (0.18f + 0.82f * amp) * (amp > 0.03f ? 1f : 0f) * swK * R_SWING[rs];
             tLegA = swing * 0.95f;
             tLegB = -tLegA;
-            tArmA = -tLegA * (0.75f + 0.25f * amp);
-            tArmB = -tLegB * (0.75f + 0.25f * amp);
-            tSpread = 0.16f + 0.05f * amp + 0.02f * (float) Math.sin(w.time * 2.2f) * (1f - amp);
+            tArmA = -tLegA * (0.75f + 0.25f * amp) * R_ARM[rs] + R_ARMFWD[rs] * amp;
+            tArmB = -tLegB * (0.75f + 0.25f * amp) * R_ARM[rs] + R_ARMFWD[rs] * amp;
+            tSpread = 0.16f + (0.05f + R_SPREAD[rs]) * amp + 0.02f * (float) Math.sin(w.time * 2.2f) * (1f - amp);
         }
         float k = first ? 1f : Math.min(1f, dt * (st == 2 ? (air || spin ? 28f : 32f) : nu ? (air || spin ? 34f : 40f) : (air || spin ? 16f : 22f)));
         sLegA = lerp(sLegA, tLegA, k); sLegB = lerp(sLegB, tLegB, k);
@@ -374,10 +389,10 @@ public final class HeroModel {
         float bob = 0, lean = 0, roll = 0, twist = 0, sy = 1f, sxz = 1f;
         if (!air && !spin) {
             float step = (float) Math.abs(Math.sin(ph)) * amp;
-            bob = 0.055f * bobK * step + 0.007f * (nu ? 2.5f : 1f) * (float) Math.sin(w.time * (nu ? 3.2f : 2.2f)) * (1f - amp);
-            lean = 0.17f * leanK * amp;
-            roll = (float) Math.sin(ph) * 0.06f * rollK * amp;
-            twist = (float) Math.sin(ph) * 0.14f * twK * amp;
+            bob = 0.055f * bobK * R_BOB[rs] * step + 0.007f * (nu ? 2.5f : 1f) * (float) Math.sin(w.time * (nu ? 3.2f : 2.2f)) * (1f - amp);
+            lean = 0.17f * leanK * R_LEAN[rs] * amp;
+            roll = (float) Math.sin(ph) * 0.06f * rollK * R_ROLL[rs] * amp;
+            twist = (float) Math.sin(ph) * 0.14f * twK * R_TWIST[rs] * amp;
         } else if (air) {
             lean = (0.08f + 0.12f * (1f - Math.max(0f, Math.min(1f, (w.vy + 6f) / 12f)))) * (nu ? 1.6f : 1f);
         }
@@ -405,8 +420,8 @@ public final class HeroModel {
         g.draw(glow, mt, 1, 1, 1, 1, 1);
         g.draw(cape, mt, 1, 1, 1, 1, 0);
         // gambe: la gamba che avanza si solleva, quella che spinge resta a terra
-        float liftA = (!air && !spin) ? Math.max(0f, (float) Math.cos(ph)) * 0.05f * liftK * amp : 0f;
-        float liftB = (!air && !spin) ? Math.max(0f, -(float) Math.cos(ph)) * 0.05f * liftK * amp : 0f;
+        float liftA = (!air && !spin) ? Math.max(0f, (float) Math.cos(ph)) * 0.05f * liftK * R_LIFT[rs] * amp : 0f;
+        float liftB = (!air && !spin) ? Math.max(0f, -(float) Math.cos(ph)) * 0.05f * liftK * R_LIFT[rs] * amp : 0f;
         limb(g, mb, leg, -0.1f, 0.37f + liftA, 0, -sLegSpread, sLegA);
         limb(g, mb, leg, 0.1f, 0.37f + liftB, 0, sLegSpread, sLegB);
         limb(g, mt, arm, -0.275f, 0.79f, 0, -sSpread, sArmA);

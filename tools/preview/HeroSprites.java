@@ -8,7 +8,7 @@ import javax.imageio.ImageIO;
 /**
  * Strumento da PC: ricava gli sprite 2D del protagonista dal modello 3D (stessa grafica nei due modi di gioco): fermo, quattro passi di corsa,
  * salto e le dodici pose della giravolta. Li disegna in grande (4x); tools/fit_hero.py li riduce alla misura del gioco (112x144).
- * Uso: HeroSprites res outDir
+ * Uso: HeroSprites res outDir [stile di corsa 0..4]   (con lo stile si generano solo i 24 fotogrammi di corsa di quello stile)
  */
 public class HeroSprites {
     static final int W = 448, H = 576;
@@ -21,7 +21,12 @@ public class HeroSprites {
         names[0] = "hero_idle"; names[5] = "hero_jump";
         for (int i = 0; i < 4; i++) names[1 + i] = "hero_run_" + i;
         for (int i = 0; i < 12; i++) names[6 + i] = "hero_spin_" + i;
+        int set = a.length > 2 ? Integer.parseInt(a[2]) : -1;
+        HeroModel.run = Math.max(0, set);
+        if (set > 0) for (int i = 0; i < 24; i++) { int n = i < 4 ? 1 + i : 18 + i - 4; names[n] = "hero_run" + "bcde".charAt(set - 1) + "_" + i; }
         for (int n = 0; n < names.length; n++) {
+            boolean runFrame = (n >= 1 && n <= 4) || n >= 18;
+            if (set >= 0 && !runFrame) continue;
             World3D w = new World3D(new MemorySave());
             HeroModel hm = new HeroModel();
             w.time = 3.1f + n * 0.07f;
@@ -30,7 +35,7 @@ public class HeroSprites {
             if ((n >= 1 && n <= 4) || n >= 18) {      // 24 fasi uguali del ciclo di corsa
                 int j = n <= 4 ? n - 1 : n - 18 + 4;
                 w.vz = 5f;
-                w.runPhase = j * 2f * (float) Math.PI / 24f / HeroModel.phaseScale(HeroModel.style);
+                w.runPhase = j * 2f * (float) Math.PI / 24f / (HeroModel.phaseScale(HeroModel.style) * Img.RUN_CADENCE[HeroModel.run]);
             }
             if (n == 5) { w.onGround = false; w.vy = 3f; w.vz = 2.5f; }
             if (n >= 6 && n < 18) {

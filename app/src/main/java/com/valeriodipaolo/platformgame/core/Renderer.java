@@ -2,6 +2,9 @@ package com.valeriodipaolo.platformgame.core;
 
 /** Disegna una scena completa del gioco su un Painter. */
 public final class Renderer {
+    /** Stile di corsa 2D scelto nel menu (0..4). */
+    public static int runSet = 0;
+
     private static final int WHITE = 0xFFFFFFFF;
 
     public void draw(Game g, Painter p, float sw, float sh) {
@@ -258,7 +261,7 @@ public final class Renderer {
         Body pl = g.player;
         int img;
         if (g.state == Game.DYING || (!pl.onGround && g.state == Game.PLAYING)) img = Img.HERO_JUMP;
-        else if (Math.abs(pl.vx) > 0.3f) img = Img.runFrame((int) (g.runPhase * (Img.RUN_FRAMES / 4f)) % Img.RUN_FRAMES);      // ciclo fluido a 24 fotogrammi
+        else if (Math.abs(pl.vx) > 0.3f) img = Img.runFrame(runSet, (int) (g.runPhase * Img.RUN_CADENCE[runSet] * (Img.RUN_FRAMES / 4f)) % Img.RUN_FRAMES);      // ciclo fluido a 24 fotogrammi
         else img = Img.HERO_IDLE;
         float hw = 1.167f * s, hh = 1.5f * s;
         float cx = (pl.x + pl.w / 2 - cam) * s, by = (pl.y + pl.h + 0.03f) * s;
