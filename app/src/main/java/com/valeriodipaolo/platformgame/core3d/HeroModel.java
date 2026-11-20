@@ -306,29 +306,29 @@ public final class HeroModel {
     // ------------------------------------------------------------------ disegno
 
     // stato dell'animazione: i valori si inseguono dolcemente, così passare da corsa a salto non è uno scatto
-    /** Animazioni scelte dal menu: 0 = originali, 2 = nuove (corsa lenta e molto marcata, salto scattante con caduta più rapida); 1 non è più offerto. */
-    public static int style = 2;
-    /** Stile di corsa scelto nel menu (0..4): classica, atletica, corsetta, meccanica, possente. */
+    /** Stile di corsa scelto nel menu (0..4): possente e quattro corse alla maniera dei platform anni '90 (busto in avanti, braccia sciolte, piedi rapidi). */
     public static int run = 0;
-    //                                     classica atletica corsetta meccanica possente
-    private static final float[] R_SWING = {1f,     1.2f,    0.6f,    0.9f,     1.3f};   // ampiezza del passo
-    private static final float[] R_ARM =   {1f,     1.35f,   0.55f,   1.0f,     0.85f};  // quanto le braccia seguono le gambe
-    private static final float[] R_BOB =   {1f,     0.8f,    0.55f,   0.25f,    1.7f};   // rimbalzo
-    private static final float[] R_LEAN =  {1f,     1.9f,    0.55f,   0.4f,     1.25f};  // inclinazione in avanti
-    private static final float[] R_ROLL =  {1f,     0.6f,    0.8f,    0f,       1.8f};   // ondeggio delle spalle
-    private static final float[] R_TWIST = {1f,     1.3f,    0.6f,    0.15f,    1.5f};   // torsione del busto
-    private static final float[] R_LIFT =  {1f,     1.8f,    0.5f,    1.4f,     1.2f};   // ginocchio che sale
-    private static final float[] R_SPREAD = {0f,    -0.04f,  0.1f,    0f,       0.12f};  // braccia larghe o strette
-    private static final float[] R_ARMFWD = {0f,    -0.15f,  -0.2f,   0f,       0f};     // braccia portate un po' avanti (negativo = avanti)
+    //                                       possente scatto  indietro saltella dinoccol.
+    private static final float[] R_SWING =  {1.3f,    1.35f,  1.3f,    1.0f,    1.15f};  // ampiezza del passo
+    private static final float[] R_ARM =    {0.85f,   1.5f,   0.2f,    1.1f,    1.3f};   // quanto le braccia seguono le gambe
+    private static final float[] R_BOB =    {1.7f,    1.3f,   0.9f,    2.4f,    1.4f};   // rimbalzo
+    private static final float[] R_HOP =    {0f,      0f,     0f,      1f,      0f};     // rimbalzo a molla: più secco e più a lungo in alto
+    private static final float[] R_LEAN =   {1.25f,   2.2f,   2.5f,    0.9f,    1.4f};   // inclinazione in avanti
+    private static final float[] R_ROLL =   {1.8f,    1.2f,   0.6f,    1.0f,    2.3f};   // ondeggio delle spalle
+    private static final float[] R_TWIST =  {1.5f,    1.6f,   0.5f,    1.0f,    1.8f};   // torsione del busto
+    private static final float[] R_LIFT =   {1.2f,    2.0f,   1.9f,    2.2f,    1.4f};   // ginocchio che sale
+    private static final float[] R_SPREAD = {0.12f,   0.25f,  0.3f,    0.15f,   0.3f};   // braccia larghe o strette
+    private static final float[] R_ARMFWD = {0f,      0f,     1.05f,   0f,      0f};     // braccia portate (negativo) avanti o (positivo) tese all'indietro
+    private static final float[] R_CIRC =   {0f,      0.55f,  0f,      0.2f,    0.35f};  // braccia che girano in tondo invece di oscillare dritte
+    private static final float[] R_LAG =    {0f,      0.2f,   0f,      0f,      0.7f};   // ritardo delle braccia sulle gambe: sciolte, si trascinano
     private float animT = -1, landT = 0, liftT = 0;
     private float sLegA, sLegB, sArmA, sArmB, sSpread, sLegSpread, sTuck;
     private boolean wasGround = true;
     private final float[] mb = new float[16], mt = new float[16];
 
     private static float lerp(float a, float b, float k) { return a + (b - a) * k; }
-    private static float pick(int st, float a, float b, float c) { return st == 0 ? a : st == 1 ? b : c; }
     /** Velocità del ciclo di corsa rispetto a World3D.runPhase (serve anche a ricavare gli sprite 2D a fasi uguali). */
-    public static float phaseScale(int st) { return pick(st, 1f, 1.5f, 0.72f); }
+    public static float phaseScale() { return 0.72f; }
 
     /** base = posizione e orientamento del robot nel mondo. */
     public void draw(Gfx3D g, float[] base, World3D w) {
@@ -338,12 +338,10 @@ public final class HeroModel {
         animT = w.time;
         float sp = (float) Math.sqrt(w.vx * w.vx + w.vz * w.vz);
         boolean spin = w.spinning(), air = !w.onGround && !spin;
-        final int st = style;
-        final boolean nu = st >= 1;
-        // coefficienti: 1 = animazione originale; le nuove sono più rapide e accentuate, le scattanti ancora di più
-        final float phK = phaseScale(st), swK = pick(st, 1f, 1.4f, 1.55f), bobK = pick(st, 1f, 2f, 2.3f), leanK = pick(st, 1f, 1.8f, 1.9f),
-                rollK = pick(st, 1f, 2f, 2f), twK = pick(st, 1f, 2f, 2f), liftK = pick(st, 1f, 2.4f, 3f), airK = pick(st, 1f, 1.3f, 1.55f),
-                landDur = pick(st, 0.22f, 0.17f, 0.12f), landSq = pick(st, 1f, 1.8f, 2.6f), liftDur = pick(st, 0.14f, 0.1f, 0.07f);
+        // coefficienti rispetto all'animazione di base: corsa e salto accentuati, atterraggio secco
+        final float phK = phaseScale(), swK = 1.55f, bobK = 2.3f, leanK = 1.9f,
+                rollK = 2f, twK = 2f, liftK = 3f, airK = 1.55f,
+                landDur = 0.12f, landSq = 2.6f, liftDur = 0.07f;
         if (!wasGround && w.onGround) landT = landDur;        // appena atterrato: ammortizza piegandosi
         if (wasGround && !w.onGround && w.vy > 3f) liftT = liftDur;   // appena staccato: si allunga
         wasGround = w.onGround;
@@ -366,21 +364,21 @@ public final class HeroModel {
                 tLegSpread = lerp(0.2f, 0.05f, up);
                 tTuck = up * 0.5f;
             }
-            if (nu) {                                          // salto più espressivo: ginocchia e braccia più decisi
-                tLegA *= airK; tLegB *= airK; tArmA *= pick(st, 1f, 1.15f, 1.3f); tArmB *= pick(st, 1f, 1.15f, 1.3f);
-                if (w.vy > 0) { tLegA += pick(st, 0f, 0.25f, 0.45f); tSpread += pick(st, 0f, 0.15f, 0.3f); }
+            {                                                  // salto espressivo: ginocchia e braccia decisi
+                tLegA *= airK; tLegB *= airK; tArmA *= 1.3f; tArmB *= 1.3f;
+                if (w.vy > 0) { tLegA += 0.45f; tSpread += 0.3f; }
             }
         } else {
-            float wave = (float) Math.sin(ph);
-            if (rs == 3) wave = Math.signum(wave) * (float) Math.pow(Math.abs(wave), 0.35f);     // meccanica: scatta e si ferma agli estremi
-            float swing = wave * (0.18f + 0.82f * amp) * (amp > 0.03f ? 1f : 0f) * swK * R_SWING[rs];
+            float gate = (0.18f + 0.82f * amp) * (amp > 0.03f ? 1f : 0f) * swK;
+            float swing = (float) Math.sin(ph) * gate * R_SWING[rs];
             tLegA = swing * 0.95f;
             tLegB = -tLegA;
-            tArmA = -tLegA * (0.75f + 0.25f * amp) * R_ARM[rs] + R_ARMFWD[rs] * amp;
-            tArmB = -tLegB * (0.75f + 0.25f * amp) * R_ARM[rs] + R_ARMFWD[rs] * amp;
+            float armSw = (float) Math.sin(ph - R_LAG[rs]) * gate * R_SWING[rs] * 0.95f * (0.75f + 0.25f * amp) * R_ARM[rs];
+            tArmA = -armSw + R_ARMFWD[rs] * amp;
+            tArmB = armSw + R_ARMFWD[rs] * amp;
             tSpread = 0.16f + (0.05f + R_SPREAD[rs]) * amp + 0.02f * (float) Math.sin(w.time * 2.2f) * (1f - amp);
         }
-        float k = first ? 1f : Math.min(1f, dt * (st == 2 ? (air || spin ? 28f : 32f) : nu ? (air || spin ? 34f : 40f) : (air || spin ? 16f : 22f)));
+        float k = first ? 1f : Math.min(1f, dt * (air || spin ? 28f : 32f));
         sLegA = lerp(sLegA, tLegA, k); sLegB = lerp(sLegB, tLegB, k);
         sArmA = lerp(sArmA, tArmA, k); sArmB = lerp(sArmB, tArmB, k);
         sSpread = lerp(sSpread, tSpread, k); sLegSpread = lerp(sLegSpread, tLegSpread, k); sTuck = lerp(sTuck, tTuck, k);
@@ -388,13 +386,13 @@ public final class HeroModel {
         // corpo: rimbalzo a ogni passo, inclinazione in avanti con la velocità, ondeggio di bacino e spalle
         float bob = 0, lean = 0, roll = 0, twist = 0, sy = 1f, sxz = 1f;
         if (!air && !spin) {
-            float step = (float) Math.abs(Math.sin(ph)) * amp;
-            bob = 0.055f * bobK * R_BOB[rs] * step + 0.007f * (nu ? 2.5f : 1f) * (float) Math.sin(w.time * (nu ? 3.2f : 2.2f)) * (1f - amp);
+            float step = (float) Math.pow(Math.abs(Math.sin(ph)), 1f - 0.65f * R_HOP[rs]) * amp;
+            bob = 0.055f * bobK * R_BOB[rs] * step + 0.0175f * (float) Math.sin(w.time * 3.2f) * (1f - amp);
             lean = 0.17f * leanK * R_LEAN[rs] * amp;
             roll = (float) Math.sin(ph) * 0.06f * rollK * R_ROLL[rs] * amp;
             twist = (float) Math.sin(ph) * 0.14f * twK * R_TWIST[rs] * amp;
         } else if (air) {
-            lean = (0.08f + 0.12f * (1f - Math.max(0f, Math.min(1f, (w.vy + 6f) / 12f)))) * (nu ? 1.6f : 1f);
+            lean = (0.08f + 0.12f * (1f - Math.max(0f, Math.min(1f, (w.vy + 6f) / 12f)))) * 1.6f;
         }
         if (landT > 0) {                                      // schiacciamento all'atterraggio
             float u = (float) Math.sin(Math.PI * (1f - landT / landDur));
@@ -424,8 +422,10 @@ public final class HeroModel {
         float liftB = (!air && !spin) ? Math.max(0f, -(float) Math.cos(ph)) * 0.05f * liftK * R_LIFT[rs] * amp : 0f;
         limb(g, mb, leg, -0.1f, 0.37f + liftA, 0, -sLegSpread, sLegA);
         limb(g, mb, leg, 0.1f, 0.37f + liftB, 0, sLegSpread, sLegB);
-        limb(g, mt, arm, -0.275f, 0.79f, 0, -sSpread, sArmA);
-        limb(g, mt, arm, 0.275f, 0.79f, 0, sSpread, sArmB);
+        // braccia che girano: l'apertura laterale va in quadratura con l'oscillazione, così la mano disegna un cerchio
+        float circ = (!air && !spin) ? R_CIRC[run < 0 || run > 4 ? 0 : run] * amp : 0f, cph = ph - R_LAG[run < 0 || run > 4 ? 0 : run];
+        limb(g, mt, arm, -0.275f, 0.79f, 0, -(sSpread + circ * (0.5f + 0.5f * (float) Math.cos(cph))), sArmA);
+        limb(g, mt, arm, 0.275f, 0.79f, 0, sSpread + circ * (0.5f - 0.5f * (float) Math.cos(cph)), sArmB);
     }
 
     private void limb(Gfx3D g, float[] base, Mesh[] mesh, float x, float y, float z, float rz, float rx) {

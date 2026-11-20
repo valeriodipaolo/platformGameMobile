@@ -23,7 +23,6 @@ final class Level3DView extends FrameLayout {
     private final GlRenderer renderer;
     private final Runnable onExit;
     /** Schema di movimento (1..5, vedi MenuView): fisso = joystick sempre nello stesso punto; 4 direzioni = niente diagonali. */
-    private final boolean fixedStick, fourWay, shaped;
 
     // schema 6: angolo entro cui si blocca sull'asse, guadagno sulle diagonali, corsa del joystick per la piena velocità
     private static final float SNAP_DEG = 20f, DIAG_GAIN = 0.6f, FULL_X = 0.7f, FULL_Y = 0.5f;
@@ -36,16 +35,9 @@ final class Level3DView extends FrameLayout {
     Level3DView(Context ctx, int levelNo, Runnable onExit) {
         super(ctx);
         this.onExit = onExit;
-        int animStyle = ctx.getSharedPreferences("platformgame", Context.MODE_PRIVATE).getInt("anim3d", 1) == 0 ? 0 : 2;
-        com.valeriodipaolo.platformgame.core3d.HeroModel.style = animStyle;
+        com.valeriodipaolo.platformgame.core3d.World3D.fastFall = true;     // dopo il salto si torna a terra in fretta
         com.valeriodipaolo.platformgame.core3d.HeroModel.run = Math.max(0, Math.min(4, ctx.getSharedPreferences("platformgame", Context.MODE_PRIVATE).getInt("run3d", 0)));
-        com.valeriodipaolo.platformgame.core3d.World3D.fastFall = animStyle == 2;
-        int mode = ctx.getSharedPreferences("platformgame", Context.MODE_PRIVATE).getInt("ctrl3d", 2);
-        fixedStick = mode == 2 || mode == 4 || mode == 5 || mode == 6;
-        shaped = mode == 6;
-        fourWay = mode == 3 || mode == 4;
         world = new World3D(new AndroidSave(ctx), levelNo);
-        world.tank = mode == 5;
         gl = new GLSurfaceView(ctx);
         gl.setEGLContextClientVersion(2);
         gl.setEGLConfigChooser(8, 8, 8, 0, 24, 0);
@@ -88,7 +80,7 @@ final class Level3DView extends FrameLayout {
     private final class Hud extends View {
         private final AndroidPainter painter;
         private final Hud3D hud = new Hud3D();
-        private int joyId = -1, axis;       // axis: asse bloccato nei modi a 4 direzioni (0 nessuno, 1 orizzontale, 2 verticale)
+        private int joyId = -1;
         private float joyCx, joyCy, joyDx, joyDy;
         private boolean prevJump, prevSpin;
 
@@ -108,7 +100,7 @@ final class Level3DView extends FrameLayout {
         @Override
         protected void onDraw(Canvas canvas) {
             painter.begin(canvas);
-            hud.draw(world, painter, getWidth(), getHeight(), fixedStick, joyId != -1, joyCx, joyCy, joyDx, joyDy, renderer.error);
+            hud.draw(world, painter, getWidth(), getHeight(), joyId != -1, joyCx, joyCy, joyDx, joyDy, renderer.error);
             postInvalidateOnAnimation();
         }
 
@@ -118,7 +110,6 @@ final class Level3DView extends FrameLayout {
             float w = getWidth(), h = getHeight(), radius = Hud3D.joyRadius(w, h);
             if (action == MotionEvent.ACTION_CANCEL) {
                 joyId = -1;
-                axis = 0;
                 joyDx = joyDy = 0;
                 joyX = joyY = 0;
                 inJump = inSpin = false;
@@ -133,24 +124,18 @@ final class Level3DView extends FrameLayout {
                 }
                 // metà sinistra: il joystick nasce dove si appoggia il dito
                 if (e.getX(idx) < w * 0.5f && joyId == -1) {
-                    if (fixedStick) {
-                        // joystick fisso: si prende se il tocco cade vicino, in una zona ampia attorno al disegno
-                        float hx = Hud3D.joyHomeX(w, h), hy = Hud3D.joyHomeY(w, h);
-                        float ddx = e.getX(idx) - hx, ddy = e.getY(idx) - hy;
-                        if (Math.sqrt(ddx * ddx + ddy * ddy) <= radius * 2.1f) {
-                            joyId = e.getPointerId(idx);
-                            joyCx = hx;
-                            joyCy = hy;
-                        }
-                    } else {
+                    // joystick fisso: si prende se il tocco cade vicino, in una zona ampia attorno al disegno
+                    float hx = Hud3D.joyHomeX(w, h), hy = Hud3D.joyHomeY(w, h);
+                    float ddx = e.getX(idx) - hx, ddy = e.getY(idx) - hy;
+                    if (Math.sqrt(ddx * ddx + ddy * ddy) <= radius * 2.1f) {
                         joyId = e.getPointerId(idx);
-                        joyCx = Math.max(radius, e.getX(idx));
-                        joyCy = Math.max(radius, Math.min(h - radius * 0.6f, e.getY(idx)));
+                        joyCx = hx;
+                        joyCy = hy;
                     }
                 }
             }
             int lifted = (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_POINTER_UP) ? idx : -1;
-            if (lifted != -1 && e.getPointerId(lifted) == joyId) { joyId = -1; axis = 0; }
+            if (lifted != -1 && e.getPointerId(lifted) == joyId) { joyId = -1; }
 
             boolean j = false, s = false;
             float dx = 0, dy = 0;
@@ -160,11 +145,7 @@ final class Level3DView extends FrameLayout {
                     dx = (e.getX(i) - joyCx) / radius;
                     dy = (e.getY(i) - joyCy) / radius;
                     float len = (float) Math.sqrt(dx * dx + dy * dy);
-                    if (len > 1f) {                  // se il dito esce dal cerchio, il joystick libero lo segue
-                        if (!fixedStick) {
-                            joyCx += (len - 1f) * radius * dx / len;
-                            joyCy += (len - 1f) * radius * dy / len;
-                        }
+                    if (len > 1f) {                  // se il dito esce dal cerchio conta solo la direzione
                         dx /= len;
                         dy /= len;
                     }
@@ -175,25 +156,13 @@ final class Level3DView extends FrameLayout {
                 }
             }
             float len = (float) Math.sqrt(dx * dx + dy * dy);
-            if (fourWay) {
-                // niente diagonali: conta solo l'asse prevalente; si cambia asse solo con un netto cambio di direzione
-                float ax = Math.abs(dx), ay = Math.abs(dy);
-                if (len < 0.12f) axis = 0;
-                else if (ax > ay * 1.25f) axis = 1;
-                else if (ay > ax * 1.25f) axis = 2;
-                else if (axis == 0) axis = ax >= ay ? 1 : 2;
-                if (axis == 1) dy = 0;
-                else if (axis == 2) dx = 0;
-                else dx = dy = 0;
-                len = Math.abs(dx) + Math.abs(dy);
-            }
             joyDx = dx;
             joyDy = dy;
             // zona morta piccola e piena velocità già a poco più di metà corsa: risposta pronta
             if (len < 0.12f) {
                 joyX = joyY = 0;
-            } else if (shaped) {
-                // schema 6: gli assi principali si "calamitano" e vanno a piena velocità; le diagonali sono più dolci.
+            } else {
+                // comandi: gli assi principali si "calamitano" e vanno a piena velocità; le diagonali sono più dolci.
                 // Il verticale arriva al massimo con poca corsa, l'orizzontale ne chiede di più (movimento laterale più fine).
                 float ax = Math.abs(dx), ay = Math.abs(dy);
                 float minor = Math.min(ax, ay), major = Math.max(ax, ay);
@@ -206,10 +175,6 @@ final class Level3DView extends FrameLayout {
                 joyY = -Math.signum(dy) * Math.min(1f, Math.abs(dy) / FULL_Y) * diag;
                 joyDx = dx;
                 joyDy = dy;
-            } else {
-                float k = Math.min(1f, len / 0.6f) / len;
-                joyX = dx * k;
-                joyY = -dy * k;
             }
             inJump = j;
             inSpin = s;

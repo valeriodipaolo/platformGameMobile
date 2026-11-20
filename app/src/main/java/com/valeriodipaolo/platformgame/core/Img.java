@@ -67,9 +67,9 @@ public final class Img {
     public static final int R3S_SAND = 295, R3S_DUNE = 296, R3S_STONE = 297, R3S_QUICK = 298, R3S_SKY = 299, R3S_MOUNTAINS = 300, R3F_FLOOR = 301, R3F_PANEL = 302, R3F_BLOCK = 303, R3F_BELT = 304, R3F_SKY = 305, R3F_MOUNTAINS = 306, R3M_ROCK = 307, R3M_WALL = 308, R3M_BLOCK = 309, R3M_SKY = 310, R3M_MOUNTAINS = 311;
     /** Altre quattro corse (stili 2..5), 24 fotogrammi ciascuna, da HERO_RUN_SET: hero_runb_0 .. hero_rune_23. */
     public static final int HERO_RUN_SET = 312;
-    public static final String[] RUN_STYLE = {"Classica", "Atletica", "Corsetta", "Meccanica", "Possente"};
+    public static final String[] RUN_STYLE = {"Possente", "Scatto selvaggio", "Braccia indietro", "Saltellante", "Dinoccolata"};
     /** Cadenza di ciascuno stile di corsa rispetto alla classica (passi per metro): vale sia per il 3D sia per gli sprite 2D. */
-    public static final float[] RUN_CADENCE = {1f, 1.3f, 0.85f, 1f, 0.8f};
+    public static final float[] RUN_CADENCE = {0.8f, 1.35f, 1.4f, 1.0f, 0.9f};
     public static final int COUNT = 408;
 
     /** Fotogramma j (0..23) del ciclo di corsa. */

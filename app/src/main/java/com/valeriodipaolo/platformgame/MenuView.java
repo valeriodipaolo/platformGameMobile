@@ -18,21 +18,12 @@ final class MenuView extends View {
     private final AndroidPainter painter;
     private final Listener listener;
     private final android.content.SharedPreferences prefs;
-    private int ctrl, anim;
-    private static final String[] CTRL_TEXT = {
-            "Joystick libero: compare dove tocchi",
-            "Joystick fisso in basso a sinistra",
-            "Joystick libero, solo 4 direzioni",
-            "Joystick fisso, solo 4 direzioni",
-            "Carro armato: sinistra/destra ruota, su/giù avanza",
-            "Joystick fisso, assi calamitati e diagonali più dolci"};
+
 
     MenuView(Context ctx, Listener listener) {
         super(ctx);
         this.listener = listener;
         prefs = ctx.getSharedPreferences("platformgame", Context.MODE_PRIVATE);
-        ctrl = Math.max(1, Math.min(6, prefs.getInt("ctrl3d", 2)));
-        anim = prefs.getInt("anim3d", 1) == 0 ? 0 : 1;
         run2d = Math.max(0, Math.min(4, prefs.getInt("run2d", 0)));
         run3d = Math.max(0, Math.min(4, prefs.getInt("run3d", 0)));
         painter = new AndroidPainter(ctx);
@@ -45,16 +36,11 @@ final class MenuView extends View {
     private float btnY(int i) { return getHeight() * (0.335f + 0.158f * (i / PER_ROW)); }
     private float btnX(int i) { return getWidth() * 0.5f + (i % PER_ROW - PER_ROW / 2f) * (btnW() + getWidth() * 0.0055f) + getWidth() * 0.003f; }
 
-    private float chipW() { return getHeight() * 0.1f; }
-    private float chipX(int i) { return getWidth() * 0.5f + (i - 2.5f) * chipW() * 1.25f; }
-    private float chipY() { return getHeight() * 0.87f; }
-    private float animW() { return getWidth() * 0.1f; }
-    private float animX(int i) { return getWidth() * (0.02f + 0.105f * i); }
-    /** Stili di corsa: due righe (2D sopra, 3D sotto) di cinque quadratini, a destra. */
+    /** Stili di corsa: due gruppi di cinque quadratini in basso, Corsa 2D a sinistra e Corsa 3D a destra. */
     private int run2d, run3d;
-    private float runW() { return getHeight() * 0.068f; }
-    private float runX(int i) { return getWidth() * 0.985f - (5 - i) * runW() * 1.18f; }
-    private float runY(int row) { return getHeight() * (row == 0 ? 0.835f : 0.92f); }
+    private float runW() { return getHeight() * 0.09f; }
+    private float runX(int row, int i) { return getWidth() * (row == 0 ? 0.27f : 0.73f) + (i - 2.5f) * runW() * 1.22f; }
+    private float runY() { return getHeight() * 0.875f; }
 
     @Override
     protected void onDraw(Canvas canvas) {
@@ -82,27 +68,14 @@ final class MenuView extends View {
             painter.text("LIVELLO " + (i + 1), x + btnW() / 2, y + btnH() * 0.47f, 0.27f * s, Painter.ALIGN_CENTER, 0xFFFFFFFF);
             painter.text(subById[Levels.ORDER[i]], x + btnW() / 2, y + btnH() * 0.8f, 0.15f * s, Painter.ALIGN_CENTER, 0xFFB3E5FC);
         }
-        painter.text("Comandi dei livelli 3D: " + CTRL_TEXT[ctrl - 1], w * 0.47f, h * 0.855f, 0.3f * s, Painter.ALIGN_CENTER, 0xFFFFFFFF);
-        for (int i = 0; i < 6; i++) {
-            boolean on = i + 1 == ctrl;
-            painter.rect(chipX(i), chipY(), chipW(), chipW(), on ? 0xFF4FC3F7 : 0xCC14324A);
-            painter.text(String.valueOf(i + 1), chipX(i) + chipW() / 2, chipY() + chipW() * 0.7f, 0.6f * s, Painter.ALIGN_CENTER, on ? 0xFF0B2233 : 0xFFFFFFFF);
-        }
-        painter.text("Animazioni eroe 3D", animX(0) + animW() + w * 0.005f, h * 0.855f, 0.3f * s, Painter.ALIGN_CENTER, 0xFFFFFFFF);
         for (int row = 0; row < 2; row++) {
             int sel = row == 0 ? run2d : run3d;
-            painter.text((row == 0 ? "Corsa 2D: " : "Corsa 3D: ") + Img.RUN_STYLE[sel], runX(0) - w * 0.008f, runY(row) + runW() * 0.62f, 0.26f * s, Painter.ALIGN_RIGHT, 0xFFFFFFFF);
+            painter.text((row == 0 ? "Corsa 2D: " : "Corsa 3D: ") + Img.RUN_STYLE[sel], (runX(row, 0) + runX(row, 4) + runW()) / 2, runY() - h * 0.018f, 0.3f * s, Painter.ALIGN_CENTER, 0xFFFFFFFF);
             for (int i = 0; i < 5; i++) {
                 boolean on = i == sel;
-                painter.rect(runX(i), runY(row), runW(), runW(), on ? 0xFF4FC3F7 : 0xCC14324A);
-                painter.text(String.valueOf(i + 1), runX(i) + runW() / 2, runY(row) + runW() * 0.72f, 0.42f * s, Painter.ALIGN_CENTER, on ? 0xFF0B2233 : 0xFFFFFFFF);
+                painter.rect(runX(row, i), runY(), runW(), runW(), on ? 0xFF4FC3F7 : 0xCC14324A);
+                painter.text(String.valueOf(i + 1), runX(row, i) + runW() / 2, runY() + runW() * 0.7f, 0.55f * s, Painter.ALIGN_CENTER, on ? 0xFF0B2233 : 0xFFFFFFFF);
             }
-        }
-        String[] an = {"ATTUALI", "NUOVE"};
-        for (int i = 0; i < 2; i++) {
-            boolean on = i == anim;
-            painter.rect(animX(i), chipY(), animW(), chipW(), on ? 0xFF4FC3F7 : 0xCC14324A);
-            painter.text(an[i], animX(i) + animW() / 2, chipY() + chipW() * 0.68f, 0.34f * s, Painter.ALIGN_CENTER, on ? 0xFF0B2233 : 0xFFFFFFFF);
         }
     }
 
@@ -110,28 +83,10 @@ final class MenuView extends View {
     public boolean onTouchEvent(MotionEvent e) {
         if (e.getActionMasked() == MotionEvent.ACTION_UP) {
             for (int row = 0; row < 2; row++) for (int i = 0; i < 5; i++) {
-                float pad = runW() * 0.08f;
-                if (e.getX() >= runX(i) - pad && e.getX() <= runX(i) + runW() + pad && e.getY() >= runY(row) - pad && e.getY() <= runY(row) + runW() + pad) {
+                float pad = runW() * 0.1f;
+                if (e.getX() >= runX(row, i) - pad && e.getX() <= runX(row, i) + runW() + pad && e.getY() >= runY() - pad && e.getY() <= runY() + runW() + pad) {
                     if (row == 0) { run2d = i; prefs.edit().putInt("run2d", i).apply(); }
                     else { run3d = i; prefs.edit().putInt("run3d", i).apply(); }
-                    invalidate();
-                    return true;
-                }
-            }
-            for (int i = 0; i < 2; i++) {
-                if (e.getX() >= animX(i) && e.getX() <= animX(i) + animW() && e.getY() >= chipY() && e.getY() <= chipY() + chipW()) {
-                    anim = i;
-                    prefs.edit().putInt("anim3d", anim).apply();
-                    invalidate();
-                    return true;
-                }
-            }
-            for (int i = 0; i < 6; i++) {
-                float pad = chipW() * 0.12f;
-                if (e.getX() >= chipX(i) - pad && e.getX() <= chipX(i) + chipW() + pad
-                        && e.getY() >= chipY() - pad && e.getY() <= chipY() + chipW() + pad) {
-                    ctrl = i + 1;
-                    prefs.edit().putInt("ctrl3d", ctrl).apply();
                     invalidate();
                     return true;
                 }

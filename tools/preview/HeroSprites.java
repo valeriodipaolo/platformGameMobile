@@ -35,7 +35,7 @@ public class HeroSprites {
             if ((n >= 1 && n <= 4) || n >= 18) {      // 24 fasi uguali del ciclo di corsa
                 int j = n <= 4 ? n - 1 : n - 18 + 4;
                 w.vz = 5f;
-                w.runPhase = j * 2f * (float) Math.PI / 24f / (HeroModel.phaseScale(HeroModel.style) * Img.RUN_CADENCE[HeroModel.run]);
+                w.runPhase = j * 2f * (float) Math.PI / 24f / (HeroModel.phaseScale() * Img.RUN_CADENCE[HeroModel.run]);
             }
             if (n == 5) { w.onGround = false; w.vy = 3f; w.vz = 2.5f; }
             if (n >= 6 && n < 18) {

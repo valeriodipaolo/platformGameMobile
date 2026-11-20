@@ -104,9 +104,6 @@ public final class World3D {
     public float springAt = -9f;
     private float springBoost;
 
-    /** Comandi a carro armato: joyX gira il robot, joyY lo fa avanzare o indietreggiare nella direzione in cui guarda. */
-    public boolean tank;
-    public static final float TANK_TURN = 3.4f, TANK_BACK = 0.6f;
     public float px, py, pz, vx, vy, vz, yaw, runPhase;
     public boolean onGround;
     public static final int START_LIVES = 100;
@@ -450,13 +447,6 @@ public final class World3D {
         float tx = joyX * max, tz = joyY * max;
         if (cart) { tx = joyX * 5.5f; tz = CART_SPEED; steering = true; }     // il carrello va da solo: si sterza tra i binari
         boolean flung = springBoost > 0 && !onGround;            // lanciato dal fiore: tiene la spinta fino all'atterraggio, sterzando di poco
-        if (tank) {
-            if (onGround) yaw += joyX * TANK_TURN * dt;     // in aria non si gira
-            float fwd = joyY > 0 ? joyY : joyY * TANK_BACK;
-            tx = (float) Math.sin(yaw) * fwd * max;
-            tz = (float) Math.cos(yaw) * fwd * max;
-            steering = joyY != 0;
-        }
         if (flung) { tx = springDx + joyX * 3f; tz = springDz + joyY * 3f; steering = true; }
         float rate = onGround ? (steering ? ACCEL : FRICTION) : (steering ? AIR_ACCEL : AIR_FRICTION);
         float dx = tx - vx, dz = tz - vz;
@@ -465,7 +455,7 @@ public final class World3D {
 
         // a terra il robot si gira verso dove va; in aria non si volta
         float sp = (float) Math.sqrt(vx * vx + vz * vz);
-        if (!tank && onGround && sp > 0.5f) {
+        if (onGround && sp > 0.5f) {
             float want = (float) Math.atan2(vx, vz), d = want - yaw;
             while (d > Math.PI) d -= 2 * Math.PI;
             while (d < -Math.PI) d += 2 * Math.PI;
