@@ -151,7 +151,7 @@ public class CheckSpring {
         ok(e.lives < livesE, "fermi abbastanza a lungo lo sciame raggiunge e punge");
         ok(e.gemsList.size() >= 60 && e.gemsList.size() <= 140, "livello 10 intero: " + e.gemsList.size() + " gemme");
         ok(e.flagZ > e.hiveZ + 100, "il traguardo è dopo la fuga (z " + e.flagZ + ")");
-        ok(Levels.ORDER.length == 37 && Levels.next(24) == 25 && Levels.next(33) == 34 && Levels.next(34) == 35 && Levels.next(37) == 0 && Levels.is3D(35) && Levels.is3D(37) && Levels.ORDER[0] == 1 && Levels.next(2) == 13 && Levels.next(14) == 3 && Levels.next(6) == 17 && Levels.next(18) == 9 && Levels.next(10) == 21 && Levels.next(22) == 7 && Levels.next(8) == 19 && Levels.next(20) == 11 && Levels.next(12) == 23 && Levels.is3D(24) && !Levels.is3D(23) && !Levels.is3D(9) && !Levels.is3D(11) && Levels.is3D(12),
+        ok(Levels.ORDER.length == 40 && Levels.next(24) == 25 && Levels.next(33) == 34 && Levels.next(34) == 35 && Levels.next(37) == 38 && Levels.next(40) == 0 && Levels.is3D(35) && Levels.is3D(39) && Levels.ORDER[0] == 1 && Levels.next(2) == 13 && Levels.next(14) == 3 && Levels.next(6) == 17 && Levels.next(18) == 9 && Levels.next(10) == 21 && Levels.next(22) == 7 && Levels.next(8) == 19 && Levels.next(20) == 11 && Levels.next(12) == 23 && Levels.is3D(24) && !Levels.is3D(23) && !Levels.is3D(9) && !Levels.is3D(11) && Levels.is3D(12),
                 "ordine dei livelli: estate, autunno, inverno, primavera, incendio, cielo, poi la terza serie e l'isola");
         System.out.println(fails == 0 ? "TUTTO OK" : fails + " FALLITI");
     }

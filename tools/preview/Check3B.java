@@ -15,6 +15,7 @@ public class Check3B {
         if (h == 99) return true;
         if (h == World3D.PIT) return false;
         if (h - base >= 1) return true;
+        if (rel && w.quickAt(c - World3D.HALF + 0.5f, z + 0.5f)) return true;      // le sabbie mobili si evitano, se si può
         if (w.crate[z * World3D.W + c]) return true;
         for (float[] t : w.thorns) if (xi(t[0]) == c && zi(t[1]) == z) return true;
         return false;
@@ -92,7 +93,7 @@ public class Check3B {
     }
 
     public static void main(String[] a) {
-        for (int id : new int[] {14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 35, 36, 37}) {
+        for (int id : new int[] {14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 35, 36, 37, 38, 39, 40}) {
             if (a.length > 0 && !a[0].equals("" + id)) continue;
             run(id);
         }

@@ -63,7 +63,9 @@ public final class Img {
     public static final int R3J_GRASS = 275, R3J_FOREST = 276, R3J_TUFT = 277, R3J_FLOWERS = 278, R3J_CROWN = 279, R3J_TREE = 280, R3J_FOLIAGE = 281,
             R3J_SKY = 282, R3J_MOUNTAINS = 283, R3J_SAND = 284, R3J_WATER = 285, R3J_TEMPLE = 286, R3J_DUSK = 287, R3J_NIGHT = 288,
             R3J_CRATE = 289, R3J_TNT = 290, R3J_NITRO = 291, R3J_BOUNCE = 292, R3J_CHECK = 293, R3J_FROND = 294;
-    public static final int COUNT = 295;
+    // deserto, fabbrica, miniera (tools/gen_worlds.py)
+    public static final int R3S_SAND = 295, R3S_DUNE = 296, R3S_STONE = 297, R3S_QUICK = 298, R3S_SKY = 299, R3S_MOUNTAINS = 300, R3F_FLOOR = 301, R3F_PANEL = 302, R3F_BLOCK = 303, R3F_BELT = 304, R3F_SKY = 305, R3F_MOUNTAINS = 306, R3M_ROCK = 307, R3M_WALL = 308, R3M_BLOCK = 309, R3M_SKY = 310, R3M_MOUNTAINS = 311;
+    public static final int COUNT = 312;
 
     /** Fotogramma j (0..23) del ciclo di corsa. */
     public static int runFrame(int j) {
@@ -109,6 +111,7 @@ public final class Img {
         "hero_metal", "hero_leather", "fx_slug",
         "hero_run_4", "hero_run_5", "hero_run_6", "hero_run_7", "hero_run_8", "hero_run_9", "hero_run_10", "hero_run_11", "hero_run_12", "hero_run_13", "hero_run_14", "hero_run_15", "hero_run_16", "hero_run_17", "hero_run_18", "hero_run_19", "hero_run_20", "hero_run_21", "hero_run_22", "hero_run_23",
         "r3j_grass", "r3j_forest", "r3j_tuft", "r3j_flowers", "r3j_crown", "r3j_tree", "r3j_foliage", "r3j_sky", "r3j_mountains", "r3j_sand",
-        "r3j_water", "r3j_temple", "r3j_dusk", "r3j_night", "r3j_crate", "r3j_tnt", "r3j_nitro", "r3j_bounce", "r3j_check", "r3j_frond"
+        "r3j_water", "r3j_temple", "r3j_dusk", "r3j_night", "r3j_crate", "r3j_tnt", "r3j_nitro", "r3j_bounce", "r3j_check", "r3j_frond",
+        "r3s_sand", "r3s_dune", "r3s_stone", "r3s_quick", "r3s_sky", "r3s_mountains", "r3f_floor", "r3f_panel", "r3f_block", "r3f_belt", "r3f_sky", "r3f_mountains", "r3m_rock", "r3m_wall", "r3m_block", "r3m_sky", "r3m_mountains"
     };
 }

@@ -11,6 +11,8 @@ public final class Enemy3 {
     /** Aspetto diverso con lo stesso comportamento (isola tropicale): granchio = scarabeo veloce, totem = pupazzo che tira noci di cocco, piranha = lapillo. */
     public int skin;
     public static final int SKIN_CRAB = 1, SKIN_TIKI = 2, SKIN_FISH = 3;
+    /** Deserto, fabbrica, miniera: scorpione = riccio (non si schiaccia), avvoltoio e pipistrello = corvo, robottino = scarabeo, drone = gufo, masso = castagna. */
+    public static final int SKIN_SCORPION = 4, SKIN_VULTURE = 5, SKIN_ROBOT = 6, SKIN_DRONE = 7, SKIN_BAT = 8, SKIN_ROCK = 9;
     /** Quota di partenza (ghianda) o quota media del volo (corvo). */
     public float baseY, hopT;
     public float x, y, z;

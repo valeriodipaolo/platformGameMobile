@@ -7,6 +7,7 @@ package com.valeriodipaolo.platformgame.core3d;
  */
 final class FoeIsland {
     private final float[] a = new float[16], b2 = new float[16];
+    private Mesh scorpBody, scorpLeg, scorpTail, vultBody, vultWing, robotBody, robotWheel, robotEye, droneBody, droneRotor, droneEye, batBody, batWing, rock;
     private final Mesh crabBody, crabEyes, crabLeg, crabClaw, tikiBody, tikiFace, tikiLeaves, fishBody, fishFin, fishTeeth, coconut;
     private static final float PI = (float) Math.PI;
 
@@ -110,6 +111,107 @@ final class FoeIsland {
         b.ellipsoid(0.04f, 0.15f, 0.08f, 0.04f, 0.04f, 0.04f, 6, 4);
         b.ellipsoid(-0.05f, 0.15f, 0.07f, 0.04f, 0.04f, 0.04f, 6, 4);
         coconut = done(b, 0.15f, 10f);
+        buildDry();
+    }
+
+    private void buildDry() {
+        // ---- scorpione: corpo a segmenti, otto zampe, coda arcuata con il pungiglione (non lo si può schiacciare)
+        final float[] sc = FoeModels.rgb(60, 40, 30), scL = FoeModels.rgb(96, 66, 44), sting = FoeModels.rgb(220, 60, 40);
+        MeshBuilder b = new MeshBuilder();
+        b.colorf(sc[0], sc[1], sc[2]);
+        for (int i = 0; i < 3; i++) b.ellipsoid(0, 0.24f, 0.2f - i * 0.17f, 0.24f - i * 0.03f, 0.12f, 0.12f, 12, 7);
+        b.colorf(1f, 0.85f, 0.2f);
+        b.ellipsoid(-0.07f, 0.33f, 0.3f, 0.035f, 0.035f, 0.03f, 6, 4);
+        b.ellipsoid(0.07f, 0.33f, 0.3f, 0.035f, 0.035f, 0.03f, 6, 4);
+        for (int s2 = -1; s2 <= 1; s2 += 2) {                        // chele
+            FoeModels.tube(b, new float[][] {{s2 * 0.18f, 0.24f, 0.28f}, {s2 * 0.32f, 0.26f, 0.42f}, {s2 * 0.22f, 0.26f, 0.6f}}, new float[] {0.04f, 0.05f, 0.03f}, 6, FoeModels.flat(scL));
+            b.colorf(scL[0], scL[1], scL[2]);
+            b.ellipsoid(s2 * 0.2f, 0.26f, 0.62f, 0.08f, 0.06f, 0.1f, 10, 6);
+        }
+        scorpBody = done(b, 0.5f, 30f);
+        b = new MeshBuilder();
+        FoeModels.tube(b, new float[][] {{0, 0, 0}, {0.18f, 0.1f, 0}, {0.3f, -0.2f, 0}}, new float[] {0.03f, 0.025f, 0.01f}, 5, FoeModels.flat(scL));
+        scorpLeg = done(b, 0.3f, 20f);
+        b = new MeshBuilder();
+        float[][] tail = {{0, 0.26f, -0.3f}, {0, 0.42f, -0.5f}, {0, 0.7f, -0.5f}, {0, 0.88f, -0.3f}, {0, 0.84f, -0.1f}};
+        FoeModels.tube(b, tail, new float[] {0.09f, 0.08f, 0.07f, 0.06f, 0.04f}, 8, FoeModels.flat(sc));
+        b.colorf(sting[0], sting[1], sting[2]);
+        b.ellipsoid(0, 0.8f, -0.04f, 0.06f, 0.08f, 0.06f, 8, 6);
+        scorpTail = done(b, 0.5f, 30f);
+
+        // ---- avvoltoio: corpo scuro, collare bianco, testa rosa nuda, ali larghe
+        b = new MeshBuilder();
+        b.colorf(0.24f, 0.18f, 0.14f);
+        b.ellipsoid(0, 0, 0, 0.26f, 0.24f, 0.4f, 14, 9);
+        b.colorf(0.95f, 0.92f, 0.86f);
+        b.ellipsoid(0, 0.12f, 0.3f, 0.17f, 0.12f, 0.12f, 10, 6);
+        b.colorf(0.92f, 0.62f, 0.56f);
+        b.ellipsoid(0, 0.22f, 0.45f, 0.1f, 0.1f, 0.12f, 10, 6);
+        b.colorf(0.95f, 0.8f, 0.3f);
+        b.ellipsoid(0, 0.18f, 0.58f, 0.04f, 0.04f, 0.08f, 6, 4);
+        vultBody = done(b, 0.2f, 14f);
+        b = new MeshBuilder().color(70, 52, 40);
+        b.quad(0, 0, 0.2f, 1.1f, 0.02f, 0.05f, 1.0f, 0f, -0.25f, 0, 0, -0.2f, 0, 1, 0, 0, 0, 1, 1);
+        vultWing = done(b, 0.1f, 8f);
+
+        // ---- robottino da fabbrica: cubo giallo su ruote con un occhio rosso
+        b = new MeshBuilder();
+        b.colorf(0.95f, 0.75f, 0.15f);
+        b.roundBox(0, 0.42f, 0, 0.6f, 0.46f, 0.56f, 0.08f);
+        b.colorf(0.25f, 0.27f, 0.3f);
+        b.box(0, 0.72f, 0, 0.3f, 0.12f, 0.3f);
+        b.cylinder(0, 0.78f, 1.0f, 0, 0.02f, 0.02f, 5, false, false);
+        robotBody = done(b, 0.6f, 40f);
+        b = new MeshBuilder().color(30, 30, 34);
+        b.ellipsoid(0, 0, 0, 0.06f, 0.14f, 0.14f, 10, 6);
+        robotWheel = done(b, 0.3f, 20f);
+        b = new MeshBuilder().color(255, 60, 40);
+        b.ellipsoid(0, 0.5f, 0.28f, 0.12f, 0.08f, 0.04f, 10, 6);
+        b.ellipsoid(0, 1.02f, 0, 0.05f, 0.05f, 0.05f, 6, 4);
+        robotEye = done(b, 0.9f, 60f);
+
+        // ---- drone: disco grigio con quattro eliche e una lente rossa che punta in basso
+        b = new MeshBuilder();
+        b.colorf(0.55f, 0.58f, 0.62f);
+        b.ellipsoid(0, 0, 0, 0.32f, 0.1f, 0.32f, 16, 7);
+        for (int i = 0; i < 4; i++) {
+            float a2 = i * 1.5708f + 0.785f;
+            b.box((float) Math.cos(a2) * 0.3f, 0.02f, (float) Math.sin(a2) * 0.3f, 0.26f, 0.04f, 0.06f);
+        }
+        droneBody = done(b, 0.7f, 50f);
+        b = new MeshBuilder().color(40, 40, 44);
+        b.box(0, 0, 0, 0.32f, 0.01f, 0.04f);
+        droneRotor = done(b, 0.2f, 10f);
+        b = new MeshBuilder().color(255, 50, 40);
+        b.ellipsoid(0, -0.08f, 0.1f, 0.09f, 0.06f, 0.09f, 10, 6);
+        droneEye = done(b, 0.9f, 60f);
+
+        // ---- pipistrello: corpo peloso, orecchie a punta, ali membranose
+        b = new MeshBuilder();
+        b.colorf(0.22f, 0.18f, 0.24f);
+        b.ellipsoid(0, 0, 0, 0.16f, 0.2f, 0.16f, 12, 8);
+        cone(b, -0.07f, 0.16f, 0.02f, 0.05f, 0.14f, 6);
+        cone(b, 0.07f, 0.16f, 0.02f, 0.05f, 0.14f, 6);
+        b.colorf(1f, 0.85f, 0.3f);
+        b.ellipsoid(-0.06f, 0.06f, 0.14f, 0.03f, 0.03f, 0.02f, 6, 4);
+        b.ellipsoid(0.06f, 0.06f, 0.14f, 0.03f, 0.03f, 0.02f, 6, 4);
+        batBody = done(b, 0.2f, 12f);
+        b = new MeshBuilder().color(70, 50, 76);
+        b.quad(0, 0.05f, 0.08f, 0.62f, 0.2f, 0f, 0.54f, -0.08f, -0.06f, 0, -0.06f, -0.06f, 0, 1, 0, 0, 0, 1, 1);
+        batWing = done(b, 0.1f, 8f);
+
+        // ---- stalattite che si stacca: cono di roccia
+        b = new MeshBuilder().color(110, 96, 84);
+        cone(b, 0, 0.5f, 0, 0.28f, -0.9f, 8);
+        b.colorf(0.38f, 0.33f, 0.3f);
+        b.ellipsoid(0, 0.5f, 0, 0.3f, 0.1f, 0.3f, 10, 5);
+        rock = done(b, 0.1f, 10f);
+    }
+
+    /** Cono con la base a quota y e la punta a y + h (h negativo: punta in giù). */
+    private static void cone(MeshBuilder b, float x, float y, float z, float r, float h, int segs) {
+        if (h > 0) b.cylinder(x, y, y + h, z, r, 0.004f, segs, false, true);
+        else b.cylinder(x, y + h, y, z, 0.004f, r, segs, true, false);
     }
 
     private static Mesh done(MeshBuilder b, float spec, float shine) {
@@ -160,6 +262,72 @@ final class FoeIsland {
                 g.draw(tikiBody, a, 1, 1, 1, 1, 0);
                 g.draw(tikiFace, a, 1, 1, 1, 1, 0.3f + 0.4f * throwK);
                 g.draw(tikiLeaves, a, 1, 1, 1, 1, 0.05f);
+                break;
+            }
+            case Enemy3.SKIN_SCORPION: {
+                System.arraycopy(m, 0, a, 0, 16);
+                g.draw(scorpBody, a, 1, 1, 1, 1, 0.03f);
+                for (int i = 0; i < 8; i++) {
+                    int sd = i < 4 ? -1 : 1;
+                    float z = 0.15f - (i % 4) * 0.12f, sw = (float) Math.sin(an * 12f + i * 1.7f) * 0.3f;
+                    System.arraycopy(a, 0, b2, 0, 16);
+                    Mat4.translate(b2, sd * 0.2f, 0.22f, z);
+                    Mat4.rotateY(b2, sd > 0 ? sw : PI - sw);
+                    g.draw(scorpLeg, b2, 1, 1, 1, 1, 0);
+                }
+                System.arraycopy(a, 0, b2, 0, 16);
+                Mat4.translate(b2, 0, 0.26f, -0.3f);
+                Mat4.rotateX(b2, 0.15f * (float) Math.sin(an * 4f));
+                Mat4.translate(b2, 0, -0.26f, 0.3f);
+                g.draw(scorpTail, b2, 1, 1, 1, 1, 0.05f);
+                break;
+            }
+            case Enemy3.SKIN_VULTURE: case Enemy3.SKIN_BAT: {
+                boolean bat = e.skin == Enemy3.SKIN_BAT;
+                System.arraycopy(m, 0, a, 0, 16);
+                Mat4.translate(a, 0, 0.5f, 0);
+                g.draw(bat ? batBody : vultBody, a, 1, 1, 1, 1, bat ? 0.05f : 0);
+                float flap = (float) Math.sin(an * (bat ? 22f : 6f)) * (bat ? 0.9f : 0.4f);
+                for (int sd = -1; sd <= 1; sd += 2) {
+                    System.arraycopy(a, 0, b2, 0, 16);
+                    Mat4.translate(b2, sd * (bat ? 0.12f : 0.2f), bat ? 0.04f : 0.08f, 0);
+                    if (sd < 0) Mat4.scale(b2, -1, 1, 1);
+                    Mat4.rotateZ(b2, flap);
+                    g.draw(bat ? batWing : vultWing, b2, 1, 1, 1, 1, 0);
+                }
+                break;
+            }
+            case Enemy3.SKIN_ROBOT: {
+                System.arraycopy(m, 0, a, 0, 16);
+                Mat4.translate(a, 0, 0.03f * Math.abs((float) Math.sin(an * 10f)), 0);
+                g.draw(robotBody, a, 1, 1, 1, 1, 0.05f);
+                g.draw(robotEye, a, 1, 1, 1, 1, 0.6f + 0.4f * (float) Math.sin(an * 8f));
+                for (int i = 0; i < 4; i++) {
+                    System.arraycopy(a, 0, b2, 0, 16);
+                    Mat4.translate(b2, (i < 2 ? -1 : 1) * 0.32f, 0.15f, (i % 2 == 0 ? 0.18f : -0.18f));
+                    Mat4.rotateX(b2, an * 9f);
+                    g.draw(robotWheel, b2, 1, 1, 1, 1, 0);
+                }
+                break;
+            }
+            case Enemy3.SKIN_DRONE: {
+                System.arraycopy(m, 0, a, 0, 16);
+                Mat4.translate(a, 0, 0.6f, 0);
+                Mat4.rotateZ(a, 0.1f * (float) Math.sin(an * 3f));
+                g.draw(droneBody, a, 1, 1, 1, 1, 0.05f);
+                g.draw(droneEye, a, 1, 1, 1, 1, 0.8f);
+                for (int i = 0; i < 4; i++) {
+                    float a2 = i * 1.5708f + 0.785f;
+                    System.arraycopy(a, 0, b2, 0, 16);
+                    Mat4.translate(b2, (float) Math.cos(a2) * 0.42f, 0.08f, (float) Math.sin(a2) * 0.42f);
+                    Mat4.rotateY(b2, an * 40f + i);
+                    g.draw(droneRotor, b2, 1, 1, 1, 1, 0);
+                }
+                break;
+            }
+            case Enemy3.SKIN_ROCK: {
+                System.arraycopy(m, 0, a, 0, 16);
+                g.draw(rock, a, 1, 1, 1, 1, 0);
                 break;
             }
             default: {                                                  // piranha: si avvita in volo e spalanca la bocca

@@ -81,6 +81,32 @@ public class CheckIsland {
         int crabs = 0, tikis = 0, fish = 0;
         for (Enemy3 e : r.enemies) { if (e.skin == Enemy3.SKIN_CRAB) crabs++; if (e.skin == Enemy3.SKIN_TIKI) tikis++; if (e.skin == Enemy3.SKIN_FISH) fish++; }
         ok(crabs > 0 && tikis > 0 && fish > 0, "sul fiume ci sono granchi " + crabs + ", totem " + tikis + ", piranha " + fish);
+        // sabbie mobili (38, z 30-32 su tutta la larghezza): rallentano e, fermi, si sprofonda
+        w = at(38, 0, 30.5f);
+        float z0 = w.pz;
+        run(w, 0.5f, 0, 1, false);
+        ok(w.pz - z0 < 2.2f, "nelle sabbie mobili si arranca: " + (w.pz - z0) + " caselle in mezzo secondo");
+        w = at(38, 0, 31.5f); lives0 = w.lives;
+        run(w, 3.6f, 0, 0, false);
+        ok(w.lives < lives0, "fermi nelle sabbie mobili si sprofonda");
+        // vento (38, z 40-60): la raffica sposta di lato
+        w = at(38, -1f, 50f);
+        float maxPush = 0;
+        for (int i = 0; i < 240; i++) { w.setInput(0, 0, false, false); w.update(1f / 60f); maxPush = Math.max(maxPush, w.windPush(w.pz, w.time)); }
+        ok(maxPush > 3f, "la raffica spinge di lato: " + maxPush);
+        // nastro (39, z 30-44 verso destra): fermi, si viene portati verso il burrone
+        w = at(39, -2f, 36f);
+        run(w, 0.8f, 0, 0, false);
+        ok(w.px > -0.5f, "il nastro di traverso trascina verso destra: x " + w.px);
+        // laser (39, z 50): acceso ferisce chi passa a terra
+        w = at(39, 0, 48f); hp0 = w.hp;
+        boolean hit = false;
+        for (int i = 0; i < 300 && !hit; i++) { w.px = 0; w.pz = 50.5f; w.py = 0; w.vz = 0; w.update(1f / 60f); hit = w.hp < hp0; }
+        ok(hit, "la barriera laser ferisce");
+        // carrello (40, z 32-104): corre da solo anche senza toccare nulla
+        w = at(40, 0, 33f); z0 = w.pz;
+        run(w, 0.8f, 0, 0, false);
+        ok(w.pz - z0 > 5f && w.inCart(), "il carrello corre da solo: " + (w.pz - z0) + " caselle in 0,8 s");
         System.out.println(fails == 0 ? "TUTTO OK" : fails + " FALLITI");
     }
 }

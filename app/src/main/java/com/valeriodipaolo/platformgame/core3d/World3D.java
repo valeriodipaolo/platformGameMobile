@@ -55,6 +55,22 @@ public final class World3D {
     /** La camera guarda il robot da davanti (fuga dal masso) finché pz < camBackUntil. */
     public float camBackUntil = -1f;
     private float bounceBoost;
+    // ---- deserto, fabbrica, miniera (livelli 38-40)
+    /** Nastri trasportatori: direzione per casella (0 nessuno, 1 verso destra, 2 sinistra, 3 avanti, 4 indietro). */
+    public byte[] belt;
+    public static final float BELT_SPEED = 3.4f;
+    /** Barriere laser: {z, periodo, fase, colonna spenta (-1 nessuna)}; accese nella prima metà del periodo, all'altezza delle ginocchia. */
+    public final List<float[]> lasers = new ArrayList<float[]>();
+    /** Sabbie mobili per casella: rallentano, il salto è più corto, e chi ci resta troppo affonda. */
+    public boolean[] quick;
+    public float sinkT;
+    public static final float SINK_TIME = 3.0f;
+    /** Raffiche di vento: {z0, z1, periodo, fase, verso (+1 destra, -1 sinistra)}. */
+    public final List<float[]> winds = new ArrayList<float[]>();
+    public static final float GUST = 1.7f, GUST_PUSH = 4.6f;
+    /** Tratti in carrello: {z0, z1}; il carrello corre da solo, si sterza e si salta. */
+    public final List<float[]> carts = new ArrayList<float[]>();
+    public static final float CART_SPEED = 9.5f;
     public int flagZ;
     /** Portone di fine livello: si apre (0..1) solo con la cella di energia; la catapulta (launchT >= 0) riporta all'inizio. */
     public float gateOpen, launchT = -1;
@@ -112,7 +128,7 @@ public final class World3D {
     public World3D(Save save, int levelNo) {
         this.save = save;
         this.levelNo = levelNo;
-        this.theme = levelNo > 34 ? Levels3J.theme(levelNo) : levelNo > 24 ? Levels3C.theme(levelNo) : levelNo > 12 ? levelNo - 12 : levelNo;
+        this.theme = levelNo > 37 ? Levels3W.theme(levelNo) : levelNo > 34 ? Levels3J.theme(levelNo) : levelNo > 24 ? Levels3C.theme(levelNo) : levelNo > 12 ? levelNo - 12 : levelNo;
         this.id = "l" + levelNo;
         newGame();
     }
@@ -123,7 +139,8 @@ public final class World3D {
         lives = START_LIVES;
         sealed = false;
         crateKind = null; crateT = null; booms.clear(); crushers.clear(); rafts.clear(); raftIdx = null; camBackUntil = -1f;
-        if (levelNo > 34) Levels3J.build(this, levelNo); else if (levelNo > 24) Levels3C.build(this, levelNo); else if (levelNo > 12) Levels3B.build(this, levelNo); else if (levelNo == 12) LevelTwelve.build(this); else if (levelNo == 10) LevelTen.build(this); else if (levelNo == 8) LevelEight.build(this); else if (levelNo == 6) LevelSix.build(this); else if (levelNo == 4) LevelFour.build(this); else LevelTwo.build(this);
+        belt = null; lasers.clear(); quick = null; sinkT = 0; winds.clear(); carts.clear();
+        if (levelNo > 37) Levels3W.build(this, levelNo); else if (levelNo > 34) Levels3J.build(this, levelNo); else if (levelNo > 24) Levels3C.build(this, levelNo); else if (levelNo > 12) Levels3B.build(this, levelNo); else if (levelNo == 12) LevelTwelve.build(this); else if (levelNo == 10) LevelTen.build(this); else if (levelNo == 8) LevelEight.build(this); else if (levelNo == 6) LevelSix.build(this); else if (levelNo == 4) LevelFour.build(this); else LevelTwo.build(this);
         if (!rafts.isEmpty()) {                          // prima delle rifiniture: le zattere a galla contano come terreno
             raftIdx = new int[length * W];
             java.util.Arrays.fill(raftIdx, -1);
@@ -300,6 +317,37 @@ public final class World3D {
         return 0;
     }
 
+    public boolean inCart() {
+        for (float[] c : carts) if (pz >= c[0] && pz < c[1]) return true;
+        return false;
+    }
+
+    public boolean quickAt(float x, float z) {
+        if (quick == null) return false;
+        int xi = xi(x), zi = zi(z);
+        return xi >= 0 && xi < W && zi >= 0 && zi < length && quick[zi * W + xi];
+    }
+
+    /** Laser: 1 acceso, 0 spento; nell'ultimo mezzo secondo prima di accendersi lampeggia (valori tra 0 e 1). */
+    public static float laserOn(float[] l, float t) {
+        float per = l[1], ph = ((t + l[2]) % per + per) % per, on = per * 0.5f;
+        if (ph < on) return 1f;
+        if (ph > per - 0.5f) return 0.5f * ((int) (ph * 12) % 2);
+        return 0f;
+    }
+
+    /** Raffica: 0..1 (sale e scende in GUST secondi); prima c'è un preavviso che si legge nella sabbia che si alza. */
+    public static float gust(float[] wd, float t) {
+        float per = wd[2], ph = ((t + wd[3]) % per + per) % per;
+        return ph < GUST ? (float) Math.sin(Math.PI * ph / GUST) : 0f;
+    }
+
+    public float windPush(float z, float t) {
+        float p = 0;
+        for (float[] wd : winds) if (z >= wd[0] && z < wd[1]) p += wd[4] * GUST_PUSH * gust(wd, t);
+        return p;
+    }
+
     /** Quota della faccia inferiore del pestello: in alto fermo, cade di colpo, resta giù, risale piano. */
     public static float crusherBottom(float[] c, float t) {
         float per = c[2], ph = ((t + c[3]) % per + per) % per, up = per * 0.5f;
@@ -395,8 +443,12 @@ public final class World3D {
 
         // movimento: la velocità insegue quella chiesta dal joystick; in aria si corregge molto meno
         float max = spinActive ? MAX_SPEED * 1.2f : MAX_SPEED;
+        boolean cart = inCart();
+        boolean inQuick = onGround && quickAt(px, pz);
+        if (inQuick) max *= 0.38f;                         // sabbie mobili: si arranca
         boolean steering = joyX != 0 || joyY != 0;
         float tx = joyX * max, tz = joyY * max;
+        if (cart) { tx = joyX * 5.5f; tz = CART_SPEED; steering = true; }     // il carrello va da solo: si sterza tra i binari
         boolean flung = springBoost > 0 && !onGround;            // lanciato dal fiore: tiene la spinta fino all'atterraggio, sterzando di poco
         if (tank) {
             if (onGround) yaw += joyX * TANK_TURN * dt;     // in aria non si gira
@@ -425,7 +477,7 @@ public final class World3D {
         coyote = onGround ? 0.14f : coyote - dt;
         if (onGround) airJumps = 1;
         if (jumpBuffer > 0 && coyote > 0) {
-            vy = JUMP_V;
+            vy = inQuick ? JUMP_V * 0.72f : JUMP_V;
             jumpBuffer = coyote = 0;
             onGround = false;
         } else if (press && !onGround && airJumps > 0 && vy > -0.6f) {
@@ -443,10 +495,17 @@ public final class World3D {
             vy = Math.max(-MAX_FALL * (fastFall ? 1.3f : 1f), vy - ((vy > 0 && (jump || springBoost > 0 || bounceBoost > 0)) ? GRAVITY_HOLD : GRAVITY * (fastFall && vy <= 0 ? FAST_FALL_G : 1f)) * dt);
         }
 
+        // spinte esterne: il nastro sotto i piedi e le raffiche di vento
+        float ex = 0, ez = 0;
+        if (onGround && belt != null) {
+            int bi = Math.max(0, Math.min(length - 1, zi(pz))) * W + Math.max(0, Math.min(W - 1, xi(px)));
+            switch (belt[bi]) { case 1: ex = BELT_SPEED; break; case 2: ex = -BELT_SPEED; break; case 3: ez = BELT_SPEED; break; case 4: ez = -BELT_SPEED; break; default: break; }
+        }
+        ex += windPush(pz, time);
         // spostamento: un asse alla volta, fermandosi contro blocchi e casse più alti dei piedi
-        float nx = px + vx * dt;
+        float nx = px + (vx + ex) * dt;
         if (blocked(nx, pz, py)) vx = 0; else px = nx;
-        float nz = pz + vz * dt;
+        float nz = pz + (vz + ez) * dt;
         if (blocked(px, nz, py)) vz = 0; else pz = nz;
 
         py += vy * dt;
@@ -458,10 +517,15 @@ public final class World3D {
             onGround = true;
         }
         if (g > -500f) groundY = g;
+        if (!onGround && quick != null) sinkT = Math.max(0, sinkT - dt * 3f);
         if (springBoost > 0) springBoost -= dt;
         if (bounceBoost > 0) bounceBoost -= dt;
         if (onGround) {                                  // fiore a molla: rimbalzo alto
             if (crateKind != null && g >= 1f && g < 1.5f) landCrate();
+            if (quick != null) {
+                if (quickAt(px, pz)) { if ((sinkT += dt) > SINK_TIME) { sinkT = 0; die(); return; } }
+                else sinkT = Math.max(0, sinkT - dt * 3f);
+            }
             if (raftIdx != null) {                           // salire su una zattera la fa affondare poco dopo
                 int rc = raftIdx[Math.max(0, Math.min(length - 1, zi(pz))) * W + Math.max(0, Math.min(W - 1, xi(px)))];
                 if (rc >= 0 && rafts.get(rc)[2] < 0) rafts.get(rc)[2] = time;
@@ -921,6 +985,11 @@ public final class World3D {
                     if (dx < 0.5f + R + 0.04f && dz < 0.5f + R + 0.04f && py < 0.98f) explode(k);
                 }
             }
+        }
+        for (float[] l : lasers) {                           // barriera laser accesa: ferisce chi la attraversa senza saltarla
+            if (laserOn(l, time) < 1f || Math.abs(l[0] + 0.5f - pz) > 0.5f + R * 0.6f || py > 0.85f) continue;
+            if (l[3] >= 0 && xi(px) == (int) l[3]) continue;
+            hurt();
         }
         for (float[] c : crushers) {                         // pestello: schiaccia chi è sotto quando cade
             if (Math.abs(c[1] + 0.5f - pz) > 1.5f) continue;

@@ -36,12 +36,12 @@ final class MenuView extends View {
         painter = new AndroidPainter(ctx);
     }
 
-    private static final int LEVELS = 37, PER_ROW = 13;
+    private static final int LEVELS = 40, PER_ROW = 14;
 
-    private float btnW() { return getWidth() * 0.068f; }
+    private float btnW() { return getWidth() * 0.064f; }
     private float btnH() { return getHeight() * 0.14f; }
     private float btnY(int i) { return getHeight() * (0.335f + 0.158f * (i / PER_ROW)); }
-    private float btnX(int i) { return getWidth() * 0.5f + (i % PER_ROW - PER_ROW / 2f) * (btnW() + getWidth() * 0.0065f) + getWidth() * 0.003f; }
+    private float btnX(int i) { return getWidth() * 0.5f + (i % PER_ROW - PER_ROW / 2f) * (btnW() + getWidth() * 0.0055f) + getWidth() * 0.003f; }
 
     private float chipW() { return getHeight() * 0.1f; }
     private float chipX(int i) { return getWidth() * 0.5f + (i - 2.5f) * chipW() * 1.25f; }
@@ -66,7 +66,8 @@ final class MenuView extends View {
                 "Brace e lapilli", "Rogo (3D)", "Rane e fiori", "Giardino (3D)", "Stelle e soli", "Cielo alto (3D)",
                 "Valle delle molle", "Labirinto (3D)", "Ghiaccio fragile", "Arcipelago (3D)", "Le due strade", "Rovi (3D)",
                 "Pioggia di ricci", "Fuga dal rogo (3D)", "Scala celeste", "La vetta (3D)",
-                "Isola: le casse", "Isola: il masso", "Isola: il fiume"};
+                "Isola: le casse", "Isola: il masso", "Isola: il fiume",
+                "Le dune", "La fabbrica", "La miniera"};
         for (int i = 0; i < LEVELS; i++) {
             float x = btnX(i), y = btnY(i);
             painter.rect(x, y, btnW(), btnH(), 0xCC14324A);
