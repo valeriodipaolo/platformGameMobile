@@ -503,6 +503,7 @@ public final class Scene3D {
                 mbs[k][c] = null;                       // il builder non serve più: la memoria si libera subito, non a fine costruzione
                 mesh.releasable = true;
                 if (k == K_CROWN || k == K_TUFT || k == K_FERN || k == K_FLOWER || k == K_FIR) mesh.cutout = true;
+                if (k == K_GRASS || k == K_DIRT || k == K_BANK || k == K_TUFT || k == K_FLOWER || k == K_RAY || k == K_TRAIL || k == K_GLOW) mesh.castShadow = false;
                 switch (k) {
                     case K_GRASS: case K_BANK: mesh.spec = 0.05f; mesh.shine = 10f; break;
                     case K_STONE: case K_ROCK: mesh.spec = 0.07f; mesh.shine = 14f; break;
