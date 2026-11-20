@@ -55,7 +55,7 @@ public final class Levels3W {
         quick(w, 30, 32, 0, 4); gemLine(w, 0, 29, 33); thorn(w, 1, 36); thorn(w, 3, 36);
         // 2. il vento: un passaggio di tre corsie sul vuoto; la raffica spinge verso destra, la sabbia la annuncia
         pit(w, 42, 58, 4, 4); pit(w, 42, 58, 0, 0); wind(w, 40, 60, 3.4f, 0f, 1f); gemLine(w, -1, 42, 58);
-        vulture(w, 50, 3.2f);
+        skin(add(w, Enemy3.CROW, 0, 50.5f, false, -1f, 1f, 3.2f), Enemy3.SKIN_VULTURE);
         scorpion(w, 64); thorn(w, 2, 68);
         // la mesa della chiave: arenaria alta tre blocchi, si sale con la cassa a molla; sotto, sabbie mobili tutt'attorno
         crateK(w, 2, 74, World3D.C_BOUNCE); quick(w, 75, 77, 0, 4);
@@ -65,7 +65,7 @@ public final class Levels3W {
         crateK(w, 2, 94, World3D.C_CHECK);
         // 3. il colpo di scena: il vento cambia verso a ogni raffica, su una lingua di sabbia larga una corsia sola
         pit(w, 102, 126, 0, 1); pit(w, 102, 126, 3, 4); wind(w, 100, 113, 2.8f, 0f, 1f); wind(w, 113, 128, 2.8f, 1.4f, -1f);
-        gemLine(w, 0, 102, 126); vulture(w, 114, 3f);
+        gemLine(w, 0, 102, 126); vultureZ(w, 114, 3f);
         // le dune a gradini: si sale e si scende, con le sabbie mobili negli avvallamenti
         stones(w, 134, new int[] {1, 1, 1, 1, 1}); quick(w, 136, 138, 0, 4); stones(w, 140, new int[] {1, 1, 1, 1, 1}); stones(w, 141, new int[] {2, 2, 2, 2, 2});
         quick(w, 143, 145, 0, 4); scorpion(w, 150); thorn(w, 0, 154); thorn(w, 4, 154);
@@ -76,7 +76,7 @@ public final class Levels3W {
         gemLine(w, -1, 160, 163); gemLine(w, 1, 164, 167); gemLine(w, 0, 168, 172);
         crateK(w, 2, 178, World3D.C_CHECK); scorpion(w, 184);
         pit(w, 192, 214, 0, 0); pit(w, 192, 214, 4, 4); pit(w, 200, 203, 1, 3); wind(w, 190, 216, 3.0f, 0.5f, -1f);
-        arc(w, 0, 200, 203); vulture(w, 196, 3f); vulture(w, 208, 3f); gemLine(w, 0, 204, 214);
+        arc(w, 0, 200, 203); skin(add(w, Enemy3.CROW, 0, 196.5f, false, -1f, 1f, 3f), Enemy3.SKIN_VULTURE); skin(add(w, Enemy3.CROW, 0, 208.5f, false, -1f, 1f, 3f), Enemy3.SKIN_VULTURE); gemLine(w, 0, 204, 214);
         scorpion(w, 222); gemLine(w, 0, 220, 228);
         w.flagZ = 230;
     }
@@ -143,10 +143,10 @@ public final class Levels3W {
         pit(w, 144, 230, 0, 0); pit(w, 144, 230, 4, 4);
         pit(w, 150, 152, 1, 2); pit(w, 158, 160, 2, 3); pit(w, 166, 168, 1, 1); pit(w, 166, 168, 3, 3);
         gemLine(w, 1, 148, 153); gemLine(w, -1, 156, 161); gemLine(w, 0, 164, 169);
-        bat(w, 174); pit(w, 178, 181, 1, 3); arc(w, 0, 178, 181);
+        batNarrow(w, 174); pit(w, 178, 181, 1, 3); arc(w, 0, 178, 181);
         crateK(w, 1, 188, World3D.C_NITRO); crateK(w, 2, 192, World3D.C_NITRO); crateK(w, 3, 196, World3D.C_NITRO); crateK(w, 2, 200, World3D.C_NITRO);
         gem(w, 1, 0.7f, 188.5f); gem(w, -1, 0.7f, 192.5f); gem(w, 0, 0.7f, 196.5f); gem(w, 1, 0.7f, 200.5f);
-        pit(w, 206, 208, 1, 3); arc(w, 0, 206, 208); bat(w, 212); pit(w, 216, 219, 1, 3); arc(w, 0, 216, 219);
+        pit(w, 206, 208, 1, 3); arc(w, 0, 206, 208); batNarrow(w, 212); pit(w, 216, 219, 1, 3); arc(w, 0, 216, 219);
         pit(w, 224, 226, 1, 2); gemLine(w, 1, 222, 228);
         gemLine(w, 0, 238, 250);
         w.flagZ = 254;
@@ -180,6 +180,11 @@ public final class Levels3W {
     private static void scorpion(World3D w, int z) { skin(add(w, Enemy3.HOG, 0, z + 0.5f, false, -2f, 2f, 0), Enemy3.SKIN_SCORPION); }
 
     private static void vulture(World3D w, int z, float y) { skin(add(w, Enemy3.CROW, 0, z + 0.5f, false, -2f, 2f, y), Enemy3.SKIN_VULTURE); }
+
+    /** Avvoltoio sopra una lingua di terra larga una corsia: fa la ronda avanti e indietro, non di traverso. */
+    private static void vultureZ(World3D w, int z, float y) { skin(add(w, Enemy3.CROW, 0, z + 0.5f, true, z - 5f, z + 5f, y), Enemy3.SKIN_VULTURE); }
+
+    private static void batNarrow(World3D w, int z) { skin(add(w, Enemy3.CROW, 0, z + 0.5f, false, -1f, 1f, 2.6f), Enemy3.SKIN_BAT); }
 
     private static void bat(World3D w, int z) { skin(add(w, Enemy3.CROW, 0, z + 0.5f, false, -2f, 2f, 2.6f), Enemy3.SKIN_BAT); }
 
