@@ -55,6 +55,23 @@ public final class MeshBuilder {
         }
     }
 
+    /**
+     * Scurisce le conche e schiarisce le gobbe di un oggetto tondeggiante attorno all'origine (occlusione finta):
+     * il colore di ogni vertice va da lo (più vicino al centro della media) a hi (più sporgente).
+     */
+    public void shadeByRelief(float lo, float hi) {
+        float sum = 0; int cnt = 0;
+        for (int i = 0; i < n; i += Mesh.STRIDE) { sum += (float) Math.sqrt(d[i] * d[i] + d[i + 1] * d[i + 1] + d[i + 2] * d[i + 2]); cnt++; }
+        float avg = cnt > 0 ? sum / cnt : 1f;
+        for (int i = 0; i < n; i += Mesh.STRIDE) {
+            float r = (float) Math.sqrt(d[i] * d[i] + d[i + 1] * d[i + 1] + d[i + 2] * d[i + 2]);
+            float t = Math.max(0f, Math.min(1f, (r - avg) / (avg * 0.12f) * 0.5f + 0.5f));
+            float k = lo + (hi - lo) * t;
+            float moss = Math.max(0f, 0.5f - t) * 0.5f;                       // nelle conche un velo di muschio
+            d[i + 8] *= k * (1f - moss * 0.5f); d[i + 9] *= k * (1f + moss * 0.15f); d[i + 10] *= k * (1f - moss * 0.6f);
+        }
+    }
+
     private static float hash3(int x, int y, int z, int seed) {
         int h = x * 374761393 + y * 668265263 + z * 1274126177 + seed * 1442695041;
         h = (h ^ (h >>> 13)) * 1274126177;

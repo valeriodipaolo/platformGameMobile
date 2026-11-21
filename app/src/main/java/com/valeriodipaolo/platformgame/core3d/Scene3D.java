@@ -1349,6 +1349,7 @@ public final class Scene3D {
         crate.spec = 0.1f; crate.shine = 20f;
         if ((autumn && !spring && !jungle) || aurora) buildPumpkin();
         if (jungle || dry != 0) buildIsland();
+        buildBoom();
         if (spring || heaven) {                                        // casse gialle con la stella rosa; fiori a molla e rovi
             b = new MeshBuilder();
             b.roundBox(0, 0.5f, 0, 0.96f, 0.96f, 0.96f, 0.16f, 63, 3);
@@ -1623,14 +1624,15 @@ public final class Scene3D {
         camX += (tx - camX) * 0.25f;
         camZ = tz;
         // la camera sta sopra anche a ciò che c'è sotto di lei (6 m dietro il robot): niente terrazze che le passano attraverso
-        float behind = Math.max(0f, w.topAt(Math.max(-2.4f, Math.min(2.4f, camX)), camZ + (back ? 7.5f : -6.0f)));
+        float behind = Math.max(0f, w.topAt(Math.max(-2.4f, Math.min(2.4f, camX)), camZ + (back ? 16f : -6.0f)));
         camY += (Math.max(Math.max(0, w.groundY), behind) - camY) * 0.06f;
         float lift = Math.max(0, w.py - camY) * 0.35f;
         float bk = backK * backK * (3 - 2 * backK);
         // davanti al robot, più in alto, guardando indietro: si vede il masso che arriva e il robot che corre verso lo schermo
-        Mat4.lookAt(view, camX, camY + 3.3f + lift + 1.6f * bk, camZ - 6.0f + 13.5f * bk, camX * 0.9f, camY + 1.0f + lift, camZ + 5f - 9f * bk);
+        // nella fuga la camera sta lontana e alta davanti al robot: gli ostacoli verso cui corre si vedono con 2-3 secondi d'anticipo
+        Mat4.lookAt(view, camX * (1 - 0.6f * bk), camY + 3.3f + lift + 5.2f * bk, camZ - 6.0f + 21f * bk, camX * 0.9f * (1 - 0.6f * bk), camY + 1.0f + lift - 0.3f * bk, camZ + 5f - 2.5f * bk);
         nearZ = back ? w.pz - 60f : w.pz - 4f;
-        farZ = back ? w.pz + 3f : w.pz + 120f;
+        farZ = back ? w.pz + 34f : w.pz + 120f;                       // tutto quello che c'è tra il robot e la camera va disegnato
         Mat4.perspective(proj, 58f, aspect, 0.3f, 400f);
         boolean dark = isle == 18 || dry == 24;
         g.begin(view, proj, fogR, fogG, fogB, dark ? 14f : 30f, dark ? 62f : 115f, dark ? 0.97f : 0.9f);
@@ -1791,6 +1793,7 @@ public final class Scene3D {
         if (spring || heaven) drawSpringProps(w, g);
         if (jungle || dry != 0) drawIslandProps(w, g);
         if (dry != 0) drawDryProps(w, g);
+        drawBooms(w, g);
         if (w.chase == 1) { drawHive(w, g); drawBees(w, g); }
         for (int c = 0; c < nChunks; c++) {
             float cz0 = zBase + c * CH;
@@ -2092,6 +2095,16 @@ public final class Scene3D {
     private Mesh[] crateKinds;
     private Mesh boomBall, boomRing, crusherBlock, crusherChain, raftMesh, boulderMesh;
 
+    private void buildBoom() {
+        if (boomBall != null) return;
+        MeshBuilder b = new MeshBuilder().color(255, 190, 70);
+        b.ellipsoid(0, 0, 0, 1, 1, 1, 18, 12);
+        boomBall = b.build(-1, true, false);
+        b = new MeshBuilder().color(255, 240, 200);
+        b.cylinder(0, -0.04f, 0.04f, 0, 1f, 0.82f, 24, true, false);
+        boomRing = b.build(-1, true, false);
+    }
+
     private void buildIsland() {
         crateKinds = new Mesh[5];
         int[] tex = {Img.R3J_CRATE, Img.R3J_TNT, Img.R3J_NITRO, Img.R3J_BOUNCE, Img.R3J_CHECK};
@@ -2101,13 +2114,8 @@ public final class Scene3D {
             crateKinds[k] = b.build(tex[k], false, true);
             crateKinds[k].spec = 0.15f; crateKinds[k].shine = 18f;
         }
-        MeshBuilder b = new MeshBuilder().color(255, 190, 70);
-        b.ellipsoid(0, 0, 0, 1, 1, 1, 18, 12);
-        boomBall = b.build(-1, true, false);
-        b = new MeshBuilder().color(255, 240, 200);
-        b.cylinder(0, -0.04f, 0.04f, 0, 1f, 0.82f, 24, true, false);
-        boomRing = b.build(-1, true, false);
-        b = new MeshBuilder();                                          // pestello: blocco di pietra scolpita con la faccia di un idolo
+        buildBoom();
+        MeshBuilder b = new MeshBuilder();                                          // pestello: blocco di pietra scolpita con la faccia di un idolo
         b.roundBox(0, 0.8f, 0, 0.98f, 1.6f, 0.98f, 0.08f);
         crusherBlock = b.build(dry == 22 ? Img.R3F_BLOCK : Img.R3J_TEMPLE, false, true);
         crusherBlock.spec = 0.1f; crusherBlock.shine = 12f;
@@ -2125,9 +2133,12 @@ public final class Scene3D {
         b.box(0, 0.2f, 0.28f, 0.9f, 0.05f, 0.08f);
         raftMesh = b.build(-1, false, true);
         raftMesh.spec = 0.05f; raftMesh.shine = 8f;
-        b = new MeshBuilder();                                          // il masso del tempio: una sfera di pietra scolpita
-        b.ellipsoid(0, 0, 0, 1, 1, 1, 22, 16);
-        boulderMesh = b.build(Img.R3J_TEMPLE, false, true);
+        b = new MeshBuilder();                                          // il masso del tempio: pietra sbozzata, bitorzoluta, con muschio nelle conche
+        b.ellipsoid(0, 0, 0, 1, 1, 1, 44, 30);
+        b.rough(0, 0.13f, 1.4f, 31);
+        b.rough(0, 0.035f, 4.5f, 32);
+        b.shadeByRelief(0.82f, 1.12f);
+        boulderMesh = b.build(Img.R3_ROCK, false, true);
         boulderMesh.spec = 0.08f; boulderMesh.shine = 10f;
     }
 
@@ -2221,18 +2232,23 @@ public final class Scene3D {
             Mat4.rotateZ(m, 0.04f * (float) Math.sin(w.time * 1.6f + z * 0.7f) + (r[2] >= 0 ? 0.1f * (float) Math.sin(w.time * 30f) * (1 - sink) : 0));
             g.draw(raftMesh, m, 1, 1, 1, 1, isle == 18 ? 0.25f : 0);
         }
+        if (w.chase == 2) drawBoulder(w, g);
+    }
+
+    /** Esplosioni (casse TNT, ricci di castagno che cadono). */
+    private void drawBooms(World3D w, Gfx3D g) {
+        if (boomBall == null) return;
         for (float[] bm : w.booms) {                                    // esplosione: palla di fuoco che si gonfia e svanisce, anello d'urto a terra
             float u = bm[2] / 0.7f, r = 0.4f + 1.9f * (float) Math.sqrt(u);
             Mat4.setIdentity(m);
-            Mat4.translate(m, bm[0], 0.6f, bm[1]);
+            Mat4.translate(m, bm[0], (bm.length > 3 ? bm[3] : 0f) + 0.6f, bm[1]);
             Mat4.scale(m, r, r * 0.85f, r);
             g.draw(boomBall, m, 1, 1f - 0.5f * u, 0.6f - 0.5f * u, 1f - u, 1);
             Mat4.setIdentity(m);
-            Mat4.translate(m, bm[0], 0.08f, bm[1]);
+            Mat4.translate(m, bm[0], (bm.length > 3 ? bm[3] : 0f) + 0.08f, bm[1]);
             Mat4.scale(m, r * 1.3f, 1, r * 1.3f);
             g.draw(boomRing, m, 1, 1, 1, 0.7f * (1f - u), 1);
         }
-        if (w.chase == 2) drawBoulder(w, g);
     }
 
     /** Il masso del tempio: rotola alle spalle del robot (che lo vede arrivare, con la camera girata). */

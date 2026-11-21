@@ -47,6 +47,8 @@ public final class World3D {
     public static final float TNT_FUSE = 3f, BOOM_R = 1.75f;
     /** Esplosioni in corso: {x, z, età}. */
     public final List<float[]> booms = new ArrayList<float[]>();
+    /** Raggio dello scoppio del riccio di castagno. */
+    static final float BURR_R = 1.3f;
     /** Pestelli di pietra del tempio: {colonna 0..4, z, periodo, fase}. */
     public final List<float[]> crushers = new ArrayList<float[]>();
     /** Zattere sul fiume: {colonna, z, istante in cui qualcuno ci è salito (-1 = mai), periodo di riemersione}. */
@@ -731,42 +733,57 @@ public final class World3D {
         float dxp = px - e.x, dzp = pz - e.z;
         float floorY = Float.isNaN(e.floor) ? e.y : e.floor;
         switch (e.type) {
-            case Enemy3.CHESTNUT: {                            // pende immobile, trema quando si passa sotto, cade e rotola
+            case Enemy3.CHESTNUT: {                            // riccio di castagno appeso a un ramo: quando passi sotto trema, cade e scoppia
                 if (Float.isNaN(e.floor)) { e.floor = Math.max(0, topAt(e.x, e.z)); e.y0 = e.y; }
+                boolean burr = e.skin == 0;                    // il masso (miniera) invece rotola come prima
                 if (e.mode == 0) {
                     e.y = e.y0;
-                    if (Math.abs(dzp) < 4.2f && dzp > -1f && Math.abs(dxp) < 2.2f) { e.mode = 1; e.t = 0; }
+                    if (burr ? (dzp > -2.6f && dzp < 0.6f && Math.abs(dxp) < 1.8f) : (Math.abs(dzp) < 4.2f && dzp > -1f && Math.abs(dxp) < 2.2f)) { e.mode = 1; e.t = 0; }
                 } else if (e.mode == 1) {
-                    if (e.t > 0.45f) { e.mode = 2; e.vy = 0; }
+                    if (e.t > (burr ? 0.3f : 0.45f)) { e.mode = 2; e.vy = 0; }
                 } else if (e.mode == 2) {
-                    e.vy -= GRAVITY * 0.8f * dt;
+                    e.vy -= GRAVITY * (burr ? 1f : 0.8f) * dt;
                     e.y += e.vy * dt;
-                    if (e.y <= e.floor + 0.3f) { e.y = e.floor + 0.3f; e.mode = 3; e.t = 0; e.dir = dzp >= 0 ? 1 : -1; }
+                    if (e.y <= e.floor + 0.3f) {
+                        e.y = e.floor + 0.3f;
+                        if (burr) {                            // a terra scoppia: chi è nel raggio si fa male
+                            booms.add(new float[] {e.x, e.z, 0, e.floor});
+                            float dx = px - e.x, dz = pz - e.z;
+                            if (state == PLAYING && dx * dx + dz * dz < BURR_R * BURR_R && py < e.floor + 1.6f) hurt();
+                            e.dead = true;
+                            e.flung = false;
+                            return true;
+                        }
+                        e.mode = 3; e.t = 0; e.dir = dzp >= 0 ? 1 : -1;
+                    }
                 } else {
                     float nz = e.z + e.dir * 4.2f * dt;
                     float h = topAt(e.x, nz);
                     if (h < e.floor - 0.05f || h > e.floor + 0.05f) e.dir = -e.dir; else e.z = nz;
                     if (e.t > 3.2f) { e.dead = true; return true; }
                 }
-                if (state == PLAYING) touch(e, false);
+                if (state == PLAYING && (!burr || e.mode == 2)) touch(e, false);
                 return true;
             }
             case Enemy3.OWL: {                                 // ronda alta, poi si tuffa sul giocatore e risale
-                if (Float.isNaN(e.floor)) e.floor = e.y;
+                if (Float.isNaN(e.floor)) e.floor = Math.max(0, topAt(e.x, e.z));   // il suolo sotto, non la quota di volo
                 if (e.mode == 0) {
                     e.y = e.baseY + 0.3f * (float) Math.sin(e.anim * 2f);
                     float n = e.alongZ ? e.z + e.dir * ENEMY_SPEED * 0.9f * dt : e.x + e.dir * ENEMY_SPEED * 0.9f * dt;
                     if (e.alongZ) { e.z = n; if (e.z > e.hi) { e.z = e.hi; e.dir = -1; } else if (e.z < e.lo) { e.z = e.lo; e.dir = 1; } }
                     else { e.x = n; if (e.x > e.hi) { e.x = e.hi; e.dir = -1; } else if (e.x < e.lo) { e.x = e.lo; e.dir = 1; } }
-                    if (Math.abs(dzp) < 4f && Math.abs(dxp) < 1.5f && py < e.baseY - 0.8f) { e.mode = 1; e.t = 0; e.x0 = px; e.z0 = pz + 1.2f; }
-                } else if (e.mode == 1) {                      // allerta: si abbassa in avanti
-                    e.y -= 3.2f * dt;
-                    float k = Math.min(1f, 3.5f * dt);
+                    if (e.t > 1.2f && Math.abs(dzp) < 4.5f && Math.abs(dxp) < 2f && py < e.baseY - 0.8f) { e.mode = 1; e.t = 0; e.x0 = px; e.z0 = pz + 0.6f; }
+                } else if (e.mode == 1) {                      // picchiata verso dove stava il robot, fino all'altezza del suo petto
+                    float ground = Math.max(0, topAt(e.x, e.z)), target = ground + 0.55f;
+                    e.y -= 5.5f * dt;
+                    float k = Math.min(1f, 4f * dt);
                     e.x += (e.x0 - e.x) * k; e.z += (e.z0 - e.z) * k;
-                    if (e.y <= Math.max(floorY, 0.5f) || e.t > 1.1f) { e.mode = 2; e.t = 0; }
+                    if (e.y <= target) { e.y = target; e.mode = 2; e.t = 0; }
+                } else if (e.mode == 2) {                      // un attimo radente, poi risale
+                    if (e.t > 0.35f) { e.mode = 3; e.t = 0; }
                 } else {
-                    e.y += 2.2f * dt;
-                    if (e.y >= e.baseY) { e.y = e.baseY; e.mode = 0; }
+                    e.y += 2.6f * dt;
+                    if (e.y >= e.baseY) { e.y = e.baseY; e.mode = 0; e.t = 0; }
                 }
                 if (state == PLAYING) touch(e, true);
                 return true;
