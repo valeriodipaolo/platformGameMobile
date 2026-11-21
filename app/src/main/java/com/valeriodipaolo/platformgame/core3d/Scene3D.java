@@ -246,7 +246,6 @@ public final class Scene3D {
     float groundAt(float x, float z) {
         float y = groundBase(x, z);
         if (lip <= 0) return y;
-        if (edgeField(x, z) < -0.05f) return y - pitD;   // nel vuoto: i fiori finiscono giù, invisibili
         return y - lipDrop(x, z);
     }
 
@@ -269,17 +268,26 @@ public final class Scene3D {
         int cx = (int) Math.floor(x + World3D.HALF), cz = (int) Math.floor(z);
         cx = Math.max(-1, Math.min(World3D.W, cx));
         float best = 2f;
-        for (int xi = cx - 1; xi <= cx + 1; xi++) {
+        for (int xi = cx - 2; xi <= cx + 2; xi++) {
             if (xi < 0 || xi >= World3D.W) continue;
-            for (int zi = cz - 1; zi <= cz + 1; zi++) {
+            for (int zi = cz - 2; zi <= cz + 2; zi++) {
                 if (vis(lvl, xi, zi) != World3D.PIT) continue;
                 float x0 = xi - World3D.HALF;
                 float dx = Math.max(0, Math.max(x0 - x, x - (x0 + 1))), dz = Math.max(0, Math.max(zi - z, z - (zi + 1)));
                 best = Math.min(best, (float) Math.sqrt(dx * dx + dz * dz));
             }
         }
-        if (best >= 1.5f) return best;
-        return best - jag(x, z);
+        if (best >= 2f) return best;
+        float j = jag(x, z);
+        // passerelle strette (vuoto da due lati opposti): il bordo resta quasi quello vero, se no la passerella sparirebbe
+        int gx = (int) Math.floor(x + World3D.HALF);
+        if (gx >= 0 && gx < World3D.W && vis(lvl, gx, cz) != World3D.PIT) {
+            boolean narrow = (gx > 0 && gx < World3D.W - 1 && vis(lvl, gx - 1, cz) == World3D.PIT && vis(lvl, gx + 1, cz) == World3D.PIT)
+                    || (vis(lvl, gx, cz - 1) == World3D.PIT && vis(lvl, gx, cz + 1) == World3D.PIT)
+                    || ((gx == 0 || gx == World3D.W - 1) && vis(lvl, gx == 0 ? 1 : gx - 1, cz) == World3D.PIT);
+            if (narrow) j = Math.min(j, 0.1f);
+        }
+        return best - j;
     }
 
     /** Quanto terreno si mangia il burrone in quel punto (0..~0,8): dentro il corridoio e anche nei prati ai lati. */
@@ -400,7 +408,7 @@ public final class Scene3D {
                     MeshBuilder g = mb(K_GRASS, z);
                     boolean nearPit = false;
                     if (lip > 0) {
-                        for (int ax = x - 1; ax <= x + 1; ax++) for (int az = z - 1; az <= z + 1; az++) {
+                        for (int ax = x - 2; ax <= x + 2; ax++) for (int az = z - 2; az <= z + 2; az++) {
                             if (ax >= 0 && ax < World3D.W && vis(w, ax, az) == World3D.PIT) nearPit = true;
                         }
                     }
@@ -504,12 +512,13 @@ public final class Scene3D {
         float[] seamF = autumn || aurora || fire || heaven ? new float[] {1f, 1f, 1f} : new float[] {0.850f, 0.943f, 0.936f};
         for (int z = z0; z < (heaven ? z0 : z1); z++) {                    // in cielo non c'è terreno ai lati: si vede solo il cielo
             for (int side = -1; side <= 1; side += 2) {
-                boolean pitNear = !heaven && (vis(w, side < 0 ? 0 : World3D.W - 1, z) == World3D.PIT
-                        || vis(w, side < 0 ? 0 : World3D.W - 1, z - 1) == World3D.PIT || vis(w, side < 0 ? 0 : World3D.W - 1, z + 1) == World3D.PIT);
+                boolean pitNear = false;
+                for (int dz = -2; dz <= 2 && !heaven; dz++)
+                    for (int xi = 0; xi < 2; xi++) if (vis(w, side < 0 ? xi : World3D.W - 1 - xi, z + dz) == World3D.PIT) pitNear = true;
                 for (int k = 0; k + 1 < D.length; k++) {
                     boolean grassy = D[k + 1] <= SEAM + 0.01f;
                     MeshBuilder g = mb(grassy ? K_BANK : K_FOREST, z);
-                    if (pitNear && D[k] < 2.2f && grassy) {                 // il burrone entra un po' nel prato: niente parete dritta
+                    if (pitNear && D[k] < 2.4f && grassy) {                 // il burrone entra un po' nel prato: niente parete dritta
                         final float sd = side;
                         clipGrid(g, side * (World3D.HALF + D[k]), side * (World3D.HALF + D[k + 1]), z, z + 1,
                                 Math.max(2, Math.round((D[k + 1] - D[k]) * 8)), 8, z, new Shade() {
@@ -983,6 +992,7 @@ public final class Scene3D {
 
     /** Ciuffo d'erba (o di fiori): cartoncini disposti a raggiera che si aprono verso l'esterno. */
     private void tuft(int kind, float x, float y, float z, float size, int cards, float lean, Random r) {
+        if (lip > 0 && edgeField(x, z) < 0.05f) return;                // sopra il vuoto frastagliato non cresce niente
         MeshBuilder b = mb(kind, z);
         lightAt(x, z, 1f);
         float lr = lt[0], lg = lt[1], lb = lt[2];
@@ -1070,6 +1080,7 @@ public final class Scene3D {
 
     /** Altezza della superficie realmente disegnata ai lati del sentiero (interpolazione della maglia), non quella teorica. */
     float meshAt(float x, float z) {
+        if (lip > 0 && edgeField(x, z) < 0.05f) return groundAt(x, z) - pitD;   // nel vuoto frastagliato: la decorazione finisce giù, invisibile
         float d = Math.abs(x) - World3D.HALF;
         if (d <= 0) return groundAt(x, z);
         float sg = Math.signum(x);
@@ -1188,6 +1199,45 @@ public final class Scene3D {
         return row == 0 ? 0f : (vnoise(x * 2.2f, z * 2.2f + row * 5.3f, 72) - 0.5f) * 0.55f;
     }
 
+    /**
+     * Erba che pende dal bordo del burrone (ciuffi capovolti, un po' sporgenti) e ogni tanto un cespuglio a cavallo del bordo:
+     * nasconde il punto dove il prato si piega e la parete comincia.
+     */
+    private void fringe(float ax, float az, float bx, float bz, float nx, float nz) {
+        if (heaven || dry == 22 || dry == 24) return;
+        float mx = (ax + bx) * 0.5f, mz = (az + bz) * 0.5f;
+        float ex = (bx - ax) * 0.45f, ez = (bz - az) * 0.45f;                // un po' più larga del segmento: la frangia non ha buchi
+        float len = 0.3f + 0.55f * vnoise(mx * 3.1f, mz * 3.1f, 81);
+        float top = groundAt(mx, mz) + 0.04f;
+        MeshBuilder t = mb(K_TUFT, (int) Math.floor(mz));
+        lightAt(mx, mz, 1f);
+        for (int layer = 0; layer < 2; layer++) {
+            float out = 0.03f + layer * 0.07f, lean = 0.12f + layer * 0.12f, l2 = len * (1f - 0.3f * layer);
+            float tone = 0.9f + 0.2f * vnoise(mx * 7f + layer, mz * 7f, 82), dk = 0.45f * tone;
+            float x0 = mx + nx * out, z0 = mz + nz * out, x1 = mx + nx * (out + lean), z1 = mz + nz * (out + lean);
+            float[][] p = {{x0 - ex * 1.6f, top, z0 - ez * 1.6f, 0, 1}, {x0 + ex * 1.6f, top, z0 + ez * 1.6f, 1, 1},
+                    {x1 + ex * 1.9f, top - l2, z1 + ez * 1.9f, 1, 0}, {x1 - ex * 1.9f, top - l2, z1 - ez * 1.9f, 0, 0}};
+            int[] ord = {0, 1, 2, 0, 2, 3};
+            for (int k : ord) {
+                boolean tip = k >= 2;
+                float c = tip ? dk : tone;                                   // in alto alla luce, le punte che pendono in ombra
+                t.colorf(lt[0] * c, lt[1] * c, lt[2] * c);
+                t.sway(tip ? 0.6f : 0f);
+                t.vert(p[k][0], p[k][1], p[k][2], nx * 0.5f, 0.85f, nz * 0.5f, p[k][3], p[k][4]);
+            }
+        }
+        t.sway(0);
+        // cespuglio a cavallo del bordo, ogni tanto
+        float hsh = vnoise(mx * 9.3f, mz * 9.3f, 83);
+        if (dry == 0 && Math.abs(mx) > 1.3f && hsh > 0.78f && Math.abs(Math.sin(mx * 12.9898f + mz * 78.233f) * 43758.5453f) % 1f < 0.07f) {
+            float rad = 0.22f + 0.2f * vnoise(mx * 2f, mz * 2f, 84);
+            float[] tc = tints()[(int) (hsh * 997) % tints().length];
+            float[] col = {tc[0] * lt[0] * 0.62f, tc[1] * lt[1] * 0.62f, tc[2] * lt[2] * 0.62f};
+            foliageLobe(mb(K_BLOB, (int) Math.floor(mz)), mx + nx * rad * 0.35f, top - rad * 0.35f, mz + nz * rad * 0.35f, rad * 1.2f, rad, rad * 1.2f, 7, 4,
+                    col, 0.95f, 0.3f, new Random((long) (mx * 1000 + mz * 7)));
+        }
+    }
+
     /** Parete frastagliata sotto il segmento di bordo a-b: quattro fasce che sporgono e rientrano, faccette come roccia. */
     private void cliff(MeshBuilder d, float ax, float az, float bx, float bz) {
         float[] ys = {0f, -0.9f, -2.0f, -pitD};
@@ -1207,6 +1257,10 @@ public final class Scene3D {
             nx /= nl; ny /= nl; nz /= nl;
             float mx = (ax + bx) * 0.5f, mz = (az + bz) * 0.5f;
             if (edgeField(mx + nx * 0.05f, mz + nz * 0.05f) > edgeField(mx - nx * 0.05f, mz - nz * 0.05f)) { nx = -nx; ny = -ny; nz = -nz; }
+            if (r == 0) {
+                float hl = (float) Math.sqrt(nx * nx + nz * nz) + 1e-6f;
+                fringe(ax, az, bx, bz, nx / hl, nz / hl);
+            }
             float la = (float) Math.sqrt((bx - ax) * (bx - ax) + (bz - az) * (bz - az));
             float ua = ax + az, ub = ua + la;
             float[] u = {ua, ub, ub, ua};
