@@ -59,6 +59,7 @@ public final class GlShaders {
             + "uniform sampler2D uShadow;\n"
             + "uniform float uShadowOn;\n"
             + "varying HP vec3 vSh;\n"
+            + "varying HP vec2 vUV;\n"                     // coordinate texture precise: niente strisce lontano dall'inizio
             + "uniform vec3 uFogColor;\n"
             + "uniform vec3 uLightV;\n"                     // verso il sole, nello spazio della camera
             + "uniform vec3 uUpV;\n"                        // l'alto, nello spazio della camera
@@ -68,7 +69,6 @@ public final class GlShaders {
             + "uniform float uEmissive;\n"
             + "uniform float uAlpha;\n"
             + "uniform vec3 uGrade;\n"
-            + "varying vec2 vUV;\n"
             + "varying vec3 vCol;\n"
             + "varying vec3 vN;\n"
             + "varying vec3 vP;\n"

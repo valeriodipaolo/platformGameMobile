@@ -290,6 +290,13 @@ public final class MeshBuilder {
     }
 
     public Mesh build(int tex, boolean blend, boolean fog) {
+        // coordinate texture riportate vicino allo zero (di un numero intero: con la texture che si ripete non cambia niente).
+        // Sui telefoni i pixel calcolano con pochi decimali: a 270 m dall'inizio del livello u = 135 perderebbe la parte
+        // fine e la texture verrebbe "a strisce", stirata.
+        float mu = Float.MAX_VALUE, mv = Float.MAX_VALUE;
+        for (int i = 0; i < n; i += Mesh.STRIDE) { mu = Math.min(mu, d[i + 6]); mv = Math.min(mv, d[i + 7]); }
+        float su = n > 0 ? (float) (int) mu : 0, sv = n > 0 ? (float) (int) mv : 0;   // tra -1 e 1 non si tocca (texture non ripetute)
+        if (su != 0 || sv != 0) for (int i = 0; i < n; i += Mesh.STRIDE) { d[i + 6] -= su; d[i + 7] -= sv; }
         return new Mesh(java.util.Arrays.copyOf(d, n), n / Mesh.STRIDE, tex, blend, fog);
     }
 }

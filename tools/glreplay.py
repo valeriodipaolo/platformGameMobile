@@ -174,6 +174,10 @@ class Replay:
         gl.glGenBuffers(1, ctypes.byref(buf))
         gl.glBindBuffer(GL_ARRAY_BUFFER, buf)
         arr = np.asarray(data, np.float32)
+        if os.environ.get("MEDIUMP") and len(arr):                          # simula i pixel "a mezza precisione" di molti telefoni
+            a2 = arr.reshape(-1, 12).copy()
+            a2[:, 6:8] = a2[:, 6:8].astype(np.float16).astype(np.float32)
+            arr = a2.reshape(-1)
         gl.glBufferData(GL_ARRAY_BUFFER, arr.nbytes, arr.ctypes.data_as(vp_), GL_STATIC_DRAW)
         self.meshes[mid] = dict(buf=buf.value, count=count, tex=tex, blend=blend, cut=cut, fog=fog, cast=cast, spec=spec, shine=shine)
 
