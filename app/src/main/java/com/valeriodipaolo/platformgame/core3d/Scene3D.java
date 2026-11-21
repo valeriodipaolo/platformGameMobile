@@ -649,6 +649,25 @@ public final class Scene3D {
         float nn = (float) Math.sqrt(nx * nx + ny * ny + nz * nz);
         nx /= nn; ny /= nn; nz /= nn;
         float t = tone * (0.95f + 0.1f * r.nextFloat());
+        // rami vicini: oltre alla falda orizzontale, una seconda falda di traverso che pende sotto il ramo (volume da ogni lato)
+        int sheets = two ? 2 : 1;
+        for (int sh = 0; sh < sheets; sh++) {
+            float ws2 = ws;
+            float qx = lx, qy = ly, qz = lz, oy = 0f;
+            if (sh == 1) {
+                qx = lx * 0.35f; qy = -0.94f; qz = lz * 0.35f;
+                float ql = (float) Math.sqrt(qx * qx + qy * qy + qz * qz);
+                qx /= ql; qy /= ql; qz /= ql;
+                ws2 = ws * 0.62f;
+                oy = -ws2 * 0.55f;                                   // appesa sotto il ramo, non a metà
+            }
+            emitBough(cb, p0x, p0y + oy * 0.4f, p0z, p1x, p1y + oy, p1z, ca, sa, R, d2, qx, qy, qz, ws2, nx, ny, nz, t, swk, two);
+        }
+        cb.sway(0);
+    }
+
+    private void emitBough(MeshBuilder cb, float p0x, float p0y, float p0z, float p1x, float p1y, float p1z, float ca, float sa, float R, float d2,
+                           float lx, float ly, float lz, float ws, float nx, float ny, float nz, float t, float swk, boolean two) {
         float u1 = two ? 0.5f : 1f, w0 = ws * 0.45f, w1 = ws;
         cb.colorf(t * 0.55f, t * 0.58f, t * 0.5f);
         float[] dark = {t * 0.55f, t * 0.58f, t * 0.5f}, lit = {t, t * 1.02f, t * 0.92f};
@@ -692,12 +711,12 @@ public final class Scene3D {
             float ya = base + (topY - base) * p / pieces, yb = base + (topY - base) * (p + 1) / pieces;
             tb.cylinder(x, ya, yb, z, r0 * (1f - 0.92f * p / pieces), r0 * (1f - 0.92f * (p + 1) / pieces), 7, false, false);
         }
-        int whorls = detailed ? 14 : 9;
+        int whorls = detailed ? 18 : 9;
         float swBase = Math.min(1.6f, 0.5f + h * 0.14f);
         for (int i = 0; i < whorls; i++) {
             float f = i / (whorls - 1f);
             float yb = y0 + h * (0.2f + 0.8f * f);
-            int per = Math.max(3, Math.round((detailed ? 7.4f : 5.4f) - 3.2f * f));
+            int per = Math.max(3, Math.round((detailed ? 9.5f : 5.4f) - (detailed ? 4.2f : 3.2f) * f));
             float R = Math.max(0.35f, rad * (1.12f - 0.94f * f) + 0.15f);
             float rot0 = r.nextFloat() * 6.283f;
             boolean top = i == whorls - 1;
@@ -706,7 +725,7 @@ public final class Scene3D {
                 float a = rot0 + q * 6.283f / per + (r.nextFloat() - 0.5f) * 0.7f;
                 if (top) bough(cb, x, yb, z, a, R * 0.9f + 0.2f, -1.7f, -1.7f, R * 0.3f + 0.08f, tone, swBase * 0.8f, false, r);
                 else bough(cb, x, yb + (r.nextFloat() - 0.5f) * 0.18f, z, a, R * (0.85f + 0.3f * r.nextFloat()),
-                        0.10f + 0.12f * (1f - f), 0.55f + 0.3f * (1f - f), R * 0.3f, tone, swBase * (0.55f + 0.7f * f), detailed, r);
+                        0.10f + 0.12f * (1f - f), 0.55f + 0.3f * (1f - f), R * (detailed ? 0.25f : 0.3f), tone, swBase * (0.55f + 0.7f * f), detailed, r);
             }
         }
     }
