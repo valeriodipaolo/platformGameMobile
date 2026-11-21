@@ -2248,7 +2248,7 @@ public final class Scene3D {
     private void drawBooms(World3D w, Gfx3D g) {
         if (boomBall == null) return;
         for (float[] bm : w.booms) {                                    // esplosione: palla di fuoco che si gonfia e svanisce, anello d'urto a terra
-            float u = bm[2] / 0.7f, r = 0.4f + 1.9f * (float) Math.sqrt(u);
+            float u = bm[2] / 0.7f, r = (0.4f + 1.9f * (float) Math.sqrt(u)) * (bm.length > 4 && bm[4] == 1 ? 0.62f : 1f);   // il riccio scoppia più piccolo
             Mat4.setIdentity(m);
             Mat4.translate(m, bm[0], (bm.length > 3 ? bm[3] : 0f) + 0.6f, bm[1]);
             Mat4.scale(m, r, r * 0.85f, r);

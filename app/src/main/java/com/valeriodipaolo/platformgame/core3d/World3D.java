@@ -48,7 +48,7 @@ public final class World3D {
     /** Esplosioni in corso: {x, z, età}. */
     public final List<float[]> booms = new ArrayList<float[]>();
     /** Raggio dello scoppio del riccio di castagno. */
-    static final float BURR_R = 2.0f;
+    static final float BURR_R = 1.5f;
     /** Pestelli di pietra del tempio: {colonna 0..4, z, periodo, fase}. */
     public final List<float[]> crushers = new ArrayList<float[]>();
     /** Zattere sul fiume: {colonna, z, istante in cui qualcuno ci è salito (-1 = mai), periodo di riemersione}. */
@@ -767,9 +767,7 @@ public final class World3D {
                     if (e.y <= e.floor + 0.3f) {
                         e.y = e.floor + 0.3f;
                         if (burr) {                            // a terra scoppia: chi è nel raggio si fa male
-                            booms.add(new float[] {e.x, e.z, 0, e.floor});
-                            float dx = px - e.x, dz = pz - e.z;
-                            if (state == PLAYING && dx * dx + dz * dz < BURR_R * BURR_R && py < e.floor + 0.45f) hurt();   // chi è in salto la scampa
+                            booms.add(new float[] {e.x, e.z, 0, e.floor, 1});      // 1: scoppio di riccio, ferisce mentre si allarga
                             e.dead = true;
                             e.flung = false;
                             return true;
@@ -796,14 +794,14 @@ public final class World3D {
                     e.x += (homeX - e.x) * Math.min(1f, 2f * dt);
                     e.z += (e.z0 - e.z) * Math.min(1f, 2f * dt);
                     e.y += (e.baseY + 0.25f * (float) Math.sin(e.anim * 2.2f) - e.y) * Math.min(1f, 4f * dt);
-                    boolean sees = dzp < -1f && dzp > -9f && Math.abs(dxp) < 3.2f;
-                    if (sees && e.t > 0.9f) {
+                    boolean sees = dzp < -1.5f && dzp > -6.5f && Math.abs(dxp) < 2.4f;
+                    if (sees && e.t > 2.4f) {                  // una picchiata ogni tanto, non a raffica
                         e.mode = 1; e.t = 0;
                         e.sx = e.x; e.sy = e.y; e.sz = e.z;
-                        e.ex = px; e.ey = Math.max(0, topAt(px, pz)) + 0.6f; e.ez = pz - 0.8f;      // punta poco davanti al robot
+                        e.ex = px; e.ey = Math.max(0, topAt(px, pz)) + 0.7f; e.ez = pz;            // punta dove sta il robot ora: se si sposta la schiva
                     }
                 } else if (e.mode == 1) {                      // picchiata: 0,7 s
-                    float u = Math.min(1f, e.t / 0.7f), uh = u * (2 - u), uv = 1 - (1 - u) * (1 - u) * (1 - u);
+                    float u = Math.min(1f, e.t / 1.0f), uh = u * (2 - u), uv = 1 - (1 - u) * (1 - u) * (1 - u);
                     e.x = e.sx + (e.ex - e.sx) * uh; e.z = e.sz + (e.ez - e.sz) * uh; e.y = e.sy + (e.ey - e.sy) * uv;
                     if (u >= 1f) {
                         e.mode = 2; e.t = 0;
@@ -1137,7 +1135,15 @@ public final class World3D {
     }
 
     private void stepIsland(float dt) {
-        for (int i = booms.size() - 1; i >= 0; i--) if ((booms.get(i)[2] += dt) > 0.7f) booms.remove(i);
+        for (int i = booms.size() - 1; i >= 0; i--) {
+            float[] bm = booms.get(i);
+            if ((bm[2] += dt) > 0.7f) { booms.remove(i); continue; }
+            // riccio: l'onda parte piccola e si allarga in 0,3 s fino a BURR_R; ferisce solo chi è a terra dentro l'onda in quel momento
+            if (bm.length > 4 && bm[4] == 1 && bm[2] < 0.3f && state == PLAYING) {
+                float r = 0.35f + (BURR_R - 0.35f) * bm[2] / 0.3f, dx = px - bm[0], dz = pz - bm[1];
+                if (dx * dx + dz * dz < r * r && py < bm[3] + 0.4f) hurt();
+            }
+        }
         if (crateKind != null) {
             int z0 = Math.max(0, zi(pz) - 30), z1 = Math.min(length - 1, zi(pz) + 30);
             for (int k = z0 * W; k < (z1 + 1) * W; k++) {
