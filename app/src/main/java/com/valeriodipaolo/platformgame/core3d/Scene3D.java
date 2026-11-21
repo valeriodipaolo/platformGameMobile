@@ -49,7 +49,9 @@ public final class Scene3D {
     /** Tinte delle chiome di primavera: ciliegi rosa e bianchi, qualche albero verde tenero. */
     static final float[][] SPRING_TINT = {{1.0f, 0.78f, 0.88f}, {1.0f, 0.92f, 0.96f}, {1.0f, 0.70f, 0.82f},
             {0.80f, 1.0f, 0.60f}, {1.0f, 0.96f, 0.98f}, {0.72f, 1.0f, 0.55f}};
-    float[][] tints() { return jungle ? JUNGLE_TINT : spring ? SPRING_TINT : AUTUMN_TINT; }
+    /** Estate: cespugli di un verde naturale, più scuro e meno acido. */
+    static final float[][] SUMMER_TINT = {{0.62f, 0.74f, 0.50f}, {0.56f, 0.70f, 0.52f}, {0.70f, 0.76f, 0.46f}, {0.52f, 0.66f, 0.48f}};
+    float[][] tints() { return jungle ? JUNGLE_TINT : spring ? SPRING_TINT : ktex == K_TEX_SUMMER ? SUMMER_TINT : AUTUMN_TINT; }
 
     private static final class Tree {
         float x, y, z, h, rad, tint;

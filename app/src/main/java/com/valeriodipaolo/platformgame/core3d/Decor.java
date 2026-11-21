@@ -211,7 +211,7 @@ final class Decor {
         float y = s.meshAt(x, z);
         light(x, z);
         MeshBuilder bb = s.mb(Scene3D.K_BLOB, z), pb = s.mb(Scene3D.K_PROP, z);
-        float[] tc = s.fire ? new float[] {0.42f * l[0], 0.32f * l[1], 0.26f * l[2]} : s.spring ? new float[] {0.6f * l[0], 1.0f * l[1], 0.46f * l[2]} : s.autumn ? new float[] {1.0f * l[0], 0.62f * l[1], 0.32f * l[2]} : new float[] {0.62f * l[0], 1.0f * l[1], 0.5f * l[2]};
+        float[] tc = s.fire ? new float[] {0.42f * l[0], 0.32f * l[1], 0.26f * l[2]} : s.spring ? new float[] {0.6f * l[0], 1.0f * l[1], 0.46f * l[2]} : s.autumn ? new float[] {1.0f * l[0], 0.62f * l[1], 0.32f * l[2]} : new float[] {0.5f * l[0], 0.68f * l[1], 0.42f * l[2]};   // estate: verde bosco, non acido
         float[] berry = s.spring ? lit(255, 130, 176, 1.3f) : s.autumn ? lit(250, 150, 30, 1.3f) : lit(236, 40, 60, 1.3f);
         int lobes = 3 + r.nextInt(2);
         for (int i = 0; i < lobes; i++) {
