@@ -580,7 +580,7 @@ final class FoeModels2 {
                 // si aprono avanti a frenare; in risalita colpi ampi e rapidi; al ritorno battito regolare
                 float t = e.t, flap, sweep, lift = 0f;
                 if (e.mode == 1) {
-                    float u = Math.min(1f, t / 1.0f);
+                    float u = Math.min(1f, t / 0.85f);
                     flap = 0.55f + 0.05f * (float) Math.sin(an * 20f) - 0.9f * Math.max(0f, (u - 0.75f) / 0.25f);
                     sweep = 0.75f * (1f - Math.max(0f, (u - 0.75f) / 0.25f));
                 } else if (e.mode == 2) {
@@ -591,7 +591,7 @@ final class FoeModels2 {
                     flap = 0.8f * (float) Math.sin(an * 5.5f) - 0.05f; sweep = 0f;
                 }
                 System.arraycopy(a, 0, b2, 0, 16);
-                if (e.mode == 1 && t > 0.7f) { Mat4.translate(b2, 0, -0.04f, 0.1f); Mat4.rotateX(b2, -0.8f); }   // artigli avanti all'impatto
+                if (e.mode == 1 && t > 0.6f) { Mat4.translate(b2, 0, -0.04f, 0.1f); Mat4.rotateX(b2, -0.8f); }   // artigli avanti all'impatto
                 g.draw(owlTalon, b2, 1, 1, 1, 1, 0);
                 for (int s = -1; s <= 1; s += 2) {
                     System.arraycopy(a, 0, b2, 0, 16);
