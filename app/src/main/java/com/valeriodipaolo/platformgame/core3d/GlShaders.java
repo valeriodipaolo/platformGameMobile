@@ -8,7 +8,7 @@ public final class GlShaders {
 
     /** Lato della mappa delle ombre (pixel), mezza ampiezza dell'area coperta e mezza profondità (metri). */
     public static final int SHADOW_SIZE = 2048;
-    public static final float SHADOW_RADIUS = 24f, SHADOW_DEPTH = 50f, SHADOW_AHEAD = 13f;
+    public static final float SHADOW_RADIUS = 28f, SHADOW_DEPTH = 50f, SHADOW_AHEAD = 13f;
 
     static final String HP = "#ifdef GL_FRAGMENT_PRECISION_HIGH\n#define HP highp\n#else\n#define HP mediump\n#endif\n";
 
@@ -196,7 +196,23 @@ public final class GlShaders {
             + "uniform vec2 uTexel;\n"
             + "varying vec2 vUV;\n"
             + "void main() {\n"
-            + "  vec3 c = texture2D(uTex, vUV).rgb;\n"
+            // bordi lisciati (FXAA leggero): l'erba e le foglie ritagliate non sfarfallano più a scalini
+            + "  vec3 L = vec3(0.299, 0.587, 0.114);\n"
+            + "  vec3 cm = texture2D(uTex, vUV).rgb;\n"
+            + "  float lnw = dot(texture2D(uTex, vUV + uTexel * vec2(-1.0, 1.0)).rgb, L), lne = dot(texture2D(uTex, vUV + uTexel * vec2(1.0, 1.0)).rgb, L);\n"
+            + "  float lsw = dot(texture2D(uTex, vUV + uTexel * vec2(-1.0, -1.0)).rgb, L), lse = dot(texture2D(uTex, vUV + uTexel * vec2(1.0, -1.0)).rgb, L);\n"
+            + "  float lm = dot(cm, L);\n"
+            + "  float lmin = min(lm, min(min(lnw, lne), min(lsw, lse))), lmax = max(lm, max(max(lnw, lne), max(lsw, lse)));\n"
+            + "  vec3 c = cm;\n"
+            + "  if (lmax - lmin > max(0.06, lmax * 0.12)) {\n"
+            + "    vec2 dir = vec2(-((lnw + lne) - (lsw + lse)), (lnw + lsw) - (lne + lse));\n"
+            + "    float red = max((lnw + lne + lsw + lse) * 0.03125, 0.008);\n"
+            + "    dir = clamp(dir / (min(abs(dir.x), abs(dir.y)) + red), -4.0, 4.0) * uTexel;\n"
+            + "    vec3 a = 0.5 * (texture2D(uTex, vUV - dir * 0.1667).rgb + texture2D(uTex, vUV + dir * 0.1667).rgb);\n"
+            + "    vec3 b2 = a * 0.5 + 0.25 * (texture2D(uTex, vUV - dir * 0.5).rgb + texture2D(uTex, vUV + dir * 0.5).rgb);\n"
+            + "    float lb = dot(b2, L);\n"
+            + "    c = (lb < lmin || lb > lmax) ? a : b2;\n"
+            + "  }\n"
             + "  vec3 b = texture2D(uBloom, vUV).rgb;\n"
             + "  c = 1.0 - (1.0 - c) * (1.0 - b * 0.55);\n"                       // bagliore sommato "a schermo": niente bianco bruciato
             + "  float l = dot(c, vec3(0.2126, 0.7152, 0.0722));\n"
