@@ -31,6 +31,8 @@ public final class Enemy3 {
     /** Pupazzo di neve: verso dove guarda e tira (0 verso lo schermo, 1 a destra, -1 a sinistra). */
     public int face;
     /** Gufo: orientamento morbido (imbardata, beccheggio, rollio) e punti della traiettoria in corso. */
+    /** Pianta carnivora: quanto è allungata la testa verso il robot (m). */
+    public float reach;
     public float yaw, pitch, bank, sx, sy, sz, ex, ey, ez;
     /** Lumaca appena uscita dal guscio: per un attimo non subisce né fa danno. */
     public float grace;

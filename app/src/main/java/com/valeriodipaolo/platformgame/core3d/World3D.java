@@ -749,6 +749,17 @@ public final class World3D {
      * Comportamento dei nemici nuovi. Restituisce true se il nemico si muove da sé e il passo generico va saltato; i camminatori
      * (lumaca, pinguino, salamandra) restituiscono false e usano il pattugliamento comune.
      */
+    /** Pianta carnivora: distanza a cui scatta e lunghezza massima del morso. */
+    static final float PLANT_RANGE = 2.6f, PLANT_REACH = 1.9f;
+
+    /** Ruota l'angolo a verso b di al più step radianti. */
+    static float turnTo(float a, float b, float step) {
+        float d = b - a;
+        while (d > Math.PI) d -= 2 * Math.PI;
+        while (d < -Math.PI) d += 2 * Math.PI;
+        return a + Math.max(-step, Math.min(step, d));
+    }
+
     private boolean stepNew3(Enemy3 e, float dt) {
         e.t += dt;
         float dxp = px - e.x, dzp = pz - e.z;
@@ -917,10 +928,11 @@ public final class World3D {
                 if (Float.isNaN(e.floor)) { e.floor = e.y; e.y0 = e.y; }
                 if (e.mode == 0) {
                     e.y = e.y0;
+                    e.yaw = turnTo(e.yaw, (float) Math.atan2(dxp, dzp), 5f * dt);     // si gira verso il robot: salta sempre di fronte
                     if (e.t > 1.4f && Math.abs(dzp) < 8f && Math.abs(dxp) < 3f) {
                         e.mode = 1; e.t = 0;
                         float l = Math.max(0.5f, (float) Math.sqrt(dxp * dxp + dzp * dzp));
-                        e.vx = dxp / l * 3.6f; e.vz = dzp / l * 3.6f; e.dir = dzp >= 0 ? 1 : -1;
+                        e.vx = (float) Math.sin(e.yaw) * 3.6f; e.vz = (float) Math.cos(e.yaw) * 3.6f; e.dir = dzp >= 0 ? 1 : -1;
                     }
                 } else {
                     float u = e.t / 0.7f;
@@ -934,10 +946,25 @@ public final class World3D {
                 if (state == PLAYING) touch(e, true);
                 return true;
             }
-            case Enemy3.PLANT: {                               // chiusa 1,4 s, trema 0,4 s, morde 1,2 s
-                float c = e.t % 3.0f;
-                e.mode = c < 1.4f ? 0 : c < 1.8f ? 1 : 2;
+            case Enemy3.PLANT: {                               // a bocca aperta aspetta; se il robot si avvicina trema un attimo e scatta a mordere
+                float dist = (float) Math.sqrt(dxp * dxp + dzp * dzp);
                 e.dir = dzp >= 0 ? 1 : -1;
+                if (e.mode == 0) {
+                    e.reach = Math.max(0f, e.reach - 4f * dt);
+                    e.yaw = turnTo(e.yaw, (float) Math.atan2(dxp, dzp), 6f * dt);
+                    if (e.t > 0.7f && dist < PLANT_RANGE && Math.abs(py - e.y) < 1.6f) { e.mode = 1; e.t = 0; }
+                } else if (e.mode == 1) {                      // freme e prende la mira: poi non corregge più
+                    e.yaw = turnTo(e.yaw, (float) Math.atan2(dxp, dzp), 10f * dt);
+                    if (e.t > 0.32f) { e.mode = 2; e.t = 0; e.hopT = Math.min(PLANT_REACH, dist + 0.4f); }
+                } else {
+                    float u = e.t / 0.6f;                      // la testa si allunga verso il robot, schiocca, torna indietro
+                    e.reach = e.hopT * (u < 0.35f ? (1f - (1f - u / 0.35f) * (1f - u / 0.35f)) : u < 0.55f ? 1f : Math.max(0f, 1f - (u - 0.55f) / 0.45f));
+                    if (state == PLAYING && u < 0.6f) {
+                        float hx = e.x + (float) Math.sin(e.yaw) * e.reach, hz = e.z + (float) Math.cos(e.yaw) * e.reach;
+                        if (Math.abs(hx - px) < 0.55f && Math.abs(hz - pz) < 0.55f && py < e.y + 1.4f && py + PLAYER_H > e.y + 0.3f) hurt();
+                    }
+                    if (u >= 1f) { e.mode = 0; e.t = 0; e.reach = 0; }
+                }
                 if (state == PLAYING) touch(e, e.mode != 2);
                 return true;
             }

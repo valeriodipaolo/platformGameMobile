@@ -502,8 +502,8 @@ final class FoeModels4 {
     static Mesh bramble() {
         MeshBuilder b = new MeshBuilder();
         java.util.Random r = new java.util.Random(31);
-        final float[] caneA = rgb(96, 46, 40), caneB = rgb(84, 112, 50), thornC = rgb(150, 70, 60), thornT = rgb(230, 200, 170);
-        final float[] leafD = rgb(46, 92, 36), leafL = rgb(86, 136, 54), leafY = rgb(120, 160, 70);
+        final float[] caneA = rgb(58, 30, 22), caneB = rgb(92, 56, 34), thornC = rgb(110, 62, 30), thornM = rgb(70, 38, 20), thornT = rgb(16, 12, 10);
+        final float[] leafD = rgb(40, 70, 30), leafL = rgb(66, 100, 40), leafY = rgb(96, 120, 50);
         int canes = 14;
         for (int k = 0; k < canes; k++) {
             float ang = k * 2 * PI / canes + (r.nextFloat() - 0.5f) * 0.5f;
@@ -517,24 +517,24 @@ final class FoeModels4 {
                 float y = h * (float) Math.sin(PI * 0.8f * t) + 0.02f;
                 float side = 0.08f * (float) Math.sin(t * 5f + k);
                 c[i] = new float[] {dx * (0.04f + L * t) - dz * side, y, dz * (0.04f + L * t) + dx * side};
-                rr[i] = 0.024f * (1f - 0.65f * t);
+                rr[i] = 0.03f * (1f - 0.6f * t);
             }
             FoeModels.tube(b, c, rr, 6, FoeModels.along(caneA, caneB));
             // spine ricurve all'indietro lungo il pollone
-            for (int i = 1; i < n - 1; i++) for (int q = 0; q < 3; q++) {
-                float t = (i + q / 3f) / (n - 1f);
+            for (int i = 1; i < n - 1; i++) for (int q = 0; q < 4; q++) {
+                float t = (i + q / 4f) / (n - 1f);
                 int i0 = Math.min(n - 2, (int) (t * (n - 1)));
                 float f = t * (n - 1) - i0;
                 float px = c[i0][0] + (c[i0 + 1][0] - c[i0][0]) * f, py = c[i0][1] + (c[i0 + 1][1] - c[i0][1]) * f, pz = c[i0][2] + (c[i0 + 1][2] - c[i0][2]) * f;
                 float tx = c[i0 + 1][0] - c[i0][0], ty = c[i0 + 1][1] - c[i0][1], tz = c[i0 + 1][2] - c[i0][2];
                 float sa = q * 2.1f + i;
                 float ox = (float) Math.cos(sa) * dz * -1f, oy = (float) Math.sin(sa), oz = (float) Math.cos(sa) * dx;
-                FoeModels.quill(b, px, py, pz, ox * 1f - tx * 4f, oy - ty * 4f, oz - tz * 4f, 0.04f, 0.009f, thornC, thornC, thornT);
+                FoeModels.quill(b, px, py, pz, ox * 1f - tx * 3f, oy - ty * 3f, oz - tz * 3f, 0.075f, 0.017f, thornC, thornM, thornT);
             }
             // foglie composte da tre (o cinque) foglioline, alternate
-            for (int i = 1; i < n - 1; i++) {
+            for (int i = 2; i < n - 1; i += 2) {
                 float px = c[i][0], py = c[i][1], pz = c[i][2];
-                float sgn = i % 2 == 0 ? 1 : -1;
+                float sgn = (i + k) % 4 < 2 ? 1 : -1;
                 float lx = -dz * sgn + dx * 0.3f, lz = dx * sgn + dz * 0.3f;
                 float ex = px + lx * 0.06f, ey = py + 0.03f, ez = pz + lz * 0.06f;
                 FoeModels.tube(b, px, py, pz, ex, ey, ez, 0.006f, 0.005f, 4, FoeModels.flat(caneB));

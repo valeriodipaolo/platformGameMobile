@@ -670,6 +670,7 @@ final class FoeModels2 {
 
     /** Modelli realistici che sostituiscono quelli vecchi (li passa FoeModels). */
     FoeModels4 s4;
+    private Mesh plantNeck;
 
     void draw(Gfx3D g, float[] m, Enemy3 e) {
         float an = e.anim;
@@ -835,11 +836,27 @@ final class FoeModels2 {
             }
             case Enemy3.PLANT: {
                 g.draw(plantStem, m, 1, 1, 1, 1, 0);
+                // a riposo la trappola è aperta e respira; quando il robot si avvicina freme; poi la testa scatta in avanti
+                // spalancata, si chiude di colpo alla massima distanza e torna indietro
+                float open = e.mode == 2 ? (e.t < 0.2f ? 0.7f : 0.03f) : e.mode == 1 ? 0.6f + 0.06f * (float) Math.sin(an * 55f) : 0.45f + 0.05f * (float) Math.sin(an * 2f);
+                float r = e.reach;
+                if (r > 0.02f) {                                       // il collo che si allunga
+                    if (plantNeck == null) {
+                        MeshBuilder nb = new MeshBuilder();
+                        nb.colorf(0.36f, 0.56f, 0.2f);
+                        nb.cylinder(0, 0, 1, 0, 0.055f, 0.045f, 8, false, false);
+                        plantNeck = fin(nb, 0.2f, 16f);
+                    }
+                    System.arraycopy(m, 0, b2, 0, 16);
+                    Mat4.translate(b2, 0, 0.72f, 0);
+                    Mat4.rotateX(b2, (float) Math.PI / 2 - 0.15f);
+                    Mat4.scale(b2, 1, r, 1);
+                    g.draw(plantNeck, b2, 1, 1, 1, 1, 0);
+                }
                 System.arraycopy(m, 0, a, 0, 16);
-                // a riposo la trappola è aperta e immobile; prima di mordere freme; quando morde scatta avanti e si chiude a colpi
-                float open = e.mode == 2 ? 0.05f + 0.4f * Math.abs((float) Math.sin(an * 7f)) : e.mode == 1 ? 0.55f + 0.05f * (float) Math.sin(an * 45f) : 0.45f;
-                Mat4.translate(a, 0, 0.75f, e.mode == 2 ? 0.12f * Math.abs((float) Math.sin(an * 7f)) : 0f);
-                Mat4.rotateX(a, -0.7f + 0.06f * (float) Math.sin(an * 1.6f));          // la bocca a V guarda in alto e verso il robot
+                Mat4.translate(a, 0, 0.75f + r * 0.15f, r);
+                if (e.mode == 1) Mat4.translate(a, 0.03f * (float) Math.sin(an * 60f), 0, -0.08f);   // si ritrae prima dello scatto
+                Mat4.rotateX(a, (e.mode == 2 ? -1.1f : -0.7f) + 0.06f * (float) Math.sin(an * 1.6f));   // in avanti, la bocca punta il robot
                 System.arraycopy(a, 0, b2, 0, 16);
                 Mat4.rotateX(b2, open);
                 g.draw(plantJaw, b2, 1, 1, 1, 1, 0);
