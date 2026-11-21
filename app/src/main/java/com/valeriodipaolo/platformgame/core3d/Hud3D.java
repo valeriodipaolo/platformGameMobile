@@ -96,24 +96,12 @@ public final class Hud3D {
         }
     }
 
-    /** Croce direzionale: due barre incrociate con bordo, il braccio premuto si illumina, una freccia su ogni braccio. */
+    /** Croce direzionale: quattro pulsanti tondi come salto e giravolta, a croce; quello premuto è pieno, gli altri velati. */
     private static void drawCross(Painter p, float cx, float cy, float r, float dx, float dy) {
-        float arm = r * 0.95f, half = r * 0.34f, edge = r * 0.06f;
-        p.rect(cx - arm - edge, cy - half - edge, 2 * (arm + edge), 2 * (half + edge), 0x99000000);
-        p.rect(cx - half - edge, cy - arm - edge, 2 * (half + edge), 2 * (arm + edge), 0x99000000);
-        p.rect(cx - arm, cy - half, 2 * arm, 2 * half, 0xB0E0E6EE);
-        p.rect(cx - half, cy - arm, 2 * half, 2 * arm, 0xB0E0E6EE);
-        int on = 0xF04FC3F7;
-        if (dx > 0.3f) p.rect(cx + half, cy - half, arm - half, 2 * half, on);
-        if (dx < -0.3f) p.rect(cx - arm, cy - half, arm - half, 2 * half, on);
-        if (dy > 0.3f) p.rect(cx - half, cy + half, 2 * half, arm - half, on);
-        if (dy < -0.3f) p.rect(cx - half, cy - arm, 2 * half, arm - half, on);
-        p.rect(cx - half * 0.45f, cy - half * 0.45f, half * 0.9f, half * 0.9f, 0x60000000);   // incavo al centro
-        float ts = r * 0.42f;
-        int ac = 0xFF37474F;
-        p.text("\u25B2", cx, cy - arm * 0.62f, ts, Painter.ALIGN_CENTER, ac);
-        p.text("\u25BC", cx, cy + arm * 0.86f, ts, Painter.ALIGN_CENTER, ac);
-        p.text("\u25C0", cx - arm * 0.72f, cy + ts * 0.36f, ts, Painter.ALIGN_CENTER, ac);
-        p.text("\u25B6", cx + arm * 0.72f, cy + ts * 0.36f, ts, Painter.ALIGN_CENTER, ac);
+        float bs = r * 0.78f, off = r * 0.66f;
+        p.image(Img.DPAD_UP, cx - bs / 2, cy - off - bs / 2, bs, bs, false, dy < -0.3f ? 1f : 0.7f);
+        p.image(Img.DPAD_DOWN, cx - bs / 2, cy + off - bs / 2, bs, bs, false, dy > 0.3f ? 1f : 0.7f);
+        p.image(Img.DPAD_LEFT, cx - off - bs / 2, cy - bs / 2, bs, bs, false, dx < -0.3f ? 1f : 0.7f);
+        p.image(Img.DPAD_RIGHT, cx + off - bs / 2, cy - bs / 2, bs, bs, false, dx > 0.3f ? 1f : 0.7f);
     }
 }

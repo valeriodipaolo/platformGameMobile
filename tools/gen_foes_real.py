@@ -113,3 +113,27 @@ if __name__ == "__main__":
     owl()
     penguin()
     print("fatto")
+
+
+def dpad_buttons():
+    """Quattro pulsanti della croce direzionale, nello stesso stile di salto e giravolta: disco bianco velato, anello chiaro,
+    freccia piena bianca (un triangolo con il gambo corto, così non si confonde con il pulsante di salto)."""
+    S, ss = 192, 4
+    W = S * ss
+    for name, rot in (("dpad_up", 0), ("dpad_right", -90), ("dpad_down", 180), ("dpad_left", 90)):
+        im = Image.new("RGBA", (W, W), (255, 255, 255, 0))
+        d = ImageDraw.Draw(im)
+        c = W / 2
+        d.ellipse([8 * ss, 8 * ss, W - 8 * ss, W - 8 * ss], fill=(255, 255, 255, 150))
+        d.ellipse([13 * ss, 13 * ss, W - 13 * ss, W - 13 * ss], fill=(255, 255, 255, 44))
+        tri = Image.new("RGBA", (W, W), (0, 0, 0, 0))
+        dt = ImageDraw.Draw(tri)
+        dt.polygon([(c, c - 52 * ss), (c + 48 * ss, c + 14 * ss), (c - 48 * ss, c + 14 * ss)], fill=(255, 255, 255, 225))
+        dt.rectangle([c - 17 * ss, c + 13 * ss, c + 17 * ss, c + 40 * ss], fill=(255, 255, 255, 225))
+        tri = tri.rotate(rot, resample=Image.BICUBIC)
+        im = Image.alpha_composite(im, tri)
+        im.resize((S, S), Image.LANCZOS).save(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "app", "src", "main", "res", "drawable-nodpi", name + ".png"))
+
+
+if __name__ == "__main__" and len(sys.argv) > 1 and sys.argv[1] == "dpad":
+    dpad_buttons()
