@@ -56,14 +56,7 @@ final class MenuView extends View {
         painter.rect(0, 0, w, h, 0x55000000);
         painter.image(Img.HERO_SPIN + 3, w / 2 - 1.0f * s, 0.25f * s, 2.0f * s, 2.6f * s, false, 1);
         painter.text("ROBO JUMP", w / 2, 3.55f * s, 1.0f * s, Painter.ALIGN_CENTER, 0xFFFFFFFF);
-        String[] subById = {null, "Il prato", "Bosco (3D)", "Prato d'autunno", "Bosco d'autunno (3D)", "Tundra boreale", "Lago gelato (3D)",
-                "Prato in fiamme", "Bosco in fiamme (3D)", "Primavera", "Primavera e api (3D)", "Il cielo", "Sulle nuvole (3D)",
-                "Talpe e lumache", "Radure (3D)", "Castagne e gufi", "Querceto (3D)", "Neve e pupazzi", "Ghiaccio (3D)",
-                "Brace e lapilli", "Rogo (3D)", "Rane e fiori", "Giardino (3D)", "Stelle e soli", "Cielo alto (3D)",
-                "Valle delle molle", "Labirinto (3D)", "Ghiaccio fragile", "Arcipelago (3D)", "Le due strade", "Rovi (3D)",
-                "Pioggia di ricci", "Fuga dal rogo (3D)", "Scala celeste", "La vetta (3D)",
-                "Isola: le casse", "Isola: il masso", "Isola: il fiume",
-                "Le dune", "La fabbrica", "La miniera"};
+        String[] subById = Levels.NAMES;
         for (int i = 0; i < LEVELS; i++) {
             float x = btnX(i), y = btnY(i);
             painter.rect(x, y, btnW(), btnH(), 0xCC14324A);

@@ -303,6 +303,7 @@ public final class Renderer {
             ix += isz * 1.25f;
         }
         p.image(Img.GEM_FULL, ix, iy, isz, isz, false, g.gemOwned ? 1f : 0.4f);
+        p.text(com.valeriodipaolo.platformgame.core.Levels.title(g.levelNo), sw / 2, base - 0.52f * s, 0.3f * s, Painter.ALIGN_CENTER, 0xFFFFE082);   // numero e nome del livello
         p.text("PUNTI " + g.score, sw / 2, base, ts, Painter.ALIGN_CENTER, WHITE);
         p.text("VITE " + g.lives, sw - m, base, ts, Painter.ALIGN_RIGHT, WHITE);
         float pip = 0.36f * s, gap = 0.12f * s, py = base + 0.22f * s;

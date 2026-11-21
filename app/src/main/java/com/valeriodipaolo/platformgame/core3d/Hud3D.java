@@ -29,6 +29,7 @@ public final class Hud3D {
         float ix = m, iy = 1.3f * s, isz = 0.85f * s;
         p.image(Img.BATTERY, ix, iy, isz, isz, false, w.batteryOwned ? 1f : 0.4f);
         p.image(Img.GEM_FULL, ix + isz * 1.25f, iy, isz, isz, false, w.gemOwned ? 1f : 0.4f);
+        p.text(com.valeriodipaolo.platformgame.core.Levels.title(w.levelNo), sw / 2, base - 0.52f * s, 0.3f * s, Painter.ALIGN_CENTER, 0xFFFFE082);   // numero e nome del livello
         p.text("PUNTI " + w.score, sw / 2, base, ts, Painter.ALIGN_CENTER, WHITE);
         p.text("VITE " + w.lives, sw - m, base, ts, Painter.ALIGN_RIGHT, WHITE);
         float pip = 0.36f * s, gap = 0.12f * s, py = base + 0.22f * s;
