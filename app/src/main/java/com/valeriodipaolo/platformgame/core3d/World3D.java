@@ -148,6 +148,7 @@ public final class World3D {
         launchT = -1;
         sealed = true;
         sealEnd();
+        gemsOffThorns();
         gemTotal = gemsList.size();
         for (int k = 0; k < crate.length; k++) if (crate[k] && (crateKind == null || crateKind[k] != C_BOUNCE)) gemTotal++;
         if (crateKind != null) crateT = new float[crate.length];
@@ -851,6 +852,33 @@ public final class World3D {
             if (hit) hurt();
             if (hit || s[1] < Math.max(0, top) - 0.1f || Math.abs(s[2] - pz) > 30f) shots.remove(i);
         }
+    }
+
+    /**
+     * Una gemma sopra (o attaccata a) un rovo non si può prendere senza farsi male: la si sposta sulla colonna libera più vicina
+     * alla stessa z, alla stessa altezza dal terreno. Se tutta la fila è spinosa, la si alza a mezz'aria: si prende saltando.
+     */
+    private void gemsOffThorns() {
+        if (thorns.isEmpty()) return;
+        for (float[] g : gemsList) {
+            if (!nearThorn(g[0], g[2])) continue;
+            float lift = g[1] - Math.max(0, topAt(g[0], g[2]));
+            float best = Float.MAX_VALUE, bx = g[0];
+            for (int xi = 0; xi < W; xi++) {
+                float x = xi - HALF + 0.5f;
+                int c = cell(xi, (int) Math.floor(g[2]));
+                if (c == PIT || c < 0 || nearThorn(x, g[2]) || Math.abs(topAt(x, g[2]) - topAt(g[0], g[2])) > 1.01f) continue;
+                if (Math.abs(x - g[0]) < best) { best = Math.abs(x - g[0]); bx = x; }
+            }
+            if (best < Float.MAX_VALUE) { g[0] = bx; g[1] = Math.max(0, topAt(bx, g[2])) + Math.max(0.5f, lift); }
+            else g[1] = Math.max(0, topAt(g[0], g[2])) + 1.9f;
+        }
+    }
+
+    /** In questo punto chi raccoglie una gemma toccherebbe un rovo? (raggio di raccolta 0,65 + raggio del rovo 0,62) */
+    private boolean nearThorn(float x, float z) {
+        for (float[] t : thorns) if (Math.abs(t[0] - x) < 0.95f && Math.abs(t[1] - z) < 0.95f) return true;
+        return false;
     }
 
     private void pickups() {
