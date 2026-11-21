@@ -88,7 +88,8 @@ public final class Scene3D {
     private Mesh crate, gem, battery, batteryGlow, shadow, ring, gateStone, gateDoor, catapult;
     private final HeroModel hero = new HeroModel();
     private int builtFor = -1;
-    private float camX, camY = 0, camZ;
+    private float camX, camY = 0, camZ, camEye;
+    private boolean camEyeInit;
     private float backK, nearZ, farZ;
     private boolean back;
     private boolean camInit;
@@ -1625,12 +1626,27 @@ public final class Scene3D {
         camZ = tz;
         // la camera sta sopra anche a ciò che c'è sotto di lei (6 m dietro il robot): niente terrazze che le passano attraverso
         float behind = Math.max(0f, w.topAt(Math.max(-2.4f, Math.min(2.4f, camX)), camZ + (back ? 16f : -6.0f)));
-        camY += (Math.max(Math.max(0, w.groundY), behind) - camY) * 0.06f;
+        float base = Math.max(0, w.groundY);
+        // lo sguardo segue il terreno del robot (non la struttura alle spalle); l'occhio invece sale quanto basta perché la
+        // linea fino alla testa del robot passi sopra le terrazze rimaste dietro: si guarda giù oltre il bordo, il robot resta visibile
+        camY += ((back ? Math.max(base, behind) : base) - camY) * 0.06f;
+        float head = base + 1.0f, eye = base + 3.3f;
+        if (!back) {
+            for (float d = 0.5f; d <= 6.01f; d += 0.5f) {
+                float sx = w.px + (camX - w.px) * d / 6f;
+                float h = Math.max(0f, w.topAt(Math.max(-2.4f, Math.min(2.4f, sx)), w.pz - d));
+                if (h > base + 0.2f) eye = Math.max(eye, head + (h + 0.45f - head) * 6f / d);
+            }
+            eye = Math.min(eye, base + 11f);
+        }
+        if (!camEyeInit) { camEye = eye; camEyeInit = true; }
+        camEye += (eye - camEye) * (eye > camEye ? 0.18f : 0.06f);       // sale in fretta (mai coperto), scende con calma
         float lift = Math.max(0, w.py - camY) * 0.35f;
         float bk = backK * backK * (3 - 2 * backK);
+        float eyeY = back ? camY + 3.3f : camEye;
         // davanti al robot, più in alto, guardando indietro: si vede il masso che arriva e il robot che corre verso lo schermo
         // nella fuga la camera sta lontana e alta davanti al robot: gli ostacoli verso cui corre si vedono con 2-3 secondi d'anticipo
-        Mat4.lookAt(view, camX * (1 - 0.6f * bk), camY + 3.3f + lift + 5.2f * bk, camZ - 6.0f + 21f * bk, camX * 0.9f * (1 - 0.6f * bk), camY + 1.0f + lift - 0.3f * bk, camZ + 5f - 2.5f * bk);
+        Mat4.lookAt(view, camX * (1 - 0.6f * bk), eyeY + lift + 5.2f * bk, camZ - 6.0f + 21f * bk, camX * 0.9f * (1 - 0.6f * bk), camY + 1.0f + lift - 0.3f * bk, camZ + 5f - 2.5f * bk);
         nearZ = back ? w.pz - 60f : w.pz - 4f;
         farZ = back ? w.pz + 34f : w.pz + 120f;                       // tutto quello che c'è tra il robot e la camera va disegnato
         Mat4.perspective(proj, 58f, aspect, 0.3f, 400f);

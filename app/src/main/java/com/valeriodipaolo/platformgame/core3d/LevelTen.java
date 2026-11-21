@@ -29,7 +29,7 @@ public final class LevelTen {
         // --- prato d'ingresso: poche gemme, e un fiore che lancia sul balcone di pietra
         gemLine3(w, 0, 0.7f, 4, 6);
         crate(w, 1, 9); crate(w, 3, 9);
-        padRow(w, 14, 1, 3);
+        padRow(w, 14, 0, 4);
         balcony(w, 20, 29);
         gem(w, 0, 4.7f, 23.5f); gem(w, -1, 4.7f, 25.5f); gem(w, 1, 4.7f, 27.5f);
         acorn(w, 0f, 34);
@@ -88,10 +88,10 @@ public final class LevelTen {
         for (int c = c0; c <= c1; c++) spring(w, c, z);
     }
 
-    /** Balcone di pietra alto 4 m sulle colonne 1..3, da z0 a z1, con due gradini di discesa in fondo. */
+    /** Balcone di pietra alto 4 m su tutta la larghezza, da z0 a z1, con due gradini di discesa in fondo. */
     private static void balcony(World3D w, int z0, int z1) {
-        for (int z = z0; z <= z1; z++) for (int x = 1; x <= 3; x++) set(w, x, z, 4);
-        for (int x = 1; x <= 3; x++) { set(w, x, z1 + 1, 2); set(w, x, z1 + 2, 1); }
+        for (int z = z0; z <= z1; z++) for (int x = 0; x <= 4; x++) set(w, x, z, 4);   // da bordo a bordo: non si gira attorno
+        for (int x = 0; x <= 4; x++) { set(w, x, z1 + 1, 2); set(w, x, z1 + 2, 1); }
     }
 
     /** Fila di rovi: due cespugli alle colonne ca e cb. */

@@ -150,6 +150,7 @@ public final class World3D {
         launchT = -1;
         sealed = true;
         sealEnd();
+        noSidePaths();
         gemsOffThorns();
         seasonSkins();
         gemTotal = gemsList.size();
@@ -979,6 +980,22 @@ public final class World3D {
      * una lepre bianca, il riccio un riccio di ghiaccio, lo scarabeo un pinguino; nell'incendio una brace che salta, un
      * riccio di lava, il corvo un pipistrello.
      */
+    /**
+     * Le strutture alte (3 blocchi o più) vanno da un bordo all'altro: se una colonna laterale resta più bassa della vicina
+     * alta, la si alza alla stessa quota, così non si può girare attorno alla struttura camminando ai lati.
+     */
+    private void noSidePaths() {
+        for (int z = 0; z < length; z++) {
+            int h = height[z * W + 1];
+            if (h == PIT || h < 3) continue;
+            boolean flat = true;
+            for (int x = 1; x < W - 1; x++) if (height[z * W + x] != h) flat = false;
+            int l = height[z * W], r = height[z * W + W - 1];
+            // solo il "balcone": tutto il centro alla stessa quota e entrambi i lati più bassi (le corsie a zig-zag restano)
+            if (flat && (l == PIT || l < h) && (r == PIT || r < h)) { height[z * W] = h; height[z * W + W - 1] = h; }
+        }
+    }
+
     private void seasonSkins() {
         for (Enemy3 e : enemies) {
             if (e.skin != 0) continue;

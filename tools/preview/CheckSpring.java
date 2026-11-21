@@ -201,7 +201,6 @@ public class CheckSpring {
     /** Colonna di mondo verso cui puntare a ogni quota z (caselle libere dei campi di rovi, isolotti dei fiumi). */
     static float xTarget(int levelNo, float z) {
         if (levelNo == 12) {
-            if ((z >= 10 && z < 18) || (z >= 74 && z < 97)) return -1.8f;                 // si aggirano scalinata e balcone, senza salire
             if (z >= 39 && z < 43) return 2f;
             if (z >= 43 && z < 47) return -2f;
             if (z >= 47 && z < 51) return 1f;
@@ -211,7 +210,6 @@ public class CheckSpring {
             if (z >= 177 && z < 181) return 2f;
             return 0f;
         }
-        if ((z >= 8 && z < 34) || (z >= 68 && z < 94)) return -1.8f;     // si aggira il balcone, senza salire
         if ((z >= 35 && z < 48) || (z >= 128 && z < 141)) return -1f;    // corsia libera dei campi di rovi
         return 0f;
     }

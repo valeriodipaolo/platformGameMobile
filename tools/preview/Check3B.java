@@ -53,9 +53,10 @@ public class Check3B {
                 int bh = b.cell(xi(b.px), zi(b.pz)); base = bh == World3D.PIT || !rel ? 0 : bh;
                 int best = cur; float bs = -1e9f;
                 for (int c = 0; c < World3D.W; c++) {
-                    float s = freeRun(b, c, b.pz) - 0.4f * Math.abs(c - cur) + (c == cur ? 0.6f : 0);
-                    // un fiore a molla davanti attira
-                    for (float[] q : b.springs) if (xi(q[0]) == c && q[1] - b.pz > 0 && q[1] - b.pz < 8) s += 0.3f;
+                    float fr = freeRun(b, c, b.pz);
+                    float s = fr - 0.4f * Math.abs(c - cur) + (c == cur ? 0.6f : 0);
+                    // un fiore a molla davanti attira (molto, se davanti c'è un muro alto da bordo a bordo)
+                    for (float[] q : b.springs) if (xi(q[0]) == c && q[1] - b.pz > 0 && q[1] - b.pz < 8) s += fr < 10 ? 2f : 0.3f;
                     // una cassa a molla davanti attira: è l'unico modo di passare un muro alto o un fiume largo
                     if (b.crateKind != null) for (int z = zi(b.pz) + 1; z <= zi(b.pz) + 6 && z < b.length; z++) if (b.crate[z * World3D.W + c] && b.crateKind[z * World3D.W + c] == World3D.C_BOUNCE) s += 6f;
                     if (s > bs) { bs = s; best = c; }
