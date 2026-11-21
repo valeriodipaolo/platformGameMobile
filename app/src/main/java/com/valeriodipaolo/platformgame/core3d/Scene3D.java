@@ -85,7 +85,7 @@ public final class Scene3D {
     /** Quanto il bordo dei burroni si arrotonda verso il basso (0 = spigolo vivo). */
     private float lip;
     private Mesh flame, ember, logMesh, vent;
-    private Mesh crate, gem, battery, batteryGlow, shadow, ring, gateStone, gateDoor, catapult;
+    private Mesh crate, gem, battery, batteryGlow, shadow, ring, gateStone, gateDoor, catapult, gateLight;
     private final HeroModel hero = new HeroModel();
     private int builtFor = -1;
     private float camX, camY = 0, camZ, camEye;
@@ -1480,26 +1480,55 @@ public final class Scene3D {
         b.ring(0, 0, 0, 0.86f, 1f, 28);
         ring = b.build(-1, true, true);
 
-        // portone del traguardo: pilastri e architrave di pietra, muro ai lati, due battenti di legno
+        // portone del traguardo: una muraglia di pietre irregolari altissima (la cima non si vede) e larga oltre il bosco,
+        // l'arco del portone, e dietro i battenti un corridoio buio che finisce in una luce bianca: oltre non si vede nulla
         b = new MeshBuilder();
-        for (int side = -1; side <= 1; side += 2) {
-            for (int k = 0; k < 4; k++) {
-                b.colorf(0.95f + 0.1f * hash(side, k, 3), 0.95f + 0.08f * hash(side, k, 5), 0.95f);
-                b.box(side * 1.7f, -0.15f + 0.45f + k * 0.9f, 0, 0.8f, 0.9f, 0.9f);
-            }
-            for (int i = 0; i < 5; i++) {
-                for (int k = 0; k < 4; k++) {
-                    b.colorf(0.88f + 0.12f * hash(side * (i + 2), k, 9), 0.9f + 0.08f * hash(side * (i + 2), k, 11), 0.9f);
-                    b.box(side * (2.6f + i), -0.9f + 0.45f + k * 0.9f, 0, 1f, 0.9f, 0.7f);
+        {
+            java.util.Random rg = new java.util.Random(77);
+            float y = -0.6f;
+            int row = 0;
+            while (y < 42f) {
+                float sh = y < 6f ? 0.8f + 0.25f * rg.nextFloat() : 1.3f + 0.6f * rg.nextFloat();   // in alto pietre più grandi (non servono dettagli)
+                float x = -16f - rg.nextFloat() * 1.2f;
+                while (x < 16f) {
+                    float sw = sh * (1.1f + 0.9f * rg.nextFloat());
+                    float cx = x + sw / 2;
+                    boolean door = Math.abs(cx) < 1.3f + sw / 2 - 0.05f && y < 3.7f;              // vano del portone
+                    if (!door) {
+                        float t = 0.82f + 0.24f * rg.nextFloat();
+                        b.colorf(t, t * (0.96f + 0.06f * rg.nextFloat()), t * (0.92f + 0.06f * rg.nextFloat()));
+                        int mk = b.mark();
+                        float d = 0.9f + 0.4f * rg.nextFloat();
+                        if (y < 7f && Math.abs(cx) < 8f) b.roundBox(cx, y + sh / 2, 0.15f * rg.nextFloat(), sw * 0.97f, sh * 0.96f, d, Math.min(sw, sh) * 0.18f, 63, 1);
+                        else b.box(cx, y + sh / 2, 0.2f * rg.nextFloat(), sw * 0.97f, sh * 0.96f, d);
+                        b.rough(mk, Math.min(sw, sh) * 0.09f, 1.3f, 300 + row);
+                    }
+                    x += sw;
                 }
+                y += sh;
+                row++;
             }
+            // malta scura dietro le pietre (niente buchi verso il cielo)
+            b.colorf(0.42f, 0.4f, 0.37f);
+            b.box(-9.3f, 21f, 0.55f, 13.4f, 44f, 0.4f);
+            b.box(9.3f, 21f, 0.55f, 13.4f, 44f, 0.4f);
+            b.box(0, 23f, 0.55f, 5.2f, 40f, 0.4f);
+            // arco: pilastri e architrave più chiari
+            b.colorf(1.02f, 1.0f, 0.96f);
+            for (int side = -1; side <= 1; side += 2) for (int k = 0; k < 4; k++) { int mk = b.mark(); b.roundBox(side * 1.6f, 0.45f + k * 0.9f, -0.1f, 0.62f, 0.88f, 1.2f, 0.1f, 63, 1); b.rough(mk, 0.04f, 2f, 400 + k + side * 9); }
+            for (int i = 0; i < 5; i++) { int mk = b.mark(); b.roundBox(-1.68f + i * 0.84f, 3.95f, -0.1f, 0.82f, 0.8f, 1.25f, 0.1f, 63, 1); b.rough(mk, 0.04f, 2f, 420 + i); }
+            // corridoio dietro i battenti: pareti e volta scure
+            b.colorf(0.16f, 0.15f, 0.14f);
+            b.box(-1.45f, 1.9f, 3.2f, 0.3f, 3.8f, 6.4f);
+            b.box(1.45f, 1.9f, 3.2f, 0.3f, 3.8f, 6.4f);
+            b.box(0, 3.75f, 3.2f, 2.9f, 0.3f, 6.4f);
+            b.box(0, -0.05f, 3.2f, 2.9f, 0.1f, 6.4f);
         }
-        for (int i = 0; i < 5; i++) {
-            b.colorf(0.95f + 0.1f * hash(i, 1, 13), 0.96f, 0.95f);
-            b.box(-1.68f + i * 0.84f, 3.45f + 0.4f, 0, 0.84f, 0.8f, 1.0f);
-        }
-        for (int i = -1; i <= 1; i++) b.box(i * 1.6f, 4.25f + 0.25f, 0, 0.6f, 0.5f, 0.8f);
         gateStone = b.build(Img.R3_ROCK, false, true);
+        gateStone.castShadow = false;
+        b = new MeshBuilder().color(255, 248, 230);                          // la luce in fondo al corridoio
+        b.quad(-1.3f, 0, 6.3f, 1.3f, 0, 6.3f, 1.3f, 3.6f, 6.3f, -1.3f, 3.6f, 6.3f, 0, 0, -1, 0, 0, 1, 1);
+        gateLight = b.build(-1, false, false);
         gateStone.spec = 0.07f; gateStone.shine = 14f;
         b = new MeshBuilder();                                                // battente: cardine sull'origine, si estende verso x positivo
         b.box(0.65f, 1.65f, 0, 1.3f, 3.6f, 0.12f);
@@ -1728,6 +1757,7 @@ public final class Scene3D {
         Mat4.setIdentity(m);
         Mat4.translate(m, 0, 0, gz);
         g.draw(gateStone, m, 1, 1, 1, 1, 0);
+        g.draw(gateLight, m, 1, 1, 1, 1, 1);
         Mat4.setIdentity(m);
         Mat4.translate(m, -1.3f, 0, gz);
         Mat4.rotateY(m, -open);
