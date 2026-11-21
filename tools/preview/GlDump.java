@@ -97,6 +97,11 @@ public class GlDump implements Gfx3D {
             int sk = Integer.getInteger("focus");
             for (Enemy3 e : w.enemies) if (e.skin == sk) { float h = e.y + 0.3f; CAM = new float[] {e.x + 1.1f, h + 0.5f, e.z - 2.0f, e.x, h, e.z}; break; }
         }
+        if (System.getProperty("ftype") != null) {                 // inquadra il k-esimo nemico di quel tipo (fd: distanza)
+            int ty = Integer.getInteger("ftype"), k = Integer.getInteger("fidx", 0);
+            float fd = Float.parseFloat(System.getProperty("fd", "1"));
+            for (Enemy3 e : w.enemies) if (e.type == ty && !e.dead && k-- == 0) { float h = e.y + 0.3f; { float sd = Float.parseFloat(System.getProperty("fside", "0")); CAM = new float[] {e.x + (1.1f + 1.4f * sd) * fd, h + 0.5f * fd, e.z - 2.0f * (1f - sd) * fd, e.x, h, e.z}; } break; }
+        }
         if (System.getProperty("foes") != null) for (Enemy3 e : w.enemies) System.out.println("nemico " + e.type + " " + e.x + " " + e.y + " " + e.z + " modo " + e.mode);
         DataOutputStream o = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(a[0]), 1 << 20));
         o.writeInt(0x474C4431);

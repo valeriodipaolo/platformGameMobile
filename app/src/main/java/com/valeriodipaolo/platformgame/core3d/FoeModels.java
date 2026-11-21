@@ -32,11 +32,10 @@ public final class FoeModels {
 
     public FoeModels() {
         buildHog();
-        buildCrow();
-        buildAcorn();
         buildBeetle();
         buildSky();
         more = new FoeModels2();
+        more.s4 = s4();
     }
 
     /** Palla di neve in volo. */
@@ -674,74 +673,62 @@ public final class FoeModels {
 
     // ------------------------------------------------------------------ scarabeo cervo
 
+    /** Cervo volante (Lucanus cervus): elitre castane lucide, testa e torace neri, grandi mandibole rossicce a palco. */
     private void buildBeetle() {
-        final float[] under = rgb(34, 22, 50), purple = rgb(112, 58, 170), teal = rgb(44, 160, 156), gold = rgb(220, 176, 74), jet = rgb(22, 16, 28);
+        final float[] chest = rgb(86, 40, 20), chest2 = rgb(120, 58, 28), under = rgb(30, 18, 12), jet = rgb(16, 12, 10), pitch = rgb(40, 28, 22);
         MeshBuilder b = new MeshBuilder();
-        // elitre: corazza striata con riflessi cangianti, orlo dorato e giunzione al centro
-        float[][] c = {{0, .30f, -.55f}, {0, .30f, -.51f}, {0, .33f, -.41f}, {0, .35f, -.26f}, {0, .36f, -.09f}, {0, .35f, .05f}, {0, .335f, .15f}, {0, .33f, .19f}};
-        float[] rx = {0, .18f, .33f, .41f, .435f, .415f, .365f, .30f};
-        float[] ry = {0, .13f, .22f, .28f, .30f, .285f, .25f, .20f};
+        // elitre: lunghe e un po' piatte, la sutura scura al centro, riflessi caldi sul dorso
+        float[][] c = {{0, .24f, -.52f}, {0, .25f, -.48f}, {0, .28f, -.38f}, {0, .3f, -.24f}, {0, .31f, -.08f}, {0, .305f, .05f}, {0, .295f, .13f}, {0, .29f, .16f}};
+        float[] rx = {0, .13f, .24f, .29f, .3f, .29f, .26f, .22f};
+        float[] ry = {0, .09f, .15f, .19f, .2f, .19f, .17f, .14f};
         Paint elytra = new Paint() {
             @Override void col(float t, float an, float x, float y, float z, float[] o) {
                 float s = (float) Math.sin(an);
-                mix(under, purple, sm((s + 0.05f) / 0.5f), o);
-                mix(o, teal, 0.5f * sm((s - 0.45f) / 0.45f) * (0.5f + 0.5f * (float) Math.sin(z * 14f + 1f)), o);
-                mix(o, gold, 0.85f * Math.max(0f, 1f - Math.abs(s - 0.04f) / 0.13f), o);
-                if (s > 0.985f) mix(o, jet, 0.85f, o);
+                mix(chest, chest2, 0.5f + 0.5f * (float) Math.sin(z * 9f + x * 4f), o);
+                mix(under, o, sm((s + 0.15f) / 0.5f), o);
+                if (Math.abs(x) < 0.012f && s > 0.5f) mix(o, jet, 0.8f, o);             // sutura
             }
         };
-        loft(b, c, rx, ry, 0, 1, 0, 24, 0.42f, elytra, 2f, 1.6f);
-        // scudo del torace, più liscio e scuro
-        final float[] navy = rgb(52, 40, 104), navyL = rgb(84, 96, 176);
-        Paint shield = new Paint() {
-            @Override void col(float t, float an, float x, float y, float z, float[] o) {
-                float s = (float) Math.sin(an);
-                mix(under, navy, sm((s + 0.05f) / 0.5f), o);
-                mix(o, navyL, 0.6f * sm((s - 0.5f) / 0.5f), o);
-                mix(o, gold, 0.7f * Math.max(0f, 1f - Math.abs(s - 0.04f) / 0.12f), o);
-            }
-        };
-        loft(b, new float[][] {{0, .325f, .10f}, {0, .33f, .14f}, {0, .345f, .23f}, {0, .34f, .34f}, {0, .315f, .43f}, {0, .29f, .485f}, {0, .28f, .50f}},
-                new float[] {0, .31f, .385f, .355f, .27f, .17f, 0}, new float[] {0, .2f, .265f, .25f, .2f, .14f, 0}, 0, 1, 0, 22, 0.45f, shield, 1f, 0.6f);
-        // testa
-        ballZ(b, 0, .255f, .57f, .175f, .12f, .135f, 14, 8, ud(under, rgb(70, 52, 110)), 1f, 0.5f);
-        beetleShell = done(b, Img.FOE_CHITIN, 0.45f, 60f);
+        loft(b, c, rx, ry, 0, 1, 0, 24, 0.45f, elytra, 2f, 1.6f);
+        // pronoto nero opaco, più largo davanti
+        loft(b, new float[][] {{0, .27f, .12f}, {0, .28f, .16f}, {0, .29f, .24f}, {0, .285f, .32f}, {0, .27f, .38f}, {0, .26f, .4f}},
+                new float[] {0, .24f, .27f, .27f, .22f, 0}, new float[] {0, .13f, .15f, .14f, .11f, 0}, 0, 1, 0, 22, 0.45f, ud(under, pitch), 1f, 0.6f);
+        // testa larga e squadrata del maschio
+        ballZ(b, 0, .24f, .47f, .2f, .085f, .1f, 14, 8, ud(under, pitch), 1f, 0.5f);
+        beetleShell = done(b, Img.FOE_CHITIN, 0.55f, 70f);
 
-        // antenne a clava
+        // antenne a gomito con la clava a pettine
         b = new MeshBuilder();
         for (int s = -1; s <= 1; s += 2) {
-            tube(b, new float[][] {{s * .07f, .33f, .64f}, {s * .16f, .43f, .74f}, {s * .245f, .41f, .83f}}, new float[] {.014f, .011f, .01f}, 5, flat(jet));
-            for (int k = 0; k < 3; k++) ball(b, s * (.25f + k * .022f), .408f - k * .006f, .84f + k * .02f, .012f, .03f, .02f, rgb(120, 80, 40));
+            tube(b, new float[][] {{s * .15f, .26f, .53f}, {s * .2f, .3f, .6f}, {s * .22f, .31f, .66f}}, new float[] {.01f, .008f, .007f}, 5, flat(jet));
+            tube(b, new float[][] {{s * .22f, .31f, .66f}, {s * .27f, .32f, .67f}, {s * .31f, .33f, .68f}}, new float[] {.007f, .006f, .006f}, 5, flat(jet));
+            for (int k = 0; k < 4; k++) ball(b, s * (.29f + k * .012f), .335f, .69f + k * .004f, .006f, .016f, .006f, rgb(60, 40, 28));
         }
         beetleGloss = done(b, -1, 0.6f, 30f);
 
-        // occhi composti gialli
+        // occhi piccoli e scuri ai lati della testa
         b = new MeshBuilder();
-        for (int s = -1; s <= 1; s += 2) {
-            ball(b, s * .145f, .3f, .615f, .05f, .05f, .045f, rgb(252, 216, 64));
-            ball(b, s * .16f, .312f, .642f, .016f, .016f, .012f, rgb(255, 255, 240));
-        }
-        beetleEyes = done(b, -1, 0.9f, 40f);
+        for (int s = -1; s <= 1; s += 2) ball(b, s * .2f, .26f, .5f, .03f, .03f, .035f, rgb(40, 30, 24));
+        beetleEyes = done(b, -1, 0.9f, 60f);
 
-        // zampa in tre tratti con ginocchio, spine sulla tibia e uncini (origine all'anca, lato destro)
+        // zampa nera e sottile: femore, tibia dentata, tarso a segmenti con due uncini (origine all'anca, lato destro)
         b = new MeshBuilder();
-        Paint legP = along(rgb(60, 40, 84), jet);
-        tube(b, new float[][] {{0, 0, 0}, {.09f, .06f, 0}, {.175f, .095f, 0}}, new float[] {.046f, .042f, .034f}, 7, legP);
-        ball(b, .18f, .095f, 0, .04f, .04f, .04f, rgb(70, 48, 100));
-        tube(b, new float[][] {{.18f, .095f, 0}, {.26f, .02f, 0}, {.335f, -.06f, 0}}, new float[] {.032f, .027f, .02f}, 7, legP);
-        for (int k = 0; k < 3; k++) quill(b, .22f + k * .04f, .06f - k * .04f, 0, 0.7f, 0.5f, k % 2 == 0 ? 0.6f : -0.6f, .05f, .01f, jet, jet, rgb(90, 70, 110));
-        tube(b, new float[][] {{.335f, -.06f, 0}, {.375f, -.13f, 0}, {.405f, -.195f, 0}}, new float[] {.016f, .012f, .008f}, 5, flat(jet));
-        quill(b, .405f, -.19f, 0, 0.8f, -0.4f, 0.5f, .04f, .007f, jet, jet, jet);
-        quill(b, .405f, -.19f, 0, 0.8f, -0.4f, -0.5f, .04f, .007f, jet, jet, jet);
-        beetleLeg = done(b, -1, 0.7f, 34f);
+        Paint legP = along(pitch, jet);
+        tube(b, new float[][] {{0, 0, 0}, {.07f, .025f, 0}, {.14f, .03f, 0}}, new float[] {.03f, .028f, .024f}, 7, legP);
+        tube(b, new float[][] {{.14f, .03f, 0}, {.19f, -.04f, 0}, {.23f, -.11f, 0}}, new float[] {.022f, .018f, .014f}, 7, legP);
+        for (int k = 0; k < 3; k++) quill(b, .16f + k * .025f, .0f - k * .035f, 0, 0.8f, 0.3f, k % 2 == 0 ? 0.6f : -0.6f, .025f, .005f, jet, jet, jet);
+        tube(b, new float[][] {{.23f, -.11f, 0}, {.27f, -.15f, 0}, {.31f, -.175f, 0}}, new float[] {.011f, .009f, .006f}, 5, flat(jet));
+        quill(b, .31f, -.175f, 0, 0.9f, -0.2f, 0.5f, .025f, .005f, jet, jet, jet);
+        quill(b, .31f, -.175f, 0, 0.9f, -0.2f, -0.5f, .025f, .005f, jet, jet, jet);
+        beetleLeg = done(b, -1, 0.6f, 40f);
 
-        // mandibola ricurva con dente interno (origine all'attacco, lato destro)
+        // mandibola a palco: lunga, arcuata verso l'interno, dente centrale e punta biforcuta (origine all'attacco, lato destro)
         b = new MeshBuilder();
-        Paint jawP = along(rgb(96, 52, 40), jet);
-        tube(b, new float[][] {{0, 0, 0}, {.085f, .02f, .12f}, {.105f, .035f, .26f}, {.05f, .04f, .36f}, {.0f, .04f, .40f}}, new float[] {.046f, .04f, .03f, .018f, .003f}, 8, jawP);
-        quill(b, .09f, .03f, .2f, -1, 0, 0.3f, .07f, .018f, rgb(70, 40, 34), jet, jet);
-        quill(b, .07f, .038f, .31f, -1, 0, 0.2f, .045f, .012f, jet, jet, jet);
-        beetleJaw = done(b, -1, 0.8f, 40f);
+        Paint jawP = along(rgb(110, 46, 22), rgb(150, 70, 34));
+        tube(b, new float[][] {{0, 0, 0}, {.07f, .04f, .12f}, {.09f, .07f, .25f}, {.06f, .08f, .36f}, {.015f, .07f, .42f}}, new float[] {.034f, .03f, .024f, .016f, .006f}, 8, jawP);
+        quill(b, .085f, .06f, .2f, -1, 0.3f, 0.2f, .07f, .015f, rgb(100, 44, 22), rgb(80, 36, 18), jet);
+        quill(b, .05f, .08f, .37f, -0.4f, 0.6f, 0.6f, .05f, .011f, rgb(130, 60, 30), rgb(90, 40, 20), jet);
+        beetleJaw = done(b, -1, 0.7f, 50f);
     }
 
     private void drawBeetle(Gfx3D g, float[] m, Enemy3 e) {
@@ -750,21 +737,21 @@ public final class FoeModels {
         Mat4.translate(a, 0, 0.01f * (float) Math.sin(walk * 2f), 0);
         g.draw(beetleShell, a, 1, 1, 1, 1, 0);
         g.draw(beetleGloss, a, 1, 1, 1, 1, 0);
-        g.draw(beetleEyes, a, 1, 1, 1, 1, 0.85f);
+        g.draw(beetleEyes, a, 1, 1, 1, 1, 0.02f);
         float pinch = 0.16f * (float) Math.sin(e.anim * 5f);
         for (int s = -1; s <= 1; s += 2) {
             System.arraycopy(a, 0, b2, 0, 16);
-            Mat4.translate(b2, s * 0.075f, 0.245f, 0.63f);
+            Mat4.translate(b2, s * 0.09f, 0.23f, 0.54f);
             if (s < 0) Mat4.scale(b2, -1, 1, 1);
             Mat4.rotateY(b2, pinch - 0.05f);
             g.draw(beetleJaw, b2, 1, 1, 1, 1, 0);
         }
-        float[] hipZ = {0.32f, 0.06f, -0.22f}, yaw0 = {-0.6f, 0f, 0.65f};
+        float[] hipZ = {0.3f, 0.1f, -0.12f}, yaw0 = {-0.6f, 0f, 0.65f};
         for (int i = 0; i < 6; i++) {
             int s = i % 2 == 0 ? 1 : -1, k = i / 2;
             float phs = walk + (i % 2 == 0 ? 0 : PI) + k * PI;
             System.arraycopy(m, 0, b2, 0, 16);
-            Mat4.translate(b2, s * 0.3f, 0.2f, hipZ[k]);
+            Mat4.translate(b2, s * 0.22f, 0.18f, hipZ[k]);
             if (s < 0) Mat4.scale(b2, -1, 1, 1);
             Mat4.rotateY(b2, yaw0[k] + 0.32f * (float) Math.sin(phs));
             Mat4.rotateZ(b2, 0.14f * Math.max(0f, (float) Math.cos(phs)));       // la zampa si alza mentre torna avanti
@@ -815,11 +802,7 @@ public final class FoeModels {
 
     private void drawStorm(Gfx3D g, float[] m, Enemy3 e) {
         int ph = Enemy3.stormPhase(e.hopT);
-        System.arraycopy(m, 0, a, 0, 16);
-        Mat4.translate(a, 0, -0.25f, 0);
-        if (ph > 0) Mat4.scale(a, 1f + 0.05f * (float) Math.sin(e.anim * 40f), 1f, 1f + 0.05f * (float) Math.sin(e.anim * 40f + 1f));
-        g.draw(stormBody, a, ph > 0 ? 1.3f : 1f, ph > 0 ? 1.25f : 1f, ph > 0 ? 0.9f : 1f, 1, ph > 0 ? 0.25f : 0f);
-        if (ph > 0) g.draw(stormEyes, a, 1f, 0.85f, 0.2f, 1, 0.9f); else g.draw(stormEyes, a, 1, 1, 1, 1, 0.3f);
+        s4().drawStorm(g, m, e, ph);
         if (ph > 0 && e.flatTime <= 0) {                                    // avviso tremolante, poi la scarica
             System.arraycopy(m, 0, b2, 0, 16);
             Mat4.translate(b2, 0, -0.3f, 0);
@@ -847,6 +830,8 @@ public final class FoeModels {
 
     private FoeModels3 season3;
     private FoeModels3 s3() { if (season3 == null) season3 = new FoeModels3(); return season3; }
+    private FoeModels4 season4;
+    FoeModels4 s4() { if (season4 == null) season4 = new FoeModels4(); return season4; }
 
     /** Aspetto stagionale: si disegna il modello di un altro nemico (o un riccio ritinto) con lo stato del nemico vero. */
     private void drawSeason(Gfx3D g, float[] m, Enemy3 e) {
@@ -855,7 +840,7 @@ public final class FoeModels {
         switch (skin) {
             case Enemy3.SKIN_FROG: e.type = Enemy3.FROG; e.mode = e.y > e.baseY + 0.05f ? 1 : 0; more.draw(g, m, e); break;
             case Enemy3.SKIN_HARE: more.drawHare(g, m, e); break;
-            case Enemy3.SKIN_EMBER: { float[] sm = new float[16]; System.arraycopy(m, 0, sm, 0, 16); Mat4.scale(sm, 0.6f, 0.6f, 0.6f); e.type = Enemy3.LAPILLO; e.mode = 1; more.draw(g, sm, e); break; }
+            case Enemy3.SKIN_EMBER: s4().drawEmber(g, m, e); break;
             case Enemy3.SKIN_PENGUIN: e.type = Enemy3.PENGUIN; e.mode = 0; more.draw(g, m, e); break;
             case Enemy3.SKIN_ICE: hr = 0.75f; hg = 0.9f; hb = 1.25f; he = 0.15f; drawHog(g, m, e); hr = hg = hb = 1; he = 0; break;
             case Enemy3.SKIN_HOPPER: s3().drawHopper(g, m, e); break;
@@ -887,10 +872,16 @@ public final class FoeModels {
         if (e.skin != 0) { if (island == null) island = new FoeIsland(); island.draw(g, m, e); return; }
         switch (e.type) {
             case Enemy3.HOG: drawHog(g, m, e); break;
-            case Enemy3.CROW: drawCrow(g, m, e); break;
+            case Enemy3.CROW: {                                // cornacchia nera, come gli altri uccelli realistici
+                System.arraycopy(m, 0, c2, 0, 16);
+                Mat4.translate(c2, 0, -0.18f, 0);
+                Mat4.scale(c2, 1.2f, 1.2f, 1.2f);
+                s3().drawBird(g, c2, e, 3);
+                break;
+            }
             case Enemy3.STORM: drawStorm(g, m, e); break;
-            case Enemy3.WHIRL: drawWhirl(g, m, e); break;
-            case Enemy3.ACORN: drawAcorn(g, m, e); break;
+            case Enemy3.WHIRL: s4().drawWhirl(g, m, e); break;
+            case Enemy3.ACORN: s4().drawSquirrel(g, m, e); break;    // l'autunno: uno scoiattolo che salta
             default:
                 if (e.type >= Enemy3.MOLE) more.draw(g, m, e); else drawBeetle(g, m, e);
                 break;

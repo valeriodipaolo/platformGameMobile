@@ -1366,12 +1366,7 @@ public final class Scene3D {
             b = new MeshBuilder();                                     // corolla vista dall'alto
             b.quad(-0.82f, 0, -0.82f, -0.82f, 0, 0.82f, 0.82f, 0, 0.82f, 0.82f, 0, -0.82f, 0, 1, 0, 0, 0, 1, 1);
             padTop = b.build(heaven ? Img.R3H_SPRING : Img.R3D_SPRING, true, true);
-            b = new MeshBuilder();                                     // cespuglio di rovi: due cartoncini incrociati
-            b.quad(-0.62f, 0, 0, 0.62f, 0, 0, 0.62f, 0.95f, 0, -0.62f, 0.95f, 0, 0, 0, 1, 0, 0, 1, 1);
-            b.quad(0.62f, 0, 0, -0.62f, 0, 0, -0.62f, 0.95f, 0, 0.62f, 0.95f, 0, 0, 0, -1, 0, 0, 1, 1);
-            b.quad(0, 0, -0.62f, 0, 0, 0.62f, 0, 0.95f, 0.62f, 0, 0.95f, -0.62f, 1, 0, 0, 0, 0, 1, 1);
-            b.quad(0, 0, 0.62f, 0, 0, -0.62f, 0, 0.95f, -0.62f, 0, 0.95f, 0.62f, -1, 0, 0, 0, 0, 1, 1);
-            thornMesh = b.build(Img.SP_THORN, true, true);
+            thornMesh = FoeModels4.bramble();                          // cespuglio di rovo in fiore, spine vere
             b = new MeshBuilder().color(255, 198, 24);                 // ape: addome giallo a strisce nere, testa scura (asse lungo y)
             b.ellipsoid(0, 0, 0, 0.1f, 0.17f, 0.1f, 10, 7);
             b.colorf(0.1f, 0.07f, 0.03f);
@@ -1980,7 +1975,7 @@ public final class Scene3D {
             Mat4.translate(m, t[0], groundAt(t[0], t[1]) - 0.02f, t[1]);
             Mat4.rotateY(m, t[0] * 5f + t[1] * 3f);
             Mat4.scale(m, 1.15f, 1.15f, 1.15f);
-            g.draw(thornMesh, m, 1, 1, 1, 1, 0.12f);
+            g.draw(thornMesh, m, 1, 1, 1, 1, 0f);
         }
     }
 

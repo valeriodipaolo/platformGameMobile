@@ -22,7 +22,7 @@ final class FoeModels3 {
     }
 
     /** Corpo morbido lungo z: profilo dato per punti, ricampionato fitto e smussato. */
-    private static void body(MeshBuilder b, float[][] c, float[] rx, float[] ry, int n, int segs, FoeModels.Paint p, float u, float v) {
+    static void body(MeshBuilder b, float[][] c, float[] rx, float[] ry, int n, int segs, FoeModels.Paint p, float u, float v) {
         float[][] c2 = new float[n][3];
         float[] rx2 = new float[n], ry2 = new float[n];
         for (int i = 0; i < n; i++) {
@@ -382,14 +382,15 @@ final class FoeModels3 {
     }
 
     // ================================================================== uccelli: rondine, gazza, falco
-    /** 0 rondine, 1 gazza, 2 falco. */
-    private final Mesh[] birdBody = new Mesh[3], birdWing = new Mesh[3], birdTail = new Mesh[3], birdEyes = new Mesh[3];
+    /** 0 rondine, 1 gazza, 2 falco, 3 cornacchia nera. */
+    private final Mesh[] birdBody = new Mesh[4], birdWing = new Mesh[4], birdTail = new Mesh[4], birdEyes = new Mesh[4];
 
     private void buildBird(final int kind) {
         final float[] back, back2, belly, throat, wingC, beak;
         final float len, span, wingW;
         if (kind == 0) { back = rgb(28, 38, 84); back2 = rgb(40, 52, 110); belly = rgb(236, 226, 206); throat = rgb(170, 44, 30); wingC = rgb(26, 30, 60); beak = rgb(20, 18, 18); len = 0.9f; span = 0.62f; wingW = 0.1f; }
         else if (kind == 1) { back = rgb(18, 20, 26); back2 = rgb(30, 40, 60); belly = rgb(240, 240, 238); throat = rgb(18, 20, 26); wingC = rgb(24, 30, 52); beak = rgb(20, 18, 18); len = 1f; span = 0.5f; wingW = 0.13f; }
+        else if (kind == 3) { back = rgb(14, 14, 18); back2 = rgb(30, 34, 58); belly = rgb(22, 22, 28); throat = rgb(14, 14, 18); wingC = rgb(16, 16, 22); beak = rgb(26, 24, 24); len = 1.05f; span = 0.62f; wingW = 0.16f; }
         else { back = rgb(110, 76, 46); back2 = rgb(136, 96, 58); belly = rgb(226, 206, 170); throat = rgb(230, 214, 186); wingC = rgb(100, 70, 44); beak = rgb(220, 180, 60); len = 1f; span = 0.66f; wingW = 0.17f; }
         MeshBuilder b = new MeshBuilder();
         FoeModels.Paint plum = new FoeModels.Paint() {
@@ -407,7 +408,7 @@ final class FoeModels3 {
         float L = len * 0.36f;
         body(b, new float[][] {{0, 0.0f, -L}, {0, 0.01f, -L * 0.5f}, {0, 0.02f, 0}, {0, 0.03f, L * 0.45f}, {0, 0.05f, L * 0.7f}, {0, 0.06f, L * 0.85f}, {0, 0.05f, L}},
                 new float[] {0.03f, 0.09f, 0.11f, 0.09f, 0.065f, 0.055f, 0.02f}, new float[] {0.03f, 0.08f, 0.1f, 0.085f, 0.065f, 0.055f, 0.02f}, 28, 18, plum, 3f, 3f);
-        FoeModels.tube(b, new float[][] {{0, 0.05f, L * 0.98f}, {0, 0.04f, L * 1.08f}, {0, kind == 2 ? 0.0f : 0.035f, L * (kind == 2 ? 1.14f : 1.16f)}}, new float[] {0.022f, 0.012f, 0.002f}, 8, FoeModels.along(beak, kind == 2 ? rgb(40, 36, 30) : beak));
+        FoeModels.tube(b, new float[][] {{0, 0.05f, L * 0.98f}, {0, 0.04f, L * 1.08f}, {0, kind == 2 ? 0.0f : kind == 3 ? 0.025f : 0.035f, L * (kind == 2 ? 1.14f : kind == 3 ? 1.24f : 1.16f)}}, new float[] {kind == 3 ? 0.032f : 0.022f, kind == 3 ? 0.018f : 0.012f, 0.002f}, 8, FoeModels.along(beak, kind == 2 ? rgb(40, 36, 30) : beak));
         birdBody[kind] = fin(b, Img.FOE_OWL, 0.08f, 12f);
         b = new MeshBuilder();
         for (int s = -1; s <= 1; s += 2) {
@@ -439,7 +440,7 @@ final class FoeModels3 {
         int nt = 7;
         for (int k = 0; k < nt; k++) {
             float u = k / (nt - 1f) * 2 - 1;
-            float tl = kind == 0 ? 0.22f + 0.32f * u * u * u * u : kind == 1 ? 0.5f - 0.18f * Math.abs(u) : 0.3f;
+            float tl = kind == 0 ? 0.22f + 0.32f * u * u * u * u : kind == 1 ? 0.5f - 0.18f * Math.abs(u) : kind == 3 ? 0.34f - 0.06f * u * u : 0.3f;
             float spread = kind == 2 ? 0.07f : 0.04f;
             FoeModels.loft(b, new float[][] {{u * 0.02f, 0, 0}, {u * spread, -0.005f, -tl * 0.5f}, {u * spread * 1.3f, -0.01f, -tl}}, new float[] {0.02f, kind == 0 ? 0.018f : 0.03f, 0.012f}, new float[] {0.004f, 0.004f, 0.003f}, 0, 1, 0, 5, 1f, wpaint, 1f, 2f);
         }

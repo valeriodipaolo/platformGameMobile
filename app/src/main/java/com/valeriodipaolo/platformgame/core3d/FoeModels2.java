@@ -668,6 +668,9 @@ final class FoeModels2 {
         g.draw(snowball, a, 1, 1, 1, 1, 0.1f);
     }
 
+    /** Modelli realistici che sostituiscono quelli vecchi (li passa FoeModels). */
+    FoeModels4 s4;
+
     void draw(Gfx3D g, float[] m, Enemy3 e) {
         float an = e.anim;
         switch (e.type) {
@@ -777,6 +780,7 @@ final class FoeModels2 {
                 return;
             }
             case Enemy3.LAPILLO: {
+                if (s4 != null) { s4.drawLavaBomb(g, m, e); return; }
                 if (e.mode == 0) return;
                 System.arraycopy(m, 0, a, 0, 16);
                 Mat4.translate(a, 0, 0.36f, 0);
@@ -787,6 +791,17 @@ final class FoeModels2 {
                 return;
             }
             case Enemy3.SALAMANDER: {
+                if (s4 != null) {
+                    s4.drawSalamander(g, m, e);
+                    if (e.mode == 2) {                                 // la fiammata dalla bocca
+                        System.arraycopy(m, 0, b2, 0, 16);
+                        Mat4.translate(b2, 0, 0.16f, 0.3f);
+                        float k = 1f + 0.1f * (float) Math.sin(an * 40f);
+                        Mat4.scale(b2, 0.8f * k, 0.8f * k, 1f);
+                        g.draw(flame, b2, 1, 1, 1, 1, 1f);
+                    }
+                    return;
+                }
                 System.arraycopy(m, 0, a, 0, 16);
                 float sw = e.mode == 1 ? 1f + 0.12f * (float) Math.sin(an * 30f) : 1f;
                 Mat4.scale(a, sw, sw, 1f);
@@ -834,12 +849,14 @@ final class FoeModels2 {
                 return;
             }
             case Enemy3.STAR: {
+                if (s4 != null) { s4.drawMeteor(g, m, e); return; }
                 System.arraycopy(m, 0, a, 0, 16);
                 Mat4.rotateZ(a, an * 4f);
                 g.draw(starBody, a, 1f, 0.95f, 0.8f, 1, 0.9f);
                 return;
             }
             default: {
+                if (s4 != null) { s4.drawOrb(g, m, e); return; }
                 System.arraycopy(m, 0, a, 0, 16);
                 Mat4.translate(a, 0, 0.3f, 0);
                 g.draw(sunBody, a, 1, 1, 1, 1, 0.8f);
