@@ -47,7 +47,15 @@ public class GlDump implements Gfx3D {
 
     private void floats(float[] a) throws IOException { for (int i = 0; i < 16; i++) out.writeFloat(a[i]); }
 
+    /** Camera ravvicinata facoltativa (-Dcam=ex,ey,ez,tx,ty,tz): per guardare da vicino un nemico o un oggetto. */
+    static float[] CAM;
+
     @Override public void begin(float[] view, float[] proj, float fr, float fg, float fb, float fs, float fe, float fm) {
+        if (CAM != null) {
+            view = new float[16]; proj = new float[16];
+            Mat4.lookAt(view, CAM[0], CAM[1], CAM[2], CAM[3], CAM[4], CAM[5]);
+            Mat4.perspective(proj, 28f, 1280f / 576f, 0.1f, 400f);
+        }
         try { out.writeByte(2); floats(view); floats(proj); out.writeFloat(fr); out.writeFloat(fg); out.writeFloat(fb); out.writeFloat(fs); out.writeFloat(fe); out.writeFloat(fm);
               float[] l = new float[16]; GlShaders.lightMatrix(view, l); floats(l); }
         catch (IOException e) { throw new RuntimeException(e); }
@@ -77,10 +85,13 @@ public class GlDump implements Gfx3D {
         int id = Integer.parseInt(a[1]);
         float z = Float.parseFloat(a[2]), x = a.length > 3 ? Float.parseFloat(a[3]) : 0f;
         HeroModel.character = a.length > 4 ? Integer.parseInt(a[4]) : 0;
+        String cam = System.getProperty("cam");
+        if (cam != null) { String[] p = cam.split(","); CAM = new float[6]; for (int i = 0; i < 6; i++) CAM[i] = Float.parseFloat(p[i]); }
         World3D w = new World3D(new MemorySave(), id);
         Scene3D sc = new Scene3D();
         w.px = x; w.pz = z; w.py = Math.max(0, w.topAt(x, z)) + 0.01f;
         for (int i = 0; i < 40; i++) { w.setInput(0, i > 25 ? 0.6f : 0f, false, false); w.hp = 99; w.update(1f / 60f); }
+        if (System.getProperty("foes") != null) for (Enemy3 e : w.enemies) System.out.println("nemico " + e.type + " " + e.x + " " + e.y + " " + e.z + " modo " + e.mode);
         DataOutputStream o = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(a[0]), 1 << 20));
         o.writeInt(0x474C4431);
         str(o, GlShaders.VERTEX);

@@ -99,32 +99,152 @@ final class FoeModels2 {
         }
     }
 
+    private Mesh chestStem, chestNuts, owlFace, owlTalon;
+
+    /**
+     * Riccio di castagno: guscio verde-bruno coperto di aculei sottili, spaccato in quattro in cima con le castagne lucide che
+     * spuntano; appeso a un rametto con due foglie seghettate (il rametto sale verso la chioma e resta lì quando il riccio cade).
+     */
+    private void buildBurr() {
+        MeshBuilder b = new MeshBuilder();
+        final float R = 0.3f;
+        FoeModels.Paint husk = new FoeModels.Paint() {
+            @Override void col(float t, float an, float x, float y, float z, float[] o) {
+                FoeModels.mix(rgb(78, 88, 34), rgb(110, 118, 44), 0.5f + 0.5f * (float) Math.sin(an * 5f + t * 9f), o);
+            }
+        };
+        FoeModels.ballZ(b, 0, 0.35f, 0, R * 0.92f, R * 0.88f, R * 0.92f, 16, 12, husk, 0, 0);
+        // aculei: punte sottili verso l'esterno, base verde e punta bruna; in cima (dove il guscio è aperto) niente aculei
+        java.util.Random r = new java.util.Random(7);
+        FoeModels.Paint spine = FoeModels.along(rgb(150, 158, 64), rgb(176, 150, 80));
+        for (int i = 0; i < 950; i++) {
+            float u = r.nextFloat() * 2 - 1, ph = r.nextFloat() * 6.283f, sq = (float) Math.sqrt(1 - u * u);
+            float nx = sq * (float) Math.cos(ph), ny = u, nz = sq * (float) Math.sin(ph);
+            if (ny > 0.66f) continue;
+            float L = 0.07f + 0.05f * r.nextFloat();
+            FoeModels.tube(b, nx * R * 0.92f, 0.35f + ny * R * 0.9f, nz * R * 0.92f, nx * (R + L), 0.35f + ny * (R * 0.95f + L), nz * (R + L), 0.01f, 0.0015f, 3, spine);
+        }
+        chestBody = fin(b, 0.15f, 12f);
+        b = new MeshBuilder();
+        b.colorf(0.40f, 0.20f, 0.09f);                                     // castagne lucide con la punta chiara
+        for (int k = 0; k < 3; k++) {
+            float an = k * 2.094f;
+            float cx = (float) Math.cos(an) * 0.07f, cz = (float) Math.sin(an) * 0.07f;
+            b.colorf(0.42f, 0.21f, 0.09f); b.ellipsoid(cx * 1.3f, 0.35f + R * 0.7f, cz * 1.3f, 0.1f, 0.11f, 0.1f, 10, 7);
+            b.colorf(0.86f, 0.78f, 0.58f); b.ellipsoid(cx * 1.3f, 0.35f + R * 0.7f + 0.1f, cz * 1.3f, 0.03f, 0.022f, 0.03f, 6, 4);
+        }
+        chestNuts = fin(b, 0.9f, 70f);
+        // rametto dal riccio fino alla chioma (3 m), con due foglie lunghe e seghettate
+        b = new MeshBuilder();
+        FoeModels.Paint wood = FoeModels.along(rgb(92, 70, 46), rgb(70, 54, 38));
+        FoeModels.tube(b, new float[][] {{0, 0.66f, 0}, {0.03f, 1.2f, -0.02f}, {-0.05f, 2.2f, 0.03f}, {0.02f, 3.4f, 0}}, new float[] {0.022f, 0.03f, 0.04f, 0.05f}, 6, wood);
+        for (int sd = -1; sd <= 1; sd += 2) {
+            float[][] c = {{0, 0.9f, 0}, {sd * 0.12f, 0.95f, 0.04f}, {sd * 0.26f, 0.93f, 0.07f}, {sd * 0.38f, 0.86f, 0.08f}, {sd * 0.46f, 0.78f, 0.08f}};
+            float[] rx = {0.005f, 0.05f, 0.06f, 0.04f, 0.004f}, ry = {0.003f, 0.006f, 0.006f, 0.005f, 0.002f};
+            FoeModels.loft(b, c, rx, ry, 0, 1, 0, 8, 1f, new FoeModels.Paint() {
+                @Override void col(float t, float an, float x, float y, float z, float[] o) {
+                    FoeModels.mix(rgb(170, 130, 40), rgb(130, 80, 30), t, o);   // foglia d'autunno
+                    float saw = 0.9f + 0.1f * (float) Math.sin(t * 60f);
+                    o[0] *= saw; o[1] *= saw; o[2] *= saw;
+                }
+            }, 0, 0);
+        }
+        chestStem = fin(b, 0.05f, 8f);
+        b = new MeshBuilder(); chestEyes = fin(b, 0f, 8f);                 // un riccio non ha occhi
+    }
+
+    /**
+     * Allocco: corpo a pera coperto di piume striate, disco facciale chiaro bordato di scuro, occhi neri profondi, becco
+     * adunco giallastro, ciuffi alle orecchie; ali a remiganti separate e barrate; zampe piumate con artigli neri.
+     */
+    private void buildOwl() {
+        MeshBuilder b = new MeshBuilder();
+        final float[] dark = rgb(84, 60, 40), mid = rgb(140, 104, 68), light = rgb(196, 168, 128);
+        FoeModels.Paint plumage = new FoeModels.Paint() {
+            @Override void col(float t, float an, float x, float y, float z, float[] o) {
+                boolean front = z > 0.04f;
+                // gocce scure allungate sul petto, barre sul dorso: piume che si vedono anche da lontano
+                float drop = (float) Math.sin(y * 70f) * (float) Math.sin(x * 55f + y * 9f);
+                float barB = (float) Math.sin(y * 48f + (float) Math.sin(x * 30f) * 1.5f);
+                if (front) FoeModels.mix(light, dark, FoeModels.sm((drop - 0.45f) * 4f) * 0.85f, o);
+                else FoeModels.mix(mid, dark, FoeModels.sm(barB * 2f + 0.3f), o);
+                float sc = 0.92f + 0.08f * (float) Math.sin(t * 90f + an * 9f);
+                o[0] *= sc; o[1] *= sc; o[2] *= sc;
+            }
+        };
+        float[][] c = {{0, -0.18f, -0.02f}, {0, -0.12f, 0}, {0, 0.0f, 0.01f}, {0, 0.14f, 0.02f}, {0, 0.28f, 0.02f}, {0, 0.38f, 0.01f}, {0, 0.48f, 0}, {0, 0.58f, -0.01f}, {0, 0.64f, -0.01f}};
+        float[] rx = {0.02f, 0.14f, 0.22f, 0.25f, 0.24f, 0.21f, 0.22f, 0.18f, 0.02f}, ry = {0.02f, 0.13f, 0.2f, 0.22f, 0.21f, 0.19f, 0.2f, 0.16f, 0.02f};
+        // tante sezioni: le piume sono dipinte sui vertici, servono fitti
+        int nn = 40;
+        float[][] c2 = new float[nn][3];
+        float[] rx2 = new float[nn], ry2 = new float[nn];
+        for (int i = 0; i < nn; i++) {
+            float f = i / (nn - 1f) * (c.length - 1);
+            int k = Math.min(c.length - 2, (int) f);
+            float u = f - k, us = u * u * (3 - 2 * u);
+            for (int q = 0; q < 3; q++) c2[i][q] = c[k][q] + (c[k + 1][q] - c[k][q]) * u;
+            rx2[i] = rx[k] + (rx[k + 1] - rx[k]) * us;
+            ry2[i] = ry[k] + (ry[k + 1] - ry[k]) * us;
+        }
+        FoeModels.loft(b, c2, rx2, ry2, 0, 0, 1, 40, 1f, plumage, 0, 0);
+        // coda corta
+        FoeModels.tube(b, 0, -0.06f, -0.12f, 0, -0.2f, -0.24f, 0.06f, 0.03f, 8, FoeModels.along(mid, dark));
+        // ciuffi
+        for (int sd = -1; sd <= 1; sd += 2) FoeModels.tube(b, sd * 0.12f, 0.58f, 0.02f, sd * 0.17f, 0.72f, -0.03f, 0.045f, 0.008f, 6, FoeModels.along(mid, dark));
+        owlBody = fin(b, 0.12f, 10f);
+        // disco facciale: due conche chiare con il bordo scuro, becco in mezzo
+        b = new MeshBuilder();
+        for (int sd = -1; sd <= 1; sd += 2) {
+            b.colorf(0.42f, 0.30f, 0.20f); b.ellipsoid(sd * 0.093f, 0.43f, 0.155f, 0.11f, 0.12f, 0.06f, 14, 8);
+            b.colorf(0.80f, 0.70f, 0.54f); b.ellipsoid(sd * 0.09f, 0.43f, 0.17f, 0.1f, 0.11f, 0.05f, 14, 8);
+        }
+        b.colorf(0.62f, 0.50f, 0.36f); b.ellipsoid(0, 0.44f, 0.19f, 0.035f, 0.1f, 0.03f, 8, 6);       // costola di piume tra gli occhi
+        FoeModels.tube(b, new float[][] {{0, 0.41f, 0.2f}, {0, 0.38f, 0.255f}, {0, 0.335f, 0.25f}}, new float[] {0.03f, 0.02f, 0.004f}, 8, FoeModels.along(rgb(200, 180, 110), rgb(70, 62, 50)));
+        owlFace = fin(b, 0.1f, 10f);
+        b = new MeshBuilder();
+        for (int sd = -1; sd <= 1; sd += 2) {
+            b.colorf(0.03f, 0.025f, 0.02f); b.ellipsoid(sd * 0.09f, 0.44f, 0.205f, 0.045f, 0.048f, 0.022f, 12, 8);
+            b.colorf(0.95f, 0.95f, 0.9f); b.ellipsoid(sd * 0.09f + 0.012f, 0.455f, 0.224f, 0.009f, 0.009f, 0.004f, 6, 4);   // riflesso
+        }
+        owlEyes = fin(b, 0.9f, 80f);
+        // ala: dalla spalla verso +x, copritrici in alto, remiganti separate e barrate sotto
+        b = new MeshBuilder();
+        FoeModels.Paint bar = new FoeModels.Paint() {
+            @Override void col(float t, float an, float x, float y, float z, float[] o) {
+                FoeModels.mix(mid, dark, FoeModels.sm(0.5f + 2f * (float) Math.sin(t * 22f)), o);
+            }
+        };
+        float[][] cw = {{0.0f, 0, 0}, {0.14f, 0.01f, -0.02f}, {0.3f, 0.0f, -0.05f}, {0.42f, -0.02f, -0.08f}};
+        FoeModels.loft(b, cw, new float[] {0.03f, 0.17f, 0.15f, 0.07f}, new float[] {0.02f, 0.035f, 0.025f, 0.012f}, 0, 1, 0, 10, 1f, FoeModels.along(mid, dark), 0, 0);
+        for (int k = 0; k < 7; k++) {                                       // remiganti a ventaglio
+            float an = -0.25f - k * 0.17f;
+            float x0 = 0.12f + k * 0.045f, z0 = -0.06f - k * 0.015f, L = 0.32f + 0.04f * (3 - Math.abs(k - 3));
+            float x1 = x0 + (float) Math.cos(an) * L, z1 = z0 + (float) Math.sin(an) * L;
+            float[][] cf = {{x0, -0.005f * k, z0}, {(x0 + x1) / 2, -0.01f - 0.005f * k, (z0 + z1) / 2}, {x1, -0.015f - 0.005f * k, z1}};
+            FoeModels.loft(b, cf, new float[] {0.05f, 0.055f, 0.018f}, new float[] {0.007f, 0.007f, 0.003f}, 0, 1, 0, 6, 1f, bar, 0, 0);
+        }
+        owlWing = fin(b, 0.08f, 8f);
+        // zampe piumate con quattro dita e artigli neri
+        b = new MeshBuilder();
+        for (int sd = -1; sd <= 1; sd += 2) {
+            FoeModels.tube(b, sd * 0.08f, -0.08f, 0.04f, sd * 0.08f, -0.22f, 0.06f, 0.05f, 0.035f, 8, FoeModels.along(light, mid));
+            for (int t = 0; t < 4; t++) {
+                float an = (t == 3 ? 3.14f : -0.5f + t * 0.5f) + 1.5708f;
+                float tx = sd * 0.08f + (float) Math.cos(an) * 0.07f, tz = 0.06f + (float) Math.sin(an) * 0.07f;
+                FoeModels.tube(b, sd * 0.08f, -0.23f, 0.06f, tx, -0.25f, tz, 0.014f, 0.01f, 5, FoeModels.along(rgb(170, 150, 90), rgb(150, 130, 80)));
+                FoeModels.tube(b, tx, -0.25f, tz, tx + (float) Math.cos(an) * 0.03f, -0.28f, tz + (float) Math.sin(an) * 0.03f, 0.009f, 0.002f, 4, FoeModels.along(rgb(30, 26, 22), rgb(10, 8, 8)));
+            }
+        }
+        owlTalon = fin(b, 0.3f, 30f);
+    }
+
     FoeModels2() {
         MeshBuilder b = new MeshBuilder();
 
         buildSnail();
 
-        // castagna: sfera lucida con la macchia chiara e due occhi truci
-        b = new MeshBuilder();
-        b.colorf(0.46f, 0.22f, 0.10f); b.ellipsoid(0, 0.35f, 0, 0.34f, 0.36f, 0.34f, 14, 10);
-        b.colorf(0.62f, 0.36f, 0.18f); b.ellipsoid(0, 0.62f, 0, 0.17f, 0.1f, 0.17f, 10, 6);
-        b.colorf(0.9f, 0.82f, 0.62f); b.ellipsoid(0, 0.1f, 0, 0.17f, 0.07f, 0.17f, 10, 6);
-        chestBody = fin(b, 0.8f, 60f);
-        b = new MeshBuilder(); eyes(b, 0.4f, 0.27f, 0.12f, 0.06f, 1f); chestEyes = fin(b, 0.6f, 30f);
-
-        // gufo: corpo a goccia, grandi occhi gialli, becco arancio; ala come ellissoide piatto
-        b = new MeshBuilder();
-        b.colorf(0.50f, 0.38f, 0.28f); b.ellipsoid(0, 0.1f, 0, 0.30f, 0.38f, 0.28f, 14, 9);
-        b.colorf(0.86f, 0.78f, 0.62f); b.ellipsoid(0, 0.02f, 0.1f, 0.2f, 0.28f, 0.2f, 12, 8);
-        b.colorf(0.42f, 0.30f, 0.22f); b.ellipsoid(-0.17f, 0.46f, 0, 0.07f, 0.12f, 0.07f, 8, 5); b.ellipsoid(0.17f, 0.46f, 0, 0.07f, 0.12f, 0.07f, 8, 5);
-        b.colorf(0.98f, 0.62f, 0.12f); b.ellipsoid(0, 0.18f, 0.28f, 0.05f, 0.07f, 0.09f, 8, 5);
-        owlBody = fin(b, 0.3f, 18f);
-        b = new MeshBuilder();
-        b.colorf(0.95f, 0.85f, 0.25f); b.ellipsoid(-0.13f, 0.28f, 0.22f, 0.11f, 0.11f, 0.05f, 10, 6); b.ellipsoid(0.13f, 0.28f, 0.22f, 0.11f, 0.11f, 0.05f, 10, 6);
-        b.colorf(0.04f, 0.04f, 0.06f); b.ellipsoid(-0.13f, 0.28f, 0.265f, 0.05f, 0.06f, 0.02f, 8, 5); b.ellipsoid(0.13f, 0.28f, 0.265f, 0.05f, 0.06f, 0.02f, 8, 5);
-        owlEyes = fin(b, 0.7f, 40f);
-        b = new MeshBuilder(); b.colorf(0.40f, 0.30f, 0.22f); b.ellipsoid(0.26f, 0, 0, 0.30f, 0.05f, 0.2f, 10, 6);
-        owlWing = fin(b, 0.2f, 12f);
+        buildBurr();
+        buildOwl();
 
         // pinguino
         b = new MeshBuilder();
@@ -245,23 +365,36 @@ final class FoeModels2 {
             case Enemy3.CHESTNUT: {
                 System.arraycopy(m, 0, a, 0, 16);
                 Mat4.translate(a, 0, -0.35f, 0);
-                if (e.mode == 1) Mat4.translate(a, 0.04f * (float) Math.sin(an * 60f), 0, 0);
+                if (e.mode < 2) {                                      // il rametto resta appeso dove stava il riccio
+                    System.arraycopy(a, 0, b2, 0, 16);
+                    if (e.mode == 1) Mat4.rotateZ(b2, 0.05f * (float) Math.sin(an * 40f));
+                    g.draw(chestStem, b2, 1, 1, 1, 1, 0);
+                }
+                if (e.mode == 1) { Mat4.translate(a, 0, 0.66f, 0); Mat4.rotateZ(a, 0.09f * (float) Math.sin(an * 45f)); Mat4.translate(a, 0, -0.66f, 0); }
+                if (e.mode == 2) Mat4.rotateX(a, an * 6f);
                 if (e.mode == 3) Mat4.rotateX(a, an * 9f * e.dir);
                 g.draw(chestBody, a, 1, 1, 1, 1, 0);
-                if (e.mode != 3) g.draw(chestEyes, a, 1, 1, 1, 1, 0.3f);
+                g.draw(chestNuts, a, 1, 1, 1, 1, 0);
                 return;
             }
             case Enemy3.OWL: {
                 System.arraycopy(m, 0, a, 0, 16);
                 Mat4.translate(a, 0, -0.1f, 0);
-                if (e.mode == 1) Mat4.rotateX(a, 0.6f);
+                boolean dive = e.mode == 1 || e.mode == 2;
+                if (dive) Mat4.rotateX(a, 0.75f);                      // in picchiata: testa avanti, artigli protesi
                 g.draw(owlBody, a, 1, 1, 1, 1, 0);
-                g.draw(owlEyes, a, 1, 1, 1, 1, 0.5f);
-                float flap = 0.7f * (float) Math.sin(an * (e.mode == 0 ? 7f : 14f));
+                g.draw(owlFace, a, 1, 1, 1, 1, 0);
+                g.draw(owlEyes, a, 1, 1, 1, 1, 0.05f);
+                System.arraycopy(a, 0, b2, 0, 16);
+                if (dive) { Mat4.translate(b2, 0, -0.05f, 0.12f); Mat4.rotateX(b2, -0.9f); }
+                g.draw(owlTalon, b2, 1, 1, 1, 1, 0);
+                // volo lento a colpi ampi; in picchiata ali raccolte all'indietro, poi aperte a frenare
+                float flap = dive ? (e.mode == 2 ? 0.9f : -0.2f) : 0.85f * (float) Math.sin(an * 5.5f) - 0.1f;
                 for (int s = -1; s <= 1; s += 2) {
                     System.arraycopy(a, 0, b2, 0, 16);
-                    Mat4.translate(b2, s * 0.22f, 0.15f, 0);
+                    Mat4.translate(b2, s * 0.2f, 0.36f, -0.02f);
                     if (s < 0) Mat4.scale(b2, -1, 1, 1);
+                    if (dive && e.mode == 1) Mat4.rotateY(b2, 0.9f);
                     Mat4.rotateZ(b2, flap);
                     g.draw(owlWing, b2, 1, 1, 1, 1, 0);
                 }
