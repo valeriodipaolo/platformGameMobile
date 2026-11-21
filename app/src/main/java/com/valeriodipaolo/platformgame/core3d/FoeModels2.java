@@ -481,21 +481,31 @@ final class FoeModels2 {
             case Enemy3.OWL: {
                 System.arraycopy(m, 0, a, 0, 16);
                 Mat4.translate(a, 0, -0.1f, 0);
-                boolean dive = e.mode == 1 || e.mode == 2;
-                if (dive) Mat4.rotateX(a, 0.75f);                      // in picchiata: testa avanti, artigli protesi
                 g.draw(owlBody, a, 1, 1, 1, 1, 0);
                 g.draw(owlFace, a, 1, 1, 1, 1, 0);
                 g.draw(owlEyes, a, 1, 1, 1, 1, 0.05f);
+                // ali: in attesa battito ampio e lento; in picchiata ali semichiuse a V, quasi ferme; in fondo alla picchiata
+                // si aprono avanti a frenare; in risalita colpi ampi e rapidi; al ritorno battito regolare
+                float t = e.t, flap, sweep, lift = 0f;
+                if (e.mode == 1) {
+                    float u = Math.min(1f, t / 0.7f);
+                    flap = 0.55f + 0.05f * (float) Math.sin(an * 20f) - 0.9f * Math.max(0f, (u - 0.75f) / 0.25f);
+                    sweep = 0.75f * (1f - Math.max(0f, (u - 0.75f) / 0.25f));
+                } else if (e.mode == 2) {
+                    flap = 0.9f * (float) Math.sin(t * 16f) + 0.1f; sweep = -0.15f; lift = 0.1f;
+                } else if (e.mode == 3) {
+                    flap = 0.7f * (float) Math.sin(an * 9f) + 0.1f; sweep = 0.1f;
+                } else {
+                    flap = 0.8f * (float) Math.sin(an * 5.5f) - 0.05f; sweep = 0f;
+                }
                 System.arraycopy(a, 0, b2, 0, 16);
-                if (dive) { Mat4.translate(b2, 0, -0.05f, 0.12f); Mat4.rotateX(b2, -0.9f); }
+                if (e.mode == 1 && t > 0.5f) { Mat4.translate(b2, 0, -0.04f, 0.1f); Mat4.rotateX(b2, -0.8f); }   // artigli avanti all'impatto
                 g.draw(owlTalon, b2, 1, 1, 1, 1, 0);
-                // volo lento a colpi ampi; in picchiata ali raccolte all'indietro, poi aperte a frenare
-                float flap = dive ? (e.mode == 2 ? 0.9f : -0.2f) : 0.85f * (float) Math.sin(an * 5.5f) - 0.1f;
                 for (int s = -1; s <= 1; s += 2) {
                     System.arraycopy(a, 0, b2, 0, 16);
-                    Mat4.translate(b2, s * 0.2f, 0.36f, -0.02f);
+                    Mat4.translate(b2, s * 0.2f, 0.36f + lift, -0.02f);
                     if (s < 0) Mat4.scale(b2, -1, 1, 1);
-                    if (dive && e.mode == 1) Mat4.rotateY(b2, 0.9f);
+                    Mat4.rotateY(b2, sweep);
                     Mat4.rotateZ(b2, flap);
                     g.draw(owlWing, b2, 1, 1, 1, 1, 0);
                 }

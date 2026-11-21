@@ -26,6 +26,8 @@ public final class Enemy3 {
     public int mode;
     /** Pupazzo di neve: verso dove guarda e tira (0 verso lo schermo, 1 a destra, -1 a sinistra). */
     public int face;
+    /** Gufo: orientamento morbido (imbardata, beccheggio, rollio) e punti della traiettoria in corso. */
+    public float yaw, pitch, bank, sx, sy, sz, ex, ey, ez;
     /** Lumaca appena uscita dal guscio: per un attimo non subisce né fa danno. */
     public float grace;
     public float x0, y0, z0, t;

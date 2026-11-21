@@ -702,6 +702,25 @@ public final class World3D {
         return Math.abs(px - cx) < (fx != 0 ? 1.15f : 0.6f) && Math.abs(pz - cz) < (fz != 0 ? 1.15f : 0.6f) && py < e.y + 1.0f && py + PLAYER_H > e.y;
     }
 
+    /** Nemico innocuo al contatto: si può schiacciare o far volare con la giravolta, ma toccarlo non ferisce. */
+    private void touchSoft(Enemy3 e) {
+        float ax = Math.abs(e.x - px), az = Math.abs(e.z - pz);
+        boolean vertical = py < e.y + 1.5f && py + PLAYER_H > e.y;
+        if (spinActive && ax < 0.75f + SPIN_REACH && az < 0.75f + SPIN_REACH && vertical) {
+            e.flung = true;
+            float l = Math.max(0.01f, (float) Math.sqrt((e.x - px) * (e.x - px) + (e.z - pz) * (e.z - pz)));
+            e.vx = (e.x - px) / l * 6f;
+            e.vz = (e.z - pz) / l * 6f + 3f;
+            e.vy = 8f;
+            score += 100;
+        } else if (ax < 0.7f && az < 0.7f && vy < 0 && py > e.y + 1.2f && py < e.y + 1.9f) {
+            e.flatTime = 0.45f;
+            vy = jump ? 9f : 6.5f;
+            airJumps = 1;
+            score += 100;
+        }
+    }
+
     private void touch(Enemy3 e, boolean stompable) {
         float ax = Math.abs(e.x - px), az = Math.abs(e.z - pz);
         boolean vertical = py < e.y + 0.6f && py + PLAYER_H > e.y;
@@ -762,36 +781,59 @@ public final class World3D {
                     if (h < e.floor - 0.05f || h > e.floor + 0.05f) e.dir = -e.dir; else e.z = nz;
                     if (e.t > 3.2f) { e.dead = true; return true; }
                 }
-                if (state == PLAYING && (!burr || e.mode == 2)) touch(e, false);
+                if (state == PLAYING && !burr) touch(e, false);          // il riccio fa male solo scoppiando
                 return true;
             }
             case Enemy3.OWL: {
-                // sta sospeso davanti al robot, rivolto verso di lui, e ondeggia da un lato all'altro; quando il robot è a tiro
-                // davanti a sé piomba su di lui a tutta velocità, lo supera, risale e torna al suo posto (solo allora si vede
-                // di spalle, e intanto non attacca). Se il robot gli è già passato oltre, non lo vede.
-                if (Float.isNaN(e.floor)) { e.floor = 0; e.x0 = e.x; e.z0 = (e.lo + e.hi) * 0.5f; e.z = e.z0; e.y0 = e.baseY; }
+                // sospeso davanti al robot, rivolto verso di lui, ondeggia di lato. Se il robot è a tiro piomba su di lui con
+                // una curva (prima scende ripido, poi si raddrizza radente), lo sorvola, risale in una larga virata di lato e
+                // torna al posto. Di spalle solo durante la virata, e allora non vede.
+                if (Float.isNaN(e.floor)) { e.floor = 0; e.x0 = e.x; e.z0 = (e.lo + e.hi) * 0.5f; e.z = e.z0; e.yaw = (float) Math.PI; }
                 float homeX = Math.max(-1.8f, Math.min(1.8f, e.x0 + 1.4f * (float) Math.sin(e.anim * 0.9f)));
-                if (e.mode == 0) {                             // in attesa, sospeso
+                float ox = e.x, oy = e.y, oz = e.z;
+                if (e.mode == 0) {
                     e.x += (homeX - e.x) * Math.min(1f, 2f * dt);
                     e.z += (e.z0 - e.z) * Math.min(1f, 2f * dt);
-                    e.y = e.baseY + 0.25f * (float) Math.sin(e.anim * 2.2f);
+                    e.y += (e.baseY + 0.25f * (float) Math.sin(e.anim * 2.2f) - e.y) * Math.min(1f, 4f * dt);
                     boolean sees = dzp < -1f && dzp > -9f && Math.abs(dxp) < 3.2f;
-                    if (sees && e.t > 0.9f) { e.mode = 1; e.t = 0; e.vx = px; e.vz = pz - 0.6f; }   // punta dove sarà il robot
-                } else if (e.mode == 1) {                      // picchiata: dritto sul bersaglio, fino all'altezza del petto
-                    float ground = Math.max(0, topAt(e.x, e.z)), ty = ground + 0.6f;
-                    float dx = e.vx - e.x, dy = ty - e.y, dz = e.vz - e.z, l = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
-                    float sp = 10f * dt;
-                    if (l <= sp) { e.x = e.vx; e.y = ty; e.z = e.vz; e.mode = 2; e.t = 0; }
-                    else { e.x += dx / l * sp; e.y += dy / l * sp; e.z += dz / l * sp; }
-                } else if (e.mode == 2) {                      // radente oltre il bersaglio, poi risale
-                    e.z -= 6f * dt;
-                    e.y += 1.5f * dt;
-                    if (e.t > 0.35f) { e.mode = 3; e.t = 0; }
-                } else {                                       // torna al suo posto (di spalle: non vede nessuno)
-                    float dx = homeX - e.x, dy = e.baseY - e.y, dz = e.z0 - e.z, l = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
-                    float sp = 6.5f * dt;
-                    if (l <= sp) { e.mode = 0; e.t = 0; } else { e.x += dx / l * sp; e.y += dy / l * sp; e.z += dz / l * sp; }
+                    if (sees && e.t > 0.9f) {
+                        e.mode = 1; e.t = 0;
+                        e.sx = e.x; e.sy = e.y; e.sz = e.z;
+                        e.ex = px; e.ey = Math.max(0, topAt(px, pz)) + 0.6f; e.ez = pz - 0.8f;      // punta poco davanti al robot
+                    }
+                } else if (e.mode == 1) {                      // picchiata: 0,7 s
+                    float u = Math.min(1f, e.t / 0.7f), uh = u * (2 - u), uv = 1 - (1 - u) * (1 - u) * (1 - u);
+                    e.x = e.sx + (e.ex - e.sx) * uh; e.z = e.sz + (e.ez - e.sz) * uh; e.y = e.sy + (e.ey - e.sy) * uv;
+                    if (u >= 1f) {
+                        e.mode = 2; e.t = 0;
+                        e.sx = e.x; e.sy = e.y; e.sz = e.z;
+                        float side = e.x > 0 ? -1 : 1;
+                        e.ex = e.x + side * 2.6f; e.ey = e.baseY + 1.2f; e.ez = e.z - 3.2f;     // vertice della virata: di lato e alto
+                    }
+                } else if (e.mode == 2) {                      // sorvola e risale virando: 0,8 s
+                    float u = Math.min(1f, e.t / 0.8f), us = u * u * (3 - 2 * u);
+                    e.x = e.sx + (e.ex - e.sx) * us; e.z = e.sz + (e.ez - e.sz) * (float) Math.sin(u * 1.5708f); e.y = e.sy + (e.ey - e.sy) * us;
+                    if (u >= 1f) { e.mode = 3; e.t = 0; e.sx = e.x; e.sy = e.y; e.sz = e.z; }
+                } else {                                       // ritorno al posto con un arco: 1,2 s
+                    float u = Math.min(1f, e.t / 1.2f), us = u * u * (3 - 2 * u);
+                    float cxp = (e.sx + homeX) * 0.5f + (e.sx > homeX ? 1.2f : -1.2f);
+                    float a1 = 1 - us;
+                    e.x = a1 * a1 * e.sx + 2 * a1 * us * cxp + us * us * homeX;
+                    e.z = e.sz + (e.z0 - e.sz) * us;
+                    e.y = e.sy + (e.baseY - e.sy) * us;
+                    if (u >= 1f) { e.mode = 0; e.t = 0; }
                 }
+                // orientamento morbido nel verso del moto (in attesa: verso il robot); inclinazione e rollio dalla virata
+                float vxs = (e.x - ox) / Math.max(dt, 1e-4f), vys = (e.y - oy) / Math.max(dt, 1e-4f), vzs = (e.z - oz) / Math.max(dt, 1e-4f);
+                float hs = (float) Math.sqrt(vxs * vxs + vzs * vzs);
+                float wantYaw = e.mode == 0 || hs < 0.8f ? (float) Math.PI : (float) Math.atan2(vxs, vzs);
+                float dyaw = wantYaw - e.yaw;
+                while (dyaw > Math.PI) dyaw -= 2 * Math.PI;
+                while (dyaw < -Math.PI) dyaw += 2 * Math.PI;
+                float k = Math.min(1f, 6f * dt);
+                e.yaw += dyaw * k;
+                e.bank += (Math.max(-0.7f, Math.min(0.7f, -dyaw * 1.2f)) - e.bank) * k;
+                e.pitch += ((hs > 0.8f ? Math.max(-0.9f, Math.min(0.6f, (float) Math.atan2(-vys, hs))) : 0f) - e.pitch) * k;
                 if (state == PLAYING) touch(e, true);
                 return true;
             }
@@ -851,7 +893,7 @@ public final class World3D {
                     shots.add(new float[] {e.x + hx, e.y + 1.35f, e.z + hz, vx, vyt, vz, 0, enemies.indexOf(e)});
                 }
                 if (state == PLAYING) {
-                    touch(e, true);
+                    touchSoft(e);                              // toccarlo non fa male: fanno male solo le palle di neve
                     if (e.flatTime > 0 || e.flung) {           // colpito: il tiro in preparazione non parte, le palle in volo si sbriciolano
                         e.mode = 0;
                         int id = enemies.indexOf(e);
@@ -1090,7 +1132,12 @@ public final class World3D {
         for (float[] c : crushers) {                         // pestello: schiaccia chi è sotto quando cade
             if (Math.abs(c[1] + 0.5f - pz) > 1.5f) continue;
             float bx = c[0] - HALF + 0.5f, bz = c[1] + 0.5f, bot = Math.max(0, height[(int) c[1] * W + (int) c[0]]) + crusherBottom(c, time);
-            if (Math.abs(px - bx) < 0.5f + R - 0.05f && Math.abs(pz - bz) < 0.5f + R - 0.05f && bot < py + PLAYER_H - 0.1f) hurt();
+            float ox = 0.5f + R - 0.05f - Math.abs(px - bx), oz = 0.5f + R - 0.05f - Math.abs(pz - bz);
+            if (ox <= 0 || oz <= 0 || bot >= py + PLAYER_H - 0.1f) continue;
+            boolean falling = crusherBottom(c, time) < crusherBottom(c, time - 0.03f) - 1e-4f;
+            if (falling && bot > py + 0.3f) hurt();            // fa male solo piombando dall'alto sulla testa
+            else if (ox < oz) px += Math.signum(px - bx == 0 ? 1 : px - bx) * ox;   // fermo o in risalita è un blocco di pietra: ci si sbatte contro
+            else pz += Math.signum(pz - bz == 0 ? -1 : pz - bz) * oz;
         }
     }
 
