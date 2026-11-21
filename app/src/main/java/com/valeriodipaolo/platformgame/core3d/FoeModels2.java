@@ -238,6 +238,129 @@ final class FoeModels2 {
         owlTalon = fin(b, 0.3f, 30f);
     }
 
+    private Mesh pengFeet, snowArmL, snowArmR, snowHeld;
+
+    /** Pinguino di Adelia: dorso e testa nero-bluastri, petto bianco che sale fino al becco, anello bianco attorno all'occhio, piedi rosa. */
+    private void buildPenguin() {
+        MeshBuilder b = new MeshBuilder();
+        final float[] back = rgb(22, 26, 36), white = rgb(236, 238, 242);
+        FoeModels.Paint coat = new FoeModels.Paint() {
+            @Override void col(float t, float an, float x, float y, float z, float[] o) {
+                // bianco davanti (verso +z), con il confine che sale sul collo e lascia la testa nera
+                float front = z / (0.05f + (float) Math.sqrt(x * x + z * z));
+                float lim = y > 0.7f ? 2f : 0.45f - 0.15f * (float) Math.sin(t * 3.14f);
+                FoeModels.mix(back, white, FoeModels.sm((front - lim) * 6f), o);
+                float fe = 0.95f + 0.05f * (float) Math.sin(y * 120f + x * 40f);   // piumino fitto
+                o[0] *= fe; o[1] *= fe; o[2] *= fe;
+            }
+        };
+        float[][] c = {{0, 0.04f, -0.02f}, {0, 0.12f, 0}, {0, 0.25f, 0.01f}, {0, 0.4f, 0.01f}, {0, 0.55f, 0}, {0, 0.66f, 0}, {0, 0.74f, 0.01f}, {0, 0.84f, 0.02f}, {0, 0.92f, 0.03f}, {0, 0.96f, 0.03f}};
+        float[] rx = {0.04f, 0.2f, 0.25f, 0.25f, 0.21f, 0.15f, 0.13f, 0.13f, 0.1f, 0.02f}, ry = {0.04f, 0.19f, 0.24f, 0.24f, 0.2f, 0.15f, 0.14f, 0.14f, 0.11f, 0.02f};
+        int nn = 34;
+        float[][] c2 = new float[nn][3];
+        float[] rx2 = new float[nn], ry2 = new float[nn];
+        for (int i = 0; i < nn; i++) {
+            float f = i / (nn - 1f) * (c.length - 1);
+            int k = Math.min(c.length - 2, (int) f);
+            float u = f - k, us = u * u * (3 - 2 * u);
+            for (int q = 0; q < 3; q++) c2[i][q] = c[k][q] + (c[k + 1][q] - c[k][q]) * u;
+            rx2[i] = rx[k] + (rx[k + 1] - rx[k]) * us; ry2[i] = ry[k] + (ry[k + 1] - ry[k]) * us;
+        }
+        FoeModels.loft(b, c2, rx2, ry2, 0, 0, 1, 32, 1f, coat, 0, 0);
+        FoeModels.tube(b, 0, 0.1f, -0.16f, 0, 0.03f, -0.3f, 0.07f, 0.02f, 6, FoeModels.along(back, back));   // coda rigida
+        pengBody = fin(b, 0.15f, 18f);
+        b = new MeshBuilder();
+        for (int sd = -1; sd <= 1; sd += 2) {                              // anello bianco, occhio scuro lucido
+            b.colorf(0.95f, 0.95f, 0.96f); b.ellipsoid(sd * 0.085f, 0.84f, 0.085f, 0.035f, 0.035f, 0.02f, 10, 6);
+            b.colorf(0.05f, 0.04f, 0.04f); b.ellipsoid(sd * 0.092f, 0.84f, 0.095f, 0.018f, 0.018f, 0.012f, 8, 5);
+        }
+        FoeModels.tube(b, new float[][] {{0, 0.82f, 0.12f}, {0, 0.81f, 0.18f}, {0, 0.795f, 0.22f}}, new float[] {0.03f, 0.018f, 0.004f}, 8, FoeModels.along(rgb(40, 34, 30), rgb(120, 60, 40)));
+        pengBelly = fin(b, 0.6f, 50f);
+        b = new MeshBuilder(); pengBits = fin(b, 0f, 8f);
+        b = new MeshBuilder();                                             // pinna: lama piatta nera sopra, chiara sotto
+        float[][] cw = {{0, 0, 0}, {0.02f, -0.12f, 0}, {0.03f, -0.26f, 0.01f}, {0.03f, -0.36f, 0.02f}};
+        FoeModels.loft(b, cw, new float[] {0.012f, 0.016f, 0.014f, 0.004f}, new float[] {0.06f, 0.07f, 0.05f, 0.01f}, 0, 0, 1, 10, 1f, new FoeModels.Paint() {
+            @Override void col(float t, float an, float x, float y, float z, float[] o) { FoeModels.mix(back, white, 0.08f + 0.5f * FoeModels.sm((t - 0.85f) * 8f), o); }
+        }, 0, 0);
+        pengWing = fin(b, 0.35f, 26f);
+        b = new MeshBuilder();
+        for (int sd = -1; sd <= 1; sd += 2) {
+            for (int t = -1; t <= 1; t++) FoeModels.tube(b, sd * 0.09f, 0.02f, 0.04f, sd * 0.09f + t * 0.045f, 0.01f, 0.15f, 0.025f, 0.012f, 6, FoeModels.along(rgb(220, 140, 140), rgb(190, 110, 110)));
+        }
+        pengFeet = fin(b, 0.3f, 20f);
+    }
+
+    /**
+     * Pupazzo di neve fatto davvero: tre palle di neve irregolari e granulose, occhi e bottoni di carbone, naso di carota
+     * rugosa, sciarpa rossa a maglia, secchio rovesciato in testa, braccia di rametti con le dita.
+     */
+    private void buildSnowman() {
+        MeshBuilder b = new MeshBuilder();
+        b.colorf(0.95f, 0.97f, 1f);
+        int mk = b.mark();
+        b.ellipsoid(0, 0.36f, 0, 0.4f, 0.36f, 0.4f, 26, 16);
+        b.ellipsoid(0, 0.86f, 0, 0.29f, 0.27f, 0.29f, 22, 14);
+        b.ellipsoid(0, 1.25f, 0, 0.21f, 0.2f, 0.21f, 20, 12);
+        b.rough(mk, 0.025f, 6f, 41, false);                                        // neve pressata a mano: bozze e avvallamenti
+        b.shadeByRelief(0.86f, 1.06f);
+        snowBody = fin(b, 0.25f, 14f);
+        b = new MeshBuilder();
+        b.colorf(0.08f, 0.08f, 0.08f);
+        for (int sd = -1; sd <= 1; sd += 2) {                             // occhi di carbone
+            int m2 = b.mark(); b.ellipsoid(sd * 0.075f, 1.31f, 0.185f, 0.032f, 0.03f, 0.025f, 7, 5); b.rough(m2, 0.008f, 40f, 42);
+        }
+        for (int k = 0; k < 5; k++) {                                     // bocca a sorriso storto di sassolini
+            float an = -0.6f + k * 0.3f;
+            b.ellipsoid((float) Math.sin(an) * 0.09f, 1.19f - (float) Math.cos(an) * 0.03f, 0.195f - Math.abs(an) * 0.02f, 0.014f, 0.014f, 0.012f, 5, 4);
+        }
+        for (int k = 0; k < 3; k++) {                                     // bottoni
+            int m2 = b.mark(); b.ellipsoid(0, 0.98f - k * 0.13f, 0.27f - k * 0.008f, 0.03f, 0.03f, 0.022f, 7, 5); b.rough(m2, 0.008f, 40f, 43 + k);
+        }
+        // carota rugosa
+        FoeModels.Paint carrot = new FoeModels.Paint() {
+            @Override void col(float t, float an, float x, float y, float z, float[] o) {
+                FoeModels.mix(rgb(230, 110, 30), rgb(200, 90, 24), t, o);
+                float ring = 0.85f + 0.15f * (float) Math.sin(t * 50f);
+                o[0] *= ring; o[1] *= ring; o[2] *= ring;
+            }
+        };
+        FoeModels.tube(b, new float[][] {{0, 1.26f, 0.18f}, {0.005f, 1.255f, 0.27f}, {0.01f, 1.245f, 0.36f}, {0.012f, 1.24f, 0.4f}}, new float[] {0.035f, 0.025f, 0.012f, 0.002f}, 8, carrot);
+        // sciarpa: anello al collo e un capo che pende
+        FoeModels.Paint knit = new FoeModels.Paint() {
+            @Override void col(float t, float an, float x, float y, float z, float[] o) {
+                FoeModels.mix(rgb(170, 30, 34), rgb(214, 60, 50), 0.5f + 0.5f * (float) Math.sin(an * 24f + t * 30f), o);
+                if (((int) (t * 8 + 100)) % 3 == 0) FoeModels.mix(o, rgb(236, 226, 210), 0.7f, o);   // righe chiare
+            }
+        };
+        float[][] ring = new float[17][];
+        for (int k = 0; k <= 16; k++) { float an = k * 6.283f / 16; ring[k] = new float[] {(float) Math.cos(an) * 0.2f, 1.07f + 0.01f * (float) Math.sin(an * 3), (float) Math.sin(an) * 0.2f}; }
+        float[] rr = new float[17]; java.util.Arrays.fill(rr, 0.04f);
+        FoeModels.tube(b, ring, rr, 8, knit);
+        FoeModels.loft(b, new float[][] {{0.12f, 1.05f, 0.16f}, {0.16f, 0.95f, 0.2f}, {0.17f, 0.82f, 0.22f}, {0.17f, 0.74f, 0.2f}},
+                new float[] {0.06f, 0.065f, 0.065f, 0.06f}, new float[] {0.022f, 0.022f, 0.02f, 0.018f}, 1, 0, 0, 8, 1f, knit, 0, 0);
+        // secchio di latta rovesciato, un po' storto
+        FoeModels.Paint tin = FoeModels.along(rgb(120, 126, 132), rgb(80, 86, 92));
+        FoeModels.tube(b, new float[][] {{0.02f, 1.39f, -0.01f}, {0.03f, 1.48f, -0.015f}, {0.04f, 1.56f, -0.02f}}, new float[] {0.17f, 0.15f, 0.13f}, 16, tin);
+        b.colorf(0.32f, 0.34f, 0.36f); b.ellipsoid(0.04f, 1.565f, -0.02f, 0.13f, 0.012f, 0.13f, 14, 4);
+        snowBits = fin(b, 0.15f, 14f);
+        snowArmL = arm(-1);
+        snowArmR = arm(1);
+        b = new MeshBuilder(); b.colorf(1f, 1f, 1f); int m3 = b.mark(); b.ellipsoid(0, 0, 0, 0.11f, 0.11f, 0.11f, 10, 7); b.rough(m3, 0.012f, 18f, 44);
+        snowHeld = fin(b, 0.2f, 12f);
+    }
+
+    /** Braccio di rametto dalla spalla verso il lato sd, con tre dita sottili. Origine alla spalla. */
+    private static Mesh arm(int sd) {
+        MeshBuilder b = new MeshBuilder();
+        FoeModels.Paint wood = FoeModels.along(rgb(84, 62, 44), rgb(64, 48, 36));
+        FoeModels.tube(b, new float[][] {{0, 0, 0}, {sd * 0.18f, 0.06f, 0.02f}, {sd * 0.36f, 0.14f, 0.0f}, {sd * 0.5f, 0.22f, 0.02f}}, new float[] {0.022f, 0.018f, 0.014f, 0.008f}, 6, wood);
+        for (int k = -1; k <= 1; k++) FoeModels.tube(b, sd * 0.5f, 0.22f, 0.02f, sd * 0.6f, 0.26f + k * 0.07f, 0.02f + k * 0.03f, 0.008f, 0.003f, 4, wood);
+        FoeModels.tube(b, sd * 0.3f, 0.12f, 0, sd * 0.36f, 0.24f, 0.02f, 0.008f, 0.003f, 4, wood);   // rametto laterale
+        Mesh m = b.build(-1, false, true);
+        m.spec = 0.05f; m.shine = 8f;
+        return m;
+    }
+
     FoeModels2() {
         MeshBuilder b = new MeshBuilder();
 
@@ -246,30 +369,8 @@ final class FoeModels2 {
         buildBurr();
         buildOwl();
 
-        // pinguino
-        b = new MeshBuilder();
-        b.colorf(0.12f, 0.14f, 0.26f); b.ellipsoid(0, 0.42f, 0, 0.30f, 0.44f, 0.27f, 14, 10);
-        b.colorf(0.12f, 0.14f, 0.26f); b.ellipsoid(0, 0.78f, 0.02f, 0.2f, 0.16f, 0.2f, 12, 8);
-        pengBody = fin(b, 0.4f, 30f);
-        b = new MeshBuilder(); b.colorf(0.96f, 0.96f, 0.98f); b.ellipsoid(0, 0.4f, 0.1f, 0.22f, 0.36f, 0.2f, 12, 8);
-        b.ellipsoid(0, 0.77f, 0.1f, 0.12f, 0.1f, 0.1f, 10, 6);
-        pengBelly = fin(b, 0.3f, 24f);
-        b = new MeshBuilder(); eyes(b, 0.8f, 0.17f, 0.09f, 0.04f, 1f);
-        b.colorf(0.98f, 0.62f, 0.12f); b.ellipsoid(0, 0.72f, 0.27f, 0.07f, 0.04f, 0.1f, 8, 5);
-        b.ellipsoid(-0.12f, 0.03f, 0.1f, 0.1f, 0.03f, 0.15f, 8, 5); b.ellipsoid(0.12f, 0.03f, 0.1f, 0.1f, 0.03f, 0.15f, 8, 5);
-        pengBits = fin(b, 0.5f, 30f);
-        b = new MeshBuilder(); b.colorf(0.12f, 0.14f, 0.26f); b.ellipsoid(0.12f, -0.16f, 0, 0.05f, 0.22f, 0.12f, 8, 6);
-        pengWing = fin(b, 0.3f, 20f);
-
-        // pupazzo di neve: tre sfere, naso a carota, cappello
-        b = new MeshBuilder();
-        b.colorf(0.96f, 0.97f, 1f); b.ellipsoid(0, 0.32f, 0, 0.36f, 0.32f, 0.36f, 14, 9); b.ellipsoid(0, 0.78f, 0, 0.27f, 0.25f, 0.27f, 14, 9); b.ellipsoid(0, 1.15f, 0, 0.2f, 0.2f, 0.2f, 12, 8);
-        snowBody = fin(b, 0.4f, 28f);
-        b = new MeshBuilder(); eyes(b, 1.2f, 0.16f, 0.08f, 0.035f, 1f);
-        b.colorf(0.98f, 0.5f, 0.12f); b.ellipsoid(0, 1.13f, 0.28f, 0.04f, 0.04f, 0.16f, 8, 5);
-        b.colorf(0.14f, 0.14f, 0.18f); b.ellipsoid(0, 1.36f, 0, 0.17f, 0.12f, 0.17f, 10, 6); b.ellipsoid(0, 1.3f, 0, 0.26f, 0.04f, 0.26f, 12, 5);
-        b.ellipsoid(0, 0.8f, 0.26f, 0.04f, 0.04f, 0.03f, 6, 4); b.ellipsoid(0, 0.68f, 0.27f, 0.04f, 0.04f, 0.03f, 6, 4);
-        snowBits = fin(b, 0.5f, 30f);
+        buildPenguin();
+        buildSnowman();
         b = new MeshBuilder(); b.colorf(1f, 1f, 1f); b.ellipsoid(0, 0, 0, 0.17f, 0.17f, 0.17f, 10, 7);
         snowball = fin(b, 0.3f, 20f);
 
@@ -402,26 +503,47 @@ final class FoeModels2 {
             }
             case Enemy3.PENGUIN: {
                 System.arraycopy(m, 0, a, 0, 16);
-                float w = (float) Math.sin(an * 18f);
-                Mat4.rotateZ(a, 0.1f * w);
+                boolean slide = e.mode == 1;
+                float w = (float) Math.sin(an * (e.alongZ ? 9f : 16f));
+                if (slide) {                                           // sdraiato sulla pancia, pinne aperte all'indietro
+                    Mat4.translate(a, 0, 0.24f, -0.1f);
+                    Mat4.rotateX(a, 1.45f);
+                    Mat4.translate(a, 0, -0.24f, 0);
+                } else {
+                    Mat4.rotateZ(a, 0.12f * w);                       // dondola da un piede all'altro
+                    if (e.mode == 2) Mat4.rotateX(a, 0.4f * (1f - Math.min(1f, e.t / 0.6f)));   // si rialza
+                }
                 g.draw(pengBody, a, 1, 1, 1, 1, 0);
-                g.draw(pengBelly, a, 1, 1, 1, 1, 0);
-                g.draw(pengBits, a, 1, 1, 1, 1, 0.2f);
+                g.draw(pengBelly, a, 1, 1, 1, 1, 0.05f);
+                g.draw(pengFeet, a, 1, 1, 1, 1, 0);
                 for (int s = -1; s <= 1; s += 2) {
                     System.arraycopy(a, 0, b2, 0, 16);
-                    Mat4.translate(b2, s * 0.27f, 0.6f, 0);
+                    Mat4.translate(b2, s * 0.22f, 0.62f, 0);
                     if (s < 0) Mat4.scale(b2, -1, 1, 1);
-                    Mat4.rotateZ(b2, -0.5f - 0.3f * w);
+                    Mat4.rotateZ(b2, slide ? 0.9f : 0.25f + 0.25f * Math.abs(w));
+                    if (slide) Mat4.rotateX(b2, -0.4f);
                     g.draw(pengWing, b2, 1, 1, 1, 1, 0);
                 }
                 return;
             }
             case Enemy3.SNOWMAN: {
                 System.arraycopy(m, 0, a, 0, 16);
-                float charge = e.t > 1.8f ? 0.06f * (float) Math.sin(an * 40f) : 0f;
-                Mat4.scale(a, 1f + charge, 1f, 1f + charge);
+                boolean wind = e.mode == 1;
+                if (wind) Mat4.rotateZ(a, 0.03f * (float) Math.sin(an * 30f));
                 g.draw(snowBody, a, 1, 1, 1, 1, 0);
-                g.draw(snowBits, a, 1, 1, 1, 1, 0.1f);
+                g.draw(snowBits, a, 1, 1, 1, 1, 0);
+                System.arraycopy(a, 0, b2, 0, 16);
+                Mat4.translate(b2, -0.24f, 0.9f, 0);
+                Mat4.rotateZ(b2, -0.15f);
+                g.draw(snowArmL, b2, 1, 1, 1, 1, 0);
+                // braccio destro: a riposo basso; in carica si alza dietro la testa con la palla in mano
+                float k = wind ? Math.min(1f, e.t / 0.35f) : 0f;
+                System.arraycopy(a, 0, b2, 0, 16);
+                Mat4.translate(b2, 0.24f, 0.9f, 0);
+                Mat4.rotateZ(b2, -0.35f + 1.9f * k);
+                Mat4.rotateY(b2, 0.9f * k);
+                g.draw(snowArmR, b2, 1, 1, 1, 1, 0);
+                if (wind) { Mat4.translate(b2, 0.6f, 0.26f, 0.02f); g.draw(snowHeld, b2, 1, 1, 1, 1, 0.05f); }
                 return;
             }
             case Enemy3.LAPILLO: {

@@ -609,7 +609,7 @@ public final class World3D {
             if (Math.abs(e.z - pz) > 45) continue;
             e.anim += dt;
             float speed = e.type == Enemy3.HOG ? ENEMY_SPEED * 0.8f : e.type == Enemy3.CROW ? ENEMY_SPEED * 2.7f : e.type == Enemy3.WHIRL ? ENEMY_SPEED * 1.7f
-                    : e.type == Enemy3.STORM ? ENEMY_SPEED * 0.7f : e.type == Enemy3.SNAIL ? (e.mode == 1 ? 0f : ENEMY_SPEED * (e.mode == 2 ? 0.65f : 0.4f)) : e.type == Enemy3.PENGUIN ? ENEMY_SPEED * 2.3f
+                    : e.type == Enemy3.STORM ? ENEMY_SPEED * 0.7f : e.type == Enemy3.SNAIL ? (e.mode == 1 ? 0f : ENEMY_SPEED * (e.mode == 2 ? 0.65f : 0.4f)) : e.type == Enemy3.PENGUIN ? (e.alongZ ? (e.mode == 1 ? ENEMY_SPEED * 4.2f : e.mode == 2 ? 0f : ENEMY_SPEED * 0.6f) : ENEMY_SPEED * 2.3f)
                     : e.type == Enemy3.SALAMANDER ? (e.mode == 0 ? ENEMY_SPEED * 0.8f : 0f) : e.skin == Enemy3.SKIN_CRAB ? ENEMY_SPEED * 1.8f : ENEMY_SPEED;
             if (e.type >= Enemy3.MOLE && stepNew3(e, dt)) continue;
             if (e.type == Enemy3.ACORN) {                       // la ghianda aspetta ferma, poi balza in avanti
@@ -788,15 +788,56 @@ public final class World3D {
                 if (state == PLAYING) touch(e, true);
                 return true;
             }
-            case Enemy3.SNOWMAN: {                             // fermo, si volta e lancia palle di neve ogni 2,3 s
-                if (Float.isNaN(e.floor)) e.floor = e.y;
-                e.dir = dzp >= 0 ? 1 : -1;
-                if (Math.abs(dzp) < 11f && dzp > -2f && e.t > 2.3f) {
-                    e.t = 0;
-                    float l = Math.max(0.5f, (float) Math.sqrt(dxp * dxp + dzp * dzp));
-                    shots.add(new float[] {e.x, e.y + 1.3f, e.z, dxp / l * 5.5f, 3.2f, dzp / l * 5.5f, e.skin});
+            case Enemy3.PENGUIN: {                             // lungo il sentiero: zampetta su e giù, quando vede il robot si butta sulla pancia
+                if (!e.alongZ) return false;                   // di traverso: va avanti e indietro come sempre
+                boolean ahead = Math.abs(dxp) < 1.2f && dzp * e.dir > 0 && Math.abs(dzp) < 6.5f;
+                if (e.mode == 0) {
+                    if (e.t > 0.8f && Math.abs(dxp) < 1.2f && Math.abs(dzp) < 6.5f) { e.dir = dzp > 0 ? 1 : -1; e.mode = 1; e.t = 0; }
+                } else if (e.mode == 1) {
+                    if (e.t > 1.5f || (!ahead && e.t > 0.6f)) { e.mode = 2; e.t = 0; }
+                } else if (e.t > 0.6f) { e.mode = 0; e.t = 0; }
+                return false;
+            }
+            case Enemy3.SNOWMAN: {
+                if (Float.isNaN(e.floor)) {
+                    e.floor = e.y;
+                    if (e.skin == 0) e.face = e.x < -0.6f ? 1 : e.x > 0.6f ? -1 : new int[] {0, 1, -1}[((int) e.z) % 3];   // ai lati guarda dentro il sentiero; in mezzo a turno schermo, destra, sinistra
                 }
-                if (state == PLAYING) touch(e, true);
+                if (e.skin != 0) {                             // totem: si volta e tira noci di cocco ogni 2,3 s
+                    e.dir = dzp >= 0 ? 1 : -1;
+                    if (Math.abs(dzp) < 11f && dzp > -2f && e.t > 2.3f) {
+                        e.t = 0;
+                        float l = Math.max(0.5f, (float) Math.sqrt(dxp * dxp + dzp * dzp));
+                        shots.add(new float[] {e.x, e.y + 1.3f, e.z, dxp / l * 5.5f, 3.2f, dzp / l * 5.5f, e.skin});
+                    }
+                    if (state == PLAYING) touch(e, true);
+                    return true;
+                }
+                // pupazzo: fermo, guarda sempre dalla stessa parte; se il robot entra nella sua linea di tiro carica il braccio
+                // (0,7 s, si vede) e tira dritto davanti a sé. Colpito mentre carica, il tiro salta (e lui va in pezzi).
+                e.dir = -1;
+                boolean inLine = e.face == 0 ? (dzp < -1f && dzp > -11f && Math.abs(dxp) < 2.6f)
+                        : (dxp * e.face > 0.5f && dxp * e.face < 6.5f && Math.abs(dzp) < 1.4f);
+                if (e.mode == 0) {
+                    if (inLine && e.t > 1.4f) { e.mode = 1; e.t = 0; }
+                } else if (e.t > 0.7f) {
+                    e.mode = 0; e.t = 0;
+                    float dist = e.face == 0 ? Math.max(1.5f, -dzp) : Math.max(1f, Math.abs(dxp));
+                    float sp = 7.5f, tt = dist / sp, h = e.y + 1.35f - (py + 0.7f);
+                    float vyt = (0.5f * 14f * tt * tt - h) / tt;                     // arriva all'altezza del petto del robot
+                    float vx = e.face == 0 ? Math.max(-1.5f, Math.min(1.5f, dxp / tt)) : e.face * sp;
+                    float vz = e.face == 0 ? -sp : 0f;
+                    float hx = e.face == 0 ? 0.25f : e.face * 0.35f, hz = e.face == 0 ? -0.3f : 0f;
+                    shots.add(new float[] {e.x + hx, e.y + 1.35f, e.z + hz, vx, vyt, vz, 0, enemies.indexOf(e)});
+                }
+                if (state == PLAYING) {
+                    touch(e, true);
+                    if (e.flatTime > 0 || e.flung) {           // colpito: il tiro in preparazione non parte, le palle in volo si sbriciolano
+                        e.mode = 0;
+                        int id = enemies.indexOf(e);
+                        for (int i = shots.size() - 1; i >= 0; i--) if (shots.get(i).length > 7 && shots.get(i)[7] == id) shots.remove(i);
+                    }
+                }
                 return true;
             }
             case Enemy3.LAPILLO: {                             // schizza dalla lava (o dal bordo) ritmicamente: nascosto, poi un balzo

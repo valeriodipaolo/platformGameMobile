@@ -34,13 +34,17 @@ public final class MeshBuilder {
      * Rende irregolare l'ultimo pezzo (da mark in poi): ogni vertice si sposta secondo un rumore che dipende dalla sua posizione
      * nel mondo (così due pezzi che si toccano restano attaccati), poi le normali si ricalcolano per faccetta, come pietra sbozzata.
      */
-    public void rough(int mark, float amp, float freq, int seed) {
+    public void rough(int mark, float amp, float freq, int seed) { rough(mark, amp, freq, seed, true); }
+
+    /** faceted = false: le normali restano morbide (neve, superfici tondeggianti); cambia solo la sagoma. */
+    public void rough(int mark, float amp, float freq, int seed, boolean faceted) {
         for (int i = mark; i < n; i += Mesh.STRIDE) {
             float x = d[i], y = d[i + 1], z = d[i + 2];
             d[i] += amp * (noise3(x * freq, y * freq, z * freq, seed) - 0.5f) * 2f + amp * 0.4f * (noise3(x * freq * 2.7f, y * freq * 2.7f, z * freq * 2.7f, seed + 3) - 0.5f) * 2f;
             d[i + 1] += amp * 0.35f * (noise3(x * freq, y * freq, z * freq, seed + 1) - 0.5f) * 2f;
             d[i + 2] += amp * (noise3(x * freq, y * freq, z * freq, seed + 2) - 0.5f) * 2f + amp * 0.4f * (noise3(x * freq * 2.7f, y * freq * 2.7f, z * freq * 2.7f, seed + 4) - 0.5f) * 2f;
         }
+        if (!faceted) return;
         for (int i = mark; i + 3 * Mesh.STRIDE <= n; i += 3 * Mesh.STRIDE) {
             int a = i, b = i + Mesh.STRIDE, c = i + 2 * Mesh.STRIDE;
             float ux = d[b] - d[a], uy = d[b + 1] - d[a + 1], uz = d[b + 2] - d[a + 2];
