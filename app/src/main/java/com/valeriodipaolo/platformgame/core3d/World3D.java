@@ -151,6 +151,7 @@ public final class World3D {
         sealed = true;
         sealEnd();
         gemsOffThorns();
+        seasonSkins();
         gemTotal = gemsList.size();
         for (int k = 0; k < crate.length; k++) if (crate[k] && (crateKind == null || crateKind[k] != C_BOUNCE)) gemTotal++;
         if (crateKind != null) crateT = new float[crate.length];
@@ -971,6 +972,32 @@ public final class World3D {
             boolean hit = state == PLAYING && Math.abs(s[0] - px) < 0.55f && Math.abs(s[2] - pz) < 0.55f && s[1] > py - 0.15f && s[1] < py + PLAYER_H + 0.15f;
             if (hit) hurt();
             if (hit || s[1] < Math.max(0, top) - 0.1f || Math.abs(s[2] - pz) > 30f) shots.remove(i);
+        }
+    }
+
+    /**
+     * Nemici del posto giusto: i nemici di base (ghianda, riccio, scarabeo, corvo) prendono l'aspetto della stagione, con lo
+     * stesso comportamento. D'estate e in primavera la ghianda (frutto d'autunno) diventa una rana che saltella; d'inverno
+     * una lepre bianca, il riccio un riccio di ghiaccio, lo scarabeo un pinguino; nell'incendio una brace che salta, un
+     * riccio di lava, il corvo un pipistrello.
+     */
+    private void seasonSkins() {
+        for (Enemy3 e : enemies) {
+            if (e.skin != 0) continue;
+            switch (theme) {
+                case 2: case 10: if (e.type == Enemy3.ACORN) e.skin = Enemy3.SKIN_FROG; break;
+                case 6:
+                    if (e.type == Enemy3.ACORN) e.skin = Enemy3.SKIN_HARE;
+                    else if (e.type == Enemy3.HOG) e.skin = Enemy3.SKIN_ICE;
+                    else if (e.type == Enemy3.BEETLE) e.skin = Enemy3.SKIN_PENGUIN;
+                    break;
+                case 8:
+                    if (e.type == Enemy3.ACORN) e.skin = Enemy3.SKIN_EMBER;
+                    else if (e.type == Enemy3.HOG) e.skin = Enemy3.SKIN_MAGMA;
+                    else if (e.type == Enemy3.CROW) e.skin = Enemy3.SKIN_BAT;
+                    break;
+                default: break;
+            }
         }
     }
 

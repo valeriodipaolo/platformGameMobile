@@ -238,6 +238,7 @@ final class FoeModels2 {
         owlTalon = fin(b, 0.3f, 30f);
     }
 
+    private Mesh hareBody, hareEars, hareEyes, hareLegs;
     private Mesh pengFeet, snowArmL, snowArmR, snowHeld;
 
     /** Pinguino di Adelia: dorso e testa nero-bluastri, petto bianco che sale fino al becco, anello bianco attorno all'occhio, piedi rosa. */
@@ -359,6 +360,57 @@ final class FoeModels2 {
         Mesh m = b.build(-1, false, true);
         m.spec = 0.05f; m.shine = 8f;
         return m;
+    }
+
+    /** Lepre bianca d'inverno: corpo raccolto, zampe posteriori lunghe, orecchie lunghe con la punta nera, occhi scuri, pelo fitto. */
+    private void buildHare() {
+        MeshBuilder b = new MeshBuilder();
+        final float[] fur = rgb(238, 240, 244), shade = rgb(206, 210, 218);
+        FoeModels.Paint coat = new FoeModels.Paint() {
+            @Override void col(float t, float an, float x, float y, float z, float[] o) { FoeModels.mix(shade, fur, FoeModels.sm(y * 3f), o); }
+        };
+        float[][] c = {{0, 0.2f, -0.3f}, {0, 0.24f, -0.24f}, {0, 0.27f, -0.12f}, {0, 0.28f, 0f}, {0, 0.3f, 0.1f}, {0, 0.34f, 0.16f}, {0, 0.38f, 0.2f}};
+        FoeModels.loft(b, c, new float[] {0.02f, 0.13f, 0.16f, 0.15f, 0.12f, 0.08f, 0.02f}, new float[] {0.02f, 0.12f, 0.15f, 0.14f, 0.11f, 0.08f, 0.02f}, 0, 1, 0, 20, 0.85f, coat, 3f, 3f);
+        FoeModels.ballZ(b, 0, 0.42f, 0.27f, 0.09f, 0.085f, 0.11f, 16, 10, coat, 2f, 2f);          // testa
+        b.colorf(0.97f, 0.97f, 1f); b.ellipsoid(0, 0.26f, -0.31f, 0.05f, 0.05f, 0.04f, 8, 6);       // coda a batuffolo
+        hareBody = fin2(b, Img.FOE_PENGFUR, 0.02f, 6f);
+        b = new MeshBuilder();
+        for (int sd = -1; sd <= 1; sd += 2) {
+            float[][] ce = {{sd * 0.04f, 0.48f, 0.24f}, {sd * 0.06f, 0.6f, 0.2f}, {sd * 0.075f, 0.72f, 0.15f}, {sd * 0.085f, 0.8f, 0.12f}};
+            FoeModels.loft(b, ce, new float[] {0.025f, 0.032f, 0.028f, 0.004f}, new float[] {0.01f, 0.012f, 0.01f, 0.003f}, 0, 0, 1, 8, 1f, new FoeModels.Paint() {
+                @Override void col(float t, float an, float x, float y, float z, float[] o) { FoeModels.mix(fur, rgb(30, 28, 30), FoeModels.sm((t - 0.78f) * 8f), o); }
+            }, 1f, 2f);
+        }
+        hareEars = fin2(b, Img.FOE_PENGFUR, 0.02f, 6f);
+        b = new MeshBuilder();
+        for (int sd = -1; sd <= 1; sd += 2) { b.colorf(0.06f, 0.05f, 0.05f); b.ellipsoid(sd * 0.06f, 0.45f, 0.32f, 0.018f, 0.02f, 0.015f, 8, 5); }
+        b.colorf(0.85f, 0.6f, 0.62f); b.ellipsoid(0, 0.42f, 0.375f, 0.014f, 0.01f, 0.01f, 6, 4);
+        hareEyes = fin(b, 0.8f, 60f);
+        b = new MeshBuilder();
+        for (int sd = -1; sd <= 1; sd += 2) {
+            FoeModels.tube(b, sd * 0.1f, 0.2f, -0.16f, sd * 0.11f, 0.03f, -0.06f, 0.06f, 0.03f, 8, FoeModels.along(fur, shade));   // coscia
+            FoeModels.tube(b, sd * 0.11f, 0.03f, -0.06f, sd * 0.11f, 0.015f, 0.08f, 0.028f, 0.022f, 6, FoeModels.along(shade, fur)); // piede lungo
+            FoeModels.tube(b, sd * 0.06f, 0.24f, 0.14f, sd * 0.06f, 0.02f, 0.17f, 0.025f, 0.018f, 6, FoeModels.along(fur, shade));  // zampa anteriore
+        }
+        hareLegs = fin2(b, Img.FOE_PENGFUR, 0.02f, 6f);
+    }
+
+    /** Lepre che salta: in volo si allunga con le zampe distese, a terra raccolta con le orecchie che oscillano. */
+    void drawHare(Gfx3D g, float[] m, Enemy3 e) {
+        if (hareBody == null) buildHare();
+        boolean air = e.y > e.baseY + 0.05f;
+        System.arraycopy(m, 0, a, 0, 16);
+        if (air) { Mat4.scale(a, 0.95f, 0.95f, 1.15f); Mat4.rotateX(a, -0.25f); }
+        g.draw(hareBody, a, 1, 1, 1, 1, 0);
+        g.draw(hareEyes, a, 1, 1, 1, 1, 0.05f);
+        System.arraycopy(a, 0, b2, 0, 16);
+        Mat4.translate(b2, 0, 0.48f, 0.24f);
+        Mat4.rotateX(b2, air ? -0.5f : -0.1f * (float) Math.sin(e.anim * 6f));
+        Mat4.translate(b2, 0, -0.48f, -0.24f);
+        g.draw(hareEars, b2, 1, 1, 1, 1, 0);
+        System.arraycopy(a, 0, b2, 0, 16);
+        if (air) { Mat4.translate(b2, 0, 0.2f, -0.1f); Mat4.rotateX(b2, 0.7f); Mat4.translate(b2, 0, -0.2f, 0.1f); }
+        g.draw(hareLegs, b2, 1, 1, 1, 1, 0);
     }
 
     FoeModels2() {

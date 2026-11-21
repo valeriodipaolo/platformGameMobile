@@ -358,22 +358,22 @@ public final class FoeModels {
         System.arraycopy(m, 0, a, 0, 16);
         Mat4.translate(a, 0, 0.012f * (float) Math.sin(walk * 2f), 0);
         Mat4.rotateZ(a, 0.035f * (float) Math.sin(walk));                 // dondola camminando
-        g.draw(hogBody, a, 1, 1, 1, 1, 0);
-        g.draw(hogBits, a, 1, 1, 1, 1, 0);
+        g.draw(hogBody, a, hr, hg, hb, 1, he);
+        g.draw(hogBits, a, hr, hg, hb, 1, he);
         g.draw(hogGloss, a, 1, 1, 1, 1, 0.12f);
         System.arraycopy(a, 0, b2, 0, 16);
         float puff = 1f + 0.025f * (float) Math.sin(e.anim * 4f);          // gli aculei si gonfiano piano
         Mat4.translate(b2, 0, 0.35f, -0.05f);
         Mat4.scale(b2, puff, puff, puff);
         Mat4.translate(b2, 0, -0.35f, 0.05f);
-        g.draw(hogSpines, b2, 1, 1, 1, 1, 0);
+        g.draw(hogSpines, b2, hr, hg, hb, 1, he > 0 ? he : hr < 0.7f ? 0.35f : 0f);   // aculei di lava incandescenti
         for (int i = 0; i < 4; i++) {
             int s = i % 2 == 0 ? -1 : 1;
             boolean front = i >= 2;
             System.arraycopy(m, 0, b2, 0, 16);
             Mat4.translate(b2, s * 0.2f, 0.172f, front ? 0.22f : -0.2f);
             Mat4.rotateX(b2, (float) Math.sin(walk + (s > 0 == front ? 0 : PI)) * 0.55f);
-            g.draw(hogLeg, b2, 1, 1, 1, 1, 0);
+            g.draw(hogLeg, b2, hr, hg, hb, 1, he);
         }
     }
 
@@ -845,10 +845,30 @@ public final class FoeModels {
         g.draw(whirlEyes, a, 1, 1, 1, 1, 0.4f);
     }
 
+    /** Aspetto stagionale: si disegna il modello di un altro nemico (o un riccio ritinto) con lo stato del nemico vero. */
+    private void drawSeason(Gfx3D g, float[] m, Enemy3 e) {
+        int type = e.type, mode = e.mode, skin = e.skin;
+        e.skin = 0;
+        switch (skin) {
+            case Enemy3.SKIN_FROG: e.type = Enemy3.FROG; e.mode = e.y > e.baseY + 0.05f ? 1 : 0; more.draw(g, m, e); break;
+            case Enemy3.SKIN_HARE: more.drawHare(g, m, e); break;
+            case Enemy3.SKIN_EMBER: { float[] sm = new float[16]; System.arraycopy(m, 0, sm, 0, 16); Mat4.scale(sm, 0.6f, 0.6f, 0.6f); e.type = Enemy3.LAPILLO; e.mode = 1; more.draw(g, sm, e); break; }
+            case Enemy3.SKIN_PENGUIN: e.type = Enemy3.PENGUIN; e.mode = 0; more.draw(g, m, e); break;
+            case Enemy3.SKIN_ICE: hr = 0.75f; hg = 0.9f; hb = 1.25f; he = 0.15f; drawHog(g, m, e); hr = hg = hb = 1; he = 0; break;
+            case Enemy3.SKIN_MAGMA: hr = 0.55f; hg = 0.32f; hb = 0.25f; he = 0f; drawHog(g, m, e); hr = hg = hb = 1; he = 0; break;
+            default: break;
+        }
+        e.type = type; e.mode = mode; e.skin = skin;
+    }
+
     /** Disegna un nemico; m è la matrice già posizionata e orientata (ed eventualmente schiacciata). */
     private FoeIsland island;
 
+    /** Tinta ed emissione applicate al riccio (riccio di ghiaccio, riccio di lava). */
+    private float hr = 1, hg = 1, hb = 1, he = 0;
+
     public void draw(Gfx3D g, float[] m, Enemy3 e) {
+        if (e.skin >= Enemy3.SKIN_FROG) { drawSeason(g, m, e); return; }
         if (e.skin != 0) { if (island == null) island = new FoeIsland(); island.draw(g, m, e); return; }
         switch (e.type) {
             case Enemy3.HOG: drawHog(g, m, e); break;
