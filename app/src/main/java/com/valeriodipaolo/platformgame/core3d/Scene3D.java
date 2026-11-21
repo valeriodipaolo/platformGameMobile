@@ -334,6 +334,7 @@ public final class Scene3D {
         else if (autumn) { fogR = 0.90f; fogG = 0.79f; fogB = 0.64f; lip = 0.5f; }
         if (aurora) { fogR = 0.05f; fogG = 0.10f; fogB = 0.22f; lip = 0.5f; }
         if (fire) { fogR = 0.36f; fogG = 0.15f; fogB = 0.08f; lip = 0.5f; }
+        if (lip == 0f) lip = 0.4f;                                    // bordo dei burroni arrotondato ovunque, non a spigolo vivo
         if (isle == 14) { fogR = 0.70f; fogG = 0.88f; fogB = 0.86f; }
         if (isle == 16) { fogR = 0.86f; fogG = 0.56f; fogB = 0.44f; }
         if (isle == 18) { fogR = 0.06f; fogG = 0.10f; fogB = 0.18f; }
@@ -396,8 +397,8 @@ public final class Scene3D {
                     float[][] gc = {{fx, z}, {fx + 1, z}, {fx + 1, z + 1}, {fx, z + 1}};
                     for (int k : order) ground(gs, gc[k][0], gc[k][1], gc[k][0] * 0.5f, gc[k][1] * 0.5f, 0.42f, 0.42f, 0.42f);
                     MeshBuilder s = mb(K_STONE, z);
-                    boolean round = (autumn || aurora || fire || heaven || dry == 20 || dry == 24) && dry != 22;
-                    float rr = autumn || aurora || fire || heaven ? 0.2f : 0.11f;
+                    boolean round = true;                                  // nessuno spigolo vivo: al minimo uno smusso
+                    float rr = autumn || aurora || fire || heaven ? 0.2f : dry == 22 ? 0.06f : dry == 0 && !jungle ? 0.07f : 0.11f;
                     blockTop(w, x, z, h);
                     s.colorf(0.24f, 0.23f, 0.22f);
                     s.box(fx + 0.5f, -0.2f, z + 0.5f, 0.94f, 0.7f, 0.94f);
@@ -1135,14 +1136,14 @@ public final class Scene3D {
         leaf = b.build(Img.R3_LEAF, false, true);
         leaf.cutout = true;
         b = new MeshBuilder();
-        b.box(0, 0.5f, 0, 0.96f, 0.96f, 0.96f);
+        b.roundBox(0, 0.5f, 0, 0.96f, 0.96f, 0.96f, 0.07f, 63, 3);              // spigoli smussati come una cassa vera
         crate = b.build(Img.BONUS, false, true);
         crate.spec = 0.1f; crate.shine = 20f;
         if ((autumn && !spring && !jungle) || aurora) buildPumpkin();
         if (jungle || dry != 0) buildIsland();
         if (spring || heaven) {                                        // casse gialle con la stella rosa; fiori a molla e rovi
             b = new MeshBuilder();
-            b.roundBox(0, 0.5f, 0, 0.96f, 0.96f, 0.96f, 0.16f);
+            b.roundBox(0, 0.5f, 0, 0.96f, 0.96f, 0.96f, 0.16f, 63, 3);
             crate = b.build(heaven ? Img.HV_BONUS : Img.SP_BONUS, false, true);
             crate.spec = 0.3f; crate.shine = 24f;
             b = new MeshBuilder().color(heaven ? 250 : 86, heaven ? 246 : 168, heaven ? 238 : 62);   // base del fiore a molla (nuvola in cielo), con anelli rosa o dorati
@@ -1206,7 +1207,7 @@ public final class Scene3D {
         }
         if (fire) {                                                    // casse di roccia incandescente
             b = new MeshBuilder();
-            b.roundBox(0, 0.5f, 0, 0.96f, 0.96f, 0.96f, 0.16f);
+            b.roundBox(0, 0.5f, 0, 0.96f, 0.96f, 0.96f, 0.16f, 63, 3);
             crate = b.build(Img.R3C_LAVA, false, true);
             crate.spec = 0.2f; crate.shine = 20f;
             b = new MeshBuilder();                                     // fiamma e brace: due piani incrociati, visibili da entrambi i lati
@@ -1227,7 +1228,7 @@ public final class Scene3D {
         }
         if (aurora) {                                                  // casse di ghiaccio con la stella luminosa
             b = new MeshBuilder();
-            b.roundBox(0, 0.5f, 0, 0.96f, 0.96f, 0.96f, 0.16f);
+            b.roundBox(0, 0.5f, 0, 0.96f, 0.96f, 0.96f, 0.16f, 63, 3);
             crate = b.build(Img.R3B_ICE, false, true);
             crate.spec = 0.7f; crate.shine = 40f;
             b = new MeshBuilder();
@@ -1888,7 +1889,7 @@ public final class Scene3D {
         int[] tex = {Img.R3J_CRATE, Img.R3J_TNT, Img.R3J_NITRO, Img.R3J_BOUNCE, Img.R3J_CHECK};
         for (int k = 0; k < 5; k++) {
             MeshBuilder b = new MeshBuilder();
-            b.box(0, 0.5f, 0, 0.94f, 0.94f, 0.94f);
+            b.roundBox(0, 0.5f, 0, 0.94f, 0.94f, 0.94f, 0.07f, 63, 3);
             crateKinds[k] = b.build(tex[k], false, true);
             crateKinds[k].spec = 0.15f; crateKinds[k].shine = 18f;
         }
@@ -2100,7 +2101,7 @@ public final class Scene3D {
                         float rr = 0.5f + 0.5f * r.nextFloat();
                         p.cylinder(x + side * rr, y, y + 1.5f + 2f * r.nextFloat(), z, rr, rr, 14, true, false);
                     } else if (k < 0.6f) {                              // cassone con le strisce
-                        mb(K_STONE, z).roundBox(x + side * 0.5f, y + 0.5f, z, 1f, 1f, 1f, 0.03f);
+                        mb(K_STONE, z).roundBox(x + side * 0.5f, y + 0.5f, z, 1f, 1f, 1f, 0.09f);
                     } else {                                             // ciminiera
                         p.colorf(0.5f * lt[0], 0.3f * lt[1], 0.26f * lt[2]);
                         p.cylinder(x + side * 2f, y, y + 4f + 4f * r.nextFloat(), z, 0.4f, 0.32f, 10, true, false);

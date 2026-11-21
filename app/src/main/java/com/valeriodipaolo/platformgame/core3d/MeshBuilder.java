@@ -69,16 +69,20 @@ public final class MeshBuilder {
     public void roundBox(float cx, float cy, float cz, float sx, float sy, float sz, float r) { roundBox(cx, cy, cz, sx, sy, sz, r, 63); }
 
     /** Come sopra, ma disegna solo le facce indicate dai bit di faces (0 +x, 1 -x, 2 +y, 3 -y, 4 +z, 5 -z): quelle coperte non servono. */
-    public void roundBox(float cx, float cy, float cz, float sx, float sy, float sz, float r, int faces) {
+    public void roundBox(float cx, float cy, float cz, float sx, float sy, float sz, float r, int faces) { roundBox(cx, cy, cz, sx, sy, sz, r, faces, 1); }
+
+    /** seg = quanti spicchi per ogni spigolo arrotondato (1 = smusso con normali morbide, 3 = curva vera). */
+    public void roundBox(float cx, float cy, float cz, float sx, float sy, float sz, float r, int faces, int seg) {
         float hx = sx / 2, hy = sy / 2, hz = sz / 2, ax = hx - r, ay = hy - r, az = hz - r;
-        float[] gx = {-hx, -ax, ax, hx}, gy = {-hy, -ay, ay, hy}, gz = {-hz, -az, az, hz};
+        float[] gx = grid(hx, ax, seg), gy = grid(hy, ay, seg), gz = grid(hz, az, seg);
+        int n = gx.length - 1;
         for (int face = 0; face < 6; face++) {
             if ((faces & (1 << face)) == 0) continue;
             int axis = face / 2;
             float sg = (face % 2 == 0) ? 1 : -1;
             float[] ga = axis == 0 ? gy : gx, gb = axis == 2 ? gy : gz;
-            for (int i = 0; i < 3; i++) {
-                for (int j = 0; j < 3; j++) {
+            for (int i = 0; i < n; i++) {
+                for (int j = 0; j < n; j++) {
                     int[][] q = {{i, j}, {i + 1, j}, {i + 1, j + 1}, {i, j}, {i + 1, j + 1}, {i, j + 1}};
                     for (int[] k : q) {
                         float a = ga[k[0]], b = gb[k[1]];
@@ -96,6 +100,19 @@ public final class MeshBuilder {
                 }
             }
         }
+    }
+
+    /** Punti della griglia di una faccia: fitti sulla curva degli spigoli, uno solo sulla parte piatta. */
+    private static float[] grid(float h, float a, int seg) {
+        float[] g = new float[2 * seg + 2];
+        for (int k = 0; k <= seg; k++) {
+            float t = k / (float) seg;
+            // sul quarto di cerchio i punti vanno distribuiti per angolo: dopo la proiezione gli spicchi vengono uguali
+            float e = (float) Math.tan(t * Math.PI / 4) * (h - a);
+            g[k] = -a - (h - a) + e;
+            g[2 * seg + 1 - k] = a + (h - a) - e;
+        }
+        return g;
     }
 
     public void ellipsoid(float cx, float cy, float cz, float rx, float ry, float rz, int segs, int rings) {
