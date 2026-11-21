@@ -69,7 +69,8 @@ public final class Img {
     public static final int FOE_OWL = 312, FOE_OWLWING = 313, FOE_PENGFUR = 314;
     /** Croce direzionale (comandi 3D "CROCE"), stesso stile dei pulsanti di salto e giravolta. */
     public static final int DPAD_UP = 315, DPAD_RIGHT = 316, DPAD_DOWN = 317, DPAD_LEFT = 318;
-    public static final int COUNT = 319;
+    public static final int FOE_FROG = 319, FOE_TRAP = 320;
+    public static final int COUNT = 321;
 
 
     /** Fotogramma j (0..23) del ciclo di corsa. */
@@ -119,6 +120,6 @@ public final class Img {
         "r3j_grass", "r3j_forest", "r3j_tuft", "r3j_flowers", "r3j_crown", "r3j_tree", "r3j_foliage", "r3j_sky", "r3j_mountains", "r3j_sand",
         "r3j_water", "r3j_temple", "r3j_dusk", "r3j_night", "r3j_crate", "r3j_tnt", "r3j_nitro", "r3j_bounce", "r3j_check", "r3j_frond",
         "r3s_sand", "r3s_dune", "r3s_stone", "r3s_quick", "r3s_sky", "r3s_mountains", "r3f_floor", "r3f_panel", "r3f_block", "r3f_belt", "r3f_sky", "r3f_mountains", "r3m_rock", "r3m_wall", "r3m_block", "r3m_sky", "r3m_mountains",
-        "foe_owl", "foe_owlwing", "foe_pengfur", "dpad_up", "dpad_right", "dpad_down", "dpad_left"
+        "foe_owl", "foe_owlwing", "foe_pengfur", "dpad_up", "dpad_right", "dpad_down", "dpad_left", "foe_frog", "foe_trap"
     };
 }

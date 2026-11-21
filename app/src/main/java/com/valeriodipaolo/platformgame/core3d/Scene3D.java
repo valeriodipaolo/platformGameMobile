@@ -1809,6 +1809,7 @@ public final class Scene3D {
             Mat4.translate(m, e.x, e.y + bumpAt(e.x, e.z), e.z);
             float yawE = e.alongZ ? (e.dir > 0 ? 0 : (float) Math.PI) : (e.dir > 0 ? (float) Math.PI / 2 : -(float) Math.PI / 2);
             if (e.type == Enemy3.OWL) yawE = e.yaw;
+            if (e.type == Enemy3.PLANT) yawE = (float) Math.atan2(w.px - e.x, w.pz - e.z);   // la trappola si gira verso il robot
             if (e.type == Enemy3.SNOWMAN && e.skin == 0) yawE = e.face == 0 ? (float) Math.PI : e.face * (float) Math.PI / 2;
             Mat4.rotateY(m, yawE);
             if (e.type == Enemy3.OWL && !e.flung) { Mat4.translate(m, 0, 0.3f, 0); Mat4.rotateX(m, e.pitch); Mat4.rotateZ(m, e.bank); Mat4.translate(m, 0, -0.3f, 0); }

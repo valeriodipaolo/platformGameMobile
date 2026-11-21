@@ -137,3 +137,36 @@ def dpad_buttons():
 
 if __name__ == "__main__" and len(sys.argv) > 1 and sys.argv[1] == "dpad":
     dpad_buttons()
+
+
+def frog_and_trap():
+    """Pelle di rana (granuli, macchie scure dai bordi sfumati, pori) e foglia della dionea (nervature dal margine verso la
+    costola, cellule). Grigie: il colore lo danno i vertici."""
+    S = 512
+    r = np.random.default_rng(2201)
+    l = 0.78 + 0.12 * (fbm(S, S, beta=2.0, seed=2202) - 0.5)
+    gran = fbm(S, S, beta=0.3, seed=2203)
+    l += 0.14 * (gran - 0.5)
+    spots = Image.new("L", (S, S), 0)
+    d = ImageDraw.Draw(spots)
+    for _ in range(60):
+        x, y, rr = r.uniform(0, S), r.uniform(0, S), r.uniform(8, 26)
+        for ox in (-S, 0, S):
+            for oy in (-S, 0, S):
+                d.ellipse([x + ox - rr, y + oy - rr * r.uniform(0.6, 1), x + ox + rr, y + oy + rr], fill=255)
+    sp = ndi.gaussian_filter(np.asarray(spots).astype(float) / 255, 2.5, mode="wrap")
+    sp *= 0.7 + 0.6 * fbm(S, S, beta=1.5, seed=2204)
+    l *= 1 - 0.55 * np.clip(sp, 0, 1)
+    save("foe_frog", to_rgb(np.clip(l, 0, 1), (1, 1, 1)))
+    # foglia: u (righe) dalla costola al margine, v (colonne) lungo la costola
+    yy, xx = np.mgrid[0:S, 0:S].astype(float) / S
+    veins = np.abs(np.sin((xx + (fbm(S, S, beta=2.2, seed=2205) - 0.5) * 0.15) * math.pi * 28))
+    leaf = 0.8 + 0.1 * (fbm(S, S, beta=1.0, seed=2206) - 0.5) - 0.18 * np.exp(-veins * 7) * (0.4 + 0.6 * yy)
+    leaf -= 0.2 * np.exp(-yy * 30)                                          # costola
+    cells = fbm(S, S, beta=0.2, seed=2207)
+    leaf += 0.06 * (cells - 0.5)
+    save("foe_trap", to_rgb(np.clip(leaf, 0, 1), (1, 1, 1)))
+
+
+if __name__ == "__main__" and len(sys.argv) > 1 and sys.argv[1] == "frog":
+    frog_and_trap()

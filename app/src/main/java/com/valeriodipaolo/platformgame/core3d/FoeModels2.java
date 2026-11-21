@@ -449,6 +449,156 @@ final class FoeModels2 {
         g.draw(hareLegs, b2, 1, 1, 1, 1, 0);
     }
 
+    /**
+     * Rana verde vera: corpo schiacciato a goccia con muso appuntito, dorso verde con macchie scure e due creste chiare,
+     * ventre crema, occhi sporgenti dorati con pupilla orizzontale, timpano, zampe posteriori lunghe ripiegate e barrate,
+     * piedi palmati, zampe anteriori corte.
+     */
+    private void buildFrog() {
+        MeshBuilder b = new MeshBuilder();
+        final float[] back = rgb(92, 140, 58), back2 = rgb(120, 150, 60), belly = rgb(226, 220, 176), ridge = rgb(170, 176, 96);
+        FoeModels.Paint skin = new FoeModels.Paint() {
+            @Override void col(float t, float an, float x, float y, float z, float[] o) {
+                float s = (float) Math.sin(an), c = (float) Math.cos(an);
+                FoeModels.mix(back, back2, 0.5f + 0.5f * (float) Math.sin(x * 30f + z * 21f), o);
+                if (s > 0.2f && Math.abs(Math.abs(c) - 0.62f) < 0.1f && t > 0.2f && t < 0.8f) FoeModels.mix(o, ridge, 0.7f, o);   // creste dorso-laterali
+                FoeModels.mix(o, belly, FoeModels.sm(-s * 3f - 0.1f), o);
+            }
+        };
+        float[][] c = {{0, 0.17f, -0.3f}, {0, 0.19f, -0.24f}, {0, 0.21f, -0.14f}, {0, 0.22f, -0.03f}, {0, 0.22f, 0.07f}, {0, 0.215f, 0.15f}, {0, 0.205f, 0.22f}, {0, 0.19f, 0.28f}, {0, 0.18f, 0.32f}};
+        float[] rx = {0.03f, 0.15f, 0.2f, 0.21f, 0.2f, 0.18f, 0.14f, 0.08f, 0.02f}, ry = {0.025f, 0.1f, 0.12f, 0.12f, 0.11f, 0.09f, 0.075f, 0.05f, 0.015f};
+        int nn = 30;
+        float[][] c2 = new float[nn][3];
+        float[] rx2 = new float[nn], ry2 = new float[nn];
+        for (int i = 0; i < nn; i++) {
+            float f = i / (nn - 1f) * (c.length - 1);
+            int k = Math.min(c.length - 2, (int) f);
+            float u = f - k, us = u * u * (3 - 2 * u);
+            for (int q = 0; q < 3; q++) c2[i][q] = c[k][q] + (c[k + 1][q] - c[k][q]) * u;
+            rx2[i] = rx[k] + (rx[k + 1] - rx[k]) * us; ry2[i] = ry[k] + (ry[k + 1] - ry[k]) * us;
+        }
+        FoeModels.loft(b, c2, rx2, ry2, 0, 1, 0, 28, 0.8f, skin, 3f, 3f);
+        // palpebre (cupole verdi sopra gli occhi) e timpani
+        for (int sd = -1; sd <= 1; sd += 2) {
+            FoeModels.ballZ(b, sd * 0.1f, 0.28f, 0.17f, 0.065f, 0.05f, 0.07f, 12, 8, skin, 1f, 1f);
+            b.colorf(0.5f, 0.42f, 0.26f); b.ellipsoid(sd * 0.165f, 0.245f, 0.09f, 0.012f, 0.035f, 0.035f, 10, 6);
+        }
+        b.colorf(0.25f, 0.3f, 0.16f);                                       // rima della bocca
+        for (int sd = -1; sd <= 1; sd += 2) FoeModels.tube(b, new float[][] {{sd * 0.16f, 0.19f, 0.06f}, {sd * 0.12f, 0.185f, 0.2f}, {sd * 0.05f, 0.18f, 0.3f}, {0, 0.178f, 0.32f}}, new float[] {0.006f, 0.006f, 0.005f, 0.004f}, 5, FoeModels.along(rgb(60, 70, 40), rgb(60, 70, 40)));
+        frogBody = fin2(b, Img.FOE_FROG, 0.35f, 40f);                         // pelle umida: un po' di riflesso
+        b = new MeshBuilder();
+        for (int sd = -1; sd <= 1; sd += 2) {
+            b.colorf(0.86f, 0.66f, 0.22f); b.ellipsoid(sd * 0.115f, 0.29f, 0.18f, 0.05f, 0.048f, 0.05f, 12, 8);          // iride dorata
+            b.colorf(0.03f, 0.03f, 0.03f); b.ellipsoid(sd * 0.135f, 0.292f, 0.2f, 0.03f, 0.014f, 0.025f, 10, 6);          // pupilla orizzontale
+        }
+        frogEyes = fin(b, 0.9f, 90f);
+        // zampa posteriore destra (sx si specchia): coscia, tibia, piede, cinque dita palmate
+        b = new MeshBuilder();
+        FoeModels.Paint barred = new FoeModels.Paint() {
+            @Override void col(float t, float an, float x, float y, float z, float[] o) {
+                FoeModels.mix(back, rgb(50, 70, 34), FoeModels.sm((float) Math.sin(t * 18f) * 2f), o);
+                FoeModels.mix(o, belly, FoeModels.sm(-(float) Math.sin(an) * 2f - 0.5f) * 0.7f, o);
+            }
+        };
+        FoeModels.tube(b, new float[][] {{0.15f, 0.17f, -0.17f}, {0.22f, 0.15f, -0.06f}, {0.27f, 0.1f, 0.06f}}, new float[] {0.075f, 0.06f, 0.045f}, 10, barred);
+        FoeModels.tube(b, new float[][] {{0.27f, 0.1f, 0.06f}, {0.25f, 0.08f, -0.08f}, {0.21f, 0.06f, -0.2f}}, new float[] {0.045f, 0.035f, 0.025f}, 10, barred);
+        FoeModels.tube(b, new float[][] {{0.21f, 0.06f, -0.2f}, {0.24f, 0.03f, -0.06f}, {0.27f, 0.02f, 0.04f}}, new float[] {0.025f, 0.02f, 0.016f}, 8, barred);
+        for (int k = 0; k < 5; k++) {
+            float an = -0.5f + k * 0.28f, L = 0.08f + 0.03f * (2 - Math.abs(k - 2.5f) / 1.5f);
+            float tx = 0.27f + (float) Math.sin(an) * L, tz = 0.04f + (float) Math.cos(an) * L;
+            FoeModels.tube(b, 0.27f, 0.02f, 0.04f, tx, 0.012f, tz, 0.01f, 0.006f, 5, FoeModels.along(back, back2));
+            b.colorf(0.8f, 0.78f, 0.6f); b.ellipsoid(tx, 0.012f, tz, 0.011f, 0.007f, 0.011f, 6, 4);
+        }
+        b.colorf(0.55f, 0.66f, 0.4f);                                       // membrana tra le dita
+        float[][] web = new float[6][];
+        for (int k = 0; k < 5; k++) { float an = -0.5f + k * 0.28f; web[k] = new float[] {0.27f + (float) Math.sin(an) * 0.07f, 0.014f, 0.04f + (float) Math.cos(an) * 0.07f}; }
+        for (int k = 0; k < 4; k++) {
+            b.vert(0.27f, 0.016f, 0.04f, 0, 1, 0, 0, 0); b.vert(web[k][0], web[k][1], web[k][2], 0, 1, 0, 1, 0); b.vert(web[k + 1][0], web[k + 1][1], web[k + 1][2], 0, 1, 0, 1, 1);
+            b.vert(0.27f, 0.016f, 0.04f, 0, -1, 0, 0, 0); b.vert(web[k + 1][0], web[k + 1][1], web[k + 1][2], 0, -1, 0, 1, 1); b.vert(web[k][0], web[k][1], web[k][2], 0, -1, 0, 1, 0);
+        }
+        FoeModels.ballZ(b, 0.27f, 0.1f, 0.06f, 0.046f, 0.046f, 0.046f, 10, 6, barred, 1f, 1f);      // ginocchio
+        FoeModels.ballZ(b, 0.21f, 0.06f, -0.2f, 0.027f, 0.027f, 0.027f, 8, 5, barred, 1f, 1f);     // tallone
+        FoeModels.ballZ(b, 0.15f, 0.17f, -0.17f, 0.08f, 0.07f, 0.09f, 10, 6, barred, 1f, 1f);      // anca
+        // zampa anteriore
+        FoeModels.tube(b, new float[][] {{0.12f, 0.17f, 0.15f}, {0.16f, 0.1f, 0.2f}, {0.15f, 0.03f, 0.24f}}, new float[] {0.035f, 0.026f, 0.02f}, 8, barred);
+        for (int k = 0; k < 4; k++) {
+            float an = -0.3f + k * 0.35f;
+            FoeModels.tube(b, 0.15f, 0.03f, 0.24f, 0.15f + (float) Math.sin(an) * 0.05f, 0.01f, 0.24f + (float) Math.cos(an) * 0.05f, 0.008f, 0.005f, 4, FoeModels.along(back, back2));
+        }
+        frogLeg = fin2(b, Img.FOE_FROG, 0.3f, 36f);
+    }
+
+    /**
+     * Dionea (pianta carnivora): rosetta di foglie a terra, picciolo, e la trappola: due lobi a conchiglia, verdi fuori e
+     * rosso vivo dentro, con le ciglia lunghe sul margine. plantHead = lobo di sopra, plantJaw = lobo di sotto (cerniera
+     * sull'asse x, aprono verso +z).
+     */
+    private void buildTrap() {
+        MeshBuilder b = new MeshBuilder();
+        FoeModels.Paint stem = FoeModels.along(rgb(96, 138, 56), rgb(120, 160, 64));
+        FoeModels.tube(b, new float[][] {{0, 0, 0}, {0.02f, 0.25f, -0.03f}, {0, 0.5f, -0.04f}, {0, 0.68f, -0.02f}, {0, 0.75f, 0.0f}}, new float[] {0.05f, 0.04f, 0.035f, 0.035f, 0.03f}, 8, stem);
+        for (int k = 0; k < 7; k++) {                                      // rosetta: foglie a spatola con una piccola trappola rossa in punta
+            float an = k * 0.9f, ca = (float) Math.cos(an), sa = (float) Math.sin(an), L = 0.32f + 0.08f * (k % 3);
+            FoeModels.loft(b, new float[][] {{0, 0.02f, 0}, {ca * L * 0.4f, 0.06f, sa * L * 0.4f}, {ca * L * 0.8f, 0.07f, sa * L * 0.8f}, {ca * L, 0.06f, sa * L}},
+                    new float[] {0.01f, 0.025f, 0.05f, 0.01f}, new float[] {0.004f, 0.005f, 0.006f, 0.004f}, 0, 1, 0, 8, 1f, stem, 1f, 1f);
+            b.colorf(0.62f, 0.2f, 0.16f); b.ellipsoid(ca * (L + 0.05f), 0.08f, sa * (L + 0.05f), 0.05f, 0.025f, 0.05f, 8, 5);
+        }
+        plantStem = fin2(b, Img.FOE_TRAP, 0.15f, 16f);
+        plantHead = lobe(1);
+        plantJaw = lobe(-1);
+        b = new MeshBuilder(); plantEyes = fin(b, 0f, 8f);                   // una pianta non ha occhi
+    }
+
+    /** Un lobo della trappola: semicerchio di 0,64 m con la cerniera sull'asse x, incavato a conchiglia, con le ciglia. */
+    private static Mesh lobe(int up) {
+        MeshBuilder b = new MeshBuilder();
+        final float W = 0.32f, D = 0.44f, C = 0.1f;
+        int nu = 10, ns = 16;
+        float[][][] P = new float[nu + 1][ns + 1][];
+        for (int i = 0; i <= nu; i++) {
+            float u = i / (float) nu;
+            for (int j = 0; j <= ns; j++) {
+                float ph = (float) Math.PI * j / ns;                       // da +x a -x passando dalla punta
+                float rr = u;                                              // 0 cerniera, 1 margine
+                float x = (float) Math.cos(ph) * W * rr, z = (float) Math.sin(ph) * D * rr;
+                float y = up * C * (float) Math.sin(rr * Math.PI * 0.85f) * (0.4f + 0.6f * (float) Math.sin(ph));
+                P[i][j] = new float[] {x, y, z};
+            }
+        }
+        for (int side = 0; side < 2; side++) {                             // fuori verde, dentro rosso
+            boolean outer = side == 0;
+            for (int i = 0; i < nu; i++) for (int j = 0; j < ns; j++) {
+                float[][] q = {P[i][j], P[i + 1][j], P[i + 1][j + 1], P[i][j + 1]};
+                float ux = q[1][0] - q[0][0], uy = q[1][1] - q[0][1], uz = q[1][2] - q[0][2];
+                float vx = q[3][0] - q[0][0], vy = q[3][1] - q[0][1], vz = q[3][2] - q[0][2];
+                if (i == 0) { vx = q[2][0] - q[1][0]; vy = q[2][1] - q[1][1]; vz = q[2][2] - q[1][2]; }
+                float nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+                float nl = (float) Math.sqrt(nx * nx + ny * ny + nz * nz) + 1e-6f;
+                nx /= nl; ny /= nl; nz /= nl;
+                if ((ny * up > 0) != outer) { nx = -nx; ny = -ny; nz = -nz; }
+                int[] ord = {0, 1, 2, 0, 2, 3};
+                for (int k : ord) {
+                    int ii = i + (k == 1 || k == 2 ? 1 : 0), jj = j + (k == 2 || k == 3 ? 1 : 0);
+                    float u = ii / (float) nu;
+                    if (outer) b.colorf(0.42f + 0.1f * u, 0.62f, 0.26f);
+                    else { float rim = Math.max(0f, (u - 0.85f) / 0.15f); b.colorf(0.82f - 0.3f * rim * 0, 0.16f + 0.4f * rim, 0.14f + 0.05f * rim); }
+                    float off = 0.008f;                                        // le due facce staccate di un soffio: niente sfarfallio
+                    b.vert(q[k][0] + nx * off, q[k][1] + ny * off, q[k][2] + nz * off, nx, ny, nz, jj / (float) ns, u);
+                }
+            }
+        }
+        // ciglia: lunghe punte sul margine, che si incrociano quando la trappola si chiude
+        FoeModels.Paint cil = FoeModels.along(rgb(150, 170, 70), rgb(190, 110, 70));
+        for (int j = 1; j < ns * 2; j++) {
+            float ph = (float) Math.PI * j / (ns * 2);
+            float x = (float) Math.cos(ph) * W, z = (float) Math.sin(ph) * D;
+            float y = up * C * (float) Math.sin(Math.PI * 0.85f) * (0.4f + 0.6f * (float) Math.sin(ph));
+            float ox = (float) Math.cos(ph) * 0.13f, oz = (float) Math.sin(ph) * 0.13f;
+            FoeModels.tube(b, x, y, z, x + ox, y + up * 0.06f, z + oz, 0.007f, 0.002f, 4, cil);
+        }
+        return fin2(b, Img.FOE_TRAP, 0.12f, 24f);
+    }
+
     FoeModels2() {
         MeshBuilder b = new MeshBuilder();
 
@@ -486,30 +636,8 @@ final class FoeModels2 {
         b.colorf(1f, 0.9f, 0.4f); b.ellipsoid(0, 0, 0.45f, 0.1f, 0.1f, 0.4f, 8, 5);
         flame = fin(b, 0f, 1f);
 
-        // rana
-        b = new MeshBuilder();
-        b.colorf(0.30f, 0.66f, 0.22f); b.ellipsoid(0, 0.26f, 0, 0.34f, 0.24f, 0.4f, 14, 9);
-        b.colorf(0.88f, 0.9f, 0.62f); b.ellipsoid(0, 0.2f, 0.1f, 0.24f, 0.14f, 0.3f, 12, 7);
-        b.colorf(0.34f, 0.72f, 0.26f); b.ellipsoid(-0.17f, 0.46f, 0.22f, 0.11f, 0.11f, 0.11f, 10, 7); b.ellipsoid(0.17f, 0.46f, 0.22f, 0.11f, 0.11f, 0.11f, 10, 7);
-        b.colorf(0.9f, 0.4f, 0.4f); b.ellipsoid(0, 0.3f, 0.36f, 0.2f, 0.02f, 0.05f, 8, 4);
-        frogBody = fin(b, 0.5f, 34f);
-        b = new MeshBuilder(); eyes(b, 0.48f, 0.3f, 0.17f, 0.065f, 0f); frogEyes = fin(b, 0.7f, 40f);
-        b = new MeshBuilder(); b.colorf(0.28f, 0.60f, 0.2f); b.ellipsoid(0.1f, 0.12f, -0.05f, 0.14f, 0.17f, 0.3f, 10, 6); b.ellipsoid(0.12f, 0.03f, 0.2f, 0.1f, 0.04f, 0.22f, 8, 5);
-        frogLeg = fin(b, 0.4f, 26f);
-
-        // pianta carnivora: gambo, testa rossa con macchie chiare, mascella inferiore
-        b = new MeshBuilder();
-        b.colorf(0.22f, 0.56f, 0.18f); b.ellipsoid(0, 0.3f, 0, 0.09f, 0.34f, 0.09f, 8, 7); b.ellipsoid(-0.18f, 0.18f, 0, 0.2f, 0.04f, 0.1f, 8, 5); b.ellipsoid(0.18f, 0.2f, 0, 0.2f, 0.04f, 0.1f, 8, 5);
-        plantStem = fin(b, 0.2f, 12f);
-        b = new MeshBuilder();
-        b.colorf(0.84f, 0.12f, 0.20f); b.ellipsoid(0, 0.12f, 0.02f, 0.34f, 0.24f, 0.34f, 14, 9);
-        b.colorf(0.98f, 0.9f, 0.82f); for (int i = 0; i < 4; i++) b.ellipsoid(-0.18f + i * 0.12f, 0.3f, 0.12f, 0.05f, 0.03f, 0.05f, 6, 4);
-        plantHead = fin(b, 0.5f, 34f);
-        b = new MeshBuilder();
-        b.colorf(0.72f, 0.08f, 0.16f); b.ellipsoid(0, -0.08f, 0.02f, 0.32f, 0.16f, 0.32f, 14, 8);
-        b.colorf(1f, 1f, 0.95f); for (int i = 0; i < 5; i++) b.ellipsoid(-0.24f + i * 0.12f, 0.06f, 0.28f, 0.035f, 0.07f, 0.035f, 6, 4);
-        plantJaw = fin(b, 0.5f, 34f);
-        b = new MeshBuilder(); eyes(b, 0.3f, 0.26f, 0.12f, 0.05f, 1f); plantEyes = fin(b, 0.6f, 30f);
+        buildFrog();
+        buildTrap();
 
         // stella: centro e cinque punte arrotondate
         b = new MeshBuilder();
@@ -677,15 +805,15 @@ final class FoeModels2 {
             case Enemy3.FROG: {
                 System.arraycopy(m, 0, a, 0, 16);
                 boolean air = e.mode == 1;
-                float cr = air ? 1.12f : 0.92f + 0.04f * (float) Math.sin(an * 3f);
-                Mat4.scale(a, air ? 0.92f : 1.04f, cr, air ? 1.1f : 1f);
-                if (air) Mat4.rotateX(a, -0.35f);
+                Mat4.scale(a, 1.25f, 1.25f, 1.25f);
+                if (air) Mat4.rotateX(a, -0.3f);
+                else Mat4.scale(a, 1f, 1f + 0.03f * (float) Math.sin(an * 5f), 1f);   // la gola che pulsa
                 g.draw(frogBody, a, 1, 1, 1, 1, 0);
                 g.draw(frogEyes, a, 1, 1, 1, 1, 0.3f);
                 for (int s = -1; s <= 1; s += 2) {
                     System.arraycopy(a, 0, b2, 0, 16);
                     if (s < 0) Mat4.scale(b2, -1, 1, 1);
-                    if (air) Mat4.rotateX(b2, 0.9f);
+                    if (air) { Mat4.translate(b2, 0.13f, 0.17f, -0.18f); Mat4.rotateX(b2, 1.7f); Mat4.translate(b2, -0.13f, -0.17f, 0.18f); }   // in salto le zampe si distendono all'indietro
                     g.draw(frogLeg, b2, 1, 1, 1, 1, 0);
                 }
                 return;
@@ -693,17 +821,16 @@ final class FoeModels2 {
             case Enemy3.PLANT: {
                 g.draw(plantStem, m, 1, 1, 1, 1, 0);
                 System.arraycopy(m, 0, a, 0, 16);
-                float open = e.mode == 2 ? 0.8f : e.mode == 1 ? 0.12f + 0.1f * (float) Math.sin(an * 45f) : 0f;
-                float yaw = e.mode == 0 ? 0 : 0f;
-                Mat4.translate(a, 0, 0.72f, 0);
-                Mat4.rotateX(a, -0.25f + 0.1f * (float) Math.sin(an * 2f));
-                g.draw(plantJaw, a, 1, 1, 1, 1, 0);
+                // a riposo la trappola è aperta e immobile; prima di mordere freme; quando morde scatta avanti e si chiude a colpi
+                float open = e.mode == 2 ? 0.05f + 0.4f * Math.abs((float) Math.sin(an * 7f)) : e.mode == 1 ? 0.55f + 0.05f * (float) Math.sin(an * 45f) : 0.45f;
+                Mat4.translate(a, 0, 0.75f, e.mode == 2 ? 0.12f * Math.abs((float) Math.sin(an * 7f)) : 0f);
+                Mat4.rotateX(a, -0.7f + 0.06f * (float) Math.sin(an * 1.6f));          // la bocca a V guarda in alto e verso il robot
                 System.arraycopy(a, 0, b2, 0, 16);
-                Mat4.translate(b2, 0, 0.0f, -0.28f);
+                Mat4.rotateX(b2, open);
+                g.draw(plantJaw, b2, 1, 1, 1, 1, 0);
+                System.arraycopy(a, 0, b2, 0, 16);
                 Mat4.rotateX(b2, -open);
-                Mat4.translate(b2, 0, 0.0f, 0.28f);
-                g.draw(plantHead, b2, e.mode == 2 ? 1.2f : 1f, 1f, 1f, 1, 0);
-                g.draw(plantEyes, b2, 1, 1, 1, 1, 0.3f);
+                g.draw(plantHead, b2, 1, 1, 1, 1, 0);
                 return;
             }
             case Enemy3.STAR: {
