@@ -438,7 +438,7 @@ public final class Scene3D {
                     boolean round = true;                                  // nessuno spigolo vivo: al minimo uno smusso
                     float rr = autumn || aurora || fire || heaven ? 0.2f : dry == 22 ? 0.06f : dry == 0 && !jungle ? 0.07f : 0.11f;
                     blockTop(w, x, z, h);
-                    s.colorf(0.24f, 0.23f, 0.22f);
+                    s.colorf(0.5f, 0.47f, 0.43f);
                     s.box(fx + 0.5f, -0.2f, z + 0.5f, 0.94f, 0.7f, 0.94f);
                     for (int k = 0; k < h; k++) {
                         // masso sepolto: coperto sopra e su tutti e quattro i lati, non si vede mai (nelle torri alte sono la maggior parte)
@@ -456,7 +456,8 @@ public final class Scene3D {
                         if (dry != 22) s.rough(mk, heaven ? 0.08f : 0.17f, 1.3f, 5);              // pietre sbozzate, non cubi (la fabbrica resta squadrata)
                         else s.box(fx + 0.5f, k + 0.5f, z + 0.5f, 1, 1, 1);
                         if (round) {       // nucleo scuro e giunti pieni: tra un masso arrotondato e l'altro non si vede attraverso
-                            if (heaven) s.colorf(0.78f, 0.78f, 0.8f); else s.colorf(0.26f, 0.25f, 0.24f);   // in cielo i giunti sono chiari come il marmo
+                            // giunti tra le pietre: pietra in ombra, non nero (con le pietre irregolari se ne vedono molti)
+                            if (heaven) s.colorf(0.78f, 0.78f, 0.8f); else s.colorf(0.58f, 0.55f, 0.5f);
                             s.box(fx + 0.5f, k + 0.5f, z + 0.5f, 0.8f, 0.8f, 0.8f);
                             if (x + 1 < World3D.W && vis(w, x + 1, z) > k) s.box(fx + 1f, k + 0.5f, z + 0.5f, 0.42f, 0.8f, 0.8f);
                             if (vis(w, x, z + 1) > k) s.box(fx + 0.5f, k + 0.5f, z + 1f, 0.8f, 0.8f, 0.42f);
