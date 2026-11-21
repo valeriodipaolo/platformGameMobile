@@ -67,7 +67,9 @@ public final class Img {
     public static final int R3S_SAND = 295, R3S_DUNE = 296, R3S_STONE = 297, R3S_QUICK = 298, R3S_SKY = 299, R3S_MOUNTAINS = 300, R3F_FLOOR = 301, R3F_PANEL = 302, R3F_BLOCK = 303, R3F_BELT = 304, R3F_SKY = 305, R3F_MOUNTAINS = 306, R3M_ROCK = 307, R3M_WALL = 308, R3M_BLOCK = 309, R3M_SKY = 310, R3M_MOUNTAINS = 311;
     /** Personaggi 1..4 (volpe, pinguino, cavaliere, astronauta): 38 sprite ciascuno da HERO_CHAR, nell'ordine fermo, 24 di corsa, salto, 12 di giravolta. */
     public static final int HERO_CHAR = 312, CHAR_SPRITES = 38;
-    public static final int COUNT = 464;
+    /** Nemici realistici (tools/gen_foes_real.py): piumaggio dell'allocco, remiganti, piumino del pinguino. */
+    public static final int FOE_OWL = 464, FOE_OWLWING = 465, FOE_PENGFUR = 466;
+    public static final int COUNT = 467;
 
     public static int heroIdle(int c) { return c <= 0 ? HERO_IDLE : HERO_CHAR + (c - 1) * CHAR_SPRITES; }
     public static int heroRun(int c, int j) { return c <= 0 ? runFrame(j) : HERO_CHAR + (c - 1) * CHAR_SPRITES + 1 + j; }
@@ -139,6 +141,7 @@ public final class Img {
         "heroe_run_5", "heroe_run_6", "heroe_run_7", "heroe_run_8", "heroe_run_9", "heroe_run_10", "heroe_run_11", "heroe_run_12",
         "heroe_run_13", "heroe_run_14", "heroe_run_15", "heroe_run_16", "heroe_run_17", "heroe_run_18", "heroe_run_19", "heroe_run_20",
         "heroe_run_21", "heroe_run_22", "heroe_run_23", "heroe_jump", "heroe_spin_0", "heroe_spin_1", "heroe_spin_2", "heroe_spin_3",
-        "heroe_spin_4", "heroe_spin_5", "heroe_spin_6", "heroe_spin_7", "heroe_spin_8", "heroe_spin_9", "heroe_spin_10", "heroe_spin_11"
+        "heroe_spin_4", "heroe_spin_5", "heroe_spin_6", "heroe_spin_7", "heroe_spin_8", "heroe_spin_9", "heroe_spin_10", "heroe_spin_11",
+        "foe_owl", "foe_owlwing", "foe_pengfur"
     };
 }

@@ -48,7 +48,7 @@ public final class World3D {
     /** Esplosioni in corso: {x, z, età}. */
     public final List<float[]> booms = new ArrayList<float[]>();
     /** Raggio dello scoppio del riccio di castagno. */
-    static final float BURR_R = 1.3f;
+    static final float BURR_R = 2.0f;
     /** Pestelli di pietra del tempio: {colonna 0..4, z, periodo, fase}. */
     public final List<float[]> crushers = new ArrayList<float[]>();
     /** Zattere sul fiume: {colonna, z, istante in cui qualcuno ci è salito (-1 = mai), periodo di riemersione}. */
@@ -609,7 +609,7 @@ public final class World3D {
             if (Math.abs(e.z - pz) > 45) continue;
             e.anim += dt;
             float speed = e.type == Enemy3.HOG ? ENEMY_SPEED * 0.8f : e.type == Enemy3.CROW ? ENEMY_SPEED * 2.7f : e.type == Enemy3.WHIRL ? ENEMY_SPEED * 1.7f
-                    : e.type == Enemy3.STORM ? ENEMY_SPEED * 0.7f : e.type == Enemy3.SNAIL ? (e.mode == 1 ? 0f : ENEMY_SPEED * (e.mode == 2 ? 0.65f : 0.4f)) : e.type == Enemy3.PENGUIN ? (e.alongZ ? (e.mode == 1 ? ENEMY_SPEED * 4.2f : e.mode == 2 ? 0f : ENEMY_SPEED * 0.6f) : ENEMY_SPEED * 2.3f)
+                    : e.type == Enemy3.STORM ? ENEMY_SPEED * 0.7f : e.type == Enemy3.SNAIL ? (e.mode == 1 ? 0f : ENEMY_SPEED * (e.mode == 2 ? 0.65f : 0.4f)) : e.type == Enemy3.PENGUIN ? (e.alongZ ? ENEMY_SPEED * 0.6f : ENEMY_SPEED * 2.3f)
                     : e.type == Enemy3.SALAMANDER ? (e.mode == 0 ? ENEMY_SPEED * 0.8f : 0f) : e.skin == Enemy3.SKIN_CRAB ? ENEMY_SPEED * 1.8f : ENEMY_SPEED;
             if (e.type >= Enemy3.MOLE && stepNew3(e, dt)) continue;
             if (e.type == Enemy3.ACORN) {                       // la ghianda aspetta ferma, poi balza in avanti
@@ -738,7 +738,7 @@ public final class World3D {
                 boolean burr = e.skin == 0;                    // il masso (miniera) invece rotola come prima
                 if (e.mode == 0) {
                     e.y = e.y0;
-                    if (burr ? (dzp > -2.6f && dzp < 0.6f && Math.abs(dxp) < 1.8f) : (Math.abs(dzp) < 4.2f && dzp > -1f && Math.abs(dxp) < 2.2f)) { e.mode = 1; e.t = 0; }
+                    if (burr ? (dzp > -4.2f && dzp < 0.8f && Math.abs(dxp) < 2.6f) : (Math.abs(dzp) < 4.2f && dzp > -1f && Math.abs(dxp) < 2.2f)) { e.mode = 1; e.t = 0; }
                 } else if (e.mode == 1) {
                     if (e.t > (burr ? 0.3f : 0.45f)) { e.mode = 2; e.vy = 0; }
                 } else if (e.mode == 2) {
@@ -765,43 +765,63 @@ public final class World3D {
                 if (state == PLAYING && (!burr || e.mode == 2)) touch(e, false);
                 return true;
             }
-            case Enemy3.OWL: {                                 // ronda alta, poi si tuffa sul giocatore e risale
-                if (Float.isNaN(e.floor)) e.floor = Math.max(0, topAt(e.x, e.z));   // il suolo sotto, non la quota di volo
-                if (e.mode == 0) {
-                    e.y = e.baseY + 0.3f * (float) Math.sin(e.anim * 2f);
-                    float n = e.alongZ ? e.z + e.dir * ENEMY_SPEED * 0.9f * dt : e.x + e.dir * ENEMY_SPEED * 0.9f * dt;
-                    if (e.alongZ) { e.z = n; if (e.z > e.hi) { e.z = e.hi; e.dir = -1; } else if (e.z < e.lo) { e.z = e.lo; e.dir = 1; } }
-                    else { e.x = n; if (e.x > e.hi) { e.x = e.hi; e.dir = -1; } else if (e.x < e.lo) { e.x = e.lo; e.dir = 1; } }
-                    if (e.t > 1.2f && Math.abs(dzp) < 4.5f && Math.abs(dxp) < 2f && py < e.baseY - 0.8f) { e.mode = 1; e.t = 0; e.x0 = px; e.z0 = pz + 0.6f; }
-                } else if (e.mode == 1) {                      // picchiata verso dove stava il robot, fino all'altezza del suo petto
-                    float ground = Math.max(0, topAt(e.x, e.z)), target = ground + 0.55f;
-                    e.y -= 5.5f * dt;
-                    float k = Math.min(1f, 4f * dt);
-                    e.x += (e.x0 - e.x) * k; e.z += (e.z0 - e.z) * k;
-                    if (e.y <= target) { e.y = target; e.mode = 2; e.t = 0; }
-                } else if (e.mode == 2) {                      // un attimo radente, poi risale
+            case Enemy3.OWL: {
+                // sta sospeso davanti al robot, rivolto verso di lui, e ondeggia da un lato all'altro; quando il robot è a tiro
+                // davanti a sé piomba su di lui a tutta velocità, lo supera, risale e torna al suo posto (solo allora si vede
+                // di spalle, e intanto non attacca). Se il robot gli è già passato oltre, non lo vede.
+                if (Float.isNaN(e.floor)) { e.floor = 0; e.x0 = e.x; e.z0 = (e.lo + e.hi) * 0.5f; e.z = e.z0; e.y0 = e.baseY; }
+                float homeX = Math.max(-1.8f, Math.min(1.8f, e.x0 + 1.4f * (float) Math.sin(e.anim * 0.9f)));
+                if (e.mode == 0) {                             // in attesa, sospeso
+                    e.x += (homeX - e.x) * Math.min(1f, 2f * dt);
+                    e.z += (e.z0 - e.z) * Math.min(1f, 2f * dt);
+                    e.y = e.baseY + 0.25f * (float) Math.sin(e.anim * 2.2f);
+                    boolean sees = dzp < -1f && dzp > -9f && Math.abs(dxp) < 3.2f;
+                    if (sees && e.t > 0.9f) { e.mode = 1; e.t = 0; e.vx = px; e.vz = pz - 0.6f; }   // punta dove sarà il robot
+                } else if (e.mode == 1) {                      // picchiata: dritto sul bersaglio, fino all'altezza del petto
+                    float ground = Math.max(0, topAt(e.x, e.z)), ty = ground + 0.6f;
+                    float dx = e.vx - e.x, dy = ty - e.y, dz = e.vz - e.z, l = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
+                    float sp = 10f * dt;
+                    if (l <= sp) { e.x = e.vx; e.y = ty; e.z = e.vz; e.mode = 2; e.t = 0; }
+                    else { e.x += dx / l * sp; e.y += dy / l * sp; e.z += dz / l * sp; }
+                } else if (e.mode == 2) {                      // radente oltre il bersaglio, poi risale
+                    e.z -= 6f * dt;
+                    e.y += 1.5f * dt;
                     if (e.t > 0.35f) { e.mode = 3; e.t = 0; }
-                } else {
-                    e.y += 2.6f * dt;
-                    if (e.y >= e.baseY) { e.y = e.baseY; e.mode = 0; e.t = 0; }
+                } else {                                       // torna al suo posto (di spalle: non vede nessuno)
+                    float dx = homeX - e.x, dy = e.baseY - e.y, dz = e.z0 - e.z, l = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
+                    float sp = 6.5f * dt;
+                    if (l <= sp) { e.mode = 0; e.t = 0; } else { e.x += dx / l * sp; e.y += dy / l * sp; e.z += dz / l * sp; }
                 }
                 if (state == PLAYING) touch(e, true);
                 return true;
             }
             case Enemy3.PENGUIN: {                             // lungo il sentiero: zampetta su e giù, quando vede il robot si butta sulla pancia
                 if (!e.alongZ) return false;                   // di traverso: va avanti e indietro come sempre
-                boolean ahead = Math.abs(dxp) < 1.2f && dzp * e.dir > 0 && Math.abs(dzp) < 6.5f;
                 if (e.mode == 0) {
-                    if (e.t > 0.8f && Math.abs(dxp) < 1.2f && Math.abs(dzp) < 6.5f) { e.dir = dzp > 0 ? 1 : -1; e.mode = 1; e.t = 0; }
-                } else if (e.mode == 1) {
-                    if (e.t > 1.5f || (!ahead && e.t > 0.6f)) { e.mode = 2; e.t = 0; }
-                } else if (e.t > 0.6f) { e.mode = 0; e.t = 0; }
-                return false;
+                    if (e.t > 0.8f && Math.abs(dxp) < 1.3f && Math.abs(dzp) < 7.5f) { e.dir = dzp > 0 ? 1 : -1; e.mode = 1; e.t = 0; }
+                    else if (e.z < e.lo - 0.05f || e.z > e.hi + 0.05f) {   // dopo una scivolata fuori ronda torna indietro a piedi
+                        e.dir = e.z < e.lo ? 1 : -1;
+                        e.z += e.dir * ENEMY_SPEED * 0.6f * dt;
+                        if (state == PLAYING) touch(e, true);
+                        return true;
+                    }
+                    return false;                              // ronda normale tra lo e hi
+                }
+                if (e.mode == 1) {                             // scivolata lunga e dritta, anche oltre la sua ronda: si ferma solo contro un ostacolo
+                    float nz = e.z + e.dir * ENEMY_SPEED * 4.6f * dt;
+                    if (e.t > 2.2f || enemyBlocked(e, e.x, nz) || nz < 0.5f || nz > length - 0.5f) { e.mode = 2; e.t = 0; }
+                    else e.z = nz;
+                } else if (e.t > 0.7f) {                       // rialzato: torna alla sua ronda camminando
+                    e.mode = 0; e.t = 0;
+                    e.dir = e.z > (e.lo + e.hi) * 0.5f ? -1 : 1;
+                }
+                if (state == PLAYING) touch(e, true);
+                return true;
             }
             case Enemy3.SNOWMAN: {
                 if (Float.isNaN(e.floor)) {
                     e.floor = e.y;
-                    if (e.skin == 0) e.face = e.x < -0.6f ? 1 : e.x > 0.6f ? -1 : new int[] {0, 1, -1}[((int) e.z) % 3];   // ai lati guarda dentro il sentiero; in mezzo a turno schermo, destra, sinistra
+                    if (e.skin == 0) e.face = e.x < -0.6f ? 1 : e.x > 0.6f ? -1 : 0;   // ai lati guarda verso il centro, in mezzo verso il robot che arriva
                 }
                 if (e.skin != 0) {                             // totem: si volta e tira noci di cocco ogni 2,3 s
                     e.dir = dzp >= 0 ? 1 : -1;

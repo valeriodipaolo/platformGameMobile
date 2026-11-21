@@ -1762,6 +1762,7 @@ public final class Scene3D {
             Mat4.setIdentity(m);
             Mat4.translate(m, e.x, e.y + bumpAt(e.x, e.z), e.z);
             float yawE = e.alongZ ? (e.dir > 0 ? 0 : (float) Math.PI) : (e.dir > 0 ? (float) Math.PI / 2 : -(float) Math.PI / 2);
+            if (e.type == Enemy3.OWL) yawE = e.mode == 3 ? (float) Math.atan2(e.x0 - e.x, e.z0 - e.z) : (float) Math.PI;   // guarda il robot; di spalle solo mentre torna al posto
             if (e.type == Enemy3.SNOWMAN && e.skin == 0) yawE = e.face == 0 ? (float) Math.PI : e.face * (float) Math.PI / 2;
             Mat4.rotateY(m, yawE);
             if (e.flung) Mat4.rotateX(m, e.anim * 3f);

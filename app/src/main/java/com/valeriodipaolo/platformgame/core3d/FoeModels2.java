@@ -186,25 +186,25 @@ final class FoeModels2 {
             rx2[i] = rx[k] + (rx[k + 1] - rx[k]) * us;
             ry2[i] = ry[k] + (ry[k + 1] - ry[k]) * us;
         }
-        FoeModels.loft(b, c2, rx2, ry2, 0, 0, 1, 40, 1f, plumage, 0, 0);
+        FoeModels.loft(b, c2, rx2, ry2, 0, 0, 1, 40, 1f, plumage, 3f, 4f);
         // coda corta
         FoeModels.tube(b, 0, -0.06f, -0.12f, 0, -0.2f, -0.24f, 0.06f, 0.03f, 8, FoeModels.along(mid, dark));
         // ciuffi
-        for (int sd = -1; sd <= 1; sd += 2) FoeModels.tube(b, sd * 0.12f, 0.58f, 0.02f, sd * 0.17f, 0.72f, -0.03f, 0.045f, 0.008f, 6, FoeModels.along(mid, dark));
-        owlBody = fin(b, 0.12f, 10f);
+        for (int sd = -1; sd <= 1; sd += 2) FoeModels.tube(b, sd * 0.12f, 0.58f, 0.02f, sd * 0.16f, 0.67f, -0.03f, 0.05f, 0.012f, 6, FoeModels.along(mid, dark));
+        owlBody = fin2(b, Img.FOE_OWL, 0.04f, 6f);
         // disco facciale: due conche chiare con il bordo scuro, becco in mezzo
         b = new MeshBuilder();
         for (int sd = -1; sd <= 1; sd += 2) {
-            b.colorf(0.42f, 0.30f, 0.20f); b.ellipsoid(sd * 0.093f, 0.43f, 0.155f, 0.11f, 0.12f, 0.06f, 14, 8);
-            b.colorf(0.80f, 0.70f, 0.54f); b.ellipsoid(sd * 0.09f, 0.43f, 0.17f, 0.1f, 0.11f, 0.05f, 14, 8);
+            b.colorf(0.46f, 0.34f, 0.23f); b.ellipsoid(sd * 0.09f, 0.43f, 0.165f, 0.115f, 0.125f, 0.035f, 14, 8);
+            b.colorf(0.72f, 0.60f, 0.44f); b.ellipsoid(sd * 0.088f, 0.43f, 0.172f, 0.1f, 0.11f, 0.03f, 14, 8);
         }
         b.colorf(0.62f, 0.50f, 0.36f); b.ellipsoid(0, 0.44f, 0.19f, 0.035f, 0.1f, 0.03f, 8, 6);       // costola di piume tra gli occhi
         FoeModels.tube(b, new float[][] {{0, 0.41f, 0.2f}, {0, 0.38f, 0.255f}, {0, 0.335f, 0.25f}}, new float[] {0.03f, 0.02f, 0.004f}, 8, FoeModels.along(rgb(200, 180, 110), rgb(70, 62, 50)));
-        owlFace = fin(b, 0.1f, 10f);
+        owlFace = fin2(b, Img.FOE_OWL, 0.03f, 6f);
         b = new MeshBuilder();
         for (int sd = -1; sd <= 1; sd += 2) {
-            b.colorf(0.03f, 0.025f, 0.02f); b.ellipsoid(sd * 0.09f, 0.44f, 0.205f, 0.045f, 0.048f, 0.022f, 12, 8);
-            b.colorf(0.95f, 0.95f, 0.9f); b.ellipsoid(sd * 0.09f + 0.012f, 0.455f, 0.224f, 0.009f, 0.009f, 0.004f, 6, 4);   // riflesso
+            b.colorf(0.03f, 0.025f, 0.02f); b.ellipsoid(sd * 0.085f, 0.445f, 0.196f, 0.034f, 0.036f, 0.018f, 12, 8);
+            b.colorf(0.95f, 0.95f, 0.9f); b.ellipsoid(sd * 0.085f + 0.01f, 0.457f, 0.217f, 0.007f, 0.007f, 0.003f, 6, 4);   // riflesso
         }
         owlEyes = fin(b, 0.9f, 80f);
         // ala: dalla spalla verso +x, copritrici in alto, remiganti separate e barrate sotto
@@ -215,15 +215,15 @@ final class FoeModels2 {
             }
         };
         float[][] cw = {{0.0f, 0, 0}, {0.14f, 0.01f, -0.02f}, {0.3f, 0.0f, -0.05f}, {0.42f, -0.02f, -0.08f}};
-        FoeModels.loft(b, cw, new float[] {0.03f, 0.17f, 0.15f, 0.07f}, new float[] {0.02f, 0.035f, 0.025f, 0.012f}, 0, 1, 0, 10, 1f, FoeModels.along(mid, dark), 0, 0);
-        for (int k = 0; k < 7; k++) {                                       // remiganti a ventaglio
-            float an = -0.25f - k * 0.17f;
-            float x0 = 0.12f + k * 0.045f, z0 = -0.06f - k * 0.015f, L = 0.32f + 0.04f * (3 - Math.abs(k - 3));
+        FoeModels.loft(b, cw, new float[] {0.05f, 0.2f, 0.18f, 0.09f}, new float[] {0.02f, 0.03f, 0.022f, 0.012f}, 0, 1, 0, 12, 1f, FoeModels.along(mid, dark), 2f, 2f);
+        for (int k = 0; k < 9; k++) {                                       // remiganti a ventaglio
+            float an = -0.15f - k * 0.15f;
+            float x0 = 0.1f + k * 0.04f, z0 = -0.05f - k * 0.012f, L = 0.34f + 0.035f * (4 - Math.abs(k - 4));
             float x1 = x0 + (float) Math.cos(an) * L, z1 = z0 + (float) Math.sin(an) * L;
             float[][] cf = {{x0, -0.005f * k, z0}, {(x0 + x1) / 2, -0.01f - 0.005f * k, (z0 + z1) / 2}, {x1, -0.015f - 0.005f * k, z1}};
-            FoeModels.loft(b, cf, new float[] {0.05f, 0.055f, 0.018f}, new float[] {0.007f, 0.007f, 0.003f}, 0, 1, 0, 6, 1f, bar, 0, 0);
+            FoeModels.loft(b, cf, new float[] {0.07f, 0.075f, 0.03f}, new float[] {0.007f, 0.007f, 0.003f}, 0, 1, 0, 6, 1f, FoeModels.along(mid, mid), 1f, 1.5f);
         }
-        owlWing = fin(b, 0.08f, 8f);
+        owlWing = fin2(b, Img.FOE_OWLWING, 0.03f, 6f);
         // zampe piumate con quattro dita e artigli neri
         b = new MeshBuilder();
         for (int sd = -1; sd <= 1; sd += 2) {
@@ -266,9 +266,9 @@ final class FoeModels2 {
             for (int q = 0; q < 3; q++) c2[i][q] = c[k][q] + (c[k + 1][q] - c[k][q]) * u;
             rx2[i] = rx[k] + (rx[k + 1] - rx[k]) * us; ry2[i] = ry[k] + (ry[k + 1] - ry[k]) * us;
         }
-        FoeModels.loft(b, c2, rx2, ry2, 0, 0, 1, 32, 1f, coat, 0, 0);
+        FoeModels.loft(b, c2, rx2, ry2, 0, 0, 1, 32, 1f, coat, 4f, 5f);
         FoeModels.tube(b, 0, 0.1f, -0.16f, 0, 0.03f, -0.3f, 0.07f, 0.02f, 6, FoeModels.along(back, back));   // coda rigida
-        pengBody = fin(b, 0.15f, 18f);
+        pengBody = fin2(b, Img.FOE_PENGFUR, 0.03f, 6f);
         b = new MeshBuilder();
         for (int sd = -1; sd <= 1; sd += 2) {                              // anello bianco, occhio scuro lucido
             b.colorf(0.95f, 0.95f, 0.96f); b.ellipsoid(sd * 0.085f, 0.84f, 0.085f, 0.035f, 0.035f, 0.02f, 10, 6);
@@ -282,7 +282,7 @@ final class FoeModels2 {
         FoeModels.loft(b, cw, new float[] {0.012f, 0.016f, 0.014f, 0.004f}, new float[] {0.06f, 0.07f, 0.05f, 0.01f}, 0, 0, 1, 10, 1f, new FoeModels.Paint() {
             @Override void col(float t, float an, float x, float y, float z, float[] o) { FoeModels.mix(back, white, 0.08f + 0.5f * FoeModels.sm((t - 0.85f) * 8f), o); }
         }, 0, 0);
-        pengWing = fin(b, 0.35f, 26f);
+        pengWing = fin(b, 0.08f, 10f);
         b = new MeshBuilder();
         for (int sd = -1; sd <= 1; sd += 2) {
             for (int t = -1; t <= 1; t++) FoeModels.tube(b, sd * 0.09f, 0.02f, 0.04f, sd * 0.09f + t * 0.045f, 0.01f, 0.15f, 0.025f, 0.012f, 6, FoeModels.along(rgb(220, 140, 140), rgb(190, 110, 110)));
