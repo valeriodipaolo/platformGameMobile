@@ -245,13 +245,30 @@ public final class Scene3D {
     /** Altezza del terreno: sentiero ondulato, sponde che salgono con una curva dolce, bosco a dossi. */
     float groundAt(float x, float z) {
         float y = groundBase(x, z);
-        return lip > 0 ? y - lipDrop(x, z) : y;
+        if (lip <= 0) return y;
+        if (edgeField(x, z) < -0.05f) return y - pitD;   // nel vuoto: i fiori finiscono giù, invisibili
+        return y - lipDrop(x, z);
     }
 
-    /** Il bordo dei burroni si piega verso il basso con un quarto di cerchio (solo estetica). */
+    /** Il bordo dei burroni si piega verso il basso con un quarto di cerchio (solo estetica), seguendo il contorno frastagliato. */
     private float lipDrop(float x, float z) {
+        float f = edgeField(x, z);
+        if (f >= lip) return 0f;
+        if (f <= 0f) return lip;
+        float k = lip - f;
+        return lip - (float) Math.sqrt(Math.max(0f, lip * lip - k * k));
+    }
+
+    /**
+     * Distanza dal bordo frastagliato dei burroni: negativa dentro il vuoto. Il contorno vero (quello del gioco) è il quadrato
+     * della casella; quello disegnato si mangia da 0 a ~0,4 m di terreno con un rumore, così le voragini non sono rettangoli.
+     * Solo grafica: chi gioca non cade prima, al massimo vede il vuoto un po' più largo.
+     */
+    float edgeField(float x, float z) {
+        if (heaven) return 2f;                                             // in cielo i bordi restano quelli delle nuvole
         int cx = (int) Math.floor(x + World3D.HALF), cz = (int) Math.floor(z);
-        float best = lip;
+        cx = Math.max(-1, Math.min(World3D.W, cx));
+        float best = 2f;
         for (int xi = cx - 1; xi <= cx + 1; xi++) {
             if (xi < 0 || xi >= World3D.W) continue;
             for (int zi = cz - 1; zi <= cz + 1; zi++) {
@@ -261,9 +278,20 @@ public final class Scene3D {
                 best = Math.min(best, (float) Math.sqrt(dx * dx + dz * dz));
             }
         }
-        if (best >= lip) return 0f;
-        float k = lip - best;
-        return lip - (float) Math.sqrt(Math.max(0f, lip * lip - k * k));
+        if (best >= 1.5f) return best;
+        return best - jag(x, z);
+    }
+
+    /** Quanto terreno si mangia il burrone in quel punto (0..~0,8): dentro il corridoio e anche nei prati ai lati. */
+    private float jag(float x, float z) {
+        float n = 0.5f * vnoise(x * 0.9f, z * 0.9f, 60) + 0.32f * vnoise(x * 2.1f, z * 2.1f, 61) + 0.18f * vnoise(x * 5f + 7, z * 5f, 62);
+        float k = Math.max(0f, Math.min(1f, (n - 0.22f) / 0.56f));
+        k = k * k * (3 - 2 * k);
+        // dove si salta (in mezzo al corridoio) il bordo resta vicino a quello vero; verso i lati il burrone si allarga e si
+        // sfrangia molto, fuori dal corridoio diventa una spaccatura irregolare che entra nel prato
+        float e = Math.max(0f, Math.min(1f, (Math.abs(x) - (World3D.HALF - 1.3f)) / 1.3f));
+        float amp = 0.45f + 0.75f * e + (Math.abs(x) > World3D.HALF ? 0.35f : 0f);
+        return 0.03f + amp * k + 0.25f * e;
     }
 
     private float groundBase(float x, float z) {
@@ -376,17 +404,19 @@ public final class Scene3D {
                             if (ax >= 0 && ax < World3D.W && vis(w, ax, az) == World3D.PIT) nearPit = true;
                         }
                     }
-                    int sub = nearPit ? 4 : 2;
-                    float e = 1f / sub;
-                    for (int sx = 0; sx < sub; sx++) {
-                        for (int sz = 0; sz < sub; sz++) {
-                            float qx = fx + sx * e, qz = z + sz * e;
-                            float[][] c = {{qx, qz}, {qx + e, qz}, {qx + e, qz + e}, {qx, qz + e}};
-                            for (int k : order) {
-                                float ex = Math.abs(c[k][0]) / World3D.HALF;
-                                float t = (1.08f - 0.10f * ex * ex) * aoAt(w, c[k][0], c[k][1]);
-                                if (lip > 0) t *= 1f - 0.7f * lipDrop(c[k][0], c[k][1]) / lip * 0.45f;
-                                ground(g, c[k][0], c[k][1], c[k][0] * 0.5f, c[k][1] * 0.5f, t, t, t);
+                    if (nearPit) jaggedCell(w, g, fx, z);
+                    else {
+                        int sub = 2;
+                        float e = 1f / sub;
+                        for (int sx = 0; sx < sub; sx++) {
+                            for (int sz = 0; sz < sub; sz++) {
+                                float qx = fx + sx * e, qz = z + sz * e;
+                                float[][] c = {{qx, qz}, {qx + e, qz}, {qx + e, qz + e}, {qx, qz + e}};
+                                for (int k : order) {
+                                    float ex = Math.abs(c[k][0]) / World3D.HALF;
+                                    float t = (1.08f - 0.10f * ex * ex) * aoAt(w, c[k][0], c[k][1]);
+                                    ground(g, c[k][0], c[k][1], c[k][0] * 0.5f, c[k][1] * 0.5f, t, t, t);
+                                }
                             }
                         }
                     }
@@ -413,7 +443,9 @@ public final class Scene3D {
                         if (k + 1 < h) faces &= ~4;
                         if (vis(w, x, z + 1) > k) faces &= ~16;
                         if (z > 0 && vis(w, x, z - 1) > k) faces &= ~32;
-                        if (round) s.roundBox(fx + 0.5f, k + 0.5f, z + 0.5f, 0.98f, 0.98f, 0.98f, rr, faces);
+                        int mk = s.mark();
+                        if (round) s.roundBox(fx + 0.5f, k + 0.5f, z + 0.5f, 0.98f, 0.98f, 0.98f, dry == 22 ? rr : rr + 0.1f, faces, 2);
+                        if (dry != 22) s.rough(mk, 0.17f, 1.3f, 5);              // pietre sbozzate, non cubi (la fabbrica resta squadrata)
                         else s.box(fx + 0.5f, k + 0.5f, z + 0.5f, 1, 1, 1);
                         if (round) {       // nucleo scuro e giunti pieni: tra un masso arrotondato e l'altro non si vede attraverso
                             s.colorf(0.26f, 0.25f, 0.24f);
@@ -428,18 +460,20 @@ public final class Scene3D {
                     }
                 }
                 MeshBuilder d = mb(K_DIRT, z);
+                if (h == 0 && lip > 0) continue;                       // il prato ha già la sua parete frastagliata
                 if (vis(w, x, z - 1) == World3D.PIT) wallZ(d, fx, z, 1);
                 if (vis(w, x, z + 1) == World3D.PIT) wallZ(d, fx, z + 1, -1);
                 if (x > 0 && vis(w, x - 1, z) == World3D.PIT) wallX(d, fx, z, 1);
                 if (x < World3D.W - 1 && vis(w, x + 1, z) == World3D.PIT) wallX(d, fx + 1, z, -1);
             }
             MeshBuilder d = mb(K_DIRT, z);
-            if (vis(w, 0, z) == World3D.PIT || heaven) wallX(d, -World3D.HALF, z, 1);
-            if (vis(w, World3D.W - 1, z) == World3D.PIT || heaven) wallX(d, World3D.HALF, z, -1);
+            if (heaven) wallX(d, -World3D.HALF, z, 1);                 // altrove la parete segue il bordo frastagliato
+            if (heaven) wallX(d, World3D.HALF, z, -1);
         }
 
         b = fire ? new MeshBuilder().color(255, 96, 22) : new MeshBuilder().color(10, 18, 14);   // fondo dei burroni (lava nell'incendio)
-        b.quad(-World3D.HALF, -PIT_DEPTH, z0, World3D.HALF, -PIT_DEPTH, z0, World3D.HALF, -PIT_DEPTH, z1, -World3D.HALF, -PIT_DEPTH, z1,
+        float fw = World3D.HALF + 1.4f;                                 // più largo del corridoio: il vuoto frastagliato entra nei lati
+        b.quad(-fw, -PIT_DEPTH, z0, fw, -PIT_DEPTH, z0, fw, -PIT_DEPTH, z1, -fw, -PIT_DEPTH, z1,
                0, 1, 0, 0.5f, 0.5f, 0.5f, 0.5f);
         pitFloor = b.build(-1, false, true);
         if (heaven) {                                              // sotto le nuvole: un mare di nuvole lontano
@@ -455,7 +489,8 @@ public final class Scene3D {
         if (spring || jungle) {                                    // nei burroni scorre un fiume: due piani d'acqua, quello sopra trasparente e mosso
             float wy = -0.75f, zl = (z1 - z0) / 3f;
             b = new MeshBuilder();
-            b.quad(-World3D.HALF, wy, z0, World3D.HALF, wy, z0, World3D.HALF, wy, z1, -World3D.HALF, wy, z1, 0, 1, 0, 0, 0, 2.2f, zl);
+            float ww = World3D.HALF + 1.4f;
+            b.quad(-ww, wy, z0, ww, wy, z0, ww, wy, z1, -ww, wy, z1, 0, 1, 0, 0, 0, 2.2f, zl);
             pitFloor = b.build(jungle ? Img.R3J_WATER : Img.R3D_WATER, false, true);
             b = new MeshBuilder();
             b.quad(-World3D.HALF, 0, z0, World3D.HALF, 0, z0, World3D.HALF, 0, z1, -World3D.HALF, 0, z1, 0, 1, 0, 0.3f, 0.2f, 2.0f, zl * 1.3f);
@@ -469,9 +504,22 @@ public final class Scene3D {
         float[] seamF = autumn || aurora || fire || heaven ? new float[] {1f, 1f, 1f} : new float[] {0.850f, 0.943f, 0.936f};
         for (int z = z0; z < (heaven ? z0 : z1); z++) {                    // in cielo non c'è terreno ai lati: si vede solo il cielo
             for (int side = -1; side <= 1; side += 2) {
+                boolean pitNear = !heaven && (vis(w, side < 0 ? 0 : World3D.W - 1, z) == World3D.PIT
+                        || vis(w, side < 0 ? 0 : World3D.W - 1, z - 1) == World3D.PIT || vis(w, side < 0 ? 0 : World3D.W - 1, z + 1) == World3D.PIT);
                 for (int k = 0; k + 1 < D.length; k++) {
                     boolean grassy = D[k + 1] <= SEAM + 0.01f;
                     MeshBuilder g = mb(grassy ? K_BANK : K_FOREST, z);
+                    if (pitNear && D[k] < 2.2f && grassy) {                 // il burrone entra un po' nel prato: niente parete dritta
+                        final float sd = side;
+                        clipGrid(g, side * (World3D.HALF + D[k]), side * (World3D.HALF + D[k + 1]), z, z + 1,
+                                Math.max(2, Math.round((D[k + 1] - D[k]) * 8)), 8, z, new Shade() {
+                            public void vert(MeshBuilder g, float x, float zz) {
+                                float d = Math.abs(x) - World3D.HALF, t = d / SEAM, bs = (0.98f - 0.13f * t) * (1f - 0.7f * lipDrop(x, zz) / lip * 0.45f);
+                                ground(g, x, zz, x * 0.5f, zz * 0.5f, bs * (1 + (seamG[0] - 1) * t), bs * (1 + (seamG[1] - 1) * t), bs * (1 + (seamG[2] - 1) * t));
+                            }
+                        });
+                        continue;
+                    }
                     float[][] c = {{D[k], z}, {D[k + 1], z}, {D[k + 1], z + 1}, {D[k], z + 1}};
                     for (int q : order) {
                         float d = c[q][0], x = side * (World3D.HALF + d), zz = c[q][1];
@@ -541,6 +589,9 @@ public final class Scene3D {
                         {Math.max(fx, Math.min(fx + 1, xb1)), zb, 0}, {Math.max(fx, Math.min(fx + 1, xb0)), zb, 0}};
                 c[0][2] = (c[0][0] - ca) / (2 * TRAIL_HW) + 0.5f; c[1][2] = (c[1][0] - ca) / (2 * TRAIL_HW) + 0.5f;
                 c[2][2] = (c[2][0] - cb) / (2 * TRAIL_HW) + 0.5f; c[3][2] = (c[3][0] - cb) / (2 * TRAIL_HW) + 0.5f;
+                boolean overVoid = false;
+                for (float[] cc : c) if (edgeField(cc[0], cc[1]) < 0.08f) overVoid = true;
+                if (overVoid) continue;                                 // il sentiero si ferma prima del bordo frastagliato
                 for (int q : order) {
                     float px = c[q][0], pz = c[q][1];
                     lightAt(px, pz, 1f);
@@ -1065,6 +1116,108 @@ public final class Scene3D {
         d.vert(ax, -pitD, az, nx, 0, nz, 0, pitD);
         d.colorf(1f, 0.95f, 0.9f);
         d.vert(ax, top, az, nx, 0, nz, 0, 0);
+    }
+
+    /**
+     * Casella di prato accanto a un burrone: griglia fitta, ogni quadratino ritagliato dove il contorno frastagliato passa
+     * (il pezzo nel vuoto non si disegna) e, lungo il taglio, una parete di terra irregolare che scende.
+     */
+    private void jaggedCell(final World3D w, MeshBuilder g, float fx, int z) {
+        clipGrid(g, fx, fx + 1, z, z + 1, 8, 8, z, new Shade() {
+            public void vert(MeshBuilder g, float x, float zz) {
+                float ex = Math.abs(x) / World3D.HALF;
+                float t = (1.08f - 0.10f * ex * ex) * aoAt(w, x, zz) * (1f - 0.7f * lipDrop(x, zz) / lip * 0.45f);
+                ground(g, x, zz, x * 0.5f, zz * 0.5f, t, t, t);
+            }
+        });
+    }
+
+    /** Come colorare un vertice di terreno (prato del corridoio o prato dei lati). */
+    private interface Shade {
+        void vert(MeshBuilder g, float x, float z);
+    }
+
+    /** Rettangolo di terreno diviso in nx x nz quadratini, ritagliati sul contorno frastagliato, con la parete lungo il taglio. */
+    private void clipGrid(MeshBuilder g, float xa, float xb, float za, float zb, int nxs, int nzs, int chunkZ, Shade sh) {
+        float[] px = new float[8], pz = new float[8];
+        boolean[] cut = new boolean[8];
+        for (int sx = 0; sx < nxs; sx++) {
+            for (int sz = 0; sz < nzs; sz++) {
+                float qx0 = xa + (xb - xa) * sx / nxs, qx1 = xa + (xb - xa) * (sx + 1) / nxs;
+                float qz0 = za + (zb - za) * sz / nzs, qz1 = za + (zb - za) * (sz + 1) / nzs;
+                float[][] c = {{qx0, qz0}, {qx1, qz0}, {qx1, qz1}, {qx0, qz1}};
+                if (xb < xa) {                                          // lato sinistro: stesso giro dei vertici
+                    c = new float[][] {{qx1, qz0}, {qx0, qz0}, {qx0, qz1}, {qx1, qz1}};
+                }
+                float[] fv = new float[4];
+                boolean any = false, all = true;
+                for (int k = 0; k < 4; k++) {
+                    fv[k] = edgeField(c[k][0], c[k][1]);
+                    if (fv[k] >= 0) any = true; else all = false;
+                }
+                if (!any) continue;
+                int n = 0;
+                for (int k = 0; k < 4; k++) {                       // ritaglio del quadratino: resta la parte con terreno
+                    int k2 = (k + 1) & 3;
+                    if (fv[k] >= 0) { px[n] = c[k][0]; pz[n] = c[k][1]; cut[n] = false; n++; }
+                    if ((fv[k] >= 0) != (fv[k2] >= 0)) {
+                        float t = fv[k] / (fv[k] - fv[k2]);
+                        px[n] = c[k][0] + (c[k2][0] - c[k][0]) * t; pz[n] = c[k][1] + (c[k2][1] - c[k][1]) * t; cut[n] = true; n++;
+                    }
+                }
+                for (int k = 1; k + 1 < n; k++) {
+                    sh.vert(g, px[0], pz[0]);
+                    sh.vert(g, px[k], pz[k]);
+                    sh.vert(g, px[k + 1], pz[k + 1]);
+                }
+                if (all) continue;
+                for (int k = 0; k < n; k++) {                       // il lato tra due punti di taglio è il bordo: lì scende la parete
+                    int k2 = (k + 1) % n;
+                    if (cut[k] && cut[k2]) cliff(mb(K_DIRT, chunkZ), px[k], pz[k], px[k2], pz[k2]);
+                }
+            }
+        }
+    }
+
+    /** Spostamento orizzontale della parete a una certa profondità: sporgenze e rientranze di roccia, uguali per pezzi vicini. */
+    private float cliffDx(float x, float z, int row) {
+        return row == 0 ? 0f : (vnoise(x * 2.2f + row * 5.3f, z * 2.2f, 71) - 0.5f) * 0.55f;
+    }
+
+    private float cliffDz(float x, float z, int row) {
+        return row == 0 ? 0f : (vnoise(x * 2.2f, z * 2.2f + row * 5.3f, 72) - 0.5f) * 0.55f;
+    }
+
+    /** Parete frastagliata sotto il segmento di bordo a-b: quattro fasce che sporgono e rientrano, faccette come roccia. */
+    private void cliff(MeshBuilder d, float ax, float az, float bx, float bz) {
+        float[] ys = {0f, -0.9f, -2.0f, -pitD};
+        float ta = groundAt(ax, az), tb = groundAt(bx, bz);
+        for (int r = 0; r < 3; r++) {
+            float ya0 = r == 0 ? ta : ys[r], yb0 = r == 0 ? tb : ys[r], y1 = ys[r + 1];
+            float[][] p = {
+                {ax + cliffDx(ax, az, r), ya0, az + cliffDz(ax, az, r)},
+                {bx + cliffDx(bx, bz, r), yb0, bz + cliffDz(bx, bz, r)},
+                {bx + cliffDx(bx, bz, r + 1), y1, bz + cliffDz(bx, bz, r + 1)},
+                {ax + cliffDx(ax, az, r + 1), y1, az + cliffDz(ax, az, r + 1)}};
+            // normale della faccetta, girata verso il vuoto (dalla parte dove il campo è negativo)
+            float ux = p[1][0] - p[0][0], uy = p[1][1] - p[0][1], uz = p[1][2] - p[0][2];
+            float vx = p[3][0] - p[0][0], vy = p[3][1] - p[0][1], vz = p[3][2] - p[0][2];
+            float nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+            float nl = (float) Math.sqrt(nx * nx + ny * ny + nz * nz) + 1e-6f;
+            nx /= nl; ny /= nl; nz /= nl;
+            float mx = (ax + bx) * 0.5f, mz = (az + bz) * 0.5f;
+            if (edgeField(mx + nx * 0.05f, mz + nz * 0.05f) > edgeField(mx - nx * 0.05f, mz - nz * 0.05f)) { nx = -nx; ny = -ny; nz = -nz; }
+            float la = (float) Math.sqrt((bx - ax) * (bx - ax) + (bz - az) * (bz - az));
+            float ua = ax + az, ub = ua + la;
+            float[] u = {ua, ub, ub, ua};
+            int[] ord = {0, 1, 2, 0, 2, 3};
+            for (int k : ord) {
+                float depth = -p[k][1] / pitD;
+                float c = heaven ? 1f - 0.2f * depth : 1f - 0.96f * (float) Math.pow(Math.max(0f, Math.min(1f, depth * 1.15f)), 0.7f);
+                if (heaven) d.colorf(c * 0.85f, c * 0.92f, c); else d.colorf(c, c * 0.95f, c * 0.9f);
+                d.vert(p[k][0], p[k][1], p[k][2], nx, ny, nz, u[k] * 0.5f, -p[k][1] * 0.5f);
+            }
+        }
     }
 
     /** Parete lungo x alla quota z; dir = +1 se il vuoto sta verso z minore. */
@@ -2101,7 +2254,7 @@ public final class Scene3D {
                         float rr = 0.5f + 0.5f * r.nextFloat();
                         p.cylinder(x + side * rr, y, y + 1.5f + 2f * r.nextFloat(), z, rr, rr, 14, true, false);
                     } else if (k < 0.6f) {                              // cassone con le strisce
-                        mb(K_STONE, z).roundBox(x + side * 0.5f, y + 0.5f, z, 1f, 1f, 1f, 0.09f);
+                        { MeshBuilder ms = mb(K_STONE, z); int mk = ms.mark(); ms.roundBox(x + side * 0.5f, y + 0.5f, z, 1f, 1f, 1f, 0.12f, 63, 2); ms.rough(mk, 0.17f, 1.3f, 5); }
                     } else {                                             // ciminiera
                         p.colorf(0.5f * lt[0], 0.3f * lt[1], 0.26f * lt[2]);
                         p.cylinder(x + side * 2f, y, y + 4f + 4f * r.nextFloat(), z, 0.4f, 0.32f, 10, true, false);

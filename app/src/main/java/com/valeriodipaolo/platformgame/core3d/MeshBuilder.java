@@ -27,6 +27,53 @@ public final class MeshBuilder {
         return this;
     }
 
+    /** Quanti numeri sono già stati scritti (per deformare poi solo l'ultimo pezzo aggiunto). */
+    public int mark() { return n; }
+
+    /**
+     * Rende irregolare l'ultimo pezzo (da mark in poi): ogni vertice si sposta secondo un rumore che dipende dalla sua posizione
+     * nel mondo (così due pezzi che si toccano restano attaccati), poi le normali si ricalcolano per faccetta, come pietra sbozzata.
+     */
+    public void rough(int mark, float amp, float freq, int seed) {
+        for (int i = mark; i < n; i += Mesh.STRIDE) {
+            float x = d[i], y = d[i + 1], z = d[i + 2];
+            d[i] += amp * (noise3(x * freq, y * freq, z * freq, seed) - 0.5f) * 2f + amp * 0.4f * (noise3(x * freq * 2.7f, y * freq * 2.7f, z * freq * 2.7f, seed + 3) - 0.5f) * 2f;
+            d[i + 1] += amp * 0.35f * (noise3(x * freq, y * freq, z * freq, seed + 1) - 0.5f) * 2f;
+            d[i + 2] += amp * (noise3(x * freq, y * freq, z * freq, seed + 2) - 0.5f) * 2f + amp * 0.4f * (noise3(x * freq * 2.7f, y * freq * 2.7f, z * freq * 2.7f, seed + 4) - 0.5f) * 2f;
+        }
+        for (int i = mark; i + 3 * Mesh.STRIDE <= n; i += 3 * Mesh.STRIDE) {
+            int a = i, b = i + Mesh.STRIDE, c = i + 2 * Mesh.STRIDE;
+            float ux = d[b] - d[a], uy = d[b + 1] - d[a + 1], uz = d[b + 2] - d[a + 2];
+            float vx = d[c] - d[a], vy = d[c + 1] - d[a + 1], vz = d[c + 2] - d[a + 2];
+            float nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+            float l = (float) Math.sqrt(nx * nx + ny * ny + nz * nz);
+            if (l < 1e-9f) continue;
+            nx /= l; ny /= l; nz /= l;
+            // stesso verso della normale originale (le facce non hanno un giro fisso dei vertici)
+            if (nx * d[a + 3] + ny * d[a + 4] + nz * d[a + 5] < 0) { nx = -nx; ny = -ny; nz = -nz; }
+            for (int k = a; k <= c; k += Mesh.STRIDE) { d[k + 3] = nx; d[k + 4] = ny; d[k + 5] = nz; }
+        }
+    }
+
+    private static float hash3(int x, int y, int z, int seed) {
+        int h = x * 374761393 + y * 668265263 + z * 1274126177 + seed * 1442695041;
+        h = (h ^ (h >>> 13)) * 1274126177;
+        return ((h ^ (h >>> 16)) & 0xffffff) / (float) 0xffffff;
+    }
+
+    /** Rumore 3D morbido (0..1). */
+    static float noise3(float x, float y, float z, int seed) {
+        int xi = (int) Math.floor(x), yi = (int) Math.floor(y), zi = (int) Math.floor(z);
+        float fx = x - xi, fy = y - yi, fz = z - zi;
+        fx = fx * fx * (3 - 2 * fx); fy = fy * fy * (3 - 2 * fy); fz = fz * fz * (3 - 2 * fz);
+        float r = 0;
+        for (int k = 0; k < 8; k++) {
+            int dx = k & 1, dy = (k >> 1) & 1, dz = k >> 2;
+            r += hash3(xi + dx, yi + dy, zi + dz, seed) * (dx == 1 ? fx : 1 - fx) * (dy == 1 ? fy : 1 - fy) * (dz == 1 ? fz : 1 - fz);
+        }
+        return r;
+    }
+
     public void vert(float x, float y, float z, float nx, float ny, float nz, float u, float v) {
         if (n + Mesh.STRIDE > d.length) d = java.util.Arrays.copyOf(d, d.length * 2);
         d[n++] = x; d[n++] = y; d[n++] = z;

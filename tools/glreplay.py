@@ -364,7 +364,27 @@ class Pipeline:
         gl.glEnable(GL_DEPTH_TEST)
 
 
+TOP = None
+
+
+def top_view(cx, cz, span, view, proj, fog):
+    """Vista dall'alto (per controllare i contorni): camera sopra (cx, cz) inclinata di poco, proiezione parallela."""
+    eye = np.array([cx, 30.0, cz - 6.0]); tgt = np.array([cx, 0.0, cz])
+    f_ = tgt - eye; f_ /= np.linalg.norm(f_)
+    r_ = np.cross(f_, [0, 1, 0]); r_ /= np.linalg.norm(r_)
+    u_ = np.cross(r_, f_)
+    V = np.eye(4); V[0, :3], V[1, :3], V[2, :3] = r_, u_, -f_
+    V[:3, 3] = -V[:3, :3] @ eye
+    a = 1280 / 576
+    P = np.eye(4); P[0, 0] = 1 / (span * a); P[1, 1] = 1 / span; P[2, 2] = -2 / 200; P[2, 3] = -1
+    return tuple(V.T.flatten()), tuple(P.T.flatten()), (fog[0], fog[1], fog[2], 500, 600, 0)
+
+
 def main():
+    global TOP
+    for a in sys.argv:
+        if a.startswith("--top="):
+            TOP = tuple(float(v) for v in a[6:].split(","))
     data = open(sys.argv[1], "rb").read()
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
     fx = "--nofx" not in sys.argv
@@ -400,6 +420,8 @@ def main():
             view, proj, fog, lm = r.f(16), r.f(16), r.f(6), r.f(16)
             if live:
                 begin, light = (view, proj, fog), lm
+                if TOP:
+                    begin = top_view(*TOP, view, proj, fog)
         elif op == 3:
             mid = r.i()
             if live:
