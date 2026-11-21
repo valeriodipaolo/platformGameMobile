@@ -21,10 +21,7 @@ public class HeroSprites {
         names[0] = "hero_idle"; names[5] = "hero_jump";
         for (int i = 0; i < 4; i++) names[1 + i] = "hero_run_" + i;
         for (int i = 0; i < 12; i++) names[6 + i] = "hero_spin_" + i;
-        int ch = a.length > 2 ? Integer.parseInt(a[2]) : 0;
         boolean onlyRun = a.length > 3;
-        HeroModel.character = ch;
-        if (ch > 0) for (int n = 0; n < names.length; n++) names[n] = "hero" + "bcde".charAt(ch - 1) + names[n].substring(4);
         for (int n = 0; n < names.length; n++) {
             boolean runFrame = (n >= 1 && n <= 4) || n >= 18;
             if (onlyRun && !runFrame) continue;

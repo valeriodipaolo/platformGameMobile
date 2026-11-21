@@ -1771,6 +1771,12 @@ public final class Scene3D {
             foes.draw(g, m, e);
         }
 
+        for (Enemy3 e : w.enemies) {                                   // le liane dei ricci restano anche dopo la caduta
+            if (e.type != Enemy3.CHESTNUT || e.skin != 0 || e.z < near || e.z > far) continue;
+            Mat4.setIdentity(m);
+            Mat4.translate(m, 0, e.y0 + bumpAt(0, e.z), e.z);
+            foes.drawLiana(g, m);
+        }
         for (float[] sh : w.shots) { Mat4.setIdentity(m); foes.drawShot(g, m, sh); }
         drawRobot(w, g);
         drawLeaves(w, g);

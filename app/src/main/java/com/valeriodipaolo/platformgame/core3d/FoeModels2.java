@@ -137,7 +137,7 @@ final class FoeModels2 {
         // rametto dal riccio fino alla chioma (3 m), con due foglie lunghe e seghettate
         b = new MeshBuilder();
         FoeModels.Paint wood = FoeModels.along(rgb(92, 70, 46), rgb(70, 54, 38));
-        FoeModels.tube(b, new float[][] {{0, 0.66f, 0}, {0.03f, 1.2f, -0.02f}, {-0.05f, 2.2f, 0.03f}, {0.02f, 3.4f, 0}}, new float[] {0.022f, 0.03f, 0.04f, 0.05f}, 6, wood);
+        FoeModels.tube(b, new float[][] {{0, 0.66f, 0}, {0.02f, 1.0f, -0.01f}, {-0.01f, 1.33f, 0.01f}, {0, 1.66f, 0}}, new float[] {0.018f, 0.02f, 0.02f, 0.022f}, 6, wood);
         for (int sd = -1; sd <= 1; sd += 2) {
             float[][] c = {{0, 0.9f, 0}, {sd * 0.12f, 0.95f, 0.04f}, {sd * 0.26f, 0.93f, 0.07f}, {sd * 0.38f, 0.86f, 0.08f}, {sd * 0.46f, 0.78f, 0.08f}};
             float[] rx = {0.005f, 0.05f, 0.06f, 0.04f, 0.004f}, ry = {0.003f, 0.006f, 0.006f, 0.005f, 0.002f};
@@ -151,6 +151,42 @@ final class FoeModels2 {
         }
         chestStem = fin(b, 0.05f, 8f);
         b = new MeshBuilder(); chestEyes = fin(b, 0f, 8f);                 // un riccio non ha occhi
+    }
+
+    /** Altezza della liana sopra il centro del riccio appeso, alla coordinata x del sentiero (più bassa al centro). */
+    static float lianaY(float x) { return LIANA_H + LIANA_SAG * (x / LIANA_HALF) * (x / LIANA_HALF); }
+    static final float LIANA_H = 1.0f, LIANA_SAG = 0.9f, LIANA_HALF = 4.6f;
+    private Mesh liana;
+
+    /** Liana tesa da un lato all'altro del sentiero, un po' cadente, con qualche foglia: ci sono appesi i ricci. */
+    void drawLiana(Gfx3D g, float[] m) {
+        if (liana == null) {
+            MeshBuilder b = new MeshBuilder();
+            int n = 24;
+            float[][] c = new float[n][];
+            float[] r = new float[n];
+            for (int i = 0; i < n; i++) {
+                float x = -LIANA_HALF + 2 * LIANA_HALF * i / (n - 1f);
+                c[i] = new float[] {x, lianaY(x) + 0.02f * (float) Math.sin(i * 1.7f), 0.03f * (float) Math.sin(i * 0.9f)};
+                r[i] = 0.035f + 0.012f * (float) Math.sin(i * 2.3f);
+            }
+            FoeModels.Paint vine = new FoeModels.Paint() {
+                @Override void col(float t, float an, float x, float y, float z, float[] o) {
+                    FoeModels.mix(rgb(70, 60, 40), rgb(96, 84, 52), 0.5f + 0.5f * (float) Math.sin(t * 90f + an * 2f), o);   // fibre ritorte
+                }
+            };
+            FoeModels.tube(b, c, r, 7, vine);
+            java.util.Random rr = new java.util.Random(5);
+            for (int k = 0; k < 16; k++) {                                     // foglie secche lungo la liana
+                float x = -LIANA_HALF + 0.3f + rr.nextFloat() * (2 * LIANA_HALF - 0.6f), y = lianaY(x);
+                float sd = rr.nextBoolean() ? 1 : -1, l = 0.12f + 0.06f * rr.nextFloat();
+                FoeModels.loft(b, new float[][] {{x, y, 0}, {x + 0.03f, y - l * 0.5f, sd * 0.05f}, {x + 0.02f, y - l, sd * 0.07f}},
+                        new float[] {0.004f, 0.035f, 0.004f}, new float[] {0.003f, 0.004f, 0.002f}, 0, 0, 1, 6, 1f,
+                        FoeModels.along(rgb(150, 112, 40), rgb(120, 72, 30)), 0, 0);
+            }
+            liana = fin(b, 0.05f, 8f);
+        }
+        g.draw(liana, m, 1, 1, 1, 1, 0);
     }
 
     /**
@@ -518,9 +554,13 @@ final class FoeModels2 {
             case Enemy3.CHESTNUT: {
                 System.arraycopy(m, 0, a, 0, 16);
                 Mat4.translate(a, 0, -0.35f, 0);
-                if (e.mode < 2) {                                      // il rametto resta appeso dove stava il riccio
+                if (e.mode < 2) {                                      // picciolo dal riccio fino alla liana che attraversa il sentiero
                     System.arraycopy(a, 0, b2, 0, 16);
                     if (e.mode == 1) Mat4.rotateZ(b2, 0.05f * (float) Math.sin(an * 40f));
+                    float len = lianaY(e.x) - 0.31f;
+                    Mat4.translate(b2, 0, 0.66f, 0);
+                    Mat4.scale(b2, 1, len, 1);
+                    Mat4.translate(b2, 0, -0.66f, 0);
                     g.draw(chestStem, b2, 1, 1, 1, 1, 0);
                 }
                 if (e.mode == 1) { Mat4.translate(a, 0, 0.66f, 0); Mat4.rotateZ(a, 0.09f * (float) Math.sin(an * 45f)); Mat4.translate(a, 0, -0.66f, 0); }

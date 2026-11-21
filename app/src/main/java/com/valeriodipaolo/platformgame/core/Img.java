@@ -65,16 +65,10 @@ public final class Img {
             R3J_CRATE = 289, R3J_TNT = 290, R3J_NITRO = 291, R3J_BOUNCE = 292, R3J_CHECK = 293, R3J_FROND = 294;
     // deserto, fabbrica, miniera (tools/gen_worlds.py)
     public static final int R3S_SAND = 295, R3S_DUNE = 296, R3S_STONE = 297, R3S_QUICK = 298, R3S_SKY = 299, R3S_MOUNTAINS = 300, R3F_FLOOR = 301, R3F_PANEL = 302, R3F_BLOCK = 303, R3F_BELT = 304, R3F_SKY = 305, R3F_MOUNTAINS = 306, R3M_ROCK = 307, R3M_WALL = 308, R3M_BLOCK = 309, R3M_SKY = 310, R3M_MOUNTAINS = 311;
-    /** Personaggi 1..4 (volpe, pinguino, cavaliere, astronauta): 38 sprite ciascuno da HERO_CHAR, nell'ordine fermo, 24 di corsa, salto, 12 di giravolta. */
-    public static final int HERO_CHAR = 312, CHAR_SPRITES = 38;
     /** Nemici realistici (tools/gen_foes_real.py): piumaggio dell'allocco, remiganti, piumino del pinguino. */
-    public static final int FOE_OWL = 464, FOE_OWLWING = 465, FOE_PENGFUR = 466;
-    public static final int COUNT = 467;
+    public static final int FOE_OWL = 312, FOE_OWLWING = 313, FOE_PENGFUR = 314;
+    public static final int COUNT = 315;
 
-    public static int heroIdle(int c) { return c <= 0 ? HERO_IDLE : HERO_CHAR + (c - 1) * CHAR_SPRITES; }
-    public static int heroRun(int c, int j) { return c <= 0 ? runFrame(j) : HERO_CHAR + (c - 1) * CHAR_SPRITES + 1 + j; }
-    public static int heroJump(int c) { return c <= 0 ? HERO_JUMP : HERO_CHAR + (c - 1) * CHAR_SPRITES + 25; }
-    public static int heroSpin(int c, int pose) { return c <= 0 ? HERO_SPIN + pose : HERO_CHAR + (c - 1) * CHAR_SPRITES + 26 + pose; }
 
     /** Fotogramma j (0..23) del ciclo di corsa. */
     public static int runFrame(int j) {
@@ -123,25 +117,6 @@ public final class Img {
         "r3j_grass", "r3j_forest", "r3j_tuft", "r3j_flowers", "r3j_crown", "r3j_tree", "r3j_foliage", "r3j_sky", "r3j_mountains", "r3j_sand",
         "r3j_water", "r3j_temple", "r3j_dusk", "r3j_night", "r3j_crate", "r3j_tnt", "r3j_nitro", "r3j_bounce", "r3j_check", "r3j_frond",
         "r3s_sand", "r3s_dune", "r3s_stone", "r3s_quick", "r3s_sky", "r3s_mountains", "r3f_floor", "r3f_panel", "r3f_block", "r3f_belt", "r3f_sky", "r3f_mountains", "r3m_rock", "r3m_wall", "r3m_block", "r3m_sky", "r3m_mountains",
-        "herob_idle", "herob_run_0", "herob_run_1", "herob_run_2", "herob_run_3", "herob_run_4", "herob_run_5", "herob_run_6",
-        "herob_run_7", "herob_run_8", "herob_run_9", "herob_run_10", "herob_run_11", "herob_run_12", "herob_run_13", "herob_run_14",
-        "herob_run_15", "herob_run_16", "herob_run_17", "herob_run_18", "herob_run_19", "herob_run_20", "herob_run_21", "herob_run_22",
-        "herob_run_23", "herob_jump", "herob_spin_0", "herob_spin_1", "herob_spin_2", "herob_spin_3", "herob_spin_4", "herob_spin_5",
-        "herob_spin_6", "herob_spin_7", "herob_spin_8", "herob_spin_9", "herob_spin_10", "herob_spin_11", "heroc_idle", "heroc_run_0",
-        "heroc_run_1", "heroc_run_2", "heroc_run_3", "heroc_run_4", "heroc_run_5", "heroc_run_6", "heroc_run_7", "heroc_run_8",
-        "heroc_run_9", "heroc_run_10", "heroc_run_11", "heroc_run_12", "heroc_run_13", "heroc_run_14", "heroc_run_15", "heroc_run_16",
-        "heroc_run_17", "heroc_run_18", "heroc_run_19", "heroc_run_20", "heroc_run_21", "heroc_run_22", "heroc_run_23", "heroc_jump",
-        "heroc_spin_0", "heroc_spin_1", "heroc_spin_2", "heroc_spin_3", "heroc_spin_4", "heroc_spin_5", "heroc_spin_6", "heroc_spin_7",
-        "heroc_spin_8", "heroc_spin_9", "heroc_spin_10", "heroc_spin_11", "herod_idle", "herod_run_0", "herod_run_1", "herod_run_2",
-        "herod_run_3", "herod_run_4", "herod_run_5", "herod_run_6", "herod_run_7", "herod_run_8", "herod_run_9", "herod_run_10",
-        "herod_run_11", "herod_run_12", "herod_run_13", "herod_run_14", "herod_run_15", "herod_run_16", "herod_run_17", "herod_run_18",
-        "herod_run_19", "herod_run_20", "herod_run_21", "herod_run_22", "herod_run_23", "herod_jump", "herod_spin_0", "herod_spin_1",
-        "herod_spin_2", "herod_spin_3", "herod_spin_4", "herod_spin_5", "herod_spin_6", "herod_spin_7", "herod_spin_8", "herod_spin_9",
-        "herod_spin_10", "herod_spin_11", "heroe_idle", "heroe_run_0", "heroe_run_1", "heroe_run_2", "heroe_run_3", "heroe_run_4",
-        "heroe_run_5", "heroe_run_6", "heroe_run_7", "heroe_run_8", "heroe_run_9", "heroe_run_10", "heroe_run_11", "heroe_run_12",
-        "heroe_run_13", "heroe_run_14", "heroe_run_15", "heroe_run_16", "heroe_run_17", "heroe_run_18", "heroe_run_19", "heroe_run_20",
-        "heroe_run_21", "heroe_run_22", "heroe_run_23", "heroe_jump", "heroe_spin_0", "heroe_spin_1", "heroe_spin_2", "heroe_spin_3",
-        "heroe_spin_4", "heroe_spin_5", "heroe_spin_6", "heroe_spin_7", "heroe_spin_8", "heroe_spin_9", "heroe_spin_10", "heroe_spin_11",
         "foe_owl", "foe_owlwing", "foe_pengfur"
     };
 }

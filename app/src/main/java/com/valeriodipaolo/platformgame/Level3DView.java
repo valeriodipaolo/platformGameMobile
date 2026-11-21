@@ -27,6 +27,8 @@ final class Level3DView extends FrameLayout {
     // schema 6: angolo entro cui si blocca sull'asse, guadagno sulle diagonali, corsa del joystick per la piena velocità
     /** Comandi digitali: la levetta dà solo otto direzioni, sempre a piena velocità (niente pressione intermedia). */
     private final boolean digital;
+    /** Croce direzionale: quattro bracci (le diagonali solo negli angoli), tutto o niente. */
+    private final boolean dpad;
     private static final float SNAP_DEG = 20f, DIAG_GAIN = 0.6f, FULL_X = 0.7f, FULL_Y = 0.5f;
 
     // comandi: scritti dal thread dei tocchi, letti dal thread grafico
@@ -38,8 +40,9 @@ final class Level3DView extends FrameLayout {
         super(ctx);
         this.onExit = onExit;
         com.valeriodipaolo.platformgame.core3d.World3D.fastFall = true;     // dopo il salto si torna a terra in fretta
-        com.valeriodipaolo.platformgame.core3d.HeroModel.character = Math.max(0, Math.min(4, ctx.getSharedPreferences("platformgame", Context.MODE_PRIVATE).getInt("hero", 0)));
-        digital = ctx.getSharedPreferences("platformgame", Context.MODE_PRIVATE).getInt("ctrlmode", 0) == 1;
+        int mode = ctx.getSharedPreferences("platformgame", Context.MODE_PRIVATE).getInt("ctrlmode", 0);
+        digital = mode == 1;
+        dpad = mode == 2;
         world = new World3D(new AndroidSave(ctx), levelNo);
         gl = new GLSurfaceView(ctx);
         gl.setEGLContextClientVersion(2);
@@ -103,6 +106,7 @@ final class Level3DView extends FrameLayout {
         @Override
         protected void onDraw(Canvas canvas) {
             painter.begin(canvas);
+            hud.dpad = dpad;
             hud.draw(world, painter, getWidth(), getHeight(), joyId != -1, joyCx, joyCy, joyDx, joyDy, renderer.error);
             postInvalidateOnAnimation();
         }
@@ -162,8 +166,20 @@ final class Level3DView extends FrameLayout {
             joyDx = dx;
             joyDy = dy;
             // zona morta piccola e piena velocità già a poco più di metà corsa: risposta pronta
-            if (len < (digital ? 0.3f : 0.12f)) {
+            if (len < (digital || dpad ? 0.3f : 0.12f)) {
                 joyX = joyY = 0;
+            } else if (dpad) {
+                // croce: bracci larghi (±30° attorno agli assi), diagonali solo nello spicchio stretto degli angoli
+                double a = Math.toDegrees(Math.atan2(-dy, dx));
+                double r = ((a % 90) + 90) % 90;                       // 0..90 dentro il quadrante
+                double snap = r < 30 ? 0 : r > 60 ? 90 : 45;
+                double ang = Math.toRadians(a - r + snap);
+                joyX = (float) Math.cos(ang);
+                joyY = (float) Math.sin(ang);
+                if (Math.abs(joyX) < 1e-3f) joyX = 0;
+                if (Math.abs(joyY) < 1e-3f) joyY = 0;
+                joyDx = joyX;
+                joyDy = -joyY;
             } else if (digital) {
                 // otto direzioni, tutto o niente: l'angolo si arrotonda al multiplo di 45° più vicino e la velocità è sempre piena
                 double ang = Math.round(Math.atan2(-dy, dx) / (Math.PI / 4)) * (Math.PI / 4);

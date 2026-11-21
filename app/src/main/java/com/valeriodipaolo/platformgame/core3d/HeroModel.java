@@ -19,30 +19,15 @@ public final class HeroModel {
     private final float[][][] cp = new float[CR + 1][CC + 1][3], cn = new float[CR + 1][CC + 1][3];
     private float lift, flare, lastTime = -1;
 
-    /** Personaggio scelto nel menu: 0 robot, 1 volpe, 2 pinguino, 3 cavaliere, 4 astronauta (vedi HeroSkins). */
-    public static int character = 0;
-    public static String characterName(int c) { return HeroSkins.NAMES[Math.max(0, Math.min(4, c))]; }
-
     public HeroModel() {
-        int c = Math.max(0, Math.min(4, character));
-        if (c == 0) {
-            robe = buildRobe();
-            gear = buildGear();
-            glow = buildGlow();
-            arm = buildArm();
-            leg = buildLeg();
-            cape = new Mesh(new float[CC * CR * 6 * 2 * Mesh.STRIDE], CC * CR * 6 * 2, Img.R3_CLOTH, false, true);
-            cape.dynamic = true;
-            cape.spec = 0.06f; cape.shine = 12f;
-        } else {                                              // gli altri personaggi: stesso scheletro, senza mantello
-            Mesh[][] p = HeroSkins.build(c);
-            robe = p[0][0];
-            gear = new Mesh[] {p[0][1]};
-            glow = null;
-            arm = p[1];
-            leg = p[2];
-            cape = null;
-        }
+        robe = buildRobe();
+        gear = buildGear();
+        glow = buildGlow();
+        arm = buildArm();
+        leg = buildLeg();
+        cape = new Mesh(new float[CC * CR * 6 * 2 * Mesh.STRIDE], CC * CR * 6 * 2, Img.R3_CLOTH, false, true);
+        cape.dynamic = true;
+        cape.spec = 0.06f; cape.shine = 12f;
     }
 
     private static float[] rgb(int r, int g, int b) {

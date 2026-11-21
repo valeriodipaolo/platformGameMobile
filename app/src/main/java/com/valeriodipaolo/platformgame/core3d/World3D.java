@@ -769,7 +769,7 @@ public final class World3D {
                         if (burr) {                            // a terra scoppia: chi è nel raggio si fa male
                             booms.add(new float[] {e.x, e.z, 0, e.floor});
                             float dx = px - e.x, dz = pz - e.z;
-                            if (state == PLAYING && dx * dx + dz * dz < BURR_R * BURR_R && py < e.floor + 1.6f) hurt();
+                            if (state == PLAYING && dx * dx + dz * dz < BURR_R * BURR_R && py < e.floor + 0.45f) hurt();   // chi è in salto la scampa
                             e.dead = true;
                             e.flung = false;
                             return true;

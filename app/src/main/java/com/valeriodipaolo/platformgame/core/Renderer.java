@@ -3,7 +3,6 @@ package com.valeriodipaolo.platformgame.core;
 /** Disegna una scena completa del gioco su un Painter. */
 public final class Renderer {
     /** Personaggio scelto nel menu (0..4): sceglie la serie di sprite del protagonista. */
-    public static int character = 0;
     /** Cadenza della corsa (passi per metro), la stessa del modello 3D. */
     public static final float RUN_CADENCE = 0.8f;
 
@@ -262,9 +261,9 @@ public final class Renderer {
         // ---- giocatore
         Body pl = g.player;
         int img;
-        if (g.state == Game.DYING || (!pl.onGround && g.state == Game.PLAYING)) img = Img.heroJump(character);
-        else if (Math.abs(pl.vx) > 0.3f) img = Img.heroRun(character, (int) (g.runPhase * RUN_CADENCE * (Img.RUN_FRAMES / 4f)) % Img.RUN_FRAMES);      // ciclo fluido a 24 fotogrammi
-        else img = Img.heroIdle(character);
+        if (g.state == Game.DYING || (!pl.onGround && g.state == Game.PLAYING)) img = Img.HERO_JUMP;
+        else if (Math.abs(pl.vx) > 0.3f) img = Img.runFrame((int) (g.runPhase * RUN_CADENCE * (Img.RUN_FRAMES / 4f)) % Img.RUN_FRAMES);      // ciclo fluido a 24 fotogrammi
+        else img = Img.HERO_IDLE;
         float hw = 1.167f * s, hh = 1.5f * s;
         float cx = (pl.x + pl.w / 2 - cam) * s, by = (pl.y + pl.h + 0.03f) * s;
         float al = (g.state == Game.PLAYING && g.invuln > 0 && ((int) (g.time * 14f) % 2 == 0)) ? 0.35f : 1f;
@@ -272,7 +271,7 @@ public final class Renderer {
         if (g.spinning()) {                         // giravolta: il robot ruota attorno al proprio asse
             float ang = g.spinAngle + (g.facing < 0 ? (float) Math.PI : 0f);
             int pose = (int) Math.floor(ang / (2 * Math.PI) * Img.SPIN_POSES) % Img.SPIN_POSES;
-            img = Img.heroSpin(character, pose);
+            img = Img.HERO_SPIN + pose;
             flip = false;
             al = 1f;
         }

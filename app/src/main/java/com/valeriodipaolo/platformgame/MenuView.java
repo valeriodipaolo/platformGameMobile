@@ -24,8 +24,7 @@ final class MenuView extends View {
         super(ctx);
         this.listener = listener;
         prefs = ctx.getSharedPreferences("platformgame", Context.MODE_PRIVATE);
-        hero = Math.max(0, Math.min(4, prefs.getInt("hero", 0)));
-        digital = prefs.getInt("ctrlmode", 0) == 1;
+        ctrl = Math.max(0, Math.min(2, prefs.getInt("ctrlmode", 0)));
         painter = new AndroidPainter(ctx);
     }
 
@@ -36,17 +35,15 @@ final class MenuView extends View {
     private float btnY(int i) { return getHeight() * (0.335f + 0.158f * (i / PER_ROW)); }
     private float btnX(int i) { return getWidth() * 0.5f + (i % PER_ROW - PER_ROW / 2f) * (btnW() + getWidth() * 0.0055f) + getWidth() * 0.003f; }
 
-    /** In basso: a sinistra il personaggio (cinque riquadri con la sua figura), a destra i comandi dei livelli 3D. */
-    private int hero;
-    private boolean digital;
+    /** In basso: i comandi dei livelli 3D (levetta analogica, levetta digitale, croce direzionale). */
+    private int ctrl;
     private float heroW() { return getHeight() * 0.11f; }
-    private float heroX(int i) { return getWidth() * 0.3f + (i - 2.5f) * heroW() * 1.15f; }
     private float heroY() { return getHeight() * 0.87f; }
-    private float ctrlW() { return getWidth() * 0.13f; }
-    private float ctrlX(int i) { return getWidth() * (0.585f + 0.14f * i); }
+    private float ctrlW() { return getWidth() * 0.15f; }
+    private float ctrlX(int i) { return getWidth() * (0.5f + 0.165f * (i - 1)) - ctrlW() / 2; }
     private float ctrlY() { return getHeight() * 0.885f; }
-    private static final String[] CTRL = {"ANALOGICO", "DIGITALE"};
-    private static final String[] CTRL_HINT = {"più spingi, più corri", "solo acceso o spento, sempre a piena velocità"};
+    private static final String[] CTRL = {"ANALOGICO", "DIGITALE", "CROCE"};
+    private static final String[] CTRL_HINT = {"più spingi, più corri", "levetta a otto direzioni, sempre a piena velocità", "croce direzionale, sempre a piena velocità"};
 
     @Override
     protected void onDraw(Canvas canvas) {
@@ -57,7 +54,7 @@ final class MenuView extends View {
         float mh = h * 0.55f, mw = mh * painter.aspect(Img.MOUNTAINS);
         for (float x = (w - mw) / 2 - mw; x < w; x += mw) painter.image(Img.MOUNTAINS, x, h - mh, mw + 1, mh, false, 1);
         painter.rect(0, 0, w, h, 0x55000000);
-        painter.image(Img.heroSpin(hero, 3), w / 2 - 1.0f * s, 0.25f * s, 2.0f * s, 2.6f * s, false, 1);
+        painter.image(Img.HERO_SPIN + 3, w / 2 - 1.0f * s, 0.25f * s, 2.0f * s, 2.6f * s, false, 1);
         painter.text("ROBO JUMP", w / 2, 3.55f * s, 1.0f * s, Painter.ALIGN_CENTER, 0xFFFFFFFF);
         String[] subById = {null, "Il prato", "Bosco (3D)", "Prato d'autunno", "Bosco d'autunno (3D)", "Tundra boreale", "Lago gelato (3D)",
                 "Prato in fiamme", "Bosco in fiamme (3D)", "Primavera", "Primavera e api (3D)", "Il cielo", "Sulle nuvole (3D)",
@@ -74,16 +71,9 @@ final class MenuView extends View {
             painter.text("LIVELLO " + (i + 1), x + btnW() / 2, y + btnH() * 0.47f, 0.27f * s, Painter.ALIGN_CENTER, 0xFFFFFFFF);
             painter.text(subById[Levels.ORDER[i]], x + btnW() / 2, y + btnH() * 0.8f, 0.15f * s, Painter.ALIGN_CENTER, 0xFFB3E5FC);
         }
-        painter.text("Personaggio: " + com.valeriodipaolo.platformgame.core3d.HeroModel.characterName(hero), (heroX(0) + heroX(4) + heroW()) / 2, heroY() - h * 0.015f, 0.3f * s, Painter.ALIGN_CENTER, 0xFFFFFFFF);
-        for (int i = 0; i < 5; i++) {
-            boolean on = i == hero;
-            painter.rect(heroX(i), heroY(), heroW(), heroW(), on ? 0xFF4FC3F7 : 0xCC14324A);
-            float ih = heroW() * 0.94f, iw = ih * 112f / 144f;
-            painter.image(Img.heroIdle(i), heroX(i) + (heroW() - iw) / 2, heroY() + heroW() * 0.03f, iw, ih, false, 1);
-        }
-        painter.text("Comandi 3D: " + CTRL_HINT[digital ? 1 : 0], ctrlX(0) + ctrlW() + getWidth() * 0.005f, heroY() - h * 0.015f, 0.3f * s, Painter.ALIGN_CENTER, 0xFFFFFFFF);
-        for (int i = 0; i < 2; i++) {
-            boolean on = (i == 1) == digital;
+        painter.text("Comandi 3D: " + CTRL_HINT[ctrl], w / 2, heroY() - h * 0.015f, 0.3f * s, Painter.ALIGN_CENTER, 0xFFFFFFFF);
+        for (int i = 0; i < 3; i++) {
+            boolean on = i == ctrl;
             painter.rect(ctrlX(i), ctrlY(), ctrlW(), heroW() * 0.7f, on ? 0xFF4FC3F7 : 0xCC14324A);
             painter.text(CTRL[i], ctrlX(i) + ctrlW() / 2, ctrlY() + heroW() * 0.47f, 0.36f * s, Painter.ALIGN_CENTER, on ? 0xFF0B2233 : 0xFFFFFFFF);
         }
@@ -92,18 +82,9 @@ final class MenuView extends View {
     @Override
     public boolean onTouchEvent(MotionEvent e) {
         if (e.getActionMasked() == MotionEvent.ACTION_UP) {
-            for (int i = 0; i < 5; i++) {
-                float pad = heroW() * 0.07f;
-                if (e.getX() >= heroX(i) - pad && e.getX() <= heroX(i) + heroW() + pad && e.getY() >= heroY() - pad && e.getY() <= heroY() + heroW() + pad) {
-                    hero = i;
-                    prefs.edit().putInt("hero", i).apply();
-                    invalidate();
-                    return true;
-                }
-            }
-            for (int i = 0; i < 2; i++) {
+            for (int i = 0; i < 3; i++) {
                 if (e.getX() >= ctrlX(i) && e.getX() <= ctrlX(i) + ctrlW() && e.getY() >= ctrlY() - heroW() * 0.1f && e.getY() <= ctrlY() + heroW() * 0.8f) {
-                    digital = i == 1;
+                    ctrl = i;
                     prefs.edit().putInt("ctrlmode", i).apply();
                     invalidate();
                     return true;

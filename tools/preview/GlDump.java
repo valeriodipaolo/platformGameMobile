@@ -84,7 +84,7 @@ public class GlDump implements Gfx3D {
     public static void main(String[] a) throws Exception {
         int id = Integer.parseInt(a[1]);
         float z = Float.parseFloat(a[2]), x = a.length > 3 ? Float.parseFloat(a[3]) : 0f;
-        HeroModel.character = a.length > 4 ? Integer.parseInt(a[4]) : 0;
+
         String cam = System.getProperty("cam");
         if (cam != null) { String[] p = cam.split(","); CAM = new float[6]; for (int i = 0; i < 6; i++) CAM[i] = Float.parseFloat(p[i]); }
         World3D w = new World3D(new MemorySave(), id);

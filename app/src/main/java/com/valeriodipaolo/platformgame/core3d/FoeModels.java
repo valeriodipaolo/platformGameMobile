@@ -864,6 +864,9 @@ public final class FoeModels {
     /** Disegna un nemico; m è la matrice già posizionata e orientata (ed eventualmente schiacciata). */
     private FoeIsland island;
 
+    /** Liana a cui pende il riccio di castagno (m: posizione del riccio appeso, senza rotazioni). */
+    public void drawLiana(Gfx3D g, float[] m) { more.drawLiana(g, m); }
+
     /** Tinta ed emissione applicate al riccio (riccio di ghiaccio, riccio di lava). */
     private float hr = 1, hg = 1, hb = 1, he = 0;
 

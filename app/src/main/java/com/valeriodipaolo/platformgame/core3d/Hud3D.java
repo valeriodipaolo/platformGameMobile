@@ -13,6 +13,9 @@ public final class Hud3D {
     public static float joyHomeX(float sw, float sh) { return 0.05f * sw + joyRadius(sw, sh); }
     public static float joyHomeY(float sw, float sh) { return sh - 0.07f * sh - joyRadius(sw, sh); }
 
+    /** Al posto del joystick si disegna una croce direzionale. */
+    public boolean dpad;
+
     /**
      * joyActive: un dito sta usando il joystick, con centro (joyCx, joyCy) e spostamento (joyDx, joyDy) da -1 a 1.
      * error: messaggio da mostrare se la grafica 3D non parte.
@@ -53,10 +56,13 @@ public final class Hud3D {
         float cx = joyHomeX(sw, sh), cy = joyHomeY(sw, sh);           // il joystick resta fermo nella sua posizione
         boolean sky = w.theme == 12;                       // sulle nuvole i comandi bianchi non si vedrebbero: fondo scuro
         if (sky) p.image(Img.HV_PAD, cx - jr * 1.05f, cy - jr * 1.05f, 2.1f * jr, 2.1f * jr, false, 1);
-        p.image(Img.JOY_BASE, cx - jr, cy - jr, 2 * jr, 2 * jr, false, joyActive ? 1f : 0.7f);
-        float kr = jr * 0.46f;
-        p.image(Img.JOY_KNOB, cx + (joyActive ? joyDx : 0) * jr * 0.75f - kr, cy + (joyActive ? joyDy : 0) * jr * 0.75f - kr,
-                2 * kr, 2 * kr, false, 1);
+        if (dpad) drawCross(p, cx, cy, jr, joyActive ? joyDx : 0, joyActive ? joyDy : 0);
+        else {
+            p.image(Img.JOY_BASE, cx - jr, cy - jr, 2 * jr, 2 * jr, false, joyActive ? 1f : 0.7f);
+            float kr = jr * 0.46f;
+            p.image(Img.JOY_KNOB, cx + (joyActive ? joyDx : 0) * jr * 0.75f - kr, cy + (joyActive ? joyDy : 0) * jr * 0.75f - kr,
+                    2 * kr, 2 * kr, false, 1);
+        }
 
         float bs = Controls.size(sw, sh), bty = Controls.btnY(sw, sh);
         if (sky) for (float bxx : new float[] {Controls.jumpX(sw, sh), Controls.spinX(sw, sh)}) p.image(Img.HV_PAD, bxx - 0.1f * bs, bty - 0.1f * bs, 1.2f * bs, 1.2f * bs, false, 1);
@@ -88,5 +94,26 @@ public final class Hud3D {
             p.rect(0, sh * 0.4f, sw, sh * 0.2f, 0xCC000000);
             p.text(error, sw / 2, sh * 0.52f, 0.4f * s, Painter.ALIGN_CENTER, 0xFFFF8A80);
         }
+    }
+
+    /** Croce direzionale: due barre incrociate con bordo, il braccio premuto si illumina, una freccia su ogni braccio. */
+    private static void drawCross(Painter p, float cx, float cy, float r, float dx, float dy) {
+        float arm = r * 0.95f, half = r * 0.34f, edge = r * 0.06f;
+        p.rect(cx - arm - edge, cy - half - edge, 2 * (arm + edge), 2 * (half + edge), 0x99000000);
+        p.rect(cx - half - edge, cy - arm - edge, 2 * (half + edge), 2 * (arm + edge), 0x99000000);
+        p.rect(cx - arm, cy - half, 2 * arm, 2 * half, 0xB0E0E6EE);
+        p.rect(cx - half, cy - arm, 2 * half, 2 * arm, 0xB0E0E6EE);
+        int on = 0xF04FC3F7;
+        if (dx > 0.3f) p.rect(cx + half, cy - half, arm - half, 2 * half, on);
+        if (dx < -0.3f) p.rect(cx - arm, cy - half, arm - half, 2 * half, on);
+        if (dy > 0.3f) p.rect(cx - half, cy + half, 2 * half, arm - half, on);
+        if (dy < -0.3f) p.rect(cx - half, cy - arm, 2 * half, arm - half, on);
+        p.rect(cx - half * 0.45f, cy - half * 0.45f, half * 0.9f, half * 0.9f, 0x60000000);   // incavo al centro
+        float ts = r * 0.42f;
+        int ac = 0xFF37474F;
+        p.text("\u25B2", cx, cy - arm * 0.62f, ts, Painter.ALIGN_CENTER, ac);
+        p.text("\u25BC", cx, cy + arm * 0.86f, ts, Painter.ALIGN_CENTER, ac);
+        p.text("\u25C0", cx - arm * 0.72f, cy + ts * 0.36f, ts, Painter.ALIGN_CENTER, ac);
+        p.text("\u25B6", cx + arm * 0.72f, cy + ts * 0.36f, ts, Painter.ALIGN_CENTER, ac);
     }
 }
