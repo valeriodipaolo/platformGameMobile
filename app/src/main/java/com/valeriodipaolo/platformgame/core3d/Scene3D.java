@@ -453,10 +453,10 @@ public final class Scene3D {
                         if (z > 0 && vis(w, x, z - 1) > k) faces &= ~32;
                         int mk = s.mark();
                         if (round) s.roundBox(fx + 0.5f, k + 0.5f, z + 0.5f, 0.98f, 0.98f, 0.98f, dry == 22 ? rr : rr + 0.1f, faces, 2);
-                        if (dry != 22) s.rough(mk, 0.17f, 1.3f, 5);              // pietre sbozzate, non cubi (la fabbrica resta squadrata)
+                        if (dry != 22) s.rough(mk, heaven ? 0.08f : 0.17f, 1.3f, 5);              // pietre sbozzate, non cubi (la fabbrica resta squadrata)
                         else s.box(fx + 0.5f, k + 0.5f, z + 0.5f, 1, 1, 1);
                         if (round) {       // nucleo scuro e giunti pieni: tra un masso arrotondato e l'altro non si vede attraverso
-                            s.colorf(0.26f, 0.25f, 0.24f);
+                            if (heaven) s.colorf(0.78f, 0.78f, 0.8f); else s.colorf(0.26f, 0.25f, 0.24f);   // in cielo i giunti sono chiari come il marmo
                             s.box(fx + 0.5f, k + 0.5f, z + 0.5f, 0.8f, 0.8f, 0.8f);
                             if (x + 1 < World3D.W && vis(w, x + 1, z) > k) s.box(fx + 1f, k + 0.5f, z + 0.5f, 0.42f, 0.8f, 0.8f);
                             if (vis(w, x, z + 1) > k) s.box(fx + 0.5f, k + 0.5f, z + 1f, 0.8f, 0.8f, 0.42f);
