@@ -9,8 +9,8 @@ import static com.valeriodipaolo.platformgame.core3d.Levels3B.*;
  * di lato verso i burroni (la sabbia sollevata le annuncia); scorpioni che non si possono schiacciare, avvoltoi in picchiata, cactus.</li>
  * <li>39, la fabbrica: nastri trasportatori che aiutano, spingono verso il vuoto o remano contro; barriere laser a tempo da saltare
  * (a volte con un varco spento); presse che battono sul nastro; robottini e droni.</li>
- * <li>40, la miniera: il carrello corre da solo sui binari, si cambia corsia e si salta i binari interrotti; stalattiti che si staccano,
- * pipistrelli, casse di dinamite.</li>
+ * <li>40, la miniera: tutta in carrello su tre binari, lunga il triplo; si cambia corsia davanti ai binari rotti e si salta dove manca tutto;
+ * pipistrelli e topi, qualche cassa di nitroglicerina.</li>
  * </ul>
  */
 public final class Levels3W {
@@ -21,7 +21,7 @@ public final class Levels3W {
     public static int theme(int id) { return id == 39 ? 22 : id == 40 ? 24 : 20; }
 
     public static void build(World3D w, int id) {
-        int len = id == 38 ? 236 : id == 39 ? 244 : 262;
+        int len = id == 38 ? 236 : id == 39 ? 244 : MINE_LEN;
         w.length = len;
         w.height = new int[len * W];
         w.crate = new boolean[len * W];
@@ -120,37 +120,52 @@ public final class Levels3W {
     }
 
     // ------------------------------------------------------------------ 40: la miniera
+
+    /** La miniera è tutta in carrello: tre binari (corsie 1-3, il carrello non ne esce), dall'inizio alla fine. */
+    static final int MINE_LEN = 790;
+
     private static void mine(World3D w) {
-        gemLine(w, 0, 0, 6);
-        // 1. a piedi: stalattiti che si staccano quando ci si passa sotto, un pipistrello, casse di dinamite
-        rock(w, 1, 10); rock(w, 3, 13); gemLine(w, 0, 9, 14); bat(w, 20);
-        crateK(w, 1, 24, World3D.C_TNT); crateK(w, 3, 24, World3D.C_TNT); crateK(w, 2, 25, World3D.C_WOOD);
-        // 2. il primo carrello: corre da solo; si cambia corsia per evitare i binari interrotti
-        cart(w, 32, 104);
-        pit(w, 40, 42, 0, 2); pit(w, 48, 50, 2, 4); pit(w, 56, 58, 0, 1); pit(w, 56, 58, 3, 4);
-        gemLine(w, 2, 38, 43); gemLine(w, -2, 46, 51); gemLine(w, 0, 54, 59);
-        pit(w, 64, 66, 0, 4); arc(w, 0, 64, 66);                              // binari interrotti su tutta la larghezza: si salta col carrello
-        crateK(w, 0, 72, World3D.C_NITRO); crateK(w, 1, 72, World3D.C_NITRO); crateK(w, 3, 76, World3D.C_NITRO); crateK(w, 4, 76, World3D.C_NITRO);
-        gemLine(w, 1, 70, 73); gemLine(w, -1, 75, 78); bat(w, 82);
-        pit(w, 86, 89, 0, 4); arc(w, 0, 86, 89); pit(w, 94, 96, 1, 3); gemLine(w, -2, 92, 97);
-        // 3. a piedi: la galleria della chiave, con le stalattiti in fila e un pipistrello di guardia
-        rock(w, 2, 110); rock(w, 1, 113); rock(w, 3, 116); bat(w, 118);
-        for (int x = 1; x <= 3; x++) { set(w, x, 121, 1); for (int z = 122; z <= 128; z++) set(w, x, z, 2); set(w, x, 129, 1); }
-        w.battery = new float[] {0, 2.6f, 125f}; rockAt(w, 0, 125, 4.4f); gemLine3(w, 0, 2.7f, 123, 124); gemLine3(w, 0, 2.7f, 126, 127);
-        crateK(w, 2, 134, World3D.C_CHECK);
-        // 4. il secondo carrello, il colpo di scena: binari stretti su un abisso, interruzioni a zig-zag, dinamite e pipistrelli
-        cart(w, 140, 236);
-        pit(w, 144, 230, 0, 0); pit(w, 144, 230, 4, 4);
-        pit(w, 150, 152, 1, 2); pit(w, 158, 160, 2, 3); pit(w, 166, 168, 1, 1); pit(w, 166, 168, 3, 3);
-        gemLine(w, 1, 148, 153); gemLine(w, -1, 156, 161); gemLine(w, 0, 164, 169);
-        batNarrow(w, 174); pit(w, 178, 181, 1, 3); arc(w, 0, 178, 181);
-        crateK(w, 1, 188, World3D.C_NITRO); crateK(w, 2, 192, World3D.C_NITRO); crateK(w, 3, 196, World3D.C_NITRO); crateK(w, 2, 200, World3D.C_NITRO);
-        gem(w, 1, 0.7f, 188.5f); gem(w, -1, 0.7f, 192.5f); gem(w, 0, 0.7f, 196.5f); gem(w, 1, 0.7f, 200.5f);
-        pit(w, 206, 208, 1, 3); arc(w, 0, 206, 208); batNarrow(w, 212); pit(w, 216, 219, 1, 3); arc(w, 0, 216, 219);
-        pit(w, 224, 226, 1, 2); gemLine(w, 1, 222, 228);
-        gemLine(w, 0, 238, 250);
-        w.flagZ = 254;
+        int end = MINE_LEN - 12;
+        cart(w, 2, end);
+        gemLine(w, 0, 6, 12);
+        java.util.Random r = new java.util.Random(40);
+        // ostacoli radi, sempre uno alla volta: all'inizio lontani tra loro, poi un po' più fitti
+        int z = 26, n = 0;
+        while (z < end - 30) {
+            int kind = PATTERN[n % PATTERN.length];
+            int lane = 1 + r.nextInt(3), free = lane == 2 ? (r.nextBoolean() ? 1 : 3) : 2;
+            switch (kind) {
+                case 0:                                        // un binario interrotto: si cambia corsia, le gemme stanno su quella libera
+                    pit(w, z, z + 2, lane, lane); gemLine(w, free - 2, z - 1, z + 2); break;
+                case 1: {                                      // due binari interrotti: resta una sola corsia
+                    for (int c = 1; c <= 3; c++) if (c != free) pit(w, z, z + 2, c, c);
+                    gemLine(w, free - 2, z, z + 2); break;
+                }
+                case 2:                                        // binari interrotti su tutta la larghezza: si salta, l'arco di gemme lo indica
+                    pit(w, z, z + 2, 0, 4); arc(w, 0, z, z + 2); break;
+                case 3:                                        // pipistrello che svolazza di traverso, all'altezza del robot
+                    skin(add(w, Enemy3.CROW, 0, z + 0.5f, false, -1f, 1f, 0.9f), Enemy3.SKIN_BAT); break;
+                case 4:                                        // topo che attraversa i binari: si schiva o lo si schiaccia saltando
+                    skin(add(w, Enemy3.BEETLE, lane - 2f, z + 0.5f, false, -1f, 1f, 0), Enemy3.SKIN_MOUSE); break;
+                default:                                       // cassa di nitroglicerina su un binario
+                    crateK(w, lane, z, World3D.C_NITRO); gem(w, free - 2, 0.7f, z + 0.5f); break;
+            }
+            n++;
+            z += Math.max(15, 30 - n / 3) + r.nextInt(6);
+        }
+        // la chiave: sopra il binario centrale, a metà strada, in un tratto tranquillo con la scia di gemme che la annuncia
+        int kz = MINE_LEN / 2;
+        for (int k = kz - 8; k <= kz + 8; k++) for (int c = 1; c <= 3; c++) { set(w, c, k, 0); w.crate[k * W + c] = false; }
+        w.enemies.removeIf(e -> Math.abs(e.z - kz) < 12);
+        w.gemsList.removeIf(g -> Math.abs(g[2] - kz) < 10);
+        gemLine(w, 0, kz - 7, kz - 2);
+        w.battery = new float[] {0, 0.9f, kz + 0.5f};
+        gemLine(w, 0, end + 2, end + 8);
+        w.flagZ = MINE_LEN - 2;
     }
+
+    /** Ordine degli ostacoli in miniera: 0 un binario rotto, 1 due rotti, 2 salto, 3 pipistrello, 4 topo, 5 nitro. */
+    private static final int[] PATTERN = {0, 3, 4, 0, 1, 3, 2, 4, 5, 0, 3, 1, 4, 2, 0, 3, 5, 4, 1, 0, 2};
 
     // ------------------------------------------------------------------ attrezzi
 

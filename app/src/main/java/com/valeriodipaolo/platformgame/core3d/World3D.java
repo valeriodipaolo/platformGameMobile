@@ -72,7 +72,7 @@ public final class World3D {
     public static final float GUST = 1.7f, GUST_PUSH = 4.6f;
     /** Tratti in carrello: {z0, z1}; il carrello corre da solo, si sterza e si salta. */
     public final List<float[]> carts = new ArrayList<float[]>();
-    public static final float CART_SPEED = 9.5f;
+    public static final float CART_SPEED = 9.5f, CART_X = 1.05f;
     public int flagZ;
     /** Portone di fine livello: si apre (0..1) solo con la cella di energia; la catapulta (launchT >= 0) riporta all'inizio. */
     public float gateOpen, launchT = -1;
@@ -499,6 +499,7 @@ public final class World3D {
         ex += windPush(pz, time);
         // spostamento: un asse alla volta, fermandosi contro blocchi e casse più alti dei piedi
         float nx = px + (vx + ex) * dt;
+        if (cart && Math.abs(nx) > CART_X) { nx = Math.signum(nx) * CART_X; vx = 0; }   // il carrello resta sui tre binari centrali
         if (blocked(nx, pz, py)) vx = 0; else px = nx;
         float nz = pz + (vz + ez) * dt;
         if (blocked(px, nz, py)) vz = 0; else pz = nz;
@@ -559,6 +560,15 @@ public final class World3D {
         }
         for (float[] t : thorns) if (Math.abs(t[1] - pz) < 3.5f) return;
         for (float[] t : springs) if (Math.abs(t[1] - pz) < 2.5f) return;
+        if (inCart()) {                                  // in carrello si riparte lanciati: davanti serve un bel tratto sgombro
+            for (int cz = zi(pz) - 1; cz <= zi(pz) + 12 && cz < length; cz++) for (int cx = 0; cx < W; cx++) {
+                if (cell(cx, cz) == PIT || (crate != null && crate[cz * W + cx])) return;
+            }
+            for (Enemy3 e : enemies) if (!e.dead && e.z > pz - 2f && e.z < pz + 14f) return;
+            cpX = 0;
+            cpZ = pz;
+            return;
+        }
         cpX = px;
         cpZ = pz;
     }

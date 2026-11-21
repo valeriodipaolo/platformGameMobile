@@ -95,6 +95,18 @@ public final class MeshBuilder {
         return r;
     }
 
+    /** Copia qui tutti i vertici di src trasformati dalla matrice m (colonne, come Mat4); i colori moltiplicati per k. */
+    public void append(MeshBuilder src, float[] m, float k) {
+        for (int i = 0; i < src.n; i += Mesh.STRIDE) {
+            float x = src.d[i], y = src.d[i + 1], z = src.d[i + 2], nx = src.d[i + 3], ny = src.d[i + 4], nz = src.d[i + 5];
+            float cr0 = cr, cg0 = cg, cb0 = cb, sw0 = sw;
+            cr = src.d[i + 8] * k; cg = src.d[i + 9] * k; cb = src.d[i + 10] * k; sw = src.d[i + 11];
+            vert(m[0] * x + m[4] * y + m[8] * z + m[12], m[1] * x + m[5] * y + m[9] * z + m[13], m[2] * x + m[6] * y + m[10] * z + m[14],
+                    m[0] * nx + m[4] * ny + m[8] * nz, m[1] * nx + m[5] * ny + m[9] * nz, m[2] * nx + m[6] * ny + m[10] * nz, src.d[i + 6], src.d[i + 7]);
+            cr = cr0; cg = cg0; cb = cb0; sw = sw0;
+        }
+    }
+
     public void vert(float x, float y, float z, float nx, float ny, float nz, float u, float v) {
         if (n + Mesh.STRIDE > d.length) d = java.util.Arrays.copyOf(d, d.length * 2);
         d[n++] = x; d[n++] = y; d[n++] = z;

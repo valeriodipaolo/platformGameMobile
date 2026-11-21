@@ -307,7 +307,7 @@ public final class Scene3D {
         float d = Math.abs(x) - World3D.HALF, y = bumpAt(x, z);
         if (d <= 0) return y;
         if (heaven) return y - 4.5f * sm(d / 0.9f) + 0.7f * (vnoise(x * 0.09f + 3, z * 0.09f, 31) - 0.5f) * sm(d / 5f);
-        if (dry == 24) return y + 7.5f * sm((d - 1.6f) / 2.6f) + 1.2f * (vnoise(x * 0.4f, z * 0.3f, 41) - 0.5f) * sm(d / 2f);     // la gola della miniera: pareti a picco
+        if (dry == 24) return y + 7.5f * sm((d - 1.6f) / 2.6f) + (1.2f * (vnoise(x * 0.4f, z * 0.3f, 41) - 0.5f) + 0.7f * (vnoise(x * 1.4f, z * 1.1f, 43) - 0.5f) + 0.25f * (vnoise(x * 3.7f, z * 3.1f, 47) - 0.5f)) * sm(d / 2f);     // la gola della miniera: pareti a picco
         if (dry == 22) return y + (d > 1.2f ? 0.6f : 0f) + sm((d - 6f) / 3f) * 2.5f;                                                  // fabbrica: marciapiede e muro di cinta
         if (dry == 20) return y + sm(d / 6f) * 2.6f * vnoise(x * 0.06f + 2, z * 0.05f, 42) + 0.5f * sm(d / 2f);                          // dune
         y += sm(d / SEAM) * (1.2f + 0.7f * vnoise(x * 0.07f + 5, z * 0.07f, 21));
@@ -2354,6 +2354,227 @@ public final class Scene3D {
 
     private final float[] a2 = new float[16];
 
+    /** Carrello da miniera: vasca d'acciaio svasata e arrugginita, bordo ribattuto, rinforzi, ruote con il bordino su due assi. */
+    private static void mineCart(MeshBuilder b) {
+        float[] rust = {0.36f, 0.22f, 0.15f}, steel = {0.3f, 0.26f, 0.23f}, dark = {0.14f, 0.13f, 0.13f};
+        // vasca: sezione trapezoidale (stretta in basso), pareti spesse
+        float yb = 0.26f, yt = 0.86f, wb = 0.36f, wt = 0.47f, lb = 0.5f, lt2 = 0.6f;
+        float[][] bot = {{-wb, yb, -lb}, {wb, yb, -lb}, {wb, yb, lb}, {-wb, yb, lb}}, top = {{-wt, yt, -lt2}, {wt, yt, -lt2}, {wt, yt, lt2}, {-wt, yt, lt2}};
+        for (int k = 0; k < 4; k++) {
+            float[] a = bot[k], c = bot[(k + 1) % 4], d = top[(k + 1) % 4], e = top[k];
+            float nx = (a[0] + c[0]) * 0.5f, nz = (a[2] + c[2]) * 0.5f, nl = (float) Math.sqrt(nx * nx + nz * nz);
+            for (int band = 0; band < 3; band++) {                     // fasce: ruggine e acciaio alternati, più scuro in basso
+                float t0 = band / 3f, t1 = (band + 1) / 3f;
+                float[] col = band == 1 ? steel : rust;
+                float sh = 0.75f + 0.25f * t1;
+                b.colorf(col[0] * sh, col[1] * sh, col[2] * sh);
+                float[] p0 = lerp3(a, e, t0), p1 = lerp3(c, d, t0), p2 = lerp3(c, d, t1), p3 = lerp3(a, e, t1);
+                b.quad(p0[0], p0[1], p0[2], p1[0], p1[1], p1[2], p2[0], p2[1], p2[2], p3[0], p3[1], p3[2], nx / nl, 0.25f, nz / nl, 0, 0, 1, 1);
+            }
+        }
+        b.colorf(0.1f, 0.08f, 0.07f);                                   // fondo interno scuro, con un po' di minerale
+        b.quad(-wt * 0.95f, yt - 0.18f, -lt2 * 0.95f, wt * 0.95f, yt - 0.18f, -lt2 * 0.95f, wt * 0.95f, yt - 0.18f, lt2 * 0.95f, -wt * 0.95f, yt - 0.18f, lt2 * 0.95f, 0, 1, 0, 0, 0, 1, 1);
+        // bordo superiore ribattuto
+        b.colorf(steel[0] * 1.2f, steel[1] * 1.2f, steel[2] * 1.2f);
+        b.box(0, yt, lt2, wt * 2 + 0.06f, 0.06f, 0.06f); b.box(0, yt, -lt2, wt * 2 + 0.06f, 0.06f, 0.06f);
+        b.box(wt, yt, 0, 0.06f, 0.06f, lt2 * 2 + 0.06f); b.box(-wt, yt, 0, 0.06f, 0.06f, lt2 * 2 + 0.06f);
+        for (int k = 0; k < 6; k++) {                                   // ribattini
+            float z = -lt2 + 0.1f + k * (lt2 * 2 - 0.2f) / 5f;
+            b.colorf(0.55f, 0.5f, 0.45f);
+            for (int s = -1; s <= 1; s += 2) b.ellipsoid(s * (wt + 0.035f), yt - 0.06f, z, 0.012f, 0.012f, 0.012f, 4, 3);
+        }
+        // telaio, assi, boccole e ruote con il bordino
+        b.colorf(dark[0], dark[1], dark[2]);
+        b.box(0, 0.22f, 0, 0.5f, 0.06f, 1.0f);
+        for (int s = -1; s <= 1; s += 2) {
+            b.box(0, 0.17f, s * 0.34f, 0.84f, 0.05f, 0.05f);
+            for (int q = -1; q <= 1; q += 2) {
+                float x = q * 0.36f, z = s * 0.34f;
+                b.colorf(0.2f, 0.19f, 0.19f);
+                wheel(b, x, 0.17f, z, 0.15f, 0.05f);
+                b.colorf(0.3f, 0.29f, 0.28f);
+                wheel(b, x - q * 0.03f, 0.17f, z, 0.18f, 0.015f);         // bordino che tiene la ruota sul binario
+                b.colorf(0.38f, 0.22f, 0.12f);
+                b.box(x * 0.82f, 0.2f, z, 0.07f, 0.1f, 0.1f);              // boccola
+            }
+        }
+    }
+
+    private static float[] lerp3(float[] a, float[] b, float t) { return new float[] {a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t}; }
+
+    /** Ruota con l'asse lungo x: disco di raggio r e spessore w. */
+    private static void wheel(MeshBuilder b, float cx, float cy, float cz, float r, float w) {
+        int n = 14;
+        for (int i = 0; i < n; i++) {
+            double a0 = 2 * Math.PI * i / n, a1 = 2 * Math.PI * (i + 1) / n;
+            float y0 = cy + r * (float) Math.cos(a0), z0 = cz + r * (float) Math.sin(a0), y1 = cy + r * (float) Math.cos(a1), z1 = cz + r * (float) Math.sin(a1);
+            float ny = (float) Math.cos((a0 + a1) / 2), nz = (float) Math.sin((a0 + a1) / 2);
+            b.quad(cx - w, y0, z0, cx + w, y0, z0, cx + w, y1, z1, cx - w, y1, z1, 0, ny, nz, 0, 0, 1, 1);
+            for (int s = -1; s <= 1; s += 2) {
+                b.vert(cx + s * w, cy, cz, s, 0, 0, 0, 0); b.vert(cx + s * w, y0, z0, s, 0, 0, 0, 0); b.vert(cx + s * w, y1, z1, s, 0, 0, 0, 0);
+            }
+        }
+    }
+
+    /**
+     * La galleria della miniera: armature di tronchi squadrati a mano con i saettoni, lanterne a petrolio appese a una catena,
+     * tre binari d'acciaio su traversine di legno e massicciata, e ai lati il materiale di scavo: detriti, travi, barili,
+     * casse, vagoncini abbandonati, vene di cristalli che brillano.
+     */
+    private void buildMine(World3D w, int z0, int z1, Random r) {
+        float hx = World3D.HALF + 0.15f;
+        for (int z = z0 + ((2 - z0) % 7 + 7) % 7; z < z1; z += 7) {
+            lightAt(0, z, 1f);
+            float k = 0.9f;
+            MeshBuilder t = mb(K_TRUNK, z);
+            for (int side = -1; side <= 1; side += 2) {                // ritti: tronchi squadrati, un po' storti
+                float x = side * hx, y = groundAt(x, z);
+                lightAt(x, z, 1f);
+                t.colorf(0.62f * lt[0] * k, 0.46f * lt[1] * k, 0.3f * lt[2] * k);
+                int mk = t.mark();
+                t.roundBox(x, y + 2.3f, z, 0.34f, 4.6f + 0.1f * r.nextFloat(), 0.34f, 0.06f, 63, 2);
+                t.rough(mk, 0.035f, 2.5f, z * 3 + side);
+                mk = t.mark();                                          // saettone tra ritto e cappello
+                beam(t, x, y + 3.6f, z, x - side * 0.9f, 4.55f, z, 0.11f);
+                t.rough(mk, 0.02f, 3f, z * 5 + side);
+            }
+            t.colorf(0.56f * lt[0] * k, 0.42f * lt[1] * k, 0.28f * lt[2] * k);
+            int mk = t.mark();
+            t.roundBox(0, 4.75f, z, hx * 2 + 0.7f, 0.36f, 0.38f, 0.06f, 63, 3);   // cappello
+            t.rough(mk, 0.04f, 2f, z * 7);
+            // lanterna a petrolio appesa a una catena, un po' fuori asse
+            float lx = (z / 7) % 2 == 0 ? -1.1f : 1.1f;
+            MeshBuilder p = mb(K_PROP, z);
+            p.colorf(0.18f, 0.17f, 0.16f);
+            for (int c = 0; c < 5; c++) p.box(lx, 4.5f - c * 0.11f, z, 0.03f, 0.08f, 0.03f);
+            p.colorf(0.22f, 0.2f, 0.18f);
+            p.cylinder(lx, 3.84f, 3.9f, z, 0.11f, 0.11f, 10, true, true);          // base
+            p.cylinder(lx, 4.18f, 4.22f, z, 0.07f, 0.12f, 10, true, true);         // cappello della lanterna
+            for (int q = 0; q < 4; q++) { float a = q * 1.5708f + 0.4f; p.box(lx + 0.1f * (float) Math.cos(a), 4.04f, z + 0.1f * (float) Math.sin(a), 0.015f, 0.3f, 0.015f); }
+            MeshBuilder gl = mb(K_GLOW, z);
+            gl.colorf(1f, 0.78f, 0.36f);
+            gl.ellipsoid(lx, 4.04f, z, 0.075f, 0.13f, 0.075f, 10, 7);              // vetro acceso
+        }
+        // pareti: massi sporgenti a varie altezze, che rompono le superfici lisce della roccia
+        for (int side = -1; side <= 1; side += 2) for (float z = z0 + r.nextFloat(); z < z1; z += 1.4f + 2f * r.nextFloat()) {
+            float d = 1.2f + 3.2f * r.nextFloat(), x = side * (World3D.HALF + d), y = groundAt(x, z) - 0.35f;
+            lightAt(x, z, 1f);
+            MeshBuilder rk = mb(K_ROCK, z);
+            float sh = 1.2f + 0.4f * r.nextFloat();
+            rk.colorf(sh * lt[0], sh * 0.9f * lt[1], sh * 0.82f * lt[2]);
+            float sz = 0.35f + 0.7f * r.nextFloat();
+            rk.rock(x, y, z, sz * (0.8f + 0.4f * r.nextFloat()), sz * (0.6f + 0.6f * r.nextFloat()), sz, r.nextInt(9999), 7, 5);
+        }
+        // vene di cristalli e di minerale nelle pareti
+        for (int side = -1; side <= 1; side += 2) for (float z = z0 + r.nextFloat() * 6f; z < z1; z += 5f + 9f * r.nextFloat()) {
+            float x = side * (World3D.HALF + 1.4f + r.nextFloat() * 1.5f), y = groundAt(x, z) + 0.3f + r.nextFloat() * 1.5f;
+            MeshBuilder gl = mb(K_GLOW, z);
+            boolean gold = r.nextFloat() < 0.3f;
+            int nc = 3 + r.nextInt(4);
+            for (int c = 0; c < nc; c++) {
+                float h = 0.15f + 0.3f * r.nextFloat();
+                if (gold) gl.colorf(1f, 0.8f, 0.35f); else gl.colorf(0.35f + 0.2f * r.nextFloat(), 0.75f, 1f);
+                gl.bipyramid(x - side * 0.15f * r.nextFloat(), y + (r.nextFloat() - 0.3f) * 0.3f, z + (r.nextFloat() - 0.5f) * 0.5f, 0.04f + 0.05f * r.nextFloat(), h, 6);
+            }
+        }
+        // binari: tre (corsie 1-3), traversine fitte su massicciata; le corsie esterne sono pavimento di scavo
+        for (float[] c : w.carts) {
+            for (int z = Math.max(z0, (int) c[0]); z < Math.min(z1, (int) c[1]); z++) for (int x = 1; x <= 3; x++) {
+                boolean hole = w.height[z * World3D.W + x] == World3D.PIT;
+                float cx = x - World3D.HALF + 0.5f;
+                lightAt(cx, z, 1f);
+                if (hole) {                                             // binario spezzato: un moncone di rotaia storta sul bordo
+                    if (w.height[(z - 1) * World3D.W + x] != World3D.PIT) {
+                        MeshBuilder p = mb(K_PROP, z);
+                        p.colorf(0.4f * lt[0], 0.36f * lt[1], 0.34f * lt[2]);
+                        beam(p, cx - 0.25f, 0.1f, z, cx - 0.35f, -0.5f, z + 0.5f, 0.03f);
+                        beam(p, cx + 0.25f, 0.1f, z, cx + 0.15f, 0.05f, z + 0.45f, 0.03f);
+                    }
+                    continue;
+                }
+                MeshBuilder rk = mb(K_ROCK, z);                         // massicciata di pietrisco
+                float gr = 0.5f + 0.1f * r.nextFloat();
+                rk.colorf(gr * lt[0], gr * 0.95f * lt[1], gr * 0.9f * lt[2]);
+                rk.box(cx, 0.03f, z + 0.5f, 0.92f, 0.08f, 1.0f);
+                MeshBuilder t = mb(K_TRUNK, z);
+                for (int q = 0; q < 2; q++) {                           // traversine
+                    float zz = z + 0.25f + q * 0.5f + (r.nextFloat() - 0.5f) * 0.06f, tk = 0.42f + 0.12f * r.nextFloat();
+                    t.colorf(tk * lt[0], tk * 0.76f * lt[1], tk * 0.54f * lt[2]);
+                    t.box(cx + (r.nextFloat() - 0.5f) * 0.05f, 0.1f, zz, 0.86f, 0.09f, 0.17f);
+                }
+                MeshBuilder p = mb(K_PROP, z);                          // rotaie: suola e fungo lucido
+                for (int s2 = -1; s2 <= 1; s2 += 2) {
+                    float rx = cx + s2 * 0.25f;
+                    p.colorf(0.28f * lt[0], 0.22f * lt[1], 0.18f * lt[2]);
+                    p.box(rx, 0.17f, z + 0.5f, 0.08f, 0.05f, 1.0f);
+                    p.colorf(0.46f * lt[0], 0.45f * lt[1], 0.46f * lt[2]);
+                    p.box(rx, 0.22f, z + 0.5f, 0.05f, 0.04f, 1.0f);
+                }
+            }
+        }
+        // corsie esterne: pietrisco, travi accatastate, barili, casse e qualche vagoncino abbandonato
+        for (int side = -1; side <= 1; side += 2) for (float z = z0 + r.nextFloat() * 4f; z < z1; z += 2.5f + 5f * r.nextFloat()) {
+            float x = side * (World3D.HALF - 0.5f + (r.nextFloat() - 0.5f) * 0.4f);
+            if (Math.abs(((z - 2f) % 7f + 7f) % 7f) < 0.8f) continue;     // non sotto le armature
+            lightAt(x, z, 1f);
+            float u = r.nextFloat();
+            if (u < 0.4f) {
+                MeshBuilder rk = mb(K_ROCK, z);
+                rk.colorf(0.8f * lt[0], 0.72f * lt[1], 0.66f * lt[2]);
+                for (int q = 0; q < 3; q++) rk.rock(x + (r.nextFloat() - 0.5f) * 0.6f, 0, z + (r.nextFloat() - 0.5f) * 0.8f, 0.12f + 0.2f * r.nextFloat(), 0.1f + 0.15f * r.nextFloat(), 0.12f + 0.2f * r.nextFloat(), r.nextInt(999), 7, 5);
+            } else if (u < 0.6f) {                                      // barile
+                MeshBuilder p = mb(K_PROP, z);
+                p.colorf(0.42f * lt[0], 0.28f * lt[1], 0.16f * lt[2]);
+                p.cylinder(x, 0, 0.75f, z, 0.26f, 0.26f, 12, true, false);
+                p.colorf(0.22f * lt[0], 0.2f * lt[1], 0.2f * lt[2]);
+                p.cylinder(x, 0.15f, 0.2f, z, 0.275f, 0.275f, 12, false, false);
+                p.cylinder(x, 0.55f, 0.6f, z, 0.275f, 0.275f, 12, false, false);
+            } else if (u < 0.78f) {                                     // travi accatastate
+                MeshBuilder t = mb(K_TRUNK, z);
+                t.colorf(0.55f * lt[0], 0.4f * lt[1], 0.26f * lt[2]);
+                for (int q = 0; q < 3; q++) { int mk = t.mark(); t.roundBox(x + (q - 1) * 0.15f * side, 0.1f + (q == 1 ? 0.2f : 0f), z, 0.18f, 0.18f, 1.6f, 0.03f, 63, 1); t.rough(mk, 0.015f, 4f, (int) z * 3 + q); }
+            } else if (u < 0.92f) {                                     // cassa di dinamite
+                MeshBuilder t = mb(K_TRUNK, z);
+                t.colorf(0.7f * lt[0], 0.52f * lt[1], 0.32f * lt[2]);
+                t.roundBox(x, 0.25f, z, 0.6f, 0.5f, 0.45f, 0.03f, 63, 1);
+                MeshBuilder p = mb(K_PROP, z);
+                p.colorf(0.75f * lt[0], 0.12f * lt[1], 0.08f * lt[2]);
+                p.box(x - side * 0.31f, 0.3f, z, 0.01f, 0.14f, 0.3f);
+            } else {                                                    // vagoncino abbandonato, di traverso, un po' inclinato
+                MeshBuilder p = mb(K_PROP, z);
+                MeshBuilder cart = new MeshBuilder();
+                mineCart(cart);
+                p.colorf(1, 1, 1);
+                float[] tm = new float[16];
+                Mat4.setIdentity(tm);
+                Mat4.translate(tm, x - side * 0.1f, -0.05f, z);
+                Mat4.rotateY(tm, 1.3f + 0.3f * side);
+                Mat4.rotateZ(tm, 0.12f * side);
+                p.append(cart, tm, 0.9f * Math.max(0.35f, lt[0]));
+                z += 3f;
+            }
+        }
+    }
+
+    /** Trave a sezione quadra da (x0,y0,z0) a (x1,y1,z1), lato 2h. */
+    private static void beam(MeshBuilder b, float x0, float y0, float z0, float x1, float y1, float z1, float h) {
+        float dx = x1 - x0, dy = y1 - y0, dz = z1 - z0, l = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
+        dx /= l; dy /= l; dz /= l;
+        float ux = -dz, uy = 0, uz = dx;                                // primo lato: orizzontale, di traverso
+        float ul = (float) Math.sqrt(ux * ux + uz * uz);
+        if (ul < 1e-3f) { ux = 1; uz = 0; ul = 1; }
+        ux /= ul; uz /= ul;
+        float vx = dy * uz - dz * uy, vy = dz * ux - dx * uz, vz = dx * uy - dy * ux;
+        float[][] o = {{ux + vx, uy + vy, uz + vz}, {-ux + vx, -uy + vy, -uz + vz}, {-ux - vx, -uy - vy, -uz - vz}, {ux - vx, uy - vy, uz - vz}};
+        for (int k = 0; k < 4; k++) {
+            float[] a = o[k], c = o[(k + 1) % 4];
+            float nx = a[0] + c[0], ny = a[1] + c[1], nz = a[2] + c[2], nl = (float) Math.sqrt(nx * nx + ny * ny + nz * nz);
+            b.quad(x0 + a[0] * h, y0 + a[1] * h, z0 + a[2] * h, x0 + c[0] * h, y0 + c[1] * h, z0 + c[2] * h, x1 + c[0] * h, y1 + c[1] * h, z1 + c[2] * h,
+                    x1 + a[0] * h, y1 + a[1] * h, z1 + a[2] * h, nx / nl, ny / nl, nz / nl, 0, 0, 1, 1);
+        }
+    }
+
+
     // ------------------------------------------------------------------ deserto, fabbrica, miniera
 
     private Mesh cartMesh, beltBase, chevron, laserBeam, laserPost, quickPool, cactus, dustMote;
@@ -2402,20 +2623,8 @@ public final class Scene3D {
                 p.cylinder(x, y - 0.22f, y + 0.22f, z, 0.21f, 0.21f, 8, false, false);
             }
         }
-        if (dry == 24) {                                                // armature di legno della galleria, con una lanterna appesa
-            for (int z = z0 + 2; z < z1; z += 7) {
-                MeshBuilder p = mb(K_PROP, z);
-                lightAt(0, z, 1f);
-                p.colorf(0.55f * lt[0], 0.38f * lt[1], 0.22f * lt[2]);
-                for (int side = -1; side <= 1; side += 2) p.box(side * (World3D.HALF + 0.35f), groundAt(side * (World3D.HALF + 0.35f), z) + 2.6f, z, 0.3f, 5.2f, 0.3f);
-                p.box(0, 5.3f, z, World3D.W + 1.2f, 0.32f, 0.34f);
-                MeshBuilder gl = mb(K_GLOW, z);
-                gl.colorf(1f, 0.75f, 0.3f);
-                gl.ellipsoid(-1.6f, 4.75f, z, 0.14f, 0.2f, 0.14f, 8, 6);
-            }
-        }
-        // binari nei tratti in carrello: due rotaie per corsia e le traversine
-        for (float[] c : w.carts) {
+        if (dry == 24) buildMine(w, z0, z1, r);
+        else for (float[] c : w.carts) {                               // binari semplici (negli altri mondi)
             for (int z = Math.max(z0, (int) c[0]); z < Math.min(z1, (int) c[1]); z++) for (int x = 0; x < World3D.W; x++) {
                 if (w.height[z * World3D.W + x] == World3D.PIT) continue;
                 float cx = x - World3D.HALF + 0.5f, y = Math.max(0, w.height[z * World3D.W + x]);
@@ -2429,15 +2638,7 @@ public final class Scene3D {
         }
         // meshes dinamiche
         MeshBuilder b = new MeshBuilder();
-        b.colorf(0.45f, 0.36f, 0.3f);                                   // carrello: cassone di legno cerchiato di ferro su quattro ruote
-        b.box(0, 0.35f, 0, 0.9f, 0.5f, 1.1f);
-        b.colorf(0.3f, 0.3f, 0.34f);
-        b.box(0, 0.62f, 0.56f, 0.94f, 0.08f, 0.06f);
-        b.box(0, 0.62f, -0.56f, 0.94f, 0.08f, 0.06f);
-        b.box(0.46f, 0.62f, 0, 0.06f, 0.08f, 1.1f);
-        b.box(-0.46f, 0.62f, 0, 0.06f, 0.08f, 1.1f);
-        b.colorf(0.18f, 0.18f, 0.2f);
-        for (int i = 0; i < 4; i++) b.ellipsoid((i < 2 ? -1 : 1) * 0.36f, 0.12f, (i % 2 == 0 ? 0.36f : -0.36f), 0.06f, 0.13f, 0.13f, 10, 6);
+        mineCart(b);
         cartMesh = b.build(-1, false, true);
         cartMesh.spec = 0.3f; cartMesh.shine = 20f;
         b = new MeshBuilder();
