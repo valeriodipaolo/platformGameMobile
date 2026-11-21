@@ -167,7 +167,8 @@ public final class Renderer {
             }
         }
 
-        // ---- nemici
+        // ---- nemici: un animale diverso per stagione, stesso comportamento
+        int sk = Img.S2 + Math.max(0, Math.min(5, th)) * 10;
         for (Enemy e : g.enemies) {
             if (e.dead) continue;
             float x = (e.x + e.w / 2 - cam) * s;
@@ -176,14 +177,14 @@ public final class Renderer {
             int img;
             float w = 1.083f * s, h = 0.875f * s;
             switch (e.type) {
-                case Enemy.HOG: img = Img.HOG + fr; w = 1.25f * s; h = 0.85f * s; break;
-                case Enemy.CROW: img = Img.CROW + fr; w = 1.25f * s; h = 1.0f * s; break;
+                case Enemy.HOG: img = sk + 3 + fr; w = 1.25f * s; h = 0.85f * s; break;
+                case Enemy.CROW: img = sk + 5 + fr; w = 1.25f * s; h = 1.0f * s; break;
                 case Enemy.STORM:
                     img = Game.stormPhase(e.hop) > 0 && e.flatTime <= 0 ? Img.HV_STORM_C : Img.HV_STORM;
                     w = 1.7f * s; h = 1.36f * s;
                     break;
                 case Enemy.WHIRL: img = Img.HV_WHIRL + fr; w = 1.2f * s; h = 1.38f * s; break;
-                case Enemy.SNAIL: img = e.mode == 1 ? Img.FX_SHELL : e.mode == 2 ? Img.FX_SLUG : Img.FX_SNAIL; w = (e.mode == 1 ? 0.78f : 1.2f) * s; h = (e.mode == 1 ? 0.65f : 0.9f) * s; break;
+                case Enemy.SNAIL: img = Img.S2_SN + (th == 0 ? 0 : 3) + e.mode; w = (e.mode == 1 ? 0.78f : 1.2f) * s; h = (e.mode == 1 ? 0.65f : 0.9f) * s; break;
                 case Enemy.CHESTNUT: img = Img.FX_CHESTNUT; w = 1.05f * s; h = 1.05f * s; if (e.mode == 1) x += 0.06f * s * (float) Math.sin(g.time * 45f); break;
                 case Enemy.OWL: img = Img.FX_OWL_0 + (e.mode == 1 ? 0 : fr); w = 1.5f * s; h = 1.3f * s; break;
                 case Enemy.PENGUIN: img = Img.FX_PENGUIN; w = 1.25f * s; h = 1.0f * s; break;
@@ -198,10 +199,10 @@ public final class Renderer {
                 case Enemy.STAR: img = Img.FX_STAR; w = 1.5f * s; h = 1.5f * s; break;
                 case Enemy.SUNNY: img = Img.FX_SUNNY; w = 1.25f * s; h = 1.25f * s; break;
                 case Enemy.ACORN:
-                    img = e.flatTime > 0 ? Img.ACORN_FLAT : Img.ACORN + (e.onGround ? 0 : 1);
+                    img = e.flatTime > 0 ? sk + 9 : sk + 7 + (e.onGround ? 0 : 1);
                     w = 0.95f * s; h = 1.05f * s;
                     break;
-                default: img = e.flatTime > 0 ? Img.ENEMY_FLAT : Img.ENEMY + fr; break;
+                default: img = e.flatTime > 0 ? sk + 2 : sk + fr; break;
             }
             if ((e.type == Enemy.CROW || e.type == Enemy.STORM || e.type >= Enemy.MOLE) && e.flatTime > 0) h *= 0.35f;      // schiacciato
             if (e.type == Enemy.LAPILLO && e.mode == 0) continue;                                    // dentro la lava non si vede
