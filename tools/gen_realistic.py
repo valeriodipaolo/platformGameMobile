@@ -4,7 +4,7 @@
 Colori naturali (niente verde acido), profondità data da ombre reciproche e da una mappa delle altezze illuminata.
 Tutte si ripetono senza cuciture.
 
-Uso:  python3 tools/gen_realistic.py [grass] [dirt] [rock] [tuft]
+Uso:  python3 tools/gen_realistic.py [grass] [dirt] [rock] [tuft] [branch] [firtree] [fern] [bark] [sky] [mountains]
 Le immagini sostituiscono r3_grass, r3_dirt, r3_rock in app/src/main/res/drawable-nodpi.
 """
 import math
@@ -218,6 +218,260 @@ def gen_rock():
     save("r3_rock", np.clip(out, 0, 1))
 
 
+
+# ------------------------------------------------------------------ abeti: rami, sagome lontane, felci, corteccia
+NEEDLE = [col(26, 48, 34), col(34, 60, 40), col(44, 72, 44), col(58, 88, 50)]
+TIP = [col(84, 116, 58), col(96, 126, 64)]
+
+
+def needle_twig(d, x, y, ang, ln, ss, r, shade, needle_len=7.0, density=1.0):
+    """Rametto coperto di aghi: gli aghi puntano in avanti, i più giovani in punta sono più chiari."""
+    steps = max(3, int(ln / (1.6 * ss) * density))
+    ca, sa = math.cos(ang), math.sin(ang)
+    for i in range(steps):
+        t = i / (steps - 1)
+        px, py = x + ca * ln * t, y + sa * ln * t
+        nl = needle_len * ss * (1.0 - 0.45 * t) * r.uniform(0.75, 1.15)
+        tip = t > 0.78 and r.random() < 0.7
+        for side in (-1, 1):
+            a = ang + side * r.uniform(0.55, 1.05)
+            c = (TIP[r.integers(2)] if tip else NEEDLE[r.integers(4)]) * shade * r.uniform(0.85, 1.12)
+            fill = tuple(int(np.clip(v, 0, 1) * 255) for v in c) + (255,)
+            d.line([(px, py), (px + math.cos(a) * nl, py + math.sin(a) * nl)], fill=fill, width=max(2, int(1.25 * ss)))
+    d.line([(x, y), (x + ca * ln, y + sa * ln)], fill=(58, 44, 32, 255), width=max(1, int(0.9 * ss)))
+
+
+def card(name, im, ss):
+    """Rimpicciolisce e rende netto il contorno (le foglie si ritagliano con soglia nel gioco)."""
+    w, h = im.size
+    out = im.resize((w // ss, h // ss), Image.LANCZOS)
+    a = np.asarray(out).astype(float) / 255.0
+    rgb, al = a[..., :3], a[..., 3]
+    # colore senza alone scuro ai bordi: dove l'alfa è basso si prende il colore dei vicini
+    w8 = ndi.gaussian_filter(al, 2.0)[..., None] + 1e-4
+    fill = np.dstack([ndi.gaussian_filter(rgb[..., i] * al, 2.0) for i in range(3)]) / w8
+    rgb = np.where(al[..., None] > 0.5, rgb / np.maximum(al[..., None], 1e-3), fill)
+    al = np.clip((al - 0.25) * 1.6, 0, 1)
+    save(name, np.dstack([np.clip(rgb, 0, 1), al]))
+
+
+def gen_branch():
+    """Ramo d'abete per le chiome vicine: fusto da sinistra a destra, rametti laterali fitti, punta a destra."""
+    ss = 2
+    W, H = 512 * ss, 256 * ss
+    r = np.random.default_rng(901)
+    im = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    cy = H / 2
+
+    def half(t):                                                     # metà altezza della chioma lungo il ramo
+        return (0.18 + 0.82 * math.sin(min(1.0, t / 0.35) * math.pi / 2)) * (1 - 0.72 * max(0.0, (t - 0.45) / 0.55)) * 88 * ss
+
+    def stem(x):
+        return cy + math.sin(x / W * 2.6) * 8 * ss * (x / W)
+    # rametti dietro (scuri) poi davanti (chiari): profondità
+    for layer, shade in ((0, 0.62), (1, 0.82), (2, 1.0)):
+        x = 0.04 * W
+        while x < 0.95 * W:
+            t = x / W
+            hh = half(t)
+            for side in (-1, 1):
+                if r.random() < 0.15:
+                    continue
+                ln = hh * r.uniform(0.75, 1.1) / math.sin(0.95)
+                ang = side * r.uniform(0.75, 1.15) + r.uniform(-0.1, 0.1)
+                y0 = stem(x) + r.uniform(-4, 4) * ss + layer * side * 3 * ss
+                needle_twig(d, x, y0, ang if side > 0 else ang, ln, ss, r, shade * (0.85 if side > 0 else 1.0))
+            x += r.uniform(9, 14) * ss
+    d.line([(x, stem(x)) for x in range(int(0.02 * W), int(0.97 * W), 6 * ss)], fill=(62, 46, 32, 255), width=int(3.0 * ss))
+    for x in np.linspace(0.6 * W, 0.97 * W, 30):                      # punta giovane
+        needle_twig(d, x, stem(x), r.uniform(-0.4, 0.4), r.uniform(10, 18) * ss, ss, r, 1.15, 5.0)
+    card("r3_branch", im, ss)
+
+
+def gen_firtree():
+    """Abete intero visto di lato, per le file lontane: palchi di rami che scendono, più scuri dentro e in basso."""
+    ss = 2
+    W, H = 256 * ss, 512 * ss
+    r = np.random.default_rng(911)
+    im = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    cx = W / 2
+    top, bot = 0.035 * H, 0.94 * H
+    d.line([(cx, bot - 20 * ss), (cx, H)], fill=(66, 50, 36, 255), width=int(6 * ss))
+    y = top + 4 * ss
+    while y < bot:
+        t = (y - top) / (bot - top)
+        reach = (0.06 + 0.94 * t ** 0.85) * 0.5 * W * r.uniform(0.85, 1.08)
+        shade = 0.7 + 0.35 * (1 - t) ** 0.5
+        for side in (-1, 1):
+            if r.random() < 0.1:
+                continue
+            ang = math.pi / 2 - side * (math.pi / 2 - r.uniform(0.25, 0.55))     # rami che scendono un po'
+            ex, ey = cx + math.cos(ang) * reach, y + math.sin(ang) * reach
+            n = max(2, int(reach / (6 * ss)))
+            for k in range(n + 1):
+                u = k / (n + 1)
+                bx, by = cx + (ex - cx) * u, y + (ey - y) * u + math.sin(u * math.pi) * 3 * ss
+                needle_twig(d, bx, by, ang + r.uniform(-0.9, 0.9), reach * 0.32 * (1.1 - u * 0.6), ss, r, shade * r.uniform(0.85, 1.05), 5.0, 0.8)
+        y += r.uniform(5, 9) * ss
+    card("r3_firtree", im, ss)
+
+
+def gen_fern():
+    """Fronda di felce: foglioline a lobi, nervatura centrale; picciolo nudo a destra."""
+    ss = 2
+    W, H = 512 * ss, 128 * ss
+    r = np.random.default_rng(921)
+    im = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    cy = H / 2
+    tip, base = 0.03 * W, 0.68 * W
+    d.line([(tip, cy), (W, cy)], fill=(70, 78, 40, 255), width=int(2.4 * ss))
+    x = tip
+    while x < base:
+        t = (x - tip) / (base - tip)                                    # 0 punta, 1 base
+        ln = (0.12 + 0.88 * math.sin(min(1.0, t / 0.75) * math.pi / 2) * (1 - 0.3 * max(0, (t - 0.75) / 0.25))) * 0.47 * H
+        for side in (-1, 1):
+            ang = side * (math.pi / 2 - 0.55)
+            g = r.uniform(0.85, 1.1)
+            base_c = lerp(col(54, 92, 36), col(84, 120, 46), r.random()) * g
+            # fogliolina: lama stretta che si assottiglia, bordo a dentelli, metà in luce e metà in ombra
+            dx, dy = -abs(math.cos(ang)), math.sin(ang)
+            nx_, ny_ = -dy, dx
+            wmax = 3.6 * ss * (0.6 + 0.4 * min(1.0, ln / (0.4 * H)))
+            left, right = [], []
+            m = 12
+            for k in range(m + 1):
+                u = k / m
+                w = wmax * (1 - u) ** 0.8 * (0.75 + 0.25 * (k % 2))
+                cxp, cyp = x + dx * ln * u, cy + dy * ln * u
+                left.append((cxp + nx_ * w, cyp + ny_ * w))
+                right.append((cxp - nx_ * w, cyp - ny_ * w))
+            c1 = tuple(int(np.clip(v * 1.05, 0, 1) * 255) for v in base_c) + (255,)
+            c2 = tuple(int(np.clip(v * 0.72, 0, 1) * 255) for v in base_c) + (255,)
+            mid = [(x + dx * ln * k / m, cy + dy * ln * k / m) for k in range(m + 1)]
+            d.polygon(left + mid[::-1], fill=c1)
+            d.polygon(right + mid[::-1], fill=c2)
+            d.line([(x, cy), (x + dx * ln, cy + dy * ln)], fill=tuple(int(v * 0.6 * 255) for v in base_c) + (255,), width=max(1, int(0.7 * ss)))
+        x += 5.5 * ss
+    card("r3_fern", im, ss)
+
+
+def gen_bark():
+    """Corteccia d'abete: placche verticali grigio-brune separate da fessure scure. Si ripete in verticale e in orizzontale."""
+    W, H = 256, 512
+    yy, xx = np.mgrid[0:H, 0:W].astype(float)
+    r = np.random.default_rng(931)
+    pts = r.uniform(0, 1, (70, 2)) * [W, H]
+    wx = (fbm(H, W, beta=2.4, seed=932) - 0.5) * 14
+    wy = (fbm(H, W, beta=2.4, seed=933) - 0.5) * 30
+    px, py = xx + wx, (yy + wy) * 0.33                                   # celle allungate in verticale
+    d1 = np.full((H, W), 1e9)
+    d2 = np.full((H, W), 1e9)
+    for (cx, cy) in pts:
+        for ox in (-W, 0, W):
+            for oy in (-H, 0, H):
+                dd = np.hypot(px - cx - ox, py - (cy + oy) * 0.33)
+                d2 = np.where(dd < d1, d1, np.minimum(d2, dd))
+                d1 = np.minimum(d1, dd)
+    edge = d2 - d1
+    fiss = np.exp(-edge / 2.2)
+    fine = fbm(H, W, beta=1.1, seed=934, ay=0.35)
+    mid = fbm(H, W, beta=2.0, seed=935)
+    h = np.minimum(edge, 9) * 0.9 + fine * 3 - fiss * 4
+    diff, _ = lit_from_height(ndi.gaussian_filter(h, 0.6, mode="wrap"), wrap=True)
+    base = lerp(col(78, 64, 52), col(118, 104, 90), mid[..., None])
+    base = lerp(base, col(150, 140, 124), (smooth((fine - 0.6) * 4) * 0.4)[..., None])   # scaglie chiare
+    lich = smooth((fbm(H, W, beta=1.5, seed=936) - 0.7) * 8)
+    base = lerp(base, col(120, 132, 96), (lich * 0.5)[..., None])
+    out = base * (0.42 + 0.75 * diff)[..., None] * (1 - fiss * 0.6)[..., None]
+    save("r3_bark", np.clip(out, 0, 1))
+
+
+# ------------------------------------------------------------------ cielo e montagne
+HAZE = col(190, 216, 238)            # = colore della foschia del mondo estivo (Scene3D.FOG_*)
+
+
+def gen_sky():
+    """Cielo che riempie la parte alta dello schermo: azzurro profondo in alto, velato all'orizzonte, cumuli visti in prospettiva."""
+    W, H = 1024, 512
+    v = np.linspace(0, 1, H)[:, None]                                   # 0 in alto, 1 all'orizzonte
+    sky = lerp(col(40, 98, 182), col(98, 154, 220), np.clip(v * 1.3, 0, 1)[..., None])
+    sky = lerp(sky, HAZE, (smooth((v - 0.5) / 0.5) ** 1.3)[..., None])
+    # piano delle nuvole visto in prospettiva: ogni riga guarda più lontano, le nuvole si rimpiccioliscono in entrambe le direzioni
+    NZ, NX = 1024, 1024
+    noise = fbm(NZ, NX, beta=2.6, seed=950) * 0.78 + fbm(NZ, NX, beta=1.4, seed=951) * 0.22
+    elev = (1 - v[:, 0]) * 1.0 + 0.09                                   # angolo sopra l'orizzonte (radianti)
+    dist = 1.0 / np.tan(elev)
+    s_ = 260.0
+    rows = (dist * s_).astype(int) % NZ
+    xs = (np.arange(W) - W / 2) / (W / 2) * 1.1
+    cols_ = (xs[None, :] * dist[:, None] * s_).astype(int) % NX
+    dens = noise[rows[:, None], cols_]
+    far = smooth((dist[:, None] - 3.0) / 6.0)                           # lontano il rumore si confonderebbe: si va verso la media
+    dens = lerp(dens, ndi.uniform_filter(dens, 9), far)
+    c = smooth(np.clip((dens - 0.55) * 5.0, 0, 1))
+    c *= 1 - smooth((v - 0.82) / 0.18)                                  # all'orizzonte si perdono nella foschia
+    soft = ndi.gaussian_filter(c, 1.2)
+    belly = np.clip((ndi.gaussian_filter(c, 4) - np.roll(ndi.gaussian_filter(c, 4), 6, 0)) * 3 + 0.5, 0, 1)   # pancia in ombra
+    cloud = lerp(col(150, 166, 190), col(252, 250, 246), (1 - belly * 0.8)[..., None])
+    cloud = lerp(cloud, HAZE, (v * 0.6)[..., None])
+    out = sky * (1 - soft[..., None]) + cloud * soft[..., None]
+    save("r3_sky", np.clip(out, 0, 1))
+
+
+def gen_mountains():
+    """Catene di montagne disegnate davvero: un terreno frattale visto in prospettiva (come i vecchi simulatori di volo),
+    con rocce illuminate dal sole, neve in alto, boschi in basso e foschia che cresce con la distanza.
+    Si ripete in orizzontale; in basso diventa trasparente."""
+    W, H = 2048, 512
+    NZ = 1024                       # righe del terreno, 8 unità ciascuna
+    # rumore a bassa risoluzione ingrandito: rilievi larghi chilometri, non aghi
+    wide = lambda a: ndi.zoom(a, (8, 4), order=3, mode="grid-wrap")[:NZ, :W]
+    n1 = wide(fbm(NZ // 8, W // 4, beta=4.0, seed=980))
+    n2 = wide(fbm(NZ // 8, W // 4, beta=3.4, seed=981))
+    ridged = (1 - np.abs(2 * n2 - 1)) ** 2
+    det = wide(fbm(NZ // 8, W // 4, beta=2.8, seed=982))
+    z_of_row = np.arange(NZ) * 8.0 + 200
+    amp = (np.clip((z_of_row - 200) / 4000, 0, 1) ** 0.7 * 2600 + 260)[:, None]   # lontano le vette, vicino le colline
+    T = amp * (0.55 * n1 + 0.45 * ridged + 0.05 * det) - 0.25 * amp
+    T += (amp * 0.28 * smooth((z_of_row[:, None] - 5000) / 2500)) * (0.7 + 0.6 * n2)   # catena di fondo continua
+    gz, gx = np.gradient(ndi.gaussian_filter(T, (1.5, 2.5), mode="wrap"), 8.0, 8.0)                                   # una colonna = 16 unità di terreno
+    L = np.array([0.55, 0.62, -0.56]); L /= np.linalg.norm(L)            # sole da destra e alto (x, su, verso la camera)
+    nrm = np.sqrt(gx * gx + gz * gz + 1)
+    diff = np.clip((-gx * L[0] + L[1] - gz * L[2]) / nrm, 0, 1)
+    slope = np.sqrt(gx * gx + gz * gz)
+    snow_h = amp * 0.62 + (det - 0.5) * amp * 0.3
+    snow = smooth((T - snow_h) / (amp * 0.1 + 1)) * smooth((1.15 - slope) / 0.5)
+    forest = smooth((amp * 0.18 - T) / (amp * 0.12 + 1)) * smooth((1.0 - slope) / 0.6)
+    rock = lerp(col(92, 88, 84), col(140, 132, 122), det[..., None])
+    colr = lerp(rock, lerp(col(28, 46, 32), col(52, 72, 44), n1[..., None]), forest[..., None])
+    colr = lerp(colr, col(240, 244, 250), snow[..., None])
+    lit = colr * (0.3 + 0.95 * diff)[..., None] + colr * snow[..., None] * 0.1
+    horizon, f, h0 = 430.0, 1500.0, 700.0                                 # camera alta: si vedono le valli e le catene una dietro l'altra
+    out = np.zeros((H, W, 3))
+    alpha = np.zeros((H, W))
+    ybuf = np.full(W, H, dtype=float)
+    rowsY = np.arange(H)[:, None]
+    xs = np.arange(W)
+    for zi in range(NZ - 1, 0, -1):                                     # dal più lontano al più vicino
+        z = z_of_row[zi]
+        ys = horizon - f * (T[zi] - h0) / z
+        ys = np.clip(ys, 0, H)
+        haze = 1 - np.exp(-z / 5200.0)
+        c = lerp(lit[zi], HAZE, haze * 0.85)
+        m = rowsY >= ys[None, :]
+        out[m] = np.broadcast_to(c[None, :, :], (H, W, 3))[m]
+        alpha[m] = 1
+    # venature della roccia lungo le pareti (nello spazio dell'immagine): niente strisce tutte uguali
+    vein = ndi.gaussian_filter(fbm(H, W, beta=1.6, seed=983), (2.0, 0.6))
+    out *= (0.86 + 0.28 * vein)[..., None]
+    out = lerp(out, HAZE * 0.92, (smooth((rowsY - 430) / 60) * 0.85)[..., None])
+    alpha = alpha * (1 - smooth((rowsY - 476) / 36))
+    save("r3_mountains", np.dstack([np.clip(out, 0, 1), np.clip(alpha, 0, 1)]))
+
+
 # ------------------------------------------------------------------ ciuffi d'erba (carte verticali)
 def gen_tuft():
     """Ricolora i ciuffi con la stessa tavolozza del prato: stessa forma, verde naturale invece che acido."""
@@ -239,5 +493,7 @@ def gen_tuft():
 if __name__ == "__main__":
     which = sys.argv[1:] or ["grass", "dirt", "rock"]           # "tuft" a parte: ricolora l'immagine esistente, una volta sola
     for w in which:
-        {"grass": gen_grass, "dirt": gen_dirt, "rock": gen_rock, "tuft": gen_tuft}[w]()
+        {"grass": gen_grass, "dirt": gen_dirt, "rock": gen_rock, "tuft": gen_tuft,
+         "branch": gen_branch, "firtree": gen_firtree, "fern": gen_fern, "bark": gen_bark,
+         "sky": gen_sky, "mountains": gen_mountains}[w]()
         print("fatto", w)
