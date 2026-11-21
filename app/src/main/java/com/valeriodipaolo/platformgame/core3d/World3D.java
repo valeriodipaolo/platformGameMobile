@@ -1000,11 +1000,28 @@ public final class World3D {
         for (Enemy3 e : enemies) {
             if (e.skin != 0) continue;
             switch (theme) {
-                case 2: case 10: if (e.type == Enemy3.ACORN) e.skin = Enemy3.SKIN_FROG; break;
+                case 2:                                        // estate: cavalletta, istrice, calabrone, tartaruga
+                    if (e.type == Enemy3.ACORN) e.skin = Enemy3.SKIN_HOPPER;
+                    else if (e.type == Enemy3.HOG) e.skin = Enemy3.SKIN_PORCUPINE;
+                    else if (e.type == Enemy3.CROW) e.skin = Enemy3.SKIN_WASP;
+                    else if (e.type == Enemy3.SNAIL) e.skin = Enemy3.SKIN_TORTOISE;
+                    break;
+                case 4:                                        // autunno: il topo selvatico al posto dello scarabeo
+                    if (e.type == Enemy3.BEETLE) e.skin = Enemy3.SKIN_MOUSE;
+                    break;
+                case 10:                                       // primavera: rana, processionaria, rondine
+                    if (e.type == Enemy3.ACORN) e.skin = Enemy3.SKIN_FROG;
+                    else if (e.type == Enemy3.HOG) e.skin = Enemy3.SKIN_CATERPILLAR;
+                    else if (e.type == Enemy3.CROW) e.skin = Enemy3.SKIN_SWALLOW;
+                    break;
+                case 12:                                       // cielo: il falco al posto del corvo
+                    if (e.type == Enemy3.CROW) e.skin = Enemy3.SKIN_HAWK;
+                    break;
                 case 6:
                     if (e.type == Enemy3.ACORN) e.skin = Enemy3.SKIN_HARE;
                     else if (e.type == Enemy3.HOG) e.skin = Enemy3.SKIN_ICE;
                     else if (e.type == Enemy3.BEETLE) e.skin = Enemy3.SKIN_PENGUIN;
+                    else if (e.type == Enemy3.CROW) e.skin = Enemy3.SKIN_MAGPIE;
                     break;
                 case 8:
                     if (e.type == Enemy3.ACORN) e.skin = Enemy3.SKIN_EMBER;
@@ -1025,21 +1042,27 @@ public final class World3D {
         for (float[] g : gemsList) {
             if (!nearThorn(g[0], g[2])) continue;
             float lift = g[1] - Math.max(0, topAt(g[0], g[2]));
-            float best = Float.MAX_VALUE, bx = g[0];
-            for (int xi = 0; xi < W; xi++) {
-                float x = xi - HALF + 0.5f;
-                int c = cell(xi, (int) Math.floor(g[2]));
-                if (c == PIT || c < 0 || nearThorn(x, g[2]) || Math.abs(topAt(x, g[2]) - topAt(g[0], g[2])) > 1.01f) continue;
-                if (Math.abs(x - g[0]) < best) { best = Math.abs(x - g[0]); bx = x; }
+            float best = Float.MAX_VALUE, bx = g[0], bz = g[2];
+            float[] dzs = {0, 0.5f, -0.5f, 1f, -1f, 1.5f, -1.5f, 2f, -2f};
+            for (float dz : dzs) {                                   // stessa riga se possibile, poi poco avanti o indietro
+                float z = g[2] + dz;
+                for (int xi = 0; xi < W; xi++) {
+                    float x = xi - HALF + 0.5f;
+                    int c = cell(xi, (int) Math.floor(z));
+                    if (c == PIT || c < 0 || nearThorn(x, z) || Math.abs(topAt(x, z) - topAt(g[0], g[2])) > 1.01f) continue;
+                    float d = Math.abs(x - g[0]) + Math.abs(dz) * 1.5f;
+                    if (d < best) { best = d; bx = x; bz = z; }
+                }
+                if (best < 1.6f) break;
             }
-            if (best < Float.MAX_VALUE) { g[0] = bx; g[1] = Math.max(0, topAt(bx, g[2])) + Math.max(0.5f, lift); }
+            if (best < Float.MAX_VALUE) { g[0] = bx; g[2] = bz; g[1] = Math.max(0, topAt(bx, bz)) + Math.max(0.5f, lift); }
             else g[1] = Math.max(0, topAt(g[0], g[2])) + 1.9f;
         }
     }
 
     /** In questo punto chi raccoglie una gemma toccherebbe un rovo? (raggio di raccolta 0,65 + raggio del rovo 0,62) */
     private boolean nearThorn(float x, float z) {
-        for (float[] t : thorns) if (Math.abs(t[0] - x) < 0.95f && Math.abs(t[1] - z) < 0.95f) return true;
+        for (float[] t : thorns) { float dx = t[0] - x, dz = t[1] - z; if (dx * dx + dz * dz < 1.3f * 1.3f) return true; }   // raccolta 0,65 + rovo 0,62, con margine
         return false;
     }
 

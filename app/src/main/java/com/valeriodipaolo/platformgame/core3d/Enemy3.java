@@ -13,7 +13,9 @@ public final class Enemy3 {
     public static final int SKIN_CRAB = 1, SKIN_TIKI = 2, SKIN_FISH = 3;
     /** Deserto, fabbrica, miniera: scorpione = riccio (non si schiaccia), avvoltoio e pipistrello = corvo, robottino = scarabeo, drone = gufo, masso = castagna. */
     /** Stagioni: stesso comportamento, aspetto del posto (rana, lepre bianca, brace, riccio di ghiaccio, riccio di lava, pinguino). */
-    public static final int SKIN_FROG = 10, SKIN_HARE = 11, SKIN_EMBER = 12, SKIN_ICE = 13, SKIN_MAGMA = 14, SKIN_PENGUIN = 15;
+    public static final int SKIN_FROG = 10, SKIN_HARE = 11, SKIN_EMBER = 12, SKIN_ICE = 13, SKIN_MAGMA = 14, SKIN_PENGUIN = 15,
+            SKIN_HOPPER = 16, SKIN_PORCUPINE = 17, SKIN_WASP = 18, SKIN_TORTOISE = 19, SKIN_MOUSE = 20, SKIN_MAGPIE = 21,
+            SKIN_CATERPILLAR = 22, SKIN_SWALLOW = 23, SKIN_HAWK = 24;
     public static final int SKIN_SCORPION = 4, SKIN_VULTURE = 5, SKIN_ROBOT = 6, SKIN_DRONE = 7, SKIN_BAT = 8, SKIN_ROCK = 9;
     /** Quota di partenza (ghianda) o quota media del volo (corvo). */
     public float baseY, hopT;

@@ -845,6 +845,9 @@ public final class FoeModels {
         g.draw(whirlEyes, a, 1, 1, 1, 1, 0.4f);
     }
 
+    private FoeModels3 season3;
+    private FoeModels3 s3() { if (season3 == null) season3 = new FoeModels3(); return season3; }
+
     /** Aspetto stagionale: si disegna il modello di un altro nemico (o un riccio ritinto) con lo stato del nemico vero. */
     private void drawSeason(Gfx3D g, float[] m, Enemy3 e) {
         int type = e.type, mode = e.mode, skin = e.skin;
@@ -855,6 +858,15 @@ public final class FoeModels {
             case Enemy3.SKIN_EMBER: { float[] sm = new float[16]; System.arraycopy(m, 0, sm, 0, 16); Mat4.scale(sm, 0.6f, 0.6f, 0.6f); e.type = Enemy3.LAPILLO; e.mode = 1; more.draw(g, sm, e); break; }
             case Enemy3.SKIN_PENGUIN: e.type = Enemy3.PENGUIN; e.mode = 0; more.draw(g, m, e); break;
             case Enemy3.SKIN_ICE: hr = 0.75f; hg = 0.9f; hb = 1.25f; he = 0.15f; drawHog(g, m, e); hr = hg = hb = 1; he = 0; break;
+            case Enemy3.SKIN_HOPPER: s3().drawHopper(g, m, e); break;
+            case Enemy3.SKIN_PORCUPINE: s3().drawPorcupine(g, m, e); break;
+            case Enemy3.SKIN_CATERPILLAR: s3().drawCaterpillar(g, m, e); break;
+            case Enemy3.SKIN_MOUSE: s3().drawMouse(g, m, e); break;
+            case Enemy3.SKIN_TORTOISE: e.mode = mode; s3().drawTortoise(g, m, e); break;
+            case Enemy3.SKIN_WASP: s3().drawWasp(g, m, e); break;
+            case Enemy3.SKIN_SWALLOW: s3().drawBird(g, m, e, 0); break;
+            case Enemy3.SKIN_MAGPIE: s3().drawBird(g, m, e, 1); break;
+            case Enemy3.SKIN_HAWK: s3().drawBird(g, m, e, 2); break;
             case Enemy3.SKIN_MAGMA: hr = 0.55f; hg = 0.32f; hb = 0.25f; he = 0f; drawHog(g, m, e); hr = hg = hb = 1; he = 0; break;
             default: break;
         }
