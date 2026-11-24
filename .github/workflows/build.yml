@@ -3,10 +3,17 @@ name: Build APK
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - 'tools/**'
+      - '**.md'
   workflow_dispatch:
 
 permissions:
   contents: write
+
+concurrency:
+  group: build
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -22,17 +29,14 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: 8.11.1
+          # niente cache scritta a ogni build: risparmia storage Actions
+          cache-read-only: true
 
       - name: Compila l'APK
         run: gradle --no-daemon assembleRelease
 
       - name: Prepara l'APK
         run: cp app/build/outputs/apk/release/app-release.apk platformGame.apk
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: platformGame-apk
-          path: platformGame.apk
 
       # Release "latest" sempre aggiornata: il link per scaricare l'APK resta lo stesso.
       - name: Pubblica l'APK
