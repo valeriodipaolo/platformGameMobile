@@ -64,23 +64,12 @@ public final class Level {
         if (x >= 0 && x < w && y >= 0 && y < h) t[y * w + x] = c;
     }
 
-    /** Colonna sinistra della catapulta vicino al portone (riporta a inizio livello). */
-    public int catX;
-
     /**
-     * Chiude il fine livello: muro altissimo sopra il portone e fino al bordo (non si scavalca con il salto), battenti chiusi (casella DOOR) e
-     * una catapulta sul terreno piano poco prima dell'ingresso.
+     * Chiude il fine livello: muro altissimo sopra il portone e fino al bordo (non si scavalca con il salto), battenti chiusi (casella DOOR).
      */
     public void sealEnd() {
         for (int y = 0; y <= flagBaseY - 4; y++) for (int x = Math.max(0, flagX - 2); x < w; x++) set(x, y, STONE);
         for (int y = flagBaseY - 3; y < flagBaseY; y++) set(flagX, y, DOOR);
-        int cx = flagX - 9;
-        for (; cx > flagX - 30; cx--) {
-            boolean ok = true;
-            for (int x = cx; x < cx + 3 && ok; x++) if (!solid(x, flagBaseY) || solid(x, flagBaseY - 1) || solid(x, flagBaseY - 2)) ok = false;
-            if (ok) break;
-        }
-        catX = cx;
     }
 
     public boolean solid(int x, int y) {

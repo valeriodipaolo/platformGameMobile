@@ -41,13 +41,6 @@ public final class Renderer {
             p.image(Img.GATE_DOOR, gx + 2.45f * s - lw, ly, lw, 3.05f * s, true, 1);
         }
 
-        // ---- catapulta vicino al portone: con la trottola riporta all'inizio del livello
-        float kx = (lv.catX - cam) * s;
-        if (kx > -4f * s && kx < sw + s) {
-            boolean shot = g.launching() && g.launchT < 0.6f;
-            p.image(shot ? Img.FX_CATAPULT_B : Img.FX_CATAPULT, kx + 0.7f * s, (lv.flagBaseY - 1.2f) * s, 1.75f * s, 1.2f * s, false, 1);      // piccola e discreta
-        }
-
         // ---- caselle
         int tx0 = (int) Math.floor(cam), tx1 = (int) Math.floor(cam + g.viewW) + 1;
         for (int ty = 0; ty < lv.h; ty++) {

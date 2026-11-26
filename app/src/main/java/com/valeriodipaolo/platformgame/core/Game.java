@@ -42,9 +42,8 @@ public final class Game {
     /** Gettone d'oro ancora da prendere in un punto del livello {x, y}, oppure null; coinFoe = il nemico che lo porta addosso. */
     public float[] coin;
     public Enemy coinFoe;
-    /** Apertura del portone di fine livello (0..1): si apre da solo all'arrivo; la catapulta (t >= 0) riporta all'inizio. */
-    public float gateOpen, launchT = -1;
-    private float lfx, lfy;
+    /** Apertura del portone di fine livello (0..1): si apre da solo all'arrivo. */
+    public float gateOpen;
     /** Posizione del muro di fuoco (NaN = nessun fuoco in questo livello). */
     public float fireX = Float.NaN;
     /** Piattaforme che crollano: {x, y, tempo trascorso da quando ci si sta sopra}; e quelle già crollate, da rimettere alla ripartenza. */
@@ -109,7 +108,6 @@ public final class Game {
         Coins2D.place(level, levelNo);
         level.sealEnd();
         gateOpen = 0;
-        launchT = -1;
         enemies.clear();
         for (float[] e : level.enemies) {
             enemies.add(e.length > 2 ? new Enemy(e[0], e[1], (int) e[2], e[3], e[4]) : new Enemy(e[0], e[1]));
@@ -226,16 +224,12 @@ public final class Game {
         }
 
         if (state == PLAYING) {
-            if (launchT >= 0) {
-                stepLaunch(dt);
-            } else {
-                stepPlayer(dt);
-                stepFire(dt);
-                updateCheckpoint();
-                stepEnemies(dt);
-                pickups();
-                stepGate(dt);
-            }
+            stepPlayer(dt);
+            stepFire(dt);
+            updateCheckpoint();
+            stepEnemies(dt);
+            pickups();
+            stepGate(dt);
         } else if (state == DYING) {
             player.vy += 60f * dt;
             player.y += player.vy * dt;
@@ -765,37 +759,7 @@ public final class Game {
             if (gateOpen > 0.6f) for (int y = level.flagBaseY - 3; y < level.flagBaseY; y++) if (level.get(level.flagX, y) == Level.DOOR) level.set(level.flagX, y, Level.EMPTY);
         }
         if (state == PLAYING && gateOpen > 0.6f && player.x + player.w / 2 >= fx + 1.5f) win();      // il robot entra nel varco e sparisce nell'oscurità del portone
-        // catapulta: sopra la sua piattaforma, la trottola lancia il robot all'inizio del livello
-        float cx = level.catX;
-        if (state == PLAYING && spin && !spinWas && player.onGround && player.x + player.w > cx + 0.7f && player.x < cx + 2.45f && Math.abs(player.y + player.h - level.flagBaseY) < 0.2f) {
-            launchT = 0;
-            lfx = player.x;
-            lfy = player.y;
-            spinActive = false;
-            spinCool = 0;
-            player.vx = player.vy = 0;
-        }
     }
-
-    private void stepLaunch(float dt) {
-        float dur = 2.4f;
-        launchT += dt;
-        float u = Math.min(1f, launchT / dur);
-        player.x = lfx + (level.startX - lfx) * u;
-        player.y = lfy + (level.startY - lfy) * u - 10f * 4f * u * (1f - u);
-        facing = -1;
-        invuln = Math.max(invuln, 0.3f);
-        if (u >= 1f) {
-            launchT = -1;
-            checkpointX = level.startX;
-            checkpointY = level.startY;
-            respawn();
-            invuln = 1.5f;
-        }
-    }
-
-    /** true mentre il robot vola verso l'inizio del livello. */
-    public boolean launching() { return launchT >= 0; }
 
     private void win() {
         state = WON;

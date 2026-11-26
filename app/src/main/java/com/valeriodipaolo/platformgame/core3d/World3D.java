@@ -74,11 +74,9 @@ public final class World3D {
     public final List<float[]> carts = new ArrayList<float[]>();
     public static final float CART_SPEED = 9.5f, CART_X = 1.05f;
     public int flagZ;
-    /** Portone di fine livello: si apre (0..1) da solo all'arrivo; la catapulta (launchT >= 0) riporta all'inizio. */
-    public float gateOpen, launchT = -1;
-    public int catZ;
+    /** Portone di fine livello: si apre (0..1) da solo all'arrivo. */
+    public float gateOpen;
     private boolean sealed;
-    private float lx, ly, lz;
     public final List<float[]> gemsList = new ArrayList<float[]>();
     public final List<Enemy3> enemies = new ArrayList<Enemy3>();
     /** Gemme che escono dalle casse rotte: {x, y, z, età}. */
@@ -156,9 +154,7 @@ public final class World3D {
         }
         LevelFix.apply(this);
         gateOpen = 0;
-        launchT = -1;
         sealed = true;
-        sealEnd();
         noSidePaths();
         gemsOffThorns();
         seasonSkins();
@@ -288,9 +284,7 @@ public final class World3D {
             coinPop[1] += 1.6f * dt;
             if ((coinPop[3] += dt) > 1.0f) coinPop = null;
         }
-        if (state == PLAYING && launchT >= 0) {
-            stepLaunch(dt);
-        } else if (state == PLAYING) {
+        if (state == PLAYING) {
             stepPlayer(dt);
             stepFire(dt);
             stepIsland(dt);
@@ -1319,51 +1313,10 @@ public final class World3D {
         vy = 9f;
     }
 
-    /** Cerca un tratto piano e libero davanti al portone dove mettere la catapulta. */
-    private void sealEnd() {
-        sealed = false;
-        int z = flagZ - 8;
-        for (; z > flagZ - 30 && z > 4; z--) {
-            boolean ok = true;
-            for (int k = 0; k < 3 && ok; k++) for (int x = 0; x <= 2; x++) if (cell(x, z + k) != 0) ok = false;
-            if (ok) break;
-        }
-        catZ = z;
-        sealed = true;
-    }
-
     private void stepGate(float dt) {
         if (pz > flagZ - 6f && gateOpen < 1f) gateOpen = Math.min(1f, gateOpen + dt);
         if (state == PLAYING && gateOpen > 0.6f && pz >= flagZ + 3.4f) win();
-        if (state == PLAYING && spin && !spinWas && onGround && Math.abs(px + 1.75f) < 1.0f && pz > catZ - 0.2f && pz < catZ + 1.6f && py < Math.max(0, topAt(px, pz)) + 0.3f) {
-            launchT = 0;
-            lx = px; ly = py; lz = pz;
-            spinActive = false;
-            spinCool = 0;
-            vx = vy = vz = 0;
-        }
     }
-
-    private void stepLaunch(float dt) {
-        float dur = 2.2f + Math.min(1.5f, (lz - 1.5f) / 60f);
-        launchT += dt;
-        float u = Math.min(1f, launchT / dur);
-        px = lx * (1 - u);
-        pz = lz + (1.5f - lz) * u;
-        py = ly + 14f * u * (1f - u);
-        yaw = (float) Math.PI;
-        invuln = Math.max(invuln, 0.3f);
-        if (u >= 1f) {
-            launchT = -1;
-            cpX = 0;
-            cpZ = 1.5f;
-            place();
-            invuln = 1.5f;
-            if (!Float.isNaN(fireZ)) fireZ = Math.min(fireZ, cpZ - 14f);
-        }
-    }
-
-    public boolean launching() { return launchT >= 0; }
 
     /**
      * Dissolvenza nel buio del portone (0..1): cresce mentre il robot attraversa la soglia e a livello finito copre tutto,
