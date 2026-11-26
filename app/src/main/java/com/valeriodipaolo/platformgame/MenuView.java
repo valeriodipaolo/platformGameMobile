@@ -28,9 +28,9 @@ final class MenuView extends View {
         painter = new AndroidPainter(ctx);
     }
 
-    private static final int LEVELS = 40, PER_ROW = 14;
+    private static final int LEVELS = Levels.ORDER.length, PER_ROW = 15;
 
-    private float btnW() { return getWidth() * 0.064f; }
+    private float btnW() { return getWidth() * 0.0595f; }
     private float btnH() { return getHeight() * 0.14f; }
     private float btnY(int i) { return getHeight() * (0.335f + 0.158f * (i / PER_ROW)); }
     private float btnX(int i) { return getWidth() * 0.5f + (i % PER_ROW - PER_ROW / 2f) * (btnW() + getWidth() * 0.0055f) + getWidth() * 0.003f; }
@@ -62,7 +62,7 @@ final class MenuView extends View {
             boolean green = !Levels.seasonal(Levels.ORDER[i]);          // mondi senza stagione, in coda: verdi
             painter.rect(x, y, btnW(), btnH(), green ? 0xCC14482A : 0xCC14324A);
             painter.rect(x, y, btnW(), 0.08f * s, green ? 0xFF66BB6A : 0xFF4FC3F7);
-            painter.text("LIVELLO " + (i + 1), x + btnW() / 2, y + btnH() * 0.47f, 0.27f * s, Painter.ALIGN_CENTER, 0xFFFFFFFF);
+            painter.text("LIVELLO " + (i + 1), x + btnW() / 2, y + btnH() * 0.47f, 0.24f * s, Painter.ALIGN_CENTER, 0xFFFFFFFF);
             painter.text(subById[Levels.ORDER[i]], x + btnW() / 2, y + btnH() * 0.8f, 0.15f * s, Painter.ALIGN_CENTER, green ? 0xFFC8E6C9 : 0xFFB3E5FC);
         }
         painter.text("Comandi 3D: " + CTRL_HINT[ctrl], w / 2, heroY() - h * 0.015f, 0.3f * s, Painter.ALIGN_CENTER, 0xFFFFFFFF);

@@ -582,6 +582,7 @@ public final class Scene3D {
             decor.build(w, z0, z1);
         }
         if (dry == 0) buildRays(z0, z1);
+        if (!w.carts.isEmpty() && dry != 24) buildRails(w, z0, z1, new Random(77));     // varianti della miniera nei temi principali
         buildObjects();
 
         // ---- da builder a mesh, con materiale
@@ -2238,6 +2239,10 @@ public final class Scene3D {
         dynamite = MineModels.dynamite();
         dynSpark = MineModels.spark();
         springBox = CrateModels.spring();
+        MeshBuilder cb = new MeshBuilder();
+        mineCart(cb);
+        cartMesh = cb.build(-1, false, true);
+        cartMesh.spec = 0.35f; cartMesh.shine = 22f;
     }
 
     private void buildIsland() {
@@ -2336,7 +2341,7 @@ public final class Scene3D {
             g.draw(springBox, m, 1, 1, 1, 1, 0.08f);
             return;
         }
-        if (kind == World3D.C_NITRO && dry == 24) {                     // miniera: fascio di dinamite con la miccia che sfrigola
+        if (kind == World3D.C_NITRO && !w.carts.isEmpty()) {                     // miniera: fascio di dinamite con la miccia che sfrigola
             Mat4.rotateY(m, 0.6f * ((k * 7) % 5 - 2) / 2f + 0.03f * (float) Math.sin(w.time * 29f + k));
             g.draw(dynamite, m, 1, 1, 1, 1, 0.1f + 0.08f * (float) Math.sin(w.time * 9f + k));
             float fl = 0.75f + 0.35f * (float) Math.sin(w.time * 47f + k * 3) * (float) Math.sin(w.time * 23f);
@@ -2553,41 +2558,7 @@ public final class Scene3D {
                 gl.bipyramid(x - side * 0.15f * r.nextFloat(), y + (r.nextFloat() - 0.3f) * 0.3f, z + (r.nextFloat() - 0.5f) * 0.5f, 0.04f + 0.05f * r.nextFloat(), h, 6);
             }
         }
-        // binari: tre (corsie 1-3), traversine fitte su massicciata; le corsie esterne sono pavimento di scavo
-        for (float[] c : w.carts) {
-            for (int z = Math.max(z0, (int) c[0]); z < Math.min(z1, (int) c[1]); z++) for (int x = 1; x <= 3; x++) {
-                boolean hole = w.height[z * World3D.W + x] == World3D.PIT;
-                float cx = x - World3D.HALF + 0.5f;
-                lightAt(cx, z, 1f);
-                if (hole) {                                             // binario spezzato: un moncone di rotaia storta sul bordo
-                    if (w.height[(z - 1) * World3D.W + x] != World3D.PIT) {
-                        MeshBuilder p = mb(K_PROP, z);
-                        p.colorf(0.4f * lt[0], 0.36f * lt[1], 0.34f * lt[2]);
-                        beam(p, cx - 0.25f, 0.1f, z, cx - 0.35f, -0.5f, z + 0.5f, 0.03f);
-                        beam(p, cx + 0.25f, 0.1f, z, cx + 0.15f, 0.05f, z + 0.45f, 0.03f);
-                    }
-                    continue;
-                }
-                MeshBuilder rk = mb(K_ROCK, z);                         // massicciata di pietrisco
-                float gr = 0.5f + 0.1f * r.nextFloat();
-                rk.colorf(gr * lt[0], gr * 0.95f * lt[1], gr * 0.9f * lt[2]);
-                rk.box(cx, 0.03f, z + 0.5f, 0.92f, 0.08f, 1.0f);
-                MeshBuilder t = mb(K_TRUNK, z);
-                for (int q = 0; q < 2; q++) {                           // traversine
-                    float zz = z + 0.25f + q * 0.5f + (r.nextFloat() - 0.5f) * 0.06f, tk = 0.42f + 0.12f * r.nextFloat();
-                    t.colorf(tk * lt[0], tk * 0.76f * lt[1], tk * 0.54f * lt[2]);
-                    t.box(cx + (r.nextFloat() - 0.5f) * 0.05f, 0.1f, zz, 0.86f, 0.09f, 0.17f);
-                }
-                MeshBuilder p = mb(K_PROP, z);                          // rotaie: suola e fungo lucido
-                for (int s2 = -1; s2 <= 1; s2 += 2) {
-                    float rx = cx + s2 * 0.25f;
-                    p.colorf(0.28f * lt[0], 0.22f * lt[1], 0.18f * lt[2]);
-                    p.box(rx, 0.17f, z + 0.5f, 0.08f, 0.05f, 1.0f);
-                    p.colorf(0.46f * lt[0], 0.45f * lt[1], 0.46f * lt[2]);
-                    p.box(rx, 0.22f, z + 0.5f, 0.05f, 0.04f, 1.0f);
-                }
-            }
-        }
+        buildRails(w, z0, z1, r);
         // corsie esterne: pietrisco, travi accatastate, barili, casse e qualche vagoncino abbandonato
         // fuori dalle corsie, oltre i ritti delle armature: il carrello (largo fino a 1,55 m dal centro) non li sfiora mai
         for (int side = -1; side <= 1; side += 2) for (float z = z0 + r.nextFloat() * 4f; z < z1; z += 2.5f + 5f * r.nextFloat()) {
@@ -2631,6 +2602,44 @@ public final class Scene3D {
                 Mat4.rotateZ(tm, 0.1f * side);
                 p.append(cart, tm, 0.9f * Math.max(0.35f, lt[0]));
                 z += 3f;
+            }
+        }
+    }
+
+    /** Binari: tre (corsie 1-3), traversine fitte su massicciata, monconi storti dove la rotaia è spezzata. Per tutti i livelli in carrello. */
+    private void buildRails(World3D w, int z0, int z1, Random r) {
+        for (float[] c : w.carts) {
+            for (int z = Math.max(z0, (int) c[0]); z < Math.min(z1, (int) c[1]); z++) for (int x = 1; x <= 3; x++) {
+                boolean hole = w.height[z * World3D.W + x] == World3D.PIT;
+                float cx = x - World3D.HALF + 0.5f;
+                lightAt(cx, z, 1f);
+                if (hole) {                                             // binario spezzato: un moncone di rotaia storta sul bordo
+                    if (w.height[(z - 1) * World3D.W + x] != World3D.PIT) {
+                        MeshBuilder p = mb(K_PROP, z);
+                        p.colorf(0.4f * lt[0], 0.36f * lt[1], 0.34f * lt[2]);
+                        beam(p, cx - 0.25f, 0.1f, z, cx - 0.35f, -0.5f, z + 0.5f, 0.03f);
+                        beam(p, cx + 0.25f, 0.1f, z, cx + 0.15f, 0.05f, z + 0.45f, 0.03f);
+                    }
+                    continue;
+                }
+                MeshBuilder rk = mb(K_ROCK, z);                         // massicciata di pietrisco
+                float gr = 0.5f + 0.1f * r.nextFloat();
+                rk.colorf(gr * lt[0], gr * 0.95f * lt[1], gr * 0.9f * lt[2]);
+                rk.box(cx, 0.03f, z + 0.5f, 0.92f, 0.08f, 1.0f);
+                MeshBuilder t = mb(K_TRUNK, z);
+                for (int q = 0; q < 2; q++) {                           // traversine
+                    float zz = z + 0.25f + q * 0.5f + (r.nextFloat() - 0.5f) * 0.06f, tk = 0.42f + 0.12f * r.nextFloat();
+                    t.colorf(tk * lt[0], tk * 0.76f * lt[1], tk * 0.54f * lt[2]);
+                    t.box(cx + (r.nextFloat() - 0.5f) * 0.05f, 0.1f, zz, 0.86f, 0.09f, 0.17f);
+                }
+                MeshBuilder p = mb(K_PROP, z);                          // rotaie: suola e fungo lucido
+                for (int s2 = -1; s2 <= 1; s2 += 2) {
+                    float rx = cx + s2 * 0.25f;
+                    p.colorf(0.28f * lt[0], 0.22f * lt[1], 0.18f * lt[2]);
+                    p.box(rx, 0.17f, z + 0.5f, 0.08f, 0.05f, 1.0f);
+                    p.colorf(0.46f * lt[0], 0.45f * lt[1], 0.46f * lt[2]);
+                    p.box(rx, 0.22f, z + 0.5f, 0.05f, 0.04f, 1.0f);
+                }
             }
         }
     }

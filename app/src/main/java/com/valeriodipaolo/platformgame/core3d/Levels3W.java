@@ -18,10 +18,13 @@ public final class Levels3W {
 
     private static final int W = World3D.W;
 
-    public static int theme(int id) { return id == 39 ? 22 : id == 40 ? 24 : 20; }
+    public static int theme(int id) { return id == 39 ? 22 : id == 40 ? 24 : id == 41 ? 2 : id == 42 ? 6 : id == 43 ? 12 : 20; }
+
+    /** Varianti della miniera nei temi principali: lo stesso viaggio in carrello nel bosco d'estate, nella neve e sulle nuvole. */
+    static final int RAIL_LEN = 560;
 
     public static void build(World3D w, int id) {
-        int len = id == 38 ? 236 : id == 39 ? 244 : MINE_LEN;
+        int len = id == 38 ? 236 : id == 39 ? 244 : id == 40 ? MINE_LEN : RAIL_LEN;
         w.length = len;
         w.height = new int[len * W];
         w.crate = new boolean[len * W];
@@ -38,7 +41,10 @@ public final class Levels3W {
         w.hiveZ = Float.NaN;
         switch (id) {
             case 39: factory(w); break;
-            case 40: mine(w); break;
+            case 40: cartRun(w, MINE_LEN, 4040, true); break;
+            case 41: cartRun(w, RAIL_LEN, 4141, false); break;
+            case 42: cartRun(w, RAIL_LEN, 4242, false); break;
+            case 43: cartRun(w, RAIL_LEN, 4343, false); break;
             default: dunes(w); break;
         }
     }
@@ -61,7 +67,6 @@ public final class Levels3W {
         for (int z = 78; z <= 85; z++) for (int x = 1; x <= 3; x++) set(w, x, z, 3);
         gemLine3(w, 0, 3.7f, 79, 81); gemLine3(w, 0, 3.7f, 83, 84);
         quick(w, 79, 82, 0, 0); quick(w, 79, 82, 4, 4); quick(w, 86, 87, 0, 4);
-        crateK(w, 2, 94, World3D.C_CHECK);
         // 3. il colpo di scena: il vento cambia verso a ogni raffica, su una lingua di sabbia larga una corsia sola
         pit(w, 102, 126, 0, 1); pit(w, 102, 126, 3, 4); wind(w, 100, 113, 2.8f, 0f, 1f); wind(w, 113, 128, 2.8f, 1.4f, -1f);
         gemLine(w, 0, 102, 126); vultureZ(w, 114, 3f);
@@ -73,7 +78,7 @@ public final class Levels3W {
         for (int z = 160; z <= 172; z++) { int lane = z < 164 ? 1 : z < 168 ? 3 : 2; w.quick[z * W + lane] = false; }
         thorn(w, 0, 162); thorn(w, 4, 166); thorn(w, 0, 170);
         gemLine(w, -1, 160, 163); gemLine(w, 1, 164, 167); gemLine(w, 0, 168, 172);
-        crateK(w, 2, 178, World3D.C_CHECK); scorpion(w, 184);
+        scorpion(w, 184);
         pit(w, 192, 214, 0, 0); pit(w, 192, 214, 4, 4); pit(w, 200, 203, 1, 3); wind(w, 190, 216, 3.0f, 0.5f, -1f);
         arc(w, 0, 200, 203); skin(add(w, Enemy3.CROW, 0, 196.5f, false, -1f, 1f, 3f), Enemy3.SKIN_VULTURE); skin(add(w, Enemy3.CROW, 0, 208.5f, false, -1f, 1f, 3f), Enemy3.SKIN_VULTURE); gemLine(w, 0, 204, 214);
         scorpion(w, 222); gemLine(w, 0, 220, 228);
@@ -96,7 +101,6 @@ public final class Levels3W {
         belt(w, 78, 92, 0, 4, 3); crusher(w, 1, 83, 2.2f, 0f); crusher(w, 2, 83, 2.2f, 0.7f); crusher(w, 3, 83, 2.2f, 1.4f);
         set(w, 0, 83, 3); set(w, 4, 83, 3); crusher(w, 2, 89, 2.0f, 0.3f); set(w, 0, 89, 3); set(w, 1, 89, 3); set(w, 3, 89, 3); set(w, 4, 89, 3);
         gemLine(w, 0, 78, 92);
-        crateK(w, 2, 96, World3D.C_CHECK);
         // la passerella della chiave: in alto, sopra le presse, si sale con la cassa a molla
         crateK(w, 4, 102, World3D.C_BOUNCE);
         for (int z = 105; z <= 116; z++) set(w, 4, z, 3);
@@ -109,8 +113,7 @@ public final class Levels3W {
         // nastri a scacchiera che spingono in versi opposti sopra il vuoto laterale
         pit(w, 152, 170, 0, 0); pit(w, 152, 170, 4, 4);
         for (int z = 152; z <= 170; z++) for (int x = 1; x <= 3; x++) w.belt[z * W + x] = (byte) (((z - 152) / 3) % 2 == 0 ? 1 : 2);
-        gemLine(w, 0, 152, 170); robot(w, 174); crateK(w, 2, 178, World3D.C_CHECK);
-        // 4. l'esame: pressa, laser con varco, nastro di traverso verso il vuoto, droni
+        gemLine(w, 0, 152, 170); robot(w, 174);        // 4. l'esame: pressa, laser con varco, nastro di traverso verso il vuoto, droni
         belt(w, 184, 200, 0, 4, 3); crusher(w, 0, 190, 1.8f, 0f); crusher(w, 2, 190, 1.8f, 0.6f); crusher(w, 4, 190, 1.8f, 1.2f);
         laser(w, 196, 1.8f, 0.4f, 2); gemLine(w, 0, 184, 200);
         pit(w, 204, 220, 0, 0); belt(w, 204, 220, 1, 4, 2); laser(w, 212, 2.0f, 0f, -1); drone(w, 210); gemLine(w, 2, 204, 220);
@@ -130,12 +133,13 @@ public final class Levels3W {
      * libera o un salto semplice, e mai due manovre a meno di un secondo l'una dall'altra. Ogni novanta metri circa un rettilineo
      * sgombro, dove si salva il punto di ripartenza.
      */
-    private static void mine(World3D w) {
-        int end = MINE_LEN - 12;
+    private static void cartRun(World3D w, int total, long seed, boolean mine) {
+        int end = total - 12;
         cart(w, 2, end);
         gemLine(w, 0, 6, 14);
-        java.util.Random r = new java.util.Random(4040);
-        int z = 24, n = 0, nextRest = 100;
+        java.util.Random r = new java.util.Random(seed);
+        int z = 24, n = mine ? 0 : (int) (seed % 5), nextRest = 100;      // le varianti partono da un punto diverso della sequenza
+        int s1 = total * 240 / MINE_LEN, s2 = total * 500 / MINE_LEN, coinAfter = mine ? 380 : total / 4;   // i tre tratti in proporzione alla lunghezza
         mineCoinZ = -1;
         while (z < end - 24) {
             if (z >= nextRest) {                                   // rettilineo sgombro: si riprende fiato (e si salva la ripartenza)
@@ -144,7 +148,7 @@ public final class Levels3W {
                 nextRest += 95 + r.nextInt(15);
                 continue;
             }
-            int stage = z < 240 ? 0 : z < 500 ? 1 : 2;
+            int stage = z < s1 ? 0 : z < s2 ? 1 : 2;
             int lane = 1 + r.nextInt(3), other = lane == 2 ? (r.nextBoolean() ? 1 : 3) : 2;
             int free = 6 - lane - other;                          // la terza corsia
             int kind = stage == 0 ? EASY[n % EASY.length] : stage == 1 ? MID[n % MID.length] : HARD[n % HARD.length];
@@ -157,7 +161,7 @@ public final class Levels3W {
                     pit(w, z, z + 2, lane, lane); pit(w, z, z + 2, other, other); gemLine(w, free - 2, z - 1, z + 2); len = 3; break;
                 case 2: {                                          // fossa su tutta la larghezza: si salta
                     pit(w, z, z + 2, 0, 4);
-                    boolean coinPit = mineCoinZ < 0 && z > 380;      // la fossa del gettone: gemme sul binario di sinistra, sotto il gettone
+                    boolean coinPit = mineCoinZ < 0 && z > coinAfter;      // la fossa del gettone: gemme sul binario di sinistra, sotto il gettone
                     if (coinPit) mineCoinZ = z;
                     len = jumpGems(w, z, coinPit ? -1f : 0f) - z;
                     break;
@@ -167,9 +171,9 @@ public final class Levels3W {
                 case 4:                                            // due casse di nitroglicerina: una corsia sola
                     crateK(w, lane, z, World3D.C_NITRO); crateK(w, other, z, World3D.C_NITRO); gemLine(w, free - 2, z - 1, z + 1); len = 1; break;
                 case 5:                                            // pipistrello che svolazza di traverso
-                    skin(add(w, Enemy3.CROW, 0, z + 0.5f, false, -1f, 1f, 0.9f), Enemy3.SKIN_BAT); len = 1; break;
+                    flyer(w, z + 0.5f, mine); len = 1; break;
                 case 6:                                            // topo che attraversa i binari
-                    skin(add(w, Enemy3.BEETLE, lane - 2f, z + 0.5f, false, -1f, 1f, 0), Enemy3.SKIN_MOUSE); len = 1; break;
+                    walker(w, lane - 2f, z + 0.5f, mine); len = 1; break;
                 case 7:                                            // binario rotto e cassa sull'altro: passa solo la terza corsia
                     pit(w, z, z + 2, lane, lane); crateK(w, other, z + 1, World3D.C_NITRO); gemLine(w, free - 2, z - 1, z + 2); len = 3; break;
                 case 8: {                                          // salto, poi (a distanza di sicurezza) una dinamite sul binario di lato
@@ -181,17 +185,30 @@ public final class Levels3W {
                 }
                 case 9:                                            // due binari rotti, poi un pipistrello
                     pit(w, z, z + 2, lane, lane); pit(w, z, z + 2, other, other); gemLine(w, free - 2, z - 1, z + 2);
-                    skin(add(w, Enemy3.CROW, 0, z + 11.5f, false, -1f, 1f, 0.9f), Enemy3.SKIN_BAT); len = 12; break;
+                    flyer(w, z + 11.5f, mine); len = 12; break;
                 default:                                           // cassa sul binario, e subito dopo un topo che attraversa
                     crateK(w, lane, z, World3D.C_NITRO); gem(w, other - 2, 0.7f, z + 0.5f);
-                    skin(add(w, Enemy3.BEETLE, other - 2f, z + 9.5f, false, -1f, 1f, 0), Enemy3.SKIN_MOUSE); len = 10; break;
+                    walker(w, other - 2f, z + 9.5f, mine); len = 10; break;
             }
             n++;
             int gap = stage == 0 ? 10 + r.nextInt(3) : stage == 1 ? 9 + r.nextInt(2) : 8 + r.nextInt(2);
             z += len + gap - 2;
         }
         gemLine(w, 0, end + 2, end + 8);
-        w.flagZ = MINE_LEN - 2;
+        w.flagZ = total - 2;
+        if (mineCoinZ > 0) w.coin = new float[] {-1f, 4.0f, mineCoinZ - 1f + 0.8f * w.cartSpeed(mineCoinZ)};
+    }
+
+    /** Volatile che svolazza di traverso all'altezza del robot: pipistrello in miniera, altrove l'uccello della stagione. */
+    private static void flyer(World3D w, float z, boolean mine) {
+        Enemy3 e = add(w, Enemy3.CROW, 0, z, false, -1f, 1f, 0.9f);
+        if (mine) e.skin = Enemy3.SKIN_BAT;
+    }
+
+    /** Animaletto che attraversa i binari: topo in miniera, altrove quello della stagione. */
+    private static void walker(World3D w, float x, float z, boolean mine) {
+        Enemy3 e = add(w, Enemy3.BEETLE, x, z, false, -1f, 1f, 0);
+        if (mine) e.skin = Enemy3.SKIN_MOUSE;
     }
 
     /**
@@ -205,15 +222,6 @@ public final class Levels3W {
         int land = (int) Math.ceil(z - 1 + 1.3f * spd);
         gemLine(w, cx, land, land + 4);
         return land + 5;
-    }
-
-    /**
-     * Il gettone d'oro della miniera: alto sopra il binario di sinistra, nel punto più alto del salto di una fossa; ci arriva chi la
-     * salta stando a sinistra (dove portano le gemme) e rilancia il doppio salto in cima. Le gemme di quella fossa stanno a terra
-     * prima e dopo, sullo stesso binario: prendere il gettone non fa perdere nessuna gemma.
-     */
-    static void mineCoin(World3D w) {
-        if (mineCoinZ > 0) w.coin = new float[] {-1f, 4.0f, mineCoinZ - 1f + 0.8f * w.cartSpeed(mineCoinZ)};
     }
 
     /**

@@ -15,7 +15,8 @@ public final class Levels {
             "Valle delle molle", "Labirinto (3D)", "Ghiaccio fragile", "Arcipelago (3D)", "Le due strade", "Rovi (3D)",
             "Pioggia di ricci", "Fuga dal rogo (3D)", "Scala celeste", "La vetta (3D)",
             "Isola: le casse", "Isola: il masso", "Isola: il fiume",
-            "Le dune", "La fabbrica", "La miniera"};
+            "Le dune", "La fabbrica", "La miniera",
+            "Carrello nel bosco (3D)", "Carrello nella neve (3D)", "Binari tra le nuvole (3D)"};
 
     /** "LIVELLO 7 · Querceto": numero nell'ordine di gioco e nome. */
     public static String title(int id) { return "LIVELLO " + (slot(id) + 1) + "  \u00B7  " + NAMES[id].replace(" (3D)", ""); }
@@ -24,16 +25,16 @@ public final class Levels {
      * Ordine di gioco, per tema: estate, autunno, inverno, primavera, incendio, cielo (in ogni tema 2D e 3D si alternano); in coda
      * i mondi senza stagione (isola tropicale, dune, fabbrica, miniera), che nel menu sono verdi.
      */
-    public static final int[] ORDER = {1, 2, 13, 14, 29,
+    public static final int[] ORDER = {1, 2, 13, 14, 29, 41,
             3, 4, 15, 16, 31, 26,
-            5, 6, 17, 18, 27, 28,
+            5, 6, 17, 18, 27, 28, 42,
             9, 10, 21, 22, 25, 30,
             7, 8, 19, 20, 32,
-            11, 12, 23, 24, 33, 34,
+            11, 12, 23, 24, 33, 34, 43,
             35, 36, 37, 38, 39, 40};
 
     /** Ha uno dei temi delle stagioni (estate, autunno, inverno, primavera, incendio, cielo); gli altri stanno in coda. */
-    public static boolean seasonal(int id) { return id < 35; }
+    public static boolean seasonal(int id) { return id < 35 || id > 40; }
 
     public static boolean is3D(int id) { return id % 2 == 0 || id >= 35; }      // l'isola tropicale è tutta in 3D
 

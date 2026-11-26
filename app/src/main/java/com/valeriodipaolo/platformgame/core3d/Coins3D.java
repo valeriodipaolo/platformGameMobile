@@ -40,7 +40,7 @@ final class Coins3D {
             case 37: w.coinFoeIdx = 15; break;            // il totem dopo l'ultimo fiume
             case 38: w.coinFoeIdx = 1; break;             // il primo avvoltoio
             case 39: w.coinFoeIdx = 1; break;             // il primo drone
-            case 40: Levels3W.mineCoin(w); break;
+            // 40-43 (in carrello): il gettone lo mette il percorso stesso, sopra il binario delle gemme di una fossa
             default: break;
         }
     }

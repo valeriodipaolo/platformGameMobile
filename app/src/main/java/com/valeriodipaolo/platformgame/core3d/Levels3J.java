@@ -59,7 +59,7 @@ public final class Levels3J {
         // il ponte delle TNT: una corsia sola sul fiume, tre TNT da scavalcare saltandoci sopra: ognuna si accende, non ci si può fermare
         pit(w, 54, 70, 0, 1); pit(w, 54, 70, 3, 4); kc(w, 2, 57, World3D.C_TNT); kc(w, 2, 61, World3D.C_TNT); kc(w, 2, 65, World3D.C_TNT);
         gemLine(w, 0, 54, 56); gemLine(w, 0, 58, 60); gemLine(w, 0, 62, 64); gemLine(w, 0, 66, 70);
-        kc(w, 2, 75, World3D.C_CHECK); crab(w, 80);
+        crab(w, 80);
         // 4. le instabili: file con un solo varco che cambia lato, sfiorarle basta a farle scoppiare
         nitroRow(w, 86, 2); nitroRow(w, 90, 0); nitroRow(w, 94, 4); nitroRow(w, 98, 1);
         gem(w, 0, 0.7f, 86.5f); gem(w, -2, 0.7f, 90.5f); gem(w, 2, 0.7f, 94.5f); gem(w, -1, 0.7f, 98.5f);
@@ -77,7 +77,7 @@ public final class Levels3J {
         // 5. il colpo di scena: le casse a molla sono l'unico appoggio in mezzo al fiume
         pit(w, 156, 171, 0, 4); island(w, 158, 159, 2, 2); kc(w, 2, 159, World3D.C_BOUNCE); island(w, 165, 166, 2, 2); kc(w, 2, 166, World3D.C_BOUNCE);
         gem(w, 0, 1.6f, 157f); gem(w, 0, 3.6f, 162.5f); gem(w, 0, 3.6f, 169.5f); fish(w, 2, 162, 2.6f, 3.4f); fish(w, 2, 169, 2.6f, 3.4f, 1.3f);
-        kc(w, 2, 176, World3D.C_CHECK);
+       
         // 6. l'esame: corridoio di muri bassi, instabili ai lati dei varchi, una TNT da scavalcare e i granchi
         wallFull(w, 184, 1); kc(w, 2, 184, World3D.C_WOOD); set(w, 2, 184, 0); nitroRow(w, 188, 3); crab(w, 192);
         kc(w, 2, 196, World3D.C_TNT); nitroRow(w, 200, 1); crab(w, 204); nitroRow(w, 208, 4); kc(w, 0, 212, World3D.C_BOUNCE);
@@ -138,7 +138,7 @@ public final class Levels3J {
         for (int z = 54; z <= 74; z++) raft(w, ((z - 54) / 5) % 2 == 0 ? 1 : 3, z);
         fish(w, 1, 60, 2.2f, 3.4f); fish(w, 3, 66, 2.2f, 3.4f, 1.1f); fish(w, 1, 71, 2.2f, 3.4f, 0.5f);
         for (int z = 54; z <= 74; z += 2) gem(w, ((z - 54) / 5) % 2 == 0 ? -1 : 1, 0.9f, z + 0.5f);
-        kc(w, 2, 78, World3D.C_CHECK); tiki(w, 0, 84); tiki(w, 4, 88); gemLine(w, 0, 80, 90);
+        tiki(w, 0, 84); tiki(w, 4, 88); gemLine(w, 0, 80, 90);
         // 3. l'isolotto della chiave: a sinistra, oltre una fila di zattere a parte; la strada principale va dritta
         pit(w, 96, 116, 0, 4); for (int z = 96; z <= 116; z++) raft(w, 3, z);
         island(w, 104, 108, 0, 0); raft(w, 2, 100); raft(w, 1, 100); for (int z = 100; z <= 103; z++) raft(w, 0, z);
@@ -150,7 +150,7 @@ public final class Levels3J {
         pit(w, 128, 146, 0, 4); island(w, 130, 131, 2, 2); kc(w, 2, 131, World3D.C_BOUNCE); island(w, 137, 138, 2, 2); kc(w, 2, 138, World3D.C_BOUNCE);
         for (int z = 142; z <= 146; z++) raft(w, 2, z);
         gem(w, 0, 2.6f, 130.5f); gem(w, 0, 3.6f, 135.5f); gem(w, 0, 3.4f, 140.5f); fish(w, 1, 135, 2.6f, 3.4f); fish(w, 3, 141, 2.6f, 3.4f, 1.3f);
-        kc(w, 2, 152, World3D.C_CHECK);
+       
         // 4. il colpo di scena: il fiume diventa una rapida a tre corsie di zattere, con le TNT a galla sulle isole
         pit(w, 160, 200, 0, 4);
         for (int z = 160; z <= 200; z++) { raft(w, 0, z); raft(w, 4, z); if ((z / 8) % 2 == 0) raft(w, 2, z); }

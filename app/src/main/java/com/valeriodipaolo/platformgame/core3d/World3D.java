@@ -69,7 +69,7 @@ public final class World3D {
     public static final float SINK_TIME = 3.0f;
     /** Raffiche di vento: {z0, z1, periodo, fase, verso (+1 destra, -1 sinistra)}. */
     public final List<float[]> winds = new ArrayList<float[]>();
-    public static final float GUST = 1.7f, GUST_PUSH = 4.6f;
+    public static final float GUST = 1.7f, GUST_PUSH = 1.3f;     // raffica leggera: sposta di poco, si corregge senza fatica
     /** Tratti in carrello: {z0, z1}; il carrello corre da solo, si sterza e si salta. */
     public final List<float[]> carts = new ArrayList<float[]>();
     /** Velocità del carrello: parte da CART_SPEED e cresce fino a CART_SPEED + CART_RAMP alla fine del tratto. */
