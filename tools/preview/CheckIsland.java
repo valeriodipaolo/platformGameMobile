@@ -93,7 +93,7 @@ public class CheckIsland {
         w = at(38, -1f, 50f);
         float maxPush = 0;
         for (int i = 0; i < 240; i++) { w.setInput(0, 0, false, false); w.update(1f / 60f); maxPush = Math.max(maxPush, w.windPush(w.pz, w.time)); }
-        ok(maxPush > 3f, "la raffica spinge di lato: " + maxPush);
+        ok(maxPush > 0.8f && maxPush < 2f, "la raffica spinge di lato, ma poco: " + maxPush);
         // nastro (39, z 30-44 verso destra): fermi, si viene portati verso il burrone
         w = at(39, -2f, 36f);
         run(w, 0.8f, 0, 0, false);
