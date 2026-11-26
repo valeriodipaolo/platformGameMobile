@@ -149,15 +149,19 @@ public final class Levels3W {
             int free = 6 - lane - other;                          // la terza corsia
             int kind = stage == 0 ? EASY[n % EASY.length] : stage == 1 ? MID[n % MID.length] : HARD[n % HARD.length];
             int len = 2;
+            if (kind == 2 || kind == 8) z += 4;                    // prima di un salto un tratto in più: le gemme di rincorsa non si sovrappongono all'ostacolo di prima
             switch (kind) {
                 case 0:                                            // un binario interrotto
                     pit(w, z, z + 2, lane, lane); gemLine(w, other - 2, z - 1, z + 2); len = 3; break;
                 case 1:                                            // due binari interrotti: resta una corsia sola
                     pit(w, z, z + 2, lane, lane); pit(w, z, z + 2, other, other); gemLine(w, free - 2, z - 1, z + 2); len = 3; break;
-                case 2:                                            // fossa su tutta la larghezza: si salta
-                    pit(w, z, z + 2, 0, 4); cartArc(w, z);
-                    if (mineCoinZ < 0 && z > 380) mineCoinZ = z;
-                    len = 3; break;
+                case 2: {                                          // fossa su tutta la larghezza: si salta
+                    pit(w, z, z + 2, 0, 4);
+                    boolean coinPit = mineCoinZ < 0 && z > 380;      // la fossa del gettone: gemme sul binario di sinistra, sotto il gettone
+                    if (coinPit) mineCoinZ = z;
+                    len = jumpGems(w, z, coinPit ? -1f : 0f) - z;
+                    break;
+                }
                 case 3:                                            // cassa di nitroglicerina su un binario
                     crateK(w, lane, z, World3D.C_NITRO); gem(w, other - 2, 0.7f, z + 0.5f); len = 1; break;
                 case 4:                                            // due casse di nitroglicerina: una corsia sola
@@ -168,8 +172,13 @@ public final class Levels3W {
                     skin(add(w, Enemy3.BEETLE, lane - 2f, z + 0.5f, false, -1f, 1f, 0), Enemy3.SKIN_MOUSE); len = 1; break;
                 case 7:                                            // binario rotto e cassa sull'altro: passa solo la terza corsia
                     pit(w, z, z + 2, lane, lane); crateK(w, other, z + 1, World3D.C_NITRO); gemLine(w, free - 2, z - 1, z + 2); len = 3; break;
-                case 8:                                            // salto, e appena atterrati una cassa da schivare
-                    pit(w, z, z + 1, 0, 4); cartArc(w, z); crateK(w, lane, z + 9, World3D.C_NITRO); gem(w, other - 2, 0.7f, z + 9.5f); len = 10; break;
+                case 8: {                                          // salto, poi (a distanza di sicurezza) una dinamite sul binario di lato
+                    pit(w, z, z + 1, 0, 4);
+                    int after = jumpGems(w, z, 0f), side = r.nextBoolean() ? 1 : 3;
+                    crateK(w, side, after + 4, World3D.C_NITRO);       // le gemme dell'atterraggio restano al centro, lontano dalla dinamite
+                    len = after + 5 - z;
+                    break;
+                }
                 case 9:                                            // due binari rotti, poi un pipistrello
                     pit(w, z, z + 2, lane, lane); pit(w, z, z + 2, other, other); gemLine(w, free - 2, z - 1, z + 2);
                     skin(add(w, Enemy3.CROW, 0, z + 11.5f, false, -1f, 1f, 0.9f), Enemy3.SKIN_BAT); len = 12; break;
@@ -186,32 +195,35 @@ public final class Levels3W {
     }
 
     /**
-     * Arco di gemme sul binario centrale che segue la parabola vera del carrello lanciato (salto spiccato poco prima della fossa):
-     * l'arco dei livelli a piedi è troppo corto per la velocità del carrello e le prime gemme si perdevano.
+     * Gemme di una fossa da saltare, tutte a terra e sullo stesso binario (cx): quattro prima, per mettersi in posizione, e cinque
+     * dopo, che cominciano oltre il punto dove atterra anche chi fa il doppio salto. Sopra la fossa niente: non si perde nulla
+     * comunque si salti. Restituisce la riga dopo l'ultima gemma: fino a lì niente ostacoli, l'atterraggio è sempre sgombro.
      */
-    private static void cartArc(World3D w, int z) {
+    private static int jumpGems(World3D w, int z, float cx) {
         float spd = w.cartSpeed(z);
-        for (int i = 0; i < 6; i++) {
-            float d = -0.5f + i * spd * 0.13f, t = (d + 1.2f) / spd, y = 10.5f * t - 12f * t * t;
-            gem(w, 0, Math.max(0.7f, y + 0.55f), z + d);
-        }
+        gemLine(w, cx, z - 6, z - 3);
+        int land = (int) Math.ceil(z - 1 + 1.3f * spd);
+        gemLine(w, cx, land, land + 4);
+        return land + 5;
     }
 
     /**
-     * Il gettone d'oro della miniera: alto sopra il binario di sinistra, appena oltre una fossa; ci arriva solo chi la salta
-     * stando a sinistra e rilancia il doppio salto in cima alla parabola.
+     * Il gettone d'oro della miniera: alto sopra il binario di sinistra, nel punto più alto del salto di una fossa; ci arriva chi la
+     * salta stando a sinistra (dove portano le gemme) e rilancia il doppio salto in cima. Le gemme di quella fossa stanno a terra
+     * prima e dopo, sullo stesso binario: prendere il gettone non fa perdere nessuna gemma.
      */
     static void mineCoin(World3D w) {
-        if (mineCoinZ > 0) w.coin = new float[] {-1f, 4.0f, mineCoinZ + 5.5f};
+        if (mineCoinZ > 0) w.coin = new float[] {-1f, 4.0f, mineCoinZ - 1f + 0.8f * w.cartSpeed(mineCoinZ)};
     }
 
     /**
      * Ordine degli ostacoli nei tre tratti: 0 un binario rotto, 1 due rotti, 2 salto, 3 una cassa, 4 due casse, 5 pipistrello,
-     * 6 topo, 7 binario rotto + cassa, 8 salto + cassa, 9 due rotti + pipistrello, 10 cassa + topo.
+     * 6 topo, 7 binario rotto + cassa, 8 salto + cassa più avanti, 9 due rotti + pipistrello, 10 cassa + topo. I salti sono pochi
+     * (uno o due per giro), il resto si risolve cambiando binario.
      */
-    private static final int[] EASY = {0, 5, 3, 6, 2, 0, 4, 5, 1, 6, 3, 2};
-    private static final int[] MID = {7, 5, 2, 6, 1, 3, 9, 4, 0, 10, 2, 5, 8, 6};
-    private static final int[] HARD = {7, 8, 5, 4, 9, 2, 10, 1, 6, 7, 3, 8, 5, 9, 2, 10};
+    private static final int[] EASY = {0, 5, 3, 6, 2, 0, 4, 5, 1, 6, 3, 0};
+    private static final int[] MID = {7, 5, 2, 6, 1, 3, 9, 4, 0, 10, 7, 5, 1, 6};
+    private static final int[] HARD = {7, 4, 5, 9, 2, 10, 1, 6, 7, 3, 0, 8, 5, 9, 4, 10};
 
     // ------------------------------------------------------------------ attrezzi
 
