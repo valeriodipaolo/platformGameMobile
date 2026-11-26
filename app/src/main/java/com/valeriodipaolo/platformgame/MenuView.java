@@ -59,10 +59,11 @@ final class MenuView extends View {
         String[] subById = Levels.NAMES;
         for (int i = 0; i < LEVELS; i++) {
             float x = btnX(i), y = btnY(i);
-            painter.rect(x, y, btnW(), btnH(), 0xCC14324A);
-            painter.rect(x, y, btnW(), 0.08f * s, 0xFF4FC3F7);
+            boolean green = !Levels.seasonal(Levels.ORDER[i]);          // mondi senza stagione, in coda: verdi
+            painter.rect(x, y, btnW(), btnH(), green ? 0xCC14482A : 0xCC14324A);
+            painter.rect(x, y, btnW(), 0.08f * s, green ? 0xFF66BB6A : 0xFF4FC3F7);
             painter.text("LIVELLO " + (i + 1), x + btnW() / 2, y + btnH() * 0.47f, 0.27f * s, Painter.ALIGN_CENTER, 0xFFFFFFFF);
-            painter.text(subById[Levels.ORDER[i]], x + btnW() / 2, y + btnH() * 0.8f, 0.15f * s, Painter.ALIGN_CENTER, 0xFFB3E5FC);
+            painter.text(subById[Levels.ORDER[i]], x + btnW() / 2, y + btnH() * 0.8f, 0.15f * s, Painter.ALIGN_CENTER, green ? 0xFFC8E6C9 : 0xFFB3E5FC);
         }
         painter.text("Comandi 3D: " + CTRL_HINT[ctrl], w / 2, heroY() - h * 0.015f, 0.3f * s, Painter.ALIGN_CENTER, 0xFFFFFFFF);
         for (int i = 0; i < 3; i++) {

@@ -1386,6 +1386,8 @@ public final class Scene3D {
         if ((autumn && !spring && !jungle) || aurora) buildPumpkin();
         if (jungle || dry != 0) buildIsland();
         buildBoom();
+        padDome = padTop = null;
+        if (!spring && !heaven) buildTrampoline();
         if (spring || heaven) {                                        // casse gialle con la stella rosa; fiori a molla e rovi
             b = new MeshBuilder();
             b.roundBox(0, 0.5f, 0, 0.96f, 0.96f, 0.96f, 0.16f, 63, 3);
@@ -1863,7 +1865,7 @@ public final class Scene3D {
             g.draw(shadow, m, 1, 1, 1, 0.8f, 1);
         }
         if (fire) { drawTreeFlames(w, g); drawFireHazards(w, g); }
-        if (spring || heaven) drawSpringProps(w, g);
+        if (spring || heaven || (!w.springs.isEmpty() && padDome != null)) drawSpringProps(w, g);
         if (jungle || dry != 0) drawIslandProps(w, g);
         if (dry != 0) drawDryProps(w, g);
         drawBooms(w, g);
@@ -1971,6 +1973,38 @@ public final class Scene3D {
     }
 
     /** Muro di fuoco alle spalle, getti di fiamma a tempo e tronchi in fiamme che rotolano. */
+    /**
+     * Trampolino a molla per i mondi senza fiori (il ghiaccio dell'arcipelago): piatto d'acciaio, molla a spirale ben visibile,
+     * piattaforma di ghiaccio con il bordo rosso e bianco, e sopra tre frecce luminose che indicano il lancio in alto e in avanti.
+     */
+    private void buildTrampoline() {
+        MeshBuilder b = new MeshBuilder().color(70, 78, 90);
+        b.cylinder(0, 0, 0.07f, 0, 0.62f, 0.6f, 18, true, true);                  // piatto di base
+        b.color(196, 206, 218);
+        for (int i = 0; i < 18; i++) {                                         // molla: spirale di sfere d'acciaio lucido
+            double a = i * Math.PI * 2 / 6;
+            float y = 0.08f + i * 0.0105f;
+            b.ellipsoid((float) Math.cos(a) * 0.36f, y, (float) Math.sin(a) * 0.36f, 0.06f, 0.035f, 0.06f, 8, 5);
+        }
+        for (int k = 0; k < 12; k++) {                                         // fascia rossa e bianca sul bordo del piatto superiore
+            double a0 = k * Math.PI / 6, a1 = (k + 1) * Math.PI / 6;
+            if (k % 2 == 0) b.color(222, 46, 40); else b.color(245, 245, 245);
+            float c0 = (float) Math.cos(a0), s0 = (float) Math.sin(a0), c1 = (float) Math.cos(a1), s1 = (float) Math.sin(a1), r = 0.625f;
+            b.quad(c0 * r, 0.28f, s0 * r, c1 * r, 0.28f, s1 * r, c1 * r, 0.37f, s1 * r, c0 * r, 0.37f, s0 * r, (c0 + c1) / 2, 0, (s0 + s1) / 2, 0.5f, 0.5f, 0.5f, 0.5f);
+        }
+        b.color(150, 214, 245);                                                // piano di ghiaccio
+        b.cylinder(0, 0.29f, 0.36f, 0, 0.6f, 0.6f, 24, true, true);
+        padDome = b.build(-1, false, true);
+        padDome.spec = 0.7f; padDome.shine = 40f;
+        b = new MeshBuilder().color(255, 236, 90);                              // tre frecce gialle verso l'alto e in avanti
+        for (int k = 0; k < 3; k++) {
+            float z0 = -0.36f + k * 0.24f, y = 0.005f;
+            b.quad(-0.32f, y, z0, -0.18f, y, z0, 0, y, z0 + 0.2f, 0, y, z0 + 0.34f, 0, 1, 0, 0.5f, 0.5f, 0.5f, 0.5f);
+            b.quad(0, y, z0 + 0.34f, 0, y, z0 + 0.2f, 0.18f, y, z0, 0.32f, y, z0, 0, 1, 0, 0.5f, 0.5f, 0.5f, 0.5f);
+        }
+        padTop = b.build(-1, false, true);
+    }
+
     /** Fiori a molla (si schiacciano e rimbalzano quando ci si salta sopra) e rovi. */
     private void drawSpringProps(World3D w, Gfx3D g) {
         float near = w.pz - 8, far = w.pz + 70;
@@ -1986,12 +2020,17 @@ public final class Scene3D {
             Mat4.scale(m, 1f, sq * bob, 1f);
             g.draw(padDome, m, 1, 1, 1, 1, 0.12f);
             Mat4.setIdentity(m);
-            Mat4.translate(m, sp[0], gy + 0.25f * sq * bob + 0.02f, sp[1]);
-            Mat4.rotateY(m, w.time * 0.5f + sp[1]);
-            Mat4.scale(m, 1f + 0.08f * (float) Math.sin(w.time * 4f + sp[1]), 1, 1f + 0.08f * (float) Math.sin(w.time * 4f + sp[1]));
-            g.draw(padTop, m, 1, 1, 1, 1, 0.45f);
+            if (spring || heaven) {
+                Mat4.translate(m, sp[0], gy + 0.25f * sq * bob + 0.02f, sp[1]);
+                Mat4.rotateY(m, w.time * 0.5f + sp[1]);
+                Mat4.scale(m, 1f + 0.08f * (float) Math.sin(w.time * 4f + sp[1]), 1, 1f + 0.08f * (float) Math.sin(w.time * 4f + sp[1]));
+                g.draw(padTop, m, 1, 1, 1, 1, 0.45f);
+            } else {                                       // trampolino: le frecce lampeggiano in sequenza dal basso in avanti
+                Mat4.translate(m, sp[0], gy + 0.36f * sq * bob + 0.01f, sp[1]);
+                g.draw(padTop, m, 1, 1, 1, 1, 0.55f + 0.45f * (float) Math.abs(Math.sin(w.time * 3f + sp[1])));
+            }
         }
-        for (float[] t : w.thorns) {
+        if (thornMesh != null) for (float[] t : w.thorns) {
             if (t[1] < near || t[1] > far) continue;
             Mat4.setIdentity(m);
             Mat4.translate(m, t[0], groundAt(t[0], t[1]) - 0.02f, t[1]);
