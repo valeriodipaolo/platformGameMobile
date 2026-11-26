@@ -1658,7 +1658,14 @@ public final class Scene3D {
         camZ = tz;
         // la camera sta sopra anche a ciò che c'è sotto di lei (6 m dietro il robot): niente terrazze che le passano attraverso
         float behind = Math.max(0f, w.topAt(Math.max(-2.4f, Math.min(2.4f, camX)), camZ + (back ? 16f : -6.0f)));
-        float base = Math.max(0, w.groundY);
+        // quota "di riferimento": il terreno più basso nei dintorni del robot (3,5 m avanti e indietro). Salendo su un muretto o una
+        // collinetta la camera non si muove; segue il terreno solo su altopiani lunghi, dove il robot resta in alto a lungo
+        float base = 99f;
+        for (float dz = -3.5f; dz <= 3.51f; dz += 0.5f) {
+            float h = w.topAt(w.px, w.pz + dz);
+            if (h > -500f) base = Math.min(base, h);
+        }
+        base = base > 98f ? Math.max(0, w.groundY) : Math.max(0f, Math.min(base, w.groundY));
         // lo sguardo segue il terreno del robot (non la struttura alle spalle); l'occhio invece sale quanto basta perché la
         // linea fino alla testa del robot passi sopra le terrazze rimaste dietro: si guarda giù oltre il bordo, il robot resta visibile
         camY += ((back ? Math.max(base, behind) : base) - camY) * 0.06f;
@@ -1667,13 +1674,13 @@ public final class Scene3D {
             for (float d = 0.5f; d <= 6.01f; d += 0.5f) {
                 float sx = w.px + (camX - w.px) * d / 6f;
                 float h = Math.max(0f, w.topAt(Math.max(-2.4f, Math.min(2.4f, sx)), w.pz - d));
-                if (h > base + 0.2f) eye = Math.max(eye, head + (h + 0.45f - head) * 6f / d);
+                if (h >= base + 2.5f) eye = Math.max(eye, head + (h + 0.45f - head) * 6f / d);   // solo gli ostacoli alti fanno alzare l'occhio
             }
             eye = Math.min(eye, base + 11f);
         }
         if (!camEyeInit) { camEye = eye; camEyeInit = true; }
         camEye += (eye - camEye) * (eye > camEye ? 0.18f : 0.06f);       // sale in fretta (mai coperto), scende con calma
-        float lift = Math.max(0, w.py - camY) * 0.35f;
+        float lift = Math.max(0, w.py - camY - 1.6f) * 0.35f;          // un muretto o un salto normale non spostano la camera
         float bk = backK * backK * (3 - 2 * backK);
         float eyeY = back ? camY + 3.3f : camEye;
         // davanti al robot, più in alto, guardando indietro: si vede il masso che arriva e il robot che corre verso lo schermo
