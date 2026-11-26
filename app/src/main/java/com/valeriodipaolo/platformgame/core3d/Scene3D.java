@@ -308,8 +308,13 @@ public final class Scene3D {
         if (d <= 0) return y;
         if (heaven) return y - 4.5f * sm(d / 0.9f) + 0.7f * (vnoise(x * 0.09f + 3, z * 0.09f, 31) - 0.5f) * sm(d / 5f);
         if (dry == 24) return y + 7.5f * sm((d - 1.6f) / 2.6f) + (1.2f * (vnoise(x * 0.4f, z * 0.3f, 41) - 0.5f) + 0.7f * (vnoise(x * 1.4f, z * 1.1f, 43) - 0.5f) + 0.25f * (vnoise(x * 3.7f, z * 3.1f, 47) - 0.5f)) * sm(d / 2f);     // la gola della miniera: pareti a picco
-        if (dry == 22) return y + (d > 1.2f ? 0.6f : 0f) + sm((d - 6f) / 3f) * 2.5f;                                                  // fabbrica: marciapiede e muro di cinta
-        if (dry == 20) return y + sm(d / 6f) * 2.6f * vnoise(x * 0.06f + 2, z * 0.05f, 42) + 0.5f * sm(d / 2f);                          // dune
+        if (dry == 22) return y + 0.5f * sm((d - 1.1f) / 0.25f);                                                                   // fabbrica: pavimento piano e marciapiede rialzato
+        if (dry == 20) {                                                                                                             // dune: dorsali oblique, sopravento dolce e sottovento ripido
+            float u = (x * 0.55f + z * 0.83f) * 0.085f + 1.2f * vnoise(x * 0.04f + 7, z * 0.04f, 44);
+            float pp = u - (float) Math.floor(u), prof = pp < 0.72f ? (float) Math.pow(pp / 0.72f, 1.6) : (1f - pp) / 0.28f;
+            return y + 0.45f * sm(d / 2f) + sm((d - 1f) / 6f) * (1.2f + 3.6f * vnoise(x * 0.05f + 2, z * 0.05f, 42)) * prof
+                    + 0.25f * sm(d / 3f) * (vnoise(x * 0.5f, z * 0.5f, 45) - 0.5f);
+        }
         y += sm(d / SEAM) * (1.2f + 0.7f * vnoise(x * 0.07f + 5, z * 0.07f, 21));
         y += sm(d / 7f) * 1.8f * (vnoise(x * 0.11f, z * 0.11f, 22) - 0.45f);
         y += Math.min(1f, d / 1.5f) * 0.16f * (vnoise(x * 0.7f, z * 0.7f, 23) - 0.5f);
@@ -2675,22 +2680,8 @@ public final class Scene3D {
             for (float z = z0; z < z1; z += 1.5f + 2.5f * r.nextFloat()) {
                 float d = 0.6f + 9f * r.nextFloat() * r.nextFloat(), x = side * (World3D.HALF + d), y = groundAt(x, z);
                 lightAt(x, z, 1f);
-                if (dry == 20) {
-                    if (r.nextFloat() < 0.45f) cactusAt(mb(K_PROP, z), x, y, z, 0.9f + 1.4f * r.nextFloat(), r);
-                    else mb(K_ROCK, z).rock(x, y, z, 0.3f + 0.6f * r.nextFloat(), 0.25f + 0.4f * r.nextFloat(), 0.3f + 0.6f * r.nextFloat(), r.nextInt(999), 9, 6);
-                } else if (dry == 22) {
-                    MeshBuilder p = mb(K_PROP, z);
-                    float k = r.nextFloat();
-                    if (k < 0.35f) {                                    // serbatoio
-                        p.colorf(0.46f * lt[0], 0.5f * lt[1], 0.55f * lt[2]);
-                        float rr = 0.5f + 0.5f * r.nextFloat();
-                        p.cylinder(x + side * rr, y, y + 1.5f + 2f * r.nextFloat(), z, rr, rr, 14, true, false);
-                    } else if (k < 0.6f) {                              // cassone con le strisce
-                        { MeshBuilder ms = mb(K_STONE, z); int mk = ms.mark(); ms.roundBox(x + side * 0.5f, y + 0.5f, z, 1f, 1f, 1f, 0.12f, 63, 2); ms.rough(mk, 0.17f, 1.3f, 5); }
-                    } else {                                             // ciminiera
-                        p.colorf(0.5f * lt[0], 0.3f * lt[1], 0.26f * lt[2]);
-                        p.cylinder(x + side * 2f, y, y + 4f + 4f * r.nextFloat(), z, 0.4f, 0.32f, 10, true, false);
-                    }
+                if (dry == 20 || dry == 22) {
+                    continue;                                            // deserto e fabbrica: arredo dedicato più sotto
                 } else {
                     if (r.nextFloat() < 0.5f) mb(K_ROCK, z).rock(x, y, z, 0.4f + 0.5f * r.nextFloat(), 0.4f + 0.8f * r.nextFloat(), 0.4f + 0.5f * r.nextFloat(), r.nextInt(999), 9, 6);
                     else {                                              // cristallo che brilla nella roccia
@@ -2701,17 +2692,8 @@ public final class Scene3D {
                 }
             }
         }
-        if (dry == 22) {                                                // tubature lungo i due lati, all'altezza della testa
-            for (int side = -1; side <= 1; side += 2) for (int z = z0; z < z1; z += 4) {
-                MeshBuilder p = mb(K_PROP, z);
-                float x = side * (World3D.HALF + 1.6f), y = groundAt(x, z) + 1.6f;
-                lightAt(x, z, 1f);
-                p.colorf(0.7f * lt[0] * 1.8f, 0.42f * lt[1] * 1.8f, 0.2f * lt[2] * 1.8f);
-                FoeModels.tube(p, new float[][] {{x, y, z}, {x, y, z + 4.02f}}, new float[] {0.16f, 0.16f}, 8, FoeModels.flat(new float[] {0.75f, 0.45f, 0.22f}));
-                p.colorf(0.3f, 0.3f, 0.32f);
-                p.cylinder(x, y - 0.22f, y + 0.22f, z, 0.21f, 0.21f, 8, false, false);
-            }
-        }
+        if (dry == 20) buildDesert(w, z0, z1, r);
+        if (dry == 22) buildFactory(w, z0, z1, r);
         if (dry == 24) buildMine(w, z0, z1, r);
         else for (float[] c : w.carts) {                               // binari semplici (negli altri mondi)
             for (int z = Math.max(z0, (int) c[0]); z < Math.min(z1, (int) c[1]); z++) for (int x = 0; x < World3D.W; x++) {
@@ -2756,6 +2738,12 @@ public final class Scene3D {
         dustMote = b.build(-1, true, false);
     }
 
+    private final java.util.List<float[]> stacks = new java.util.ArrayList<float[]>();
+
+    private void buildDesert(World3D w, int z0, int z1, Random r) { DryDecor.desert(this, w, z0, z1, r); }
+
+    private void buildFactory(World3D w, int z0, int z1, Random r) { stacks.clear(); DryDecor.factory(this, w, z0, z1, r, stacks); }
+
     /** Cactus a candelabro: fusto a coste e due bracci che salgono. */
     private void cactusAt(MeshBuilder p, float x, float y, float z, float h, Random r) {
         float[] green = {0.32f, 0.56f, 0.3f};
@@ -2772,6 +2760,16 @@ public final class Scene3D {
 
     private void drawDryProps(World3D w, Gfx3D g) {
         int z0 = (int) Math.max(0, nearZ), z1 = (int) Math.min(w.length - 1, farZ + 1);
+        if (dry == 22 && dustMote != null) for (float[] st : stacks) {           // fumo grigio che sale dalle ciminiere e si allarga
+            if (st[2] < nearZ || st[2] > farZ) continue;
+            for (int i = 0; i < 5; i++) {
+                float u = ((w.time * 0.18f + i / 5f + st[2] * 0.07f) % 1f + 1f) % 1f, rr = 0.5f + 1.6f * u;
+                Mat4.setIdentity(m);
+                Mat4.translate(m, st[0] + 0.8f * u * (float) Math.sin(i * 2.1f), st[1] + 0.4f + 5f * u, st[2] + 1.5f * u);
+                Mat4.scale(m, rr, rr * 0.8f, rr);
+                g.draw(dustMote, m, 0.45f, 0.44f, 0.43f, 0.55f * (1f - u), 0.1f);
+            }
+        }
         if (w.belt != null) for (int z = z0; z <= Math.min(z1, (int) w.pz + 45); z++) for (int x = 0; x < World3D.W; x++) {
             int d = w.belt[z * World3D.W + x];
             if (d == 0) continue;
@@ -2794,8 +2792,8 @@ public final class Scene3D {
             if (!w.quick[z * World3D.W + x]) continue;
             Mat4.setIdentity(m);
             Mat4.translate(m, x - World3D.HALF + 0.5f, 0.03f, z + 0.5f);
-            Mat4.rotateY(m, ((x + z) % 4) * 1.5708f);
-            float pul = 1f + 0.01f * (float) Math.sin(w.time * 2f + x + z);
+            Mat4.rotateY(m, ((x + z) % 4) * 1.5708f + w.time * 0.35f);               // la sabbia mobile gira lenta su se stessa
+            float pul = 1.06f + 0.02f * (float) Math.sin(w.time * 2f + x + z);
             Mat4.scale(m, pul, 1, pul);
             g.draw(quickPool, m, 1, 1, 1, 1, 0.05f);
         }

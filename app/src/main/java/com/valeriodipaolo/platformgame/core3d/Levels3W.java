@@ -21,7 +21,7 @@ public final class Levels3W {
     public static int theme(int id) { return id == 39 ? 22 : id == 40 ? 24 : id == 41 ? 2 : id == 42 ? 6 : id == 43 ? 12 : 20; }
 
     /** Varianti della miniera nei temi principali: lo stesso viaggio in carrello nel bosco d'estate, nella neve e sulle nuvole. */
-    static final int RAIL_LEN = 560;
+    static final int RAIL_LEN = 400;
 
     public static void build(World3D w, int id) {
         int len = id == 38 ? 236 : id == 39 ? 244 : id == 40 ? MINE_LEN : RAIL_LEN;

@@ -2,8 +2,8 @@ package com.valeriodipaolo.platformgame.core3d;
 
 /** Costruisce mesh da forme semplici: scatole, ellissoidi, cilindri, coni. */
 public final class MeshBuilder {
-    private float[] d = new float[4096];
-    private int n;
+    float[] d = new float[4096];
+    int n;
     private float cr = 1, cg = 1, cb = 1, sw;
 
     public MeshBuilder color(int r, int g, int b) {
