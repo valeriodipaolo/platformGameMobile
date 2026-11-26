@@ -47,7 +47,6 @@ public final class LevelNine {
         for (int x = 74; x <= 80; x++) lv.set(x, 3, Level.STONE);
         shards(lv, 75, 2, 2);
         shards(lv, 78, 2, 2);
-        lv.battery = new float[] {77, 1.9f};
         enemy(lv, 75, Enemy.HOG, 0, 0);
         thorn(lv, 85);
         thorn(lv, 86);

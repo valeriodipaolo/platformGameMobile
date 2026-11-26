@@ -36,7 +36,6 @@ public final class Levels3J {
         w.fireStart = Float.NaN;
         w.fireZones = new float[0][];
         w.hiveZ = Float.NaN;
-        w.battery = null;
         switch (id) {
             case 36: temple(w); break;
             case 37: river(w); break;
@@ -70,7 +69,7 @@ public final class Levels3J {
         // la terrazza della chiave: la cassa a molla porta lassù, sotto si gira attorno
         kc(w, 2, 122, World3D.C_BOUNCE);
         for (int z = 125; z <= 132; z++) for (int x = 1; x <= 3; x++) set(w, x, z, 3);
-        w.battery = new float[] {0, 3.6f, 129f}; gemLine3(w, 0, 3.7f, 126, 128); gemLine3(w, 0, 3.7f, 130, 131);
+        gemLine3(w, 0, 3.7f, 126, 128); gemLine3(w, 0, 3.7f, 130, 131);
         gemLine(w, -2, 124, 134); gemLine(w, 2, 124, 134);
         // il fortino di casse con la TNT nel mezzo: accenderla è il modo più veloce per aprirlo (e per prendere tutte le gemme)
         for (int z = 142; z <= 144; z++) for (int x = 1; x <= 3; x++) kc(w, x, z, x == 2 && z == 143 ? World3D.C_TNT : World3D.C_WOOD);
@@ -108,7 +107,7 @@ public final class Levels3J {
         gemLine(w, 0, 72, 88);
         // 3. la chiave: su una colonna a destra, si prende solo con il doppio salto e senza fermarsi
         for (int z = 100; z <= 103; z++) set(w, 4, z, 3);
-        w.battery = new float[] {2f, 3.6f, 101.5f}; gem(w, 2, 3.7f, 100.5f); gem(w, 2, 3.7f, 102.5f);
+        gem(w, 2, 3.7f, 100.5f); gem(w, 2, 3.7f, 102.5f);
         templeWall(w, 108, 2); tiki(w, 1, 112); tiki(w, 3, 116);
         pit(w, 122, 125, 0, 4); arc(w, 0, 122, 125);
         // il colpo di scena: il pavimento si stringe sopra il vuoto mentre il masso accelera
@@ -144,7 +143,7 @@ public final class Levels3J {
         pit(w, 96, 116, 0, 4); for (int z = 96; z <= 116; z++) raft(w, 3, z);
         island(w, 104, 108, 0, 0); raft(w, 2, 100); raft(w, 1, 100); for (int z = 100; z <= 103; z++) raft(w, 0, z);
         raft(w, 0, 109); raft(w, 1, 109); raft(w, 2, 109);
-        w.battery = new float[] {-2f, 0.9f, 106f}; gem(w, -2, 0.7f, 104.5f); gem(w, -2, 0.7f, 107.5f);
+        gem(w, -2, 0.7f, 104.5f); gem(w, -2, 0.7f, 107.5f);
         fish(w, 2, 106, 2.4f, 3.6f); gemLine(w, 1, 96, 116);
         // le casse a molla sulle isolette in mezzo al fiume largo
         crab(w, 122);

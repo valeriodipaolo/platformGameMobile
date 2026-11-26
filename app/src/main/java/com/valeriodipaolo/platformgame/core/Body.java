@@ -31,13 +31,15 @@ public class Body {
             }
         }
 
+        float prevBottom = y + h;
         y += vy * dt;
         onGround = false;
         int x0 = (int) Math.floor(x), x1 = (int) Math.floor(x + w - EPS);
         if (vy > 0) {
             int ty = (int) Math.floor(y + h - EPS);
             for (int tx = x0; tx <= x1; tx++) {
-                if (lv.solid(tx, ty)) { y = ty - h; vy = 0; onGround = true; break; }
+                // la finta parete regge chi ci arriva da sopra (sembra pietra), ma di lato ci si passa
+                if (lv.solid(tx, ty) || (lv.get(tx, ty) == Level.FAKE && prevBottom <= ty + 0.02f)) { y = ty - h; vy = 0; onGround = true; break; }
             }
         } else if (vy < 0) {
             int ty = (int) Math.floor(y);

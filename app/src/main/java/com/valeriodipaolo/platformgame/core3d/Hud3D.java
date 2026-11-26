@@ -23,11 +23,13 @@ public final class Hud3D {
     public void draw(World3D w, Painter p, float sw, float sh, boolean joyActive, float joyCx, float joyCy,
                      float joyDx, float joyDy, String error) {
         float s = sh / 12f;
+        float fd = w.fade();                        // dissolvenza nel buio del portone
+        if (fd > 0) p.rect(0, 0, sw, sh, ((int) (fd * 255) << 24));
         float m = 0.06f * sw, ts = 0.5f * s, base = 0.95f * s;
         p.image(Img.GEM + 3, m, 0.34f * s, 0.78f * s, 0.78f * s, false, 1);
         p.text(w.gems + "/" + w.gemTotal, m + 0.9f * s, base, ts, Painter.ALIGN_LEFT, WHITE);
         float ix = m, iy = 1.3f * s, isz = 0.85f * s;
-        p.image(Img.BATTERY, ix, iy, isz, isz, false, w.batteryOwned ? 1f : 0.4f);
+        p.image(Img.COIN, ix, iy, isz, isz, false, w.coinOwned ? 1f : 0.35f);
         p.image(Img.GEM_FULL, ix + isz * 1.25f, iy, isz, isz, false, w.gemOwned ? 1f : 0.4f);
         p.text(com.valeriodipaolo.platformgame.core.Levels.title(w.levelNo), sw / 2, base - 0.52f * s, 0.3f * s, Painter.ALIGN_CENTER, 0xFFFFE082);   // numero e nome del livello
         p.text("PUNTI " + w.score, sw / 2, base, ts, Painter.ALIGN_CENTER, WHITE);
@@ -77,9 +79,9 @@ public final class Hud3D {
             p.text("Punti: " + w.score + "   Gemme: " + w.gems + "/" + w.gemTotal, sw / 2, 4.6f * s, 0.6f * s, Painter.ALIGN_CENTER, WHITE);
             if (won) {
                 float sz = 1.1f * s, step = 3.6f * s, y0 = 5.3f * s;
-                int[] icons = {Img.BATTERY, Img.GEM_FULL};
-                boolean[] owned = {w.batteryOwned, w.gemOwned};
-                String[] names = {"Chiave", "Gemma " + w.gems + "/" + w.gemTotal};
+                int[] icons = {Img.COIN, Img.GEM_FULL};
+                boolean[] owned = {w.coinOwned, w.gemOwned};
+                String[] names = {"Gettone d'oro", "Gemma " + w.gems + "/" + w.gemTotal};
                 for (int i = 0; i < 2; i++) {
                     float x = sw / 2 + (i - 0.5f) * step;
                     p.image(icons[i], x - sz / 2, y0, sz, sz, false, owned[i] ? 1f : 0.25f);

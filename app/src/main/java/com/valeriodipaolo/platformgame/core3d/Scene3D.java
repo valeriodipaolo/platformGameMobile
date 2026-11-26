@@ -85,7 +85,7 @@ public final class Scene3D {
     /** Quanto il bordo dei burroni si arrotonda verso il basso (0 = spigolo vivo). */
     private float lip;
     private Mesh flame, ember, logMesh, vent;
-    private Mesh crate, gem, battery, batteryGlow, shadow, ring, gateStone, gateDoor, catapult, gateLight;
+    private Mesh crate, gem, coin, shadow, ring, gateStone, gateDoor, catapult, gateLight;
     private final HeroModel hero = new HeroModel();
     private int builtFor = -1;
     private float camX, camY = 0, camZ, camEye;
@@ -482,7 +482,9 @@ public final class Scene3D {
         }
 
         b = fire ? new MeshBuilder().color(255, 96, 22) : new MeshBuilder().color(10, 18, 14);   // fondo dei burroni (lava nell'incendio)
-        float fw = World3D.HALF + 1.4f;                                 // più largo del corridoio: il vuoto frastagliato entra nei lati
+        // più largo del corridoio: il vuoto frastagliato entra nei lati; nei livelli bui (miniera, notte) arriva fin sotto le pareti,
+        // così da una fessura tra due superfici si vede il fondo scuro e non il cielo chiaro
+        float fw = dry == 24 || isle == 18 ? 30f : World3D.HALF + 1.4f;
         b.quad(-fw, -PIT_DEPTH, z0, fw, -PIT_DEPTH, z0, fw, -PIT_DEPTH, z1, -fw, -PIT_DEPTH, z1,
                0, 1, 0, 0.5f, 0.5f, 0.5f, 0.5f);
         pitFloor = b.build(-1, false, true);
@@ -531,8 +533,20 @@ public final class Scene3D {
                         });
                         continue;
                     }
-                    float[][] c = {{D[k], z}, {D[k + 1], z}, {D[k + 1], z + 1}, {D[k], z + 1}};
-                    for (int q : order) {
+                    // la prima striscia tocca il prato del corridoio, che ha un vertice anche a metà casella: lo stesso qui, così
+                    // lungo il bordo non restano fessure (da cui si vedrebbe il cielo come una riga chiara)
+                    if (pitNear && !grassy && D[k] == SEAM) {                // dopo le strisce ritagliate (8 vertici per casella): stessa suddivisione sul bordo interno
+                        for (int i = 0; i < 8; i++) {
+                            float za = z + i / 8f, zb = z + (i + 1) / 8f, zo = i < 4 ? z : z + 1;
+                            for (float[] v : new float[][] {{D[k], za}, {D[k], zb}, {D[k + 1], zo}}) forestVert(g, side, v[0], v[1], seamF);
+                        }
+                        for (float[] v : new float[][] {{D[k], z + 0.5f}, {D[k + 1], z}, {D[k + 1], z + 1}}) forestVert(g, side, v[0], v[1], seamF);
+                        continue;
+                    }
+                    float[][] c = k == 0 ? new float[][] {{D[0], z}, {D[1], z}, {D[0], z + 0.5f}, {D[0], z + 0.5f}, {D[1], z}, {D[1], z + 1},
+                            {D[0], z + 0.5f}, {D[1], z + 1}, {D[0], z + 1}}
+                            : new float[][] {{D[k], z}, {D[k + 1], z}, {D[k + 1], z + 1}, {D[k], z}, {D[k + 1], z + 1}, {D[k], z + 1}};
+                    for (int q = 0; q < c.length; q++) {
                         float d = c[q][0], x = side * (World3D.HALF + d), zz = c[q][1];
                         if (grassy) {
                             float t = d / SEAM, bs = 0.98f - 0.13f * t;
@@ -543,6 +557,20 @@ public final class Scene3D {
                         }
                     }
                 }
+            }
+        }
+
+        // gonna scura sotto il bordo del corridoio: se tra il prato del sentiero e quello dei lati resta una fessura di un pixel,
+        // si vede questa e non il cielo
+        if (!heaven) for (int z = z0; z < z1; z++) for (int side = -1; side <= 1; side += 2) {
+            int edge = side < 0 ? 0 : World3D.W - 1;
+            if (vis(w, edge, z) == World3D.PIT || vis(w, edge, z - 1) == World3D.PIT || vis(w, edge, z + 1) == World3D.PIT) continue;
+            MeshBuilder g = mb(K_BANK, z);
+            float x = side * World3D.HALF;
+            g.colorf(0.05f, 0.045f, 0.04f);
+            for (int h = 0; h < 2; h++) {
+                float za = z + h * 0.5f, zb = za + 0.5f, ya = groundAt(x, za), yb = groundAt(x, zb);
+                g.quad(x, ya - 0.01f, za, x, yb - 0.01f, zb, x, yb - 0.5f, zb, x, ya - 0.5f, za, -side, 0, 0, 0, 0, 0.1f, 0.1f);
             }
         }
 
@@ -1117,6 +1145,13 @@ public final class Scene3D {
         return w.height[z * World3D.W + x];
     }
 
+    /** Vertice del sottobosco ai lati (oltre la cucitura con il prato): a distanza d dal bordo del sentiero. */
+    private void forestVert(MeshBuilder g, int side, float d, float zz, float[] seamF) {
+        float x = side * (World3D.HALF + d);
+        float t = Math.min(1f, (d - SEAM) / 4f), bs = 0.85f - 0.15f * t;
+        ground(g, x, zz, x * 0.34f, zz * 0.34f, bs * (seamF[0] + (1 - seamF[0]) * t), bs * (seamF[1] + (1 - seamF[1]) * t), bs * (seamF[2] + (1 - seamF[2]) * t));
+    }
+
     /** Parete di terra che scende nel vuoto e si scurisce verso il fondo. Vertici: a-b in alto, poi giù. */
     private void wall(MeshBuilder d, float ax, float az, float bx, float bz, float nx, float nz) {
         float top = -lip;
@@ -1447,25 +1482,7 @@ public final class Scene3D {
         gem = b.build(-1, false, true);
         gem.spec = 0.9f; gem.shine = 60f;
 
-        b = new MeshBuilder().color(236, 192, 66);                            // chiave dorata: anello in alto, gambo, due denti
-        for (int i = 0; i < 12; i++) {
-            double an = i * Math.PI * 2 / 12;
-            b.ellipsoid((float) Math.cos(an) * 0.13f, 0.34f + (float) Math.sin(an) * 0.13f, 0, 0.055f, 0.055f, 0.045f, 8, 5);
-        }
-        b.box(0, 0.02f, 0, 0.07f, 0.44f, 0.07f);
-        b.color(252, 214, 92);
-        b.box(0, 0.2f, 0, 0.14f, 0.05f, 0.09f);
-        b.color(236, 192, 66);
-        b.box(0.065f, -0.12f, 0, 0.12f, 0.07f, 0.07f);
-        b.box(0.05f, -0.01f, 0, 0.09f, 0.06f, 0.07f);
-        battery = b.build(-1, false, true);
-        battery.spec = 0.95f; battery.shine = 60f;
-        b = new MeshBuilder().color(255, 240, 170);
-        for (int i = 0; i < 12; i++) {
-            double an = i * Math.PI * 2 / 12;
-            b.ellipsoid((float) Math.cos(an) * 0.13f, 0.34f + (float) Math.sin(an) * 0.13f, 0, 0.03f, 0.03f, 0.052f, 6, 4);
-        }
-        batteryGlow = b.build(-1, false, true);
+        coin = CoinModel.build();
 
         b = new MeshBuilder();
         b.quad(-0.5f, 0, -0.5f, 0.5f, 0, -0.5f, 0.5f, 0, 0.5f, -0.5f, 0, 0.5f, 0, 1, 0, 0, 0, 1, 1);
@@ -1789,13 +1806,36 @@ public final class Scene3D {
             Mat4.scale(m, 1.3f, 1.3f, 1.3f);
             g.draw(gem, m, 1, 1, 1, 1, 0.7f);
         }
-        if (w.battery != null) {
+        if (w.coin != null && w.coin[2] > near && w.coin[2] < far) {      // il gettone d'oro gira su se stesso
             Mat4.setIdentity(m);
-            Mat4.translate(m, w.battery[0], w.battery[1] + 0.07f * (float) Math.sin(w.time * 3f) - 0.05f, w.battery[2]);
-            Mat4.rotateY(m, w.time * 1.8f);
-            Mat4.scale(m, 1.45f, 1.45f, 1.45f);
-            g.draw(battery, m, 1, 1, 1, 1, 0.1f);
-            g.draw(batteryGlow, m, 1, 1, 1, 1, 0.9f);
+            Mat4.translate(m, w.coin[0], w.coin[1] + 0.07f * (float) Math.sin(w.time * 3f), w.coin[2]);
+            Mat4.rotateY(m, w.time * 2.2f);
+            Mat4.rotateX(m, (float) Math.PI / 2);
+            Mat4.scale(m, 1.25f, 1.25f, 1.25f);
+            g.draw(coin, m, 1, 1, 1, 1, 0.12f);
+        }
+        if (w.coinPop != null) {
+            float[] c = w.coinPop;
+            float k = c[3] < 0.8f ? 1f : 1f - (c[3] - 0.8f) / 0.2f;
+            Mat4.setIdentity(m);
+            Mat4.translate(m, c[0], c[1], c[2]);
+            Mat4.rotateY(m, c[3] * 16f);
+            Mat4.rotateX(m, (float) Math.PI / 2);
+            Mat4.scale(m, 1.5f * k, 1.5f * k, 1.5f * k);
+            g.draw(coin, m, 1, 1, 1, 1, 0.35f);
+        }
+        if (w.coinFoe != null && !w.coinFoe.dead && w.coinFoe.z > near && w.coinFoe.z < far) {     // chi porta il gettone luccica ogni tanto
+            Enemy3 e = w.coinFoe;
+            float gl = (w.time + e.z0 * 0.37f) % 3.2f;
+            if (gl < 0.4f) {
+                float k = (float) Math.sin(Math.PI * gl / 0.4f) * 0.4f;
+                Mat4.setIdentity(m);
+                Mat4.translate(m, e.x, e.y + bumpAt(e.x, e.z) + 0.75f, e.z - 0.2f);
+                Mat4.rotateY(m, w.time * 6f);
+                Mat4.rotateX(m, (float) Math.PI / 2);
+                Mat4.scale(m, k, k, k);
+                g.draw(coin, m, 1, 1, 1, 1, 1f);
+            }
         }
 
         for (Enemy3 e : w.enemies) {

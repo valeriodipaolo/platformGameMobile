@@ -43,7 +43,6 @@ public final class LevelEleven {
         pad(lv, 62);
         for (int x = 66; x <= 73; x++) lv.set(x, 4, Level.STONE);
         column(lv, 66, 5); column(lv, 73, 5);
-        lv.battery = new float[] {69.5f, 2.9f};
         shards(lv, 67, 3, 2);
         shards(lv, 71, 3, 2);
 

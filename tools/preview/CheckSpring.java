@@ -21,7 +21,6 @@ public class CheckSpring {
     /** Robot 2D: corre a destra, salta davanti ai buchi, ai rovi e ai muri. Restituisce {morti, x finale, secondi}. */
     static float[] bot2d(Game g, float maxSec, float stopX) {
         g.enemies.clear();
-        g.batteryOwned = true;                       // la cella è la chiave del portone: senza, il robot si fermerebbe davanti
         int deaths = 0, lives0 = g.lives;
         float jt = 0, rel = 0, stuck = 0, lastX = g.player.x, at = 0; boolean wide = false;
         for (float t = 0; t < maxSec; t += 1f / 60f) {
@@ -158,7 +157,6 @@ public class CheckSpring {
 
     static void bot3dCheck(int levelNo) {
         World3D b = new World3D(new MemorySave(), levelNo);
-        b.batteryOwned = true;
         b.enemies.clear();
         int lives0 = b.lives;
         float stuck = 0, lastZ = b.pz, jt = 0;

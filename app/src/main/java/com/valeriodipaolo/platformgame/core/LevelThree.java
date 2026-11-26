@@ -39,13 +39,12 @@ public final class LevelThree {
         enemy(lv, 58, Enemy.ACORN, 0, 0);
         enemy(lv, 66, Enemy.BEETLE, 0, 0);
         enemy(lv, 69, Enemy.BEETLE, 0, 0);
-        row(lv, 71, 7, "BBHBB");                          // il terzo mattoncino (colonna 73) nasconde il chip segreto
+        row(lv, 71, 7, "BBHBB");                          // (il vecchio mattoncino segreto: ora il nascondiglio del gettone lo decide Coins2D)
         shards(lv, 71, 5, 5);
         crow(lv, 78, 6, 74, 86);
         enemy(lv, 81, Enemy.HOG, 0, 0);
         row(lv, 84, 6, "BBB");
         row(lv, 88, 4, "B?B");
-        lv.battery = new float[] {89, 2.6f};            // sulla piattaforma più alta: ci si arriva col doppio salto
 
         // --- secondo burrone
         shard(lv, 93, 7); shard(lv, 94, 6); shard(lv, 95, 5.5f); shard(lv, 96, 6);

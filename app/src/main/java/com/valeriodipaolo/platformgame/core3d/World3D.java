@@ -74,7 +74,7 @@ public final class World3D {
     public final List<float[]> carts = new ArrayList<float[]>();
     public static final float CART_SPEED = 9.5f, CART_X = 1.05f;
     public int flagZ;
-    /** Portone di fine livello: si apre (0..1) solo con la cella di energia; la catapulta (launchT >= 0) riporta all'inizio. */
+    /** Portone di fine livello: si apre (0..1) da solo all'arrivo; la catapulta (launchT >= 0) riporta all'inizio. */
     public float gateOpen, launchT = -1;
     public int catZ;
     private boolean sealed;
@@ -83,7 +83,15 @@ public final class World3D {
     public final List<Enemy3> enemies = new ArrayList<Enemy3>();
     /** Gemme che escono dalle casse rotte: {x, y, z, età}. */
     public final List<float[]> pops = new ArrayList<float[]>();
-    public float[] battery;
+    /**
+     * Gettone d'oro segreto, uno per livello: in un punto nascosto o difficile {x, y, z} (coin), dentro una cassa qualunque
+     * (coinCrate = indice della casella, -1 nessuna) oppure addosso a un nemico (coinFoeIdx = indice in enemies, al caricamento coinFoe).
+     */
+    public float[] coin;
+    public int coinCrate = -1, coinFoeIdx = -1;
+    public Enemy3 coinFoe;
+    /** Gettone che schizza fuori appena trovato: {x, y, z, età}, oppure null. */
+    public float[] coinPop;
     /**
      * Incendio (livello 8): muro di fuoco che insegue da dietro, getti di fiamma a tempo {x, z, periodo, fase} e tronchi in fiamme
      * che rotolano di traverso {z, periodo, fase}. fireZones = {{z, velocità}, ...}: vale la zona più avanzata raggiunta.
@@ -110,7 +118,7 @@ public final class World3D {
     public boolean onGround;
     public static final int START_LIVES = 100;
     public int state, score, lives, hp, gems, gemTotal;
-    public boolean batteryOwned, gemOwned;
+    public boolean coinOwned, gemOwned;
     public String toast;
     public float toastTime, invuln, stateTime, time, spinT, spinCool, spinAngle, djTime, djX, djY, djZ;
     /** Altezza del terreno sotto il giocatore (per l'ombra e la camera). */
@@ -139,6 +147,7 @@ public final class World3D {
         sealed = false;
         crateKind = null; crateT = null; booms.clear(); crushers.clear(); rafts.clear(); raftIdx = null; camBackUntil = -1f;
         belt = null; lasers.clear(); quick = null; sinkT = 0; winds.clear(); carts.clear();
+        coin = null; coinCrate = -1; coinFoeIdx = -1; coinFoe = null; coinPop = null;
         if (levelNo > 37) Levels3W.build(this, levelNo); else if (levelNo > 34) Levels3J.build(this, levelNo); else if (levelNo > 24) Levels3C.build(this, levelNo); else if (levelNo > 12) Levels3B.build(this, levelNo); else if (levelNo == 12) LevelTwelve.build(this); else if (levelNo == 10) LevelTen.build(this); else if (levelNo == 8) LevelEight.build(this); else if (levelNo == 6) LevelSix.build(this); else if (levelNo == 4) LevelFour.build(this); else LevelTwo.build(this);
         if (!rafts.isEmpty()) {                          // prima delle rifiniture: le zattere a galla contano come terreno
             raftIdx = new int[length * W];
@@ -153,10 +162,12 @@ public final class World3D {
         noSidePaths();
         gemsOffThorns();
         seasonSkins();
+        Coins3D.place(this);
+        if (coinFoeIdx >= 0 && coinFoeIdx < enemies.size()) coinFoe = enemies.get(coinFoeIdx);
         gemTotal = gemsList.size();
-        for (int k = 0; k < crate.length; k++) if (crate[k] && (crateKind == null || crateKind[k] != C_BOUNCE)) gemTotal++;
+        for (int k = 0; k < crate.length; k++) if (crate[k] && k != coinCrate && (crateKind == null || crateKind[k] != C_BOUNCE)) gemTotal++;
         if (crateKind != null) crateT = new float[crate.length];
-        batteryOwned = gemOwned = false;
+        coinOwned = gemOwned = false;
         pops.clear();
         toast = null;
         toastTime = 0;
@@ -273,6 +284,10 @@ public final class World3D {
             p[3] += dt;
             if (p[3] > 0.6f) pops.remove(i);
         }
+        if (coinPop != null) {
+            coinPop[1] += 1.6f * dt;
+            if ((coinPop[3] += dt) > 1.0f) coinPop = null;
+        }
         if (state == PLAYING && launchT >= 0) {
             stepLaunch(dt);
         } else if (state == PLAYING) {
@@ -300,6 +315,7 @@ public final class World3D {
         } else if (state == WON) {
             vy = Math.max(-MAX_FALL, vy - GRAVITY * dt);
             py += vy * dt;
+            if (stateTime < 1.2f) { pz += vz * dt; yaw = 0; runPhase += vz * dt * 2.1f; }
             float g = topAt(px, pz);
             if (py <= g) { py = g; vy = 0; onGround = true; }
         }
@@ -1113,14 +1129,15 @@ public final class World3D {
                 checkGem();
             }
         }
-        if (battery != null && Math.abs(battery[0] - px) < 0.7f && Math.abs(battery[2] - pz) < 0.7f
-                && battery[1] > py - 0.4f && battery[1] < py + PLAYER_H + 0.3f) {
-            battery = null;
-            batteryOwned = true;
-            save.set(id + "_battery");
-            score += 500;
-            showToast("Chiave trovata!");
+        if (coin != null && Math.abs(coin[0] - px) < 0.7f && Math.abs(coin[2] - pz) < 0.7f
+                && coin[1] > py - 0.45f && coin[1] < py + PLAYER_H + 0.35f) {
+            gotCoin(coin[0], coin[1], coin[2]);
+            coin = null;
         }
+        if (coinFoe != null && (coinFoe.flung || coinFoe.flatTime > 0)) {      // il nemico che aveva addosso il gettone: eliminato
+            gotCoin(coinFoe.x, Math.max(coinFoe.y, 0) + 0.8f, coinFoe.z);
+            coinFoe = null;
+        } else if (coinFoe != null && coinFoe.dead) coinFoe = null;
         if (spinActive) {                             // la giravolta rompe le casse vicine
             float m = R + SPIN_REACH;
             for (int cz = zi(pz - m); cz <= zi(pz + m); cz++) {
@@ -1129,7 +1146,7 @@ public final class World3D {
                     int k = cz * W + cx;
                     if (crate[k] && py < 1.2f) {
                         byte kind = crateKind == null ? C_WOOD : crateKind[k];
-                        if (kind == C_BOUNCE) continue;
+                        if (kind == C_BOUNCE && k != coinCrate) continue;      // la cassa a molla non si rompe, tranne quella del gettone
                         if (kind == C_TNT || kind == C_NITRO) { explode(k); continue; }    // la giravolta su una cassa esplosiva: scoppia subito
                         breakCrate(k);
                     }
@@ -1140,12 +1157,23 @@ public final class World3D {
 
     // ------------------------------------------------------------------ isola tropicale
 
+    /** Gettone d'oro trovato: schizza in alto e vale per il record anche se poi si ricomincia. */
+    private void gotCoin(float x, float y, float z) {
+        coinPop = new float[] {x, y, z, 0};
+        if (coinOwned) return;
+        coinOwned = true;
+        save.set(id + "_coin");
+        score += 1000;
+        showToast("Gettone d'oro trovato!");
+    }
+
     /** Cassa rotta (salto o giravolta): gemma, punti, e se è di ripartenza si riparte da qui. */
     private void breakCrate(int k) {
         crate[k] = false;
+        float cx = k % W - HALF + 0.5f, cz = k / W + 0.5f;
+        if (k == coinCrate) { gotCoin(cx, 0.8f, cz); return; }      // la cassa del gettone: niente gemma
         gems++;
         score += 200;
-        float cx = k % W - HALF + 0.5f, cz = k / W + 0.5f;
         pops.add(new float[] {cx, 0.8f, cz, 0});
         if (crateKind != null && crateKind[k] == C_CHECK) {
             cpX = cx; cpZ = cz;
@@ -1159,9 +1187,9 @@ public final class World3D {
     private void explode(int k) {
         if (!crate[k]) return;
         crate[k] = false;
-        gems++;
-        checkGem();
         float cx = k % W - HALF + 0.5f, cz = k / W + 0.5f;
+        if (k == coinCrate) gotCoin(cx, 0.8f, cz);
+        else { gems++; checkGem(); }
         booms.add(new float[] {cx, cz, 0});
         float dx = px - cx, dz = pz - cz;
         if (dx * dx + dz * dz < BOOM_R * BOOM_R && py < 2.2f) hurt();
@@ -1222,6 +1250,7 @@ public final class World3D {
             }
         }
         if (crateKind != null) {
+            boolean cart = inCart();
             int z0 = Math.max(0, zi(pz) - 30), z1 = Math.min(length - 1, zi(pz) + 30);
             for (int k = z0 * W; k < (z1 + 1) * W; k++) {
                 if (!crate[k]) continue;
@@ -1230,7 +1259,8 @@ public final class World3D {
                 }
                 if (crateKind[k] == C_NITRO && crate[k]) {      // l'instabile scoppia anche solo sfiorandola di lato
                     float dx = Math.abs(k % W - HALF + 0.5f - px), dz = Math.abs(k / W + 0.5f - pz);
-                    if (dx < 0.5f + R + 0.04f && dz < 0.5f + R + 0.04f && py < 0.98f) explode(k);
+                    float mx = cart ? 0.5f + R - 0.07f : 0.5f + R + 0.04f;     // in carrello conta solo l'urto vero: cambiare binario accanto non la fa scoppiare
+                    if (dx < mx && dz < 0.5f + R + 0.04f && py < 0.98f) explode(k);
                 }
             }
         }
@@ -1303,13 +1333,9 @@ public final class World3D {
     }
 
     private void stepGate(float dt) {
-        if (batteryOwned && pz > flagZ - 6f && gateOpen < 1f) gateOpen = Math.min(1f, gateOpen + dt);
-        else if (!batteryOwned && pz > flagZ - 4f && toastTime <= 0) {
-            toast = "Serve la chiave per aprire il portone";
-            toastTime = 2.4f;
-        }
+        if (pz > flagZ - 6f && gateOpen < 1f) gateOpen = Math.min(1f, gateOpen + dt);
         if (state == PLAYING && gateOpen > 0.6f && pz >= flagZ + 3.4f) win();
-        if (state == PLAYING && spin && !spinWas && onGround && Math.abs(px + 1.75f) < 1.0f && pz > catZ - 0.2f && pz < catZ + 1.6f && py < 0.3f) {
+        if (state == PLAYING && spin && !spinWas && onGround && Math.abs(px + 1.75f) < 1.0f && pz > catZ - 0.2f && pz < catZ + 1.6f && py < Math.max(0, topAt(px, pz)) + 0.3f) {
             launchT = 0;
             lx = px; ly = py; lz = pz;
             spinActive = false;
@@ -1339,11 +1365,23 @@ public final class World3D {
 
     public boolean launching() { return launchT >= 0; }
 
+    /**
+     * Dissolvenza nel buio del portone (0..1): cresce mentre il robot attraversa la soglia e a livello finito copre tutto,
+     * come nel 2D dove il robot sparisce nell'oscurità.
+     */
+    public float fade() {
+        if (state == WON) return Math.min(1f, 0.8f + stateTime / 0.6f * 0.2f);
+        if (state != PLAYING || gateOpen < 0.6f) return 0f;
+        float u = (pz - (flagZ + 0.2f)) / 3.2f;
+        return u <= 0 ? 0f : Math.min(0.8f, u * u * (3 - 2 * u) * 0.8f);
+    }
+
     private void win() {
         state = WON;
         stateTime = 0;
         score += 500;
-        vx = vz = 0;
+        vx = 0;
+        vz = 2.5f;                                        // continua a camminare nel buio
         spinActive = false;
     }
 }

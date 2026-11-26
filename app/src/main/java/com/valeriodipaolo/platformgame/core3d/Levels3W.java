@@ -10,7 +10,7 @@ import static com.valeriodipaolo.platformgame.core3d.Levels3B.*;
  * <li>39, la fabbrica: nastri trasportatori che aiutano, spingono verso il vuoto o remano contro; barriere laser a tempo da saltare
  * (a volte con un varco spento); presse che battono sul nastro; robottini e droni.</li>
  * <li>40, la miniera: tutta in carrello su tre binari, lunga il triplo; si cambia corsia davanti ai binari rotti e si salta dove manca tutto;
- * pipistrelli e topi, qualche cassa di nitroglicerina.</li>
+ * il percorso è disseminato di fosse, pipistrelli, topi e casse di nitroglicerina, sempre più fitti.</li>
  * </ul>
  */
 public final class Levels3W {
@@ -36,7 +36,6 @@ public final class Levels3W {
         w.fireStart = Float.NaN;
         w.fireZones = new float[0][];
         w.hiveZ = Float.NaN;
-        w.battery = null;
         switch (id) {
             case 39: factory(w); break;
             case 40: mine(w); break;
@@ -60,7 +59,7 @@ public final class Levels3W {
         // la mesa della chiave: arenaria alta tre blocchi, si sale con la cassa a molla; sotto, sabbie mobili tutt'attorno
         crateK(w, 2, 74, World3D.C_BOUNCE); quick(w, 75, 77, 0, 4);
         for (int z = 78; z <= 85; z++) for (int x = 1; x <= 3; x++) set(w, x, z, 3);
-        w.battery = new float[] {0, 3.6f, 82f}; gemLine3(w, 0, 3.7f, 79, 81); gemLine3(w, 0, 3.7f, 83, 84);
+        gemLine3(w, 0, 3.7f, 79, 81); gemLine3(w, 0, 3.7f, 83, 84);
         quick(w, 79, 82, 0, 0); quick(w, 79, 82, 4, 4); quick(w, 86, 87, 0, 4);
         crateK(w, 2, 94, World3D.C_CHECK);
         // 3. il colpo di scena: il vento cambia verso a ogni raffica, su una lingua di sabbia larga una corsia sola
@@ -101,7 +100,7 @@ public final class Levels3W {
         // la passerella della chiave: in alto, sopra le presse, si sale con la cassa a molla
         crateK(w, 4, 102, World3D.C_BOUNCE);
         for (int z = 105; z <= 116; z++) set(w, 4, z, 3);
-        w.battery = new float[] {2f, 3.6f, 114f}; gemLine3(w, 2, 3.7f, 106, 112);
+        gemLine3(w, 2, 3.7f, 106, 112);
         for (int z = 106; z <= 114; z += 4) crusher(w, 2, z, 2.4f, z * 0.3f);
         robot(w, 110); gemLine(w, 0, 104, 116);
         // 3. il colpo di scena: il nastro rema contro, e i laser si accendono a turno
@@ -123,49 +122,84 @@ public final class Levels3W {
 
     /** La miniera è tutta in carrello: tre binari (corsie 1-3, il carrello non ne esce), dall'inizio alla fine. */
     static final int MINE_LEN = 790;
+    /** Riga della fossa dopo la quale è sospeso il gettone d'oro (sopra il binario di sinistra, si prende solo col doppio salto). */
+    static int mineCoinZ;
 
+    /**
+     * Il percorso è disseminato di fosse, nemici e casse di nitroglicerina, in tre tratti sempre più fitti; c'è sempre una corsia
+     * libera o un salto semplice, e mai due manovre a meno di un secondo l'una dall'altra. Ogni novanta metri circa un rettilineo
+     * sgombro, dove si salva il punto di ripartenza.
+     */
     private static void mine(World3D w) {
         int end = MINE_LEN - 12;
         cart(w, 2, end);
-        gemLine(w, 0, 6, 12);
-        java.util.Random r = new java.util.Random(40);
-        // ostacoli radi, sempre uno alla volta: all'inizio lontani tra loro, poi un po' più fitti
-        int z = 26, n = 0;
-        while (z < end - 30) {
-            int kind = PATTERN[n % PATTERN.length];
-            int lane = 1 + r.nextInt(3), free = lane == 2 ? (r.nextBoolean() ? 1 : 3) : 2;
+        gemLine(w, 0, 6, 14);
+        java.util.Random r = new java.util.Random(4040);
+        int z = 24, n = 0, nextRest = 100;
+        mineCoinZ = -1;
+        while (z < end - 24) {
+            if (z >= nextRest) {                                   // rettilineo sgombro: si riprende fiato (e si salva la ripartenza)
+                gemLine(w, 0, z + 3, z + 9);
+                z += 18;
+                nextRest += 95 + r.nextInt(15);
+                continue;
+            }
+            int stage = z < 240 ? 0 : z < 500 ? 1 : 2;
+            int lane = 1 + r.nextInt(3), other = lane == 2 ? (r.nextBoolean() ? 1 : 3) : 2;
+            int free = 6 - lane - other;                          // la terza corsia
+            int kind = stage == 0 ? EASY[n % EASY.length] : stage == 1 ? MID[n % MID.length] : HARD[n % HARD.length];
+            int len = 2;
             switch (kind) {
-                case 0:                                        // un binario interrotto: si cambia corsia, le gemme stanno su quella libera
-                    pit(w, z, z + 2, lane, lane); gemLine(w, free - 2, z - 1, z + 2); break;
-                case 1: {                                      // due binari interrotti: resta una sola corsia
-                    for (int c = 1; c <= 3; c++) if (c != free) pit(w, z, z + 2, c, c);
-                    gemLine(w, free - 2, z, z + 2); break;
-                }
-                case 2:                                        // binari interrotti su tutta la larghezza: si salta, l'arco di gemme lo indica
-                    pit(w, z, z + 2, 0, 4); arc(w, 0, z, z + 2); break;
-                case 3:                                        // pipistrello che svolazza di traverso, all'altezza del robot
-                    skin(add(w, Enemy3.CROW, 0, z + 0.5f, false, -1f, 1f, 0.9f), Enemy3.SKIN_BAT); break;
-                case 4:                                        // topo che attraversa i binari: si schiva o lo si schiaccia saltando
-                    skin(add(w, Enemy3.BEETLE, lane - 2f, z + 0.5f, false, -1f, 1f, 0), Enemy3.SKIN_MOUSE); break;
-                default:                                       // cassa di nitroglicerina su un binario
-                    crateK(w, lane, z, World3D.C_NITRO); gem(w, free - 2, 0.7f, z + 0.5f); break;
+                case 0:                                            // un binario interrotto
+                    pit(w, z, z + 2, lane, lane); gemLine(w, other - 2, z - 1, z + 2); len = 3; break;
+                case 1:                                            // due binari interrotti: resta una corsia sola
+                    pit(w, z, z + 2, lane, lane); pit(w, z, z + 2, other, other); gemLine(w, free - 2, z - 1, z + 2); len = 3; break;
+                case 2:                                            // fossa su tutta la larghezza: si salta
+                    pit(w, z, z + 2, 0, 4); arc(w, 0, z, z + 2);
+                    if (mineCoinZ < 0 && z > 380) mineCoinZ = z;
+                    len = 3; break;
+                case 3:                                            // cassa di nitroglicerina su un binario
+                    crateK(w, lane, z, World3D.C_NITRO); gem(w, other - 2, 0.7f, z + 0.5f); len = 1; break;
+                case 4:                                            // due casse di nitroglicerina: una corsia sola
+                    crateK(w, lane, z, World3D.C_NITRO); crateK(w, other, z, World3D.C_NITRO); gemLine(w, free - 2, z - 1, z + 1); len = 1; break;
+                case 5:                                            // pipistrello che svolazza di traverso
+                    skin(add(w, Enemy3.CROW, 0, z + 0.5f, false, -1f, 1f, 0.9f), Enemy3.SKIN_BAT); len = 1; break;
+                case 6:                                            // topo che attraversa i binari
+                    skin(add(w, Enemy3.BEETLE, lane - 2f, z + 0.5f, false, -1f, 1f, 0), Enemy3.SKIN_MOUSE); len = 1; break;
+                case 7:                                            // binario rotto e cassa sull'altro: passa solo la terza corsia
+                    pit(w, z, z + 2, lane, lane); crateK(w, other, z + 1, World3D.C_NITRO); gemLine(w, free - 2, z - 1, z + 2); len = 3; break;
+                case 8:                                            // salto, e appena atterrati una cassa da schivare
+                    pit(w, z, z + 1, 0, 4); arc(w, 0, z, z + 1); crateK(w, lane, z + 9, World3D.C_NITRO); gem(w, other - 2, 0.7f, z + 9.5f); len = 10; break;
+                case 9:                                            // due binari rotti, poi un pipistrello
+                    pit(w, z, z + 2, lane, lane); pit(w, z, z + 2, other, other); gemLine(w, free - 2, z - 1, z + 2);
+                    skin(add(w, Enemy3.CROW, 0, z + 11.5f, false, -1f, 1f, 0.9f), Enemy3.SKIN_BAT); len = 12; break;
+                default:                                           // cassa sul binario, e subito dopo un topo che attraversa
+                    crateK(w, lane, z, World3D.C_NITRO); gem(w, other - 2, 0.7f, z + 0.5f);
+                    skin(add(w, Enemy3.BEETLE, other - 2f, z + 9.5f, false, -1f, 1f, 0), Enemy3.SKIN_MOUSE); len = 10; break;
             }
             n++;
-            z += Math.max(15, 30 - n / 3) + r.nextInt(6);
+            int gap = stage == 0 ? 12 + r.nextInt(3) : stage == 1 ? 10 + r.nextInt(3) : 8 + r.nextInt(3);
+            z += len + gap - 2;
         }
-        // la chiave: sopra il binario centrale, a metà strada, in un tratto tranquillo con la scia di gemme che la annuncia
-        int kz = MINE_LEN / 2;
-        for (int k = kz - 8; k <= kz + 8; k++) for (int c = 1; c <= 3; c++) { set(w, c, k, 0); w.crate[k * W + c] = false; }
-        w.enemies.removeIf(e -> Math.abs(e.z - kz) < 12);
-        w.gemsList.removeIf(g -> Math.abs(g[2] - kz) < 10);
-        gemLine(w, 0, kz - 7, kz - 2);
-        w.battery = new float[] {0, 0.9f, kz + 0.5f};
         gemLine(w, 0, end + 2, end + 8);
         w.flagZ = MINE_LEN - 2;
     }
 
-    /** Ordine degli ostacoli in miniera: 0 un binario rotto, 1 due rotti, 2 salto, 3 pipistrello, 4 topo, 5 nitro. */
-    private static final int[] PATTERN = {0, 3, 4, 0, 1, 3, 2, 4, 5, 0, 3, 1, 4, 2, 0, 3, 5, 4, 1, 0, 2};
+    /**
+     * Il gettone d'oro della miniera: alto sopra il binario di sinistra, appena oltre una fossa; ci arriva solo chi la salta
+     * stando a sinistra e rilancia il doppio salto in cima alla parabola.
+     */
+    static void mineCoin(World3D w) {
+        if (mineCoinZ > 0) w.coin = new float[] {-1f, 4.0f, mineCoinZ + 5.5f};
+    }
+
+    /**
+     * Ordine degli ostacoli nei tre tratti: 0 un binario rotto, 1 due rotti, 2 salto, 3 una cassa, 4 due casse, 5 pipistrello,
+     * 6 topo, 7 binario rotto + cassa, 8 salto + cassa, 9 due rotti + pipistrello, 10 cassa + topo.
+     */
+    private static final int[] EASY = {0, 5, 3, 6, 2, 0, 4, 5, 1, 6, 3, 2};
+    private static final int[] MID = {7, 5, 2, 6, 1, 3, 9, 4, 0, 10, 2, 5, 8, 6};
+    private static final int[] HARD = {7, 8, 5, 4, 9, 2, 10, 1, 6, 7, 3, 8, 5, 9, 2, 10};
 
     // ------------------------------------------------------------------ attrezzi
 

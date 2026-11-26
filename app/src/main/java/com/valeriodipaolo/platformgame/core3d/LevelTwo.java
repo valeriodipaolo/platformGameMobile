@@ -38,7 +38,7 @@ public final class LevelTwo {
         forward(w, -1.5f, 42, 48);
         forward(w, 1.5f, 44, 50);
         crate(w, 1, 45); crate(w, 3, 47);
-        w.battery = new float[] {0, 0.6f, 52.5f};
+       
         gemLine(w, -2, 54, 57);
         gemLine(w, 2, 54, 57);
 

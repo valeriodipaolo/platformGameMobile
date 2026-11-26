@@ -42,7 +42,6 @@ public class Check3B {
     static void run(int id) {
         rel = id > 24;            // la terza serie ha piani rialzati: gli ostacoli si misurano rispetto al piano su cui si corre
         World3D b = new World3D(new MemorySave(), id);
-        b.batteryOwned = true;
         int lives0 = b.lives;
         float stuck = 0, lastZ = b.pz, jt = 0, time = 0;
         int cur = 2;

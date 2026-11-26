@@ -12,7 +12,6 @@ public final class LevelOne {
         ground(lv, 65, 103);
         ground(lv, 107, 140);
         ground(lv, 144, 211);
-        lv.battery = new float[] {59, 9.1f};      // in bella vista sul percorso, subito prima del primo burrone
         lv.startX = 3;
         lv.startY = GROUND_Y - 1.2f;
 
@@ -39,7 +38,7 @@ public final class LevelOne {
         row(lv, 70, 7, "?B?");
         enemy(lv, 75);
         enemy(lv, 77);
-        row(lv, 82, 7, "BBBBHBBB");          // il quinto mattoncino (colonna 86) nasconde il chip segreto
+        row(lv, 82, 7, "BBBBHBBB");          // (il vecchio mattoncino segreto: ora il nascondiglio del gettone lo decide Coins2D)
         shards(lv, 83, 6, 6);
         row(lv, 91, 4, "BB?B");
         enemy(lv, 93);

@@ -12,6 +12,8 @@ public final class Level {
     public static final char CRUMBLE = 'C', DOOR = 'D';
     /** Fiore a molla: chi ci atterra sopra viene lanciato in alto (livello di primavera). */
     public static final char SPRING = 'P';
+    /** Finta parete: si disegna come la pietra, davanti al robot, ma ci si passa attraverso (nasconde il gettone d'oro). */
+    public static final char FAKE = 'F';
 
     public final int w, h;
     private final char[] t;
@@ -19,8 +21,12 @@ public final class Level {
     /** 0 = prato d'estate, 1 = autunno, 2 = aurora boreale, 3 = incendio, 4 = primavera. */
     public int theme;
     public float startX = 3, startY = 8;
-    /** Posizione della cella energetica (c'è in tutti i livelli). */
-    public float[] battery;
+    /**
+     * Gettone d'oro segreto, uno per livello, nascosto in uno di questi modi: a terra o in aria in un punto nascosto o difficile
+     * {x, y} (coin), dentro un mattoncino qualunque (casella SECRET), oppure addosso a un nemico: coinFoe = indice in enemies.
+     */
+    public float[] coin;
+    public int coinFoe = -1;
     /** Colonna dell'asta del traguardo. */
     public int flagX;
     /** Riga del terreno su cui poggia l'asta (l'asta non è un ostacolo). */
@@ -78,6 +84,7 @@ public final class Level {
     }
 
     public boolean solid(int x, int y) {
-        return get(x, y) != EMPTY;
+        char c = get(x, y);
+        return c != EMPTY && c != FAKE;
     }
 }

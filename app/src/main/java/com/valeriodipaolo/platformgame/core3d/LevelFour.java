@@ -65,7 +65,7 @@ public final class LevelFour {
         set(w, 0, 87, 1); set(w, 0, 88, 2); set(w, 0, 89, 2); set(w, 0, 90, 1);
         set(w, 1, 88, 1); set(w, 1, 89, 1);
         pit(w, 91, 94, 0, 1);
-        w.battery = new float[] {-2, 2.7f, 88.5f};
+       
         crate(w, 3, 88);
         hog(w, 1f, 92, true, 86, 96.5f);
 

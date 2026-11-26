@@ -15,7 +15,7 @@ public final class Img {
     public static final int POLE = 25, POLE_TOP = 26, FLAG = 27;
     public static final int BTN_LEFT = 28, BTN_RIGHT = 29, BTN_JUMP = 30;
     public static final int BTN_SPIN = 31;
-    public static final int BATTERY = 32, CHIP = 33, GEM_FULL = 34, SPIN_FX = 35;
+    public static final int BATTERY = 32, COIN = 33, GEM_FULL = 34, SPIN_FX = 35;
     public static final int HERO_SPIN = 36;     // 12 pose della giravolta: HERO_SPIN .. HERO_SPIN+11
     public static final int SPIN_POSES = 12;
     public static final int TEX_GRASS = 48, SHADOW = 49, JOY_BASE = 50, JOY_KNOB = 51;
@@ -92,7 +92,7 @@ public final class Img {
         "enemy_0", "enemy_1", "enemy_flat",
         "pole", "pole_top", "flag",
         "btn_left", "btn_right", "btn_jump", "btn_spin",
-        "battery", "chip", "gem_full", "spin_fx",
+        "battery", "coin", "gem_full", "spin_fx",
         "hero_spin_0", "hero_spin_1", "hero_spin_2", "hero_spin_3", "hero_spin_4", "hero_spin_5",
         "hero_spin_6", "hero_spin_7", "hero_spin_8", "hero_spin_9", "hero_spin_10", "hero_spin_11",
         "tex_grass", "shadow", "joy_base", "joy_knob",

@@ -51,7 +51,6 @@ public final class LevelSeven {
         // --- la radura: qui il fuoco si ferma. Un'altura di terra con la cella energetica in cima
         hill(lv, 100, 114, 3);
         row(lv, 102, 5, "?B?B?");
-        lv.battery = new float[] {107, 5.9f};
         shards(lv, 98, 8, 3);
         enemy(lv, 118, Enemy.ACORN, 0, 0);
         enemy(lv, 121, Enemy.BEETLE, 0, 0);

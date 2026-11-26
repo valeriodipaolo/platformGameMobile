@@ -53,7 +53,7 @@ public final class LevelTen {
         padRow(w, 74, 1, 3);
         balcony(w, 80, 89);
         gem(w, -1, 4.7f, 82.5f); gem(w, 1, 4.7f, 87.5f);
-        w.battery = new float[] {0, 5.3f, 85.5f};
+       
         hog(w, 0, 94, false, -2f, 2f);
 
         // --- secondo fiume

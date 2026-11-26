@@ -50,7 +50,6 @@ public final class LevelFive {
         enemy(lv, 85, Enemy.BEETLE, 0, 0);
         row(lv, 84, 6, "BBHBB");
         row(lv, 90, 4, "B?B");
-        lv.battery = new float[] {91, 2.6f};
 
         // --- secondo burrone
         shard(lv, 96, 7); shard(lv, 97, 6); shard(lv, 98, 6); shard(lv, 99, 7);

@@ -63,7 +63,7 @@ public final class LevelsB {
         b.sh(252, 5, 5); b.sh(265, 4, 5); b.sh(278, 5, 5); b.row(290, 6, "?B?"); b.en(294, Enemy.SNAIL, 287, 299);
         // burrone di sei, poi la piramide: la cella energetica è sulle casse più alte, sorvegliate da un corvo
         b.arc(301, 5);
-        b.up(312, 5); b.down(318, 5); b.plat(317, 5, 1); b.row(316, 1, "B?B"); lvBattery(b, 317, 3.6f); b.crow(317, 2.2f, 309, 326);
+        b.up(312, 5); b.down(318, 5); b.plat(317, 5, 1); b.row(316, 1, "B?B"); b.crow(317, 2.2f, 309, 326);
         b.en(309, Enemy.HOG, 307, 311); b.sh(328, 9, 4); b.en(336, Enemy.SNAIL, 330, 345); b.en(342, Enemy.BEETLE);
         b.row(338, 6, "B?B"); b.col(348, 2); b.col(352, 3); b.gem(348, 6); b.gem(352, 5);
         // due burroni e un isolotto stretto, con un corvo che fa la spola
@@ -77,10 +77,6 @@ public final class LevelsB {
         b.sh(444, 9, 5); b.row(452, 6, "B?B"); b.en(458, Enemy.SNAIL, 450, 468); b.en(464, Enemy.BEETLE);
         b.lv.flagX = 478; b.lv.flagBaseY = G;
         return b.lv;
-    }
-
-    static void lvBattery(LevelsB b, float x, float y) {
-        b.lv.battery = new float[] {x, y};
     }
 
     // ------------------------------------------------------------------ 15: il prato d'autunno — ricci di castagna e gufi
@@ -121,7 +117,7 @@ public final class LevelsB {
         // burrone di sei con un appiglio e una castagna sopra
         b.plat(348, 8, 2); b.chest(349, 4.5f); b.gem(348.5f, 6);
         b.sh(354, 9, 3); b.col(360, 3); b.col(364, 4); b.col(368, 4); b.col(372, 4); b.col(376, 3); b.owl(368, 0.6f, 360, 377); b.gem(360, 5); b.gem(364, 4);
-        b.gem(368, 3); b.gem(372, 4); b.gem(376, 5); b.en(362, Enemy.HOG, 361, 363); b.en(374, Enemy.HOG, 373, 375); lvBattery(b, 368, 1.6f);
+        b.gem(368, 3); b.gem(372, 4); b.gem(376, 5); b.en(362, Enemy.HOG, 361, 363); b.en(374, Enemy.HOG, 373, 375);
         b.row(383, 6, "B?B"); b.chest(384, 7); b.en(389, Enemy.ACORN); b.en(395, Enemy.BEETLE);
         // burrone di sei: due gufi in controtempo
         b.arc(401, 5); b.owl(402, 4f, 398, 406); b.owl(408, 3f, 404, 412);
@@ -166,7 +162,7 @@ public final class LevelsB {
         b.row(255, 6, "B?H?B"); b.row(270, 6, "?B?"); b.sh(256, 4, 3); b.en(286, Enemy.SNOWMAN); b.sh(283, 7, 2);
         // burrone di sei sotto il tiro incrociato: un pupazzo per sponda (quello dietro è già superato: basta non voltarsi)
         b.arc(293, 5); b.en(301, Enemy.SNOWMAN);
-        b.up(306, 5); b.plat(311, 5, 5); b.down(316, 5); b.row(312, 1, "B?B"); lvBattery(b, 313, 3.6f); b.crow(313, 2.2f, 304, 322); b.en(324, Enemy.PENGUIN, 321, 335);
+        b.up(306, 5); b.plat(311, 5, 5); b.down(316, 5); b.row(312, 1, "B?B"); b.crow(313, 2.2f, 304, 322); b.en(324, Enemy.PENGUIN, 321, 335);
         b.col(336, 2); b.en(340, Enemy.HOG, 337, 345); b.sh(326, 7, 3); b.sh(338, 6, 3);
         // burrone di sei con due appigli a salire
         b.plat(348, 8, 1); b.plat(351, 6, 1); b.gem(348, 6); b.gem(351, 4);
@@ -207,7 +203,7 @@ public final class LevelsB {
         // burrone di sei: un'unica tavola che crolla nel mezzo, e un lapillo per parte
         b.cr(203, 9, 2); b.lap(201.6f, 2.6f, 6f); b.lap(205.6f, 2.6f, 6f); b.gem(203.5f, 7);
         // salita alla radura dove il fuoco si ferma: la cella energetica è in cima alla scala di massi
-        b.sh(209, 9, 3); b.en(214, Enemy.SALAMANDER, 209, 220); b.up(222, 4); b.plat(226, 6, 6); b.down(232, 4); lvBattery(b, 228.5f, 3.4f); b.row(227, 2, "B?B");
+        b.sh(209, 9, 3); b.en(214, Enemy.SALAMANDER, 209, 220); b.up(222, 4); b.plat(226, 6, 6); b.down(232, 4); b.row(227, 2, "B?B");
         b.sh(238, 9, 4); b.row(240, 6, "BHB"); b.en(246, Enemy.BEETLE);
         // il grande ponte: tavole e lapilli alternati; alla fine una salamandra aspetta sulla terraferma
         b.bridge(252, new int[] {9, 8, 7, 8}); b.lap(255.6f, 2.5f, 6.5f); b.lap(260.6f, 2.9f, 7.5f); b.lap(265.6f, 2.3f, 6.5f); b.en(280, Enemy.SALAMANDER, 275, 288);
@@ -245,7 +241,7 @@ public final class LevelsB {
         // secondo fiume: fiore a molla; sulla sponda d'arrivo due piante lasciano libera solo la casella in mezzo
         b.pad(140); b.flight(140); b.en(153, Enemy.PLANT); b.en(158, Enemy.PLANT); b.sh(155, 9, 2);
         // la collina dei ciliegi: balcone di casse con la cella energetica, raggiungibile dal fiore a molla sotto
-        b.sh(162, 9, 3); b.pad(168); b.plat(174, 4, 8); lvBattery(b, 178, 2.6f); b.sh(175, 2, 3); b.sh(179, 2, 3); b.en(176, Enemy.FROG); b.thorn(180);
+        b.sh(162, 9, 3); b.pad(168); b.plat(174, 4, 8); b.sh(175, 2, 3); b.sh(179, 2, 3); b.en(176, Enemy.FROG); b.thorn(180);
         b.en(184, Enemy.HOG, 181, 190); b.row(186, 6, "B?B"); b.en(194, Enemy.PLANT); b.thorn(190);
         // due ruscelli e un isolotto di quattro caselle con una pianta al centro
         b.en(208.5f, Enemy.PLANT); b.gem(203.5f, 6); b.gem(213.5f, 6); b.gem(208.5f, 6);
@@ -285,7 +281,7 @@ public final class LevelsB {
         // primo ponte di nuvole: sei nuvole che cedono, due scie di stelle che lo tagliano in punti diversi
         b.bridge(73, new int[] {9, 8, 9, 8, 9}); b.star(86, -2.5f); b.star(97, -0.5f);
         // tempio di marmo: solleoni attorno alle colonne, la cella energetica sul tetto raggiungibile dal trampolino
-        b.sh(102, 9, 3); b.pad(107); b.plat(112, 4, 8); b.col(112, 5); b.col(119, 5); lvBattery(b, 115.5f, 2.9f); b.sh(113, 3, 2); b.sh(117, 3, 2);
+        b.sh(102, 9, 3); b.pad(107); b.plat(112, 4, 8); b.col(112, 5); b.col(119, 5); b.sh(113, 3, 2); b.sh(117, 3, 2);
         b.sun(124, 7f, 1.8f, 2.2f); b.whirl(128, 122, 134); b.col(136, 2); b.gem(136, 6); b.row(128, 5, "?B?");
         // balzo lungo con il trampolino; in volo si passa sopra una stella
         b.pad(142); b.flight(142); b.star(150, -3f); b.en(157, Enemy.BEETLE);

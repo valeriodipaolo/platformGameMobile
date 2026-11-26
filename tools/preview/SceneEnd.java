@@ -20,7 +20,7 @@ public class SceneEnd {
         for (int i = 0; i < Img.COUNT; i++) Preview.imgs[i] = ImageIO.read(new File(a[0], Img.NAMES[i] + ".png"));
         Game g = new Game(new MemorySave(), 1);
         g.viewW = 1200 / (540 / 12f);
-        g.enemies.clear(); g.batteryOwned = true; g.fireX = Float.NaN;
+        g.enemies.clear(); g.fireX = Float.NaN;
         Level lv = g.level;
         g.player.x = lv.flagX - 6f; g.player.y = lv.flagBaseY - g.player.h; g.camX = lv.flagX - 14;
         BufferedImage out = new BufferedImage(1200, 540 * 3, BufferedImage.TYPE_INT_RGB);
@@ -39,7 +39,7 @@ public class SceneEnd {
         ImageIO.write(shot(sp), "png", new File(a[1], "spin2d.png"));
         // catapulta + giravolta
         Game c = new Game(new MemorySave(), 1);
-        c.viewW = g.viewW; c.enemies.clear(); c.batteryOwned = true; c.fireX = Float.NaN;
+        c.viewW = g.viewW; c.enemies.clear(); c.fireX = Float.NaN;
         c.player.x = c.level.catX + 1.2f; c.player.y = c.level.flagBaseY - c.player.h; c.camX = c.level.catX - 8;
         for (int i = 0; i < 10; i++) { c.setInput(false, false, false); c.update(1f / 60f); }
         BufferedImage o2 = new BufferedImage(1200, 540 * 2, BufferedImage.TYPE_INT_RGB);

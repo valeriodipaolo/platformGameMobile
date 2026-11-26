@@ -25,7 +25,6 @@ public final class Levels3B {
         w.fireStart = Float.NaN;
         w.fireZones = new float[0][];
         w.hiveZ = Float.NaN;
-        w.battery = null;
         switch (id) {
             case 16: autumn(w); break;
             case 18: winter(w); break;
@@ -53,7 +52,7 @@ public final class Levels3B {
         pit(w, 66, 72, 0, 1); pit(w, 66, 72, 3, 4); gemLine(w, 2, 66, 68); gemLine(w, 2, 70, 72);
         // radura con la cella energetica sopra una terrazza, sorvegliata da un corvo
         for (int x = 1; x <= 3; x++) { set(w, x, 80, 1); for (int z = 81; z <= 86; z++) set(w, x, z, 2); set(w, x, 87, 1); }
-        w.battery = new float[] {0, 2.6f, 83.5f}; crow(w, 0, 83, false, -2f, 2f, 3.6f); gemLine3(w, 0, 2.7f, 81, 82); gemLine3(w, 0, 2.7f, 85, 86);
+        crow(w, 0, 83, false, -2f, 2f, 3.6f); gemLine3(w, 0, 2.7f, 81, 82); gemLine3(w, 0, 2.7f, 85, 86);
         snail(w, -2, 90, 88, 96); snail(w, 2, 94, 90, 99); crate(w, 0, 98); crate(w, 4, 98);
         // secondo campo di talpe, questa volta con ghiande tra le tane
         acorn(w, 0f, 108); acorn(w, 1f, 118); gemLine(w, 2, 103, 119);
@@ -100,7 +99,7 @@ public final class Levels3B {
         pit(w, 72, 74, 0, 4); chest(w, 2, 79, 3.4f); pit(w, 82, 84, 0, 4); gemLine(w, -1, 76, 80); arc(w, 0, 72, 74); arc(w, 0, 82, 84);
         // terrazza con la cella energetica e un gufo di guardia
         for (int x = 1; x <= 3; x++) { set(w, x, 92, 1); for (int z = 93; z <= 99; z++) set(w, x, z, 2); set(w, x, 100, 1); }
-        w.battery = new float[] {0, 2.6f, 96f}; owl(w, 0, 93, 100, 4.1f); gemLine3(w, 0, 2.7f, 94, 99);
+        owl(w, 0, 93, 100, 4.1f); gemLine3(w, 0, 2.7f, 94, 99);
         // la strada di foglie: ghiande e castagne alternate
         acorn(w, 0f, 106); chest(w, 3, 109, 3.4f); acorn(w, 1f, 112); chest(w, 1, 115, 3.4f); acorn(w, 2f, 118); hog(w, 0, 121, false, -2f, 2f);
         gemLine(w, -2, 105, 122);
@@ -145,7 +144,7 @@ public final class Levels3B {
         pit(w, 72, 86, 0, 1); pit(w, 72, 86, 3, 4); peng2(w, 2, 74, 85); gemLine(w, 2, 72, 86);
         // terrazza con la cella energetica: un pupazzo ai due lati
         for (int x = 1; x <= 3; x++) { set(w, x, 94, 1); for (int z = 95; z <= 101; z++) set(w, x, z, 2); set(w, x, 102, 1); }
-        w.battery = new float[] {0, 2.6f, 98f}; snowman(w, -2, 98, 0f); gemLine3(w, 0, 2.7f, 96, 100);
+        snowman(w, -2, 98, 0f); gemLine3(w, 0, 2.7f, 96, 100);
         // la discesa: tre pinguini in fila che partono insieme, due burroni sul fondo
         peng(w, 108, -2f, 2f); peng(w, 111, -2f, 2f); pit(w, 116, 118, 0, 4); pit(w, 123, 125, 0, 4); snowman(w, 2, 120); arc(w, 0, 116, 118); arc(w, 0, 123, 125);
         // tratto di iceberg: isolotti sparsi, ognuno con un pinguino
@@ -194,7 +193,7 @@ public final class Levels3B {
         pit(w, 92, 112, 0, 1); pit(w, 92, 112, 3, 4); lap(w, 1, 98, 2.6f, 3.4f); lap(w, 3, 104, 2.2f, 3.4f); lap(w, 1, 110, 2.8f, 3.4f); gemLine(w, 2, 92, 112);
         // radura con la cella energetica sopra una scala di tronchi
         for (int x = 1; x <= 3; x++) { set(w, x, 120, 1); for (int z = 121; z <= 127; z++) set(w, x, z, 2); set(w, x, 128, 1); }
-        w.battery = new float[] {0, 2.6f, 124f}; sala(w, 0, 123, 121, 127, 2f); gemLine3(w, 0, 2.7f, 121, 127);
+        sala(w, 0, 123, 121, 127, 2f); gemLine3(w, 0, 2.7f, 121, 127);
         // sosta: il fuoco si ferma qui (zona a velocità zero) e si ascoltano i tronchi
         gemLine(w, 0, 132, 138); crate(w, 1, 134); crate(w, 3, 134);
         // braciere a scacchiera: getti fitti e due salamandre sul fondo
@@ -232,7 +231,7 @@ public final class Levels3B {
         // la terrazza fiorita con la cella energetica; il fiore a molla porta in cima
         padRow(w, 70, 1, 3);
         for (int x = 1; x <= 3; x++) { for (int z = 76; z <= 84; z++) set(w, x, z, 3); set(w, x, 85, 2); set(w, x, 86, 1); }
-        w.battery = new float[] {0, 3.6f, 80f}; plant(w, 1, 78, 3f); gemLine3(w, 0, 3.7f, 76, 84);
+        plant(w, 1, 78, 3f); gemLine3(w, 0, 3.7f, 76, 84);
         // sentiero con rovi alle due estremità e una rana al centro che sbarra la via
         for (int z = 92; z <= 106; z += 2) { thorn(w, 0, z); thorn(w, 4, z + 1); }
         frog(w, 2, 98); frog(w, 2, 104); gemLine(w, 2, 92, 106);
@@ -284,7 +283,7 @@ public final class Levels3B {
         crate(w, 1, 80); crate(w, 3, 80); padRow(w, 83, 1, 3);
         for (int z = 89; z <= 98; z++) for (int x = 1; x <= 3; x++) set(w, x, z, 4);
         for (int x = 1; x <= 3; x++) { set(w, x, 99, 2); set(w, x, 100, 1); }
-        w.battery = new float[] {0, 5.3f, 94f}; sun(w, 0f, 6.2f, 94f, 1.5f, 2.0f); gem(w, -1, 4.7f, 91.5f); gem(w, 1, 4.7f, 96.5f);
+        sun(w, 0f, 6.2f, 94f, 1.5f, 2.0f); gem(w, -1, 4.7f, 91.5f); gem(w, 1, 4.7f, 96.5f);
         // sentiero stretto sul vuoto con stelle a due quote
         pit(w, 106, 126, 0, 0); pit(w, 106, 126, 4, 4); star(w, 3, 5f, 110, -2.6f, -2.8f); star(w, -3, 5f, 118, 2.6f, -2.8f); storm(w, 0, 114, true, 108f, 122f, 2.9f);
         for (int z = 106; z <= 126; z += 3) gem(w, 0, 0.7f, z + 0.5f);

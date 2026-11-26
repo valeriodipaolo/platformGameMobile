@@ -38,7 +38,6 @@ public final class Levels3C {
         w.fireStart = Float.NaN;
         w.fireZones = new float[0][];
         w.hiveZ = Float.NaN;
-        w.battery = null;
         switch (id) {
             case 28: archipelago(w); break;
             case 30: thorns(w); break;
@@ -64,7 +63,7 @@ public final class Levels3C {
         wallH(w, 66, 4, 3); acorn(w, 0f, 69); gem(w, 2, 0.7f, 66.5f);
         // la radura della chiave: una terrazza nel mezzo, con il gufo di guardia
         for (int x = 1; x <= 3; x++) { set(w, x, 76, 1); for (int z = 77; z <= 83; z++) set(w, x, z, 2); set(w, x, 84, 1); }
-        w.battery = new float[] {0, 2.6f, 80f}; owl(w, 2, 77, 84, 4.1f); gemLine3(w, 0, 2.7f, 78, 79); gemLine3(w, 0, 2.7f, 81, 82);
+        owl(w, 2, 77, 84, 4.1f); gemLine3(w, 0, 2.7f, 78, 79); gemLine3(w, 0, 2.7f, 81, 82);
         crate(w, 0, 90); crate(w, 4, 90); hog(w, 2, 93, false, -2f, 2f);
         // 3. il colpo di scena: subito dopo il varco c'è il vuoto, e il varco successivo è dall'altra parte: si sterza in volo
         wallH(w, 100, 2, 3); pit(w, 101, 103, 0, 4); wallH(w, 106, 0, 3); pit(w, 107, 109, 0, 4); wallH(w, 112, 4, 3); pit(w, 113, 115, 0, 4);
@@ -103,7 +102,7 @@ public final class Levels3C {
         crate(w, 1, 84); crate(w, 3, 84); padRow(w, 88, 1, 3);
         for (int z = 94; z <= 101; z++) for (int x = 1; x <= 3; x++) set(w, x, z, 3);
         for (int x = 1; x <= 3; x++) { set(w, x, 102, 2); set(w, x, 103, 1); }
-        w.battery = new float[] {0, 3.6f, 98f}; gemLine3(w, 0, 3.7f, 95, 97); peng(w, 108, -2f, 2f);
+        gemLine3(w, 0, 3.7f, 95, 97); peng(w, 108, -2f, 2f);
         // 3. il colpo di scena: la molla non porta sulla riva ma su un isolotto, e dall'isolotto si salta di nuovo
         padRow(w, 114, 0, 4); pit(w, 115, 133, 0, 4); island(w, 125, 128, 0, 4); flight(w, 114); arc(w, 0, 129, 133);
         snowman(w, 2, 138); gemLine(w, -2, 135, 140);
@@ -130,7 +129,7 @@ public final class Levels3C {
         // la terrazza della chiave: il fiore a molla sale sui ciliegi, sotto c'è il roseto
         padRow(w, 90, 1, 3);
         for (int x = 1; x <= 3; x++) { for (int z = 96; z <= 103; z++) set(w, x, z, 3); set(w, x, 104, 2); set(w, x, 105, 1); }
-        w.battery = new float[] {0, 3.6f, 100f}; plant(w, 2, 98, 3f); gemLine3(w, 0, 3.7f, 96, 97); thorn(w, 0, 99); thorn(w, 4, 101);
+        plant(w, 2, 98, 3f); gemLine3(w, 0, 3.7f, 96, 97); thorn(w, 0, 99); thorn(w, 4, 101);
         // 3. il colpo di scena: le rane abitano proprio il sentiero; si salta loro in testa o si aspetta che balzino via
         path(w, 112, 125, 2); frog(w, 2, 116); frog(w, 2, 122); gemLine(w, 0, 112, 125);
         path(w, 126, 137, 4); plant(w, 4, 131); gemLine(w, 2, 126, 137);
@@ -163,7 +162,7 @@ public final class Levels3C {
         pit(w, 94, 97, 0, 4); arc(w, 0, 94, 97);
         // la radura: il fuoco si ferma, la chiave sta sopra la scala di tronchi
         for (int x = 1; x <= 3; x++) { set(w, x, 106, 1); for (int z = 107; z <= 113; z++) set(w, x, z, 2); set(w, x, 114, 1); }
-        w.battery = new float[] {0, 2.6f, 110f}; gemLine3(w, 0, 2.7f, 107, 109); gemLine3(w, 0, 2.7f, 111, 113); crate(w, 0, 118); crate(w, 4, 118);
+        gemLine3(w, 0, 2.7f, 107, 109); gemLine3(w, 0, 2.7f, 111, 113); crate(w, 0, 118); crate(w, 4, 118);
         // 3. il colpo di scena: il fuoco riparte più veloce e la strada si stringe sopra la lava, con i lapilli a tempo
         pit(w, 126, 150, 0, 1); pit(w, 126, 150, 3, 4); lap(w, 1, 132, 2.4f, 3.4f); lap(w, 3, 139, 2.2f, 3.4f); lap(w, 1, 146, 2.6f, 3.4f);
         gemLine(w, 0, 126, 150); sala(w, 2, 156, 152, 162);
@@ -193,7 +192,7 @@ public final class Levels3C {
         padRow(w, 74, 1, 3);
         for (int z = 80; z <= 88; z++) for (int x = 1; x <= 3; x++) set(w, x, z, 5);
         for (int x = 1; x <= 3; x++) { set(w, x, 89, 4); set(w, x, 90, 3); }
-        w.battery = new float[] {0, 6.3f, 84f}; sun(w, 0f, 7.2f, 84f, 1.5f, 2.0f); gem(w, -1, 5.7f, 82.5f); gem(w, 1, 5.7f, 86.5f);
+        sun(w, 0f, 7.2f, 84f, 1.5f, 2.0f); gem(w, -1, 5.7f, 82.5f); gem(w, 1, 5.7f, 86.5f);
         // 3. il colpo di scena: dal terzo piano la scala scende nel vuoto; il ponte di nuvole è sottile e le stelle cadono di traverso
         rise(w, 96, 3); pit(w, 102, 124, 0, 4); for (int z = 102; z <= 124; z++) for (int x = 1; x <= 3; x++) if (((z - 102) / 6) % 2 == 0 ? x != 3 : x != 1) set(w, x, z, 3);
         star(w, 4, 7f, 108, -2.6f, -2.8f); star(w, -4, 7f, 116, 2.6f, -2.8f); storm(w, 0, 120, true, 112f, 124f, 5f);

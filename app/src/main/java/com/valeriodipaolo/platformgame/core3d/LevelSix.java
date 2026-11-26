@@ -59,7 +59,7 @@ public final class LevelSix {
         set(w, 0, 97, 1); set(w, 0, 98, 2); set(w, 0, 99, 2); set(w, 0, 100, 1);
         set(w, 1, 98, 1); set(w, 1, 99, 1);
         pit(w, 101, 104, 0, 1);
-        w.battery = new float[] {-2, 2.7f, 98.5f};
+       
         crate(w, 3, 98);
         hog(w, 1.5f, 102, true, 96, 106.5f);
 

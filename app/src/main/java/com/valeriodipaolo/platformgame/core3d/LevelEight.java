@@ -71,7 +71,7 @@ public final class LevelEight {
 
         // --- radura: qui il fuoco si ferma. Una scala di massi porta alla cella energetica
         set(w, 0, 114, 1); set(w, 0, 115, 2); set(w, 0, 116, 3); set(w, 0, 117, 3); set(w, 0, 118, 2);
-        w.battery = new float[] {-2, 4.3f, 116.5f};
+       
         crate(w, 3, 119); crate(w, 4, 119); crate(w, 2, 121);
         gemLine(w, 1, 112, 118);
 

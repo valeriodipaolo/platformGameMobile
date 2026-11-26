@@ -54,7 +54,7 @@ public final class Renderer {
             for (int tx = tx0; tx <= tx1; tx++) {
                 if (tx < 0 || tx >= lv.w) continue;
                 char c = lv.get(tx, ty);
-                if (c == Level.EMPTY || c == Level.DOOR) continue;
+                if (c == Level.EMPTY || c == Level.DOOR || c == Level.FAKE) continue;      // la finta parete si disegna dopo il robot
                 int img;
                 boolean softEdge = false;
                 switch (c) {
@@ -143,7 +143,7 @@ public final class Renderer {
             }
         }
 
-        // ---- pezzi di gemma e cella energetica
+        // ---- pezzi di gemma e gettone d'oro
         int frame = (int) (g.time * 9f) % 6;
         for (float[] c : g.shards) {
             float x = (c[0] - cam) * s;
@@ -151,17 +151,17 @@ public final class Renderer {
             float bob = (float) Math.sin(g.time * 3f + c[0]) * 0.06f;
             p.image(Img.GEM + (frame + (int) c[0]) % 6, x + 0.14f * s, (c[1] + 0.1f + bob) * s, 0.72f * s, 0.72f * s, false, 1);
         }
-        if (g.battery != null) {
-            float x = (g.battery[0] - cam) * s;
+        if (g.coin != null) {
+            float x = (g.coin[0] - cam) * s;
             if (x > -s && x < sw) {
                 float bob = (float) Math.sin(g.time * 3f) * 0.07f;
-                p.image(Img.BATTERY, x, (g.battery[1] + bob) * s, 0.9f * s, 0.9f * s, false, 1);
+                coin(p, x + 0.5f * s, (g.coin[1] + 0.5f + bob) * s, 0.8f * s, g.time, 1f);
             }
         }
         for (float[] c : g.pops) {
             float a = Math.min(1f, ((c[4] == 1 ? 0.8f : 0.5f) - c[3]) * 6f);
             if (c[4] == 1) {
-                p.image(Img.CHIP, (c[0] - cam + 0.05f) * s, (c[1] + 0.05f) * s, 0.9f * s, 0.9f * s, false, a);
+                coin(p, (c[0] - cam + 0.5f) * s, (c[1] + 0.5f) * s, 0.85f * s, g.time * 3f, a);
             } else {
                 p.image(Img.GEM + (int) (c[3] * 24f) % 6, (c[0] - cam + 0.14f) * s, (c[1] + 0.1f) * s, 0.72f * s, 0.72f * s, false, a);
             }
@@ -218,6 +218,13 @@ public final class Renderer {
                 p.image(Img.HV_BOLT, bx - bw / 2, by - 0.1f * s, bw, bot - by + 0.1f * s, ((int) (g.time * 30f) & 1) == 0, Math.max(0.05f, a));
             }
             p.image(img, x - w / 2, (e.y + e.h + 0.03f) * s - h, w, h, e.dir > 0, 1);
+            if (e == g.coinFoe) {                      // chi ha addosso il gettone luccica d'oro ogni tanto, per un attimo
+                float gl = (g.time + e.x0 * 0.37f) % 3.2f;
+                if (gl < 0.35f) {
+                    float k = (float) Math.sin(Math.PI * gl / 0.35f), gs = 0.7f * s * k;
+                    p.image(Img.HV_SPARK, x - gs / 2 + 0.15f * w, (e.y + e.h * 0.35f) * s - gs / 2, gs, gs, false, 0.9f * k);
+                }
+            }
         }
 
         for (float[] q : g.shots) p.image(Img.FX_SNOWBALL, (q[0] - cam - 0.25f) * s, (q[1] - 0.25f) * s, 0.5f * s, 0.5f * s, false, 1);
@@ -283,6 +290,7 @@ public final class Renderer {
             hw *= 0.8f + 0.2f * f2; hh *= 0.8f + 0.2f * f2;
         }
         p.image(img, cx - hw / 2, by - hh, hw, hh, flip, al);
+        drawFake(g, p, s, cam, th, au, pl);
         if (g.spinning()) {                         // dieci anelli tenui, stessa estensione di prima
             float k = 1.9f * s * (1f + 0.1f * (float) Math.sin(g.time * 45f));
             p.image(Img.SPIN_FX, cx - k / 2, by - 0.55f * s - k / 2, k, k, false, 0.8f);
@@ -297,12 +305,8 @@ public final class Renderer {
         p.image(Img.GEM + 3, m, 0.34f * s, 0.78f * s, 0.78f * s, false, 1);
         p.text(g.gems + "/" + g.gemTotal, m + 0.9f * s, base, ts, Painter.ALIGN_LEFT, WHITE);
         float ix = m, iy = 1.3f * s, isz = 0.85f * s;
-        p.image(Img.BATTERY, ix, iy, isz, isz, false, g.batteryOwned ? 1f : 0.4f);
+        p.image(Img.COIN, ix, iy, isz, isz, false, g.coinOwned ? 1f : 0.35f);
         ix += isz * 1.25f;
-        if (g.secretOwned) {
-            p.image(Img.CHIP, ix, iy, isz, isz, false, 1);
-            ix += isz * 1.25f;
-        }
         p.image(Img.GEM_FULL, ix, iy, isz, isz, false, g.gemOwned ? 1f : 0.4f);
         p.text(com.valeriodipaolo.platformgame.core.Levels.title(g.levelNo), sw / 2, base - 0.52f * s, 0.3f * s, Painter.ALIGN_CENTER, 0xFFFFE082);   // numero e nome del livello
         p.text("PUNTI " + g.score, sw / 2, base, ts, Painter.ALIGN_CENTER, WHITE);
@@ -335,12 +339,12 @@ public final class Renderer {
             p.text(won ? "LIVELLO COMPLETATO!" : "PARTITA FINITA", sw / 2, 3.3f * s, 1.1f * s, Painter.ALIGN_CENTER, WHITE);
             p.text("Punti: " + g.score + "   Gemme: " + g.gems + "/" + g.gemTotal, sw / 2, 4.6f * s, 0.6f * s, Painter.ALIGN_CENTER, WHITE);
             if (won) {
-                float sz = 1.1f * s, step = 3.6f * s, x0 = sw / 2 - step, y0 = 5.3f * s;
-                int[] icons = {Img.BATTERY, Img.CHIP, Img.GEM_FULL};
-                boolean[] owned = {g.batteryOwned, g.secretOwned, g.gemOwned};
-                String[] names = {"Chiave", "Chip segreto", "Gemma " + g.gems + "/" + g.gemTotal};
-                for (int i = 0; i < 3; i++) {
-                    float ix2 = x0 + i * step;
+                float sz = 1.1f * s, step = 3.6f * s, y0 = 5.3f * s;
+                int[] icons = {Img.COIN, Img.GEM_FULL};
+                boolean[] owned = {g.coinOwned, g.gemOwned};
+                String[] names = {"Gettone d'oro", "Gemma " + g.gems + "/" + g.gemTotal};
+                for (int i = 0; i < 2; i++) {
+                    float ix2 = sw / 2 + (i - 0.5f) * step;
                     p.image(icons[i], ix2 - sz / 2, y0, sz, sz, false, owned[i] ? 1f : 0.25f);
                     p.text(names[i], ix2, y0 + sz + 0.55f * s, 0.4f * s, Painter.ALIGN_CENTER, owned[i] ? WHITE : 0xFF9E9E9E);
                 }
@@ -348,6 +352,36 @@ public final class Renderer {
             if (g.stateTime > 1.2f) {
                 p.text(won ? Levels.wonText(g.levelNo) : "Tocca lo schermo per riprovare", sw / 2, 9.4f * s, 0.5f * s, Painter.ALIGN_CENTER, 0xFFFFE082);
             }
+        }
+    }
+
+    /** Gettone d'oro che ruota su se stesso: centro (cx, cy), diametro d in pixel. */
+    public static void coin(Painter p, float cx, float cy, float d, float t, float a) {
+        float k = (float) Math.cos(t * 2.6f), w = d * Math.max(0.12f, Math.abs(k));
+        p.image(Img.COIN, cx - w / 2, cy - d / 2, w, d, k < 0, a);
+    }
+
+    /**
+     * Finte pareti: pietra disegnata davanti al robot; quando il robot ci entra diventano trasparenti attorno a lui, così si vede
+     * il nascondiglio.
+     */
+    private static void drawFake(Game g, Painter p, float s, float cam, int th, boolean au, Body pl) {
+        Level lv = g.level;
+        int img = th == 5 ? Img.HV_STONE : th == 4 ? Img.SP_STONE : th == 3 ? Img.FR_STONE : th == 2 ? Img.AR_STONE : au ? Img.AU_STONE : Img.STONE;
+        int tx0 = (int) Math.floor(cam), tx1 = (int) Math.floor(cam + g.viewW) + 1;
+        float pcx = pl.x + pl.w / 2, pcy = pl.y + pl.h / 2;
+        boolean inside = false;
+        for (int ty = (int) Math.floor(pl.y); ty <= (int) Math.floor(pl.y + pl.h); ty++)
+            for (int tx = (int) Math.floor(pl.x); tx <= (int) Math.floor(pl.x + pl.w); tx++) if (lv.get(tx, ty) == Level.FAKE) inside = true;
+        for (int ty = 0; ty < lv.h; ty++) for (int tx = Math.max(0, tx0); tx <= Math.min(lv.w - 1, tx1); tx++) {
+            if (lv.get(tx, ty) != Level.FAKE) continue;
+            float a = 1f;
+            if (inside) {
+                float d = (float) Math.hypot(tx + 0.5f - pcx, ty + 0.5f - pcy);
+                a = Math.max(0.18f, Math.min(1f, (d - 1.2f) / 2.5f));
+            }
+            float x0 = Math.round((tx - cam) * s), x1 = Math.round((tx + 1 - cam) * s);
+            p.image(img, x0, Math.round(ty * s), x1 - x0, Math.round((ty + 1) * s) - Math.round(ty * s), false, a);
         }
     }
 

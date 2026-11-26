@@ -50,7 +50,7 @@ public final class LevelsC {
         b.row(253, 6, "?B?"); b.en(256, Enemy.PLANT);
         b.pad(262); b.flight(262); b.crow(267, 6f, 264, 272);
         // 4. l'esame: la chiave è sulla mensola alta, raggiungibile solo dal fiore; sotto una lumaca pattuglia il passaggio
-        b.sh(275, 9, 2); b.pad(282); b.plat(290, 4, 5); LevelsB.lvBattery(b, 292.5f, 2.6f); b.gem(290, 3); b.gem(294, 3);
+        b.sh(275, 9, 2); b.pad(282); b.plat(290, 4, 5); b.gem(290, 3); b.gem(294, 3);
         b.en(294, 9, Enemy.SNAIL, 287, 300); b.en(304, Enemy.FROG); b.thorn(309); b.en(314, Enemy.PLANT);
         b.arc(319, 5); b.en(329, Enemy.FROG);
         b.row(333, 6, "B?B"); b.en(338, Enemy.HOG, 334, 344); b.pad(343); b.flight(343);
@@ -93,7 +93,7 @@ public final class LevelsC {
         b.en(260, Enemy.PENGUIN, 258, 262); b.gem(255.5f, 6); b.gem(265.5f, 6);
         // 4. il fortino: tre torri di pietra, un pupazzo su ognuna; la chiave è sulla torre di mezzo, sotto il suo pupazzo
         b.sh(270, 9, 3); b.col(276, 3); b.en(276, 6, Enemy.SNOWMAN, 0, 0); b.en(281, Enemy.PENGUIN, 278, 286);
-        b.up(288, 3); b.plat(291, 6, 4); b.down(295, 3); b.en(293, 5, Enemy.SNOWMAN, 0, 0); LevelsB.lvBattery(b, 291.5f, 4.4f);
+        b.up(288, 3); b.plat(291, 6, 4); b.down(295, 3); b.en(293, 5, Enemy.SNOWMAN, 0, 0);
         b.en(302, Enemy.PENGUIN, 299, 308); b.col(310, 4); b.en(310, 5, Enemy.SNOWMAN, 0, 0); b.gem(306, 6);
         b.arc(319, 5); b.en(330, Enemy.SNOWMAN); b.col(327, 2);
         b.row(336, 6, "B?B"); b.en(342, Enemy.PENGUIN, 336, 348); b.col(350, 2); b.sh(345, 9, 3);
@@ -132,7 +132,7 @@ public final class LevelsC {
         b.col(252, 2); b.en(257, Enemy.HOG, 253, 262); b.col(263, 2); b.gem(252, 6); b.gem(263, 6);
         b.arc(269, 5);
         // 4. la torre della chiave: due piani di mensole, la chiave in cima; si sale saltando di piano in piano
-        b.sh(276, 9, 2); b.plat(282, 7, 5); b.plat(289, 4, 5); b.plat(296, 1, 4); LevelsB.lvBattery(b, 297.5f, 0f); b.gem(283, 6); b.gem(285, 6);
+        b.sh(276, 9, 2); b.plat(282, 7, 5); b.plat(289, 4, 5); b.plat(296, 1, 4); b.gem(283, 6); b.gem(285, 6);
         b.gem(290, 3); b.gem(292, 3); b.en(287, Enemy.SNAIL, 280, 300); b.en(291, 3, Enemy.SNAIL, 289, 293); b.crow(294, 2.5f, 286, 304);
         b.en(306, Enemy.HOG, 302, 312); b.row(310, 6, "?B?"); b.en(318, Enemy.ACORN);
         b.arc(323, 5);
@@ -171,7 +171,7 @@ public final class LevelsC {
         b.sh(231, 6, 7); b.en(242, Enemy.BEETLE); b.owl(248, 3.5f, 240, 256); b.en(252, Enemy.HOG, 246, 257);
         b.arc(259, 5);
         // 4. l'esame: la mensola della chiave, con tre ricci sotto e due gufi; la chiave è in cima, sopra i ricci
-        b.plat(268, 5, 16); b.chest(270, 6); b.chest(275, 6); b.chest(280, 6); LevelsB.lvBattery(b, 276f, 3.3f); b.sh(269, 4, 4); b.sh(279, 4, 4);
+        b.plat(268, 5, 16); b.chest(270, 6); b.chest(275, 6); b.chest(280, 6); b.sh(269, 4, 4); b.sh(279, 4, 4);
         b.owl(273, 2.5f, 266, 280); b.owl(286, 3f, 280, 294); b.gem(272.5f, 9); b.gem(277.5f, 9);
         b.en(292, Enemy.ACORN); b.row(297, 6, "B?B"); b.chest(298, 7); b.en(305, Enemy.HOG, 300, 310);
         b.arc(311, 5);
@@ -196,7 +196,7 @@ public final class LevelsC {
         b.pad(160); b.flight(160); b.cr(171, 9, 3); b.cr(176, 8, 3); b.cr(181, 9, 3); b.star(176, -2.5f); b.gem(177, 6);
         // 3. il colpo di scena: la scala di nuvole sale invece di attraversare; in cima la chiave, attorno due solleoni
         b.sh(188, 9, 2); b.cr(194, 7, 2); b.cr(198, 5, 2); b.cr(202, 3, 2); b.cr(206, 5, 2); b.cr(210, 7, 2);
-        b.gem(194, 5); b.gem(198, 3); b.gem(206, 3); b.gem(210, 5); LevelsB.lvBattery(b, 203f, 1.4f); b.sun(198.5f, 2f, 1.3f, 2.4f); b.sun(206.5f, 2f, 1.3f, -2.4f);
+        b.gem(194, 5); b.gem(198, 3); b.gem(206, 3); b.gem(210, 5); b.sun(198.5f, 2f, 1.3f, 2.4f); b.sun(206.5f, 2f, 1.3f, -2.4f);
         b.sh(214, 9, 3); b.storm(220, 2.4f, 212, 228); b.row(220, 6, "B?B");
         b.en(233, Enemy.BEETLE, 232, 234); b.gem(229.5f, 6); b.gem(237.5f, 6); b.star(236, -1f);
         // le colonne di marmo con i solleoni e il mattone segreto

@@ -61,7 +61,7 @@ public final class LevelTwelve {
         for (int z = 83; z <= 92; z++) for (int x = 1; x <= 3; x++) set(w, x, z, 4);
         for (int x = 1; x <= 3; x++) { set(w, x, 93, 2); set(w, x, 94, 1); }
         gem(w, -1, 4.7f, 85.5f); gem(w, 1, 4.7f, 90.5f);
-        w.battery = new float[] {0, 5.3f, 88f};
+       
 
         // --- sentiero stretto con il vuoto ai lati e due uccelli
         pit(w, 99, 116, 0, 0);

@@ -130,25 +130,44 @@ public class Check {
         }
         run(d, 2.5f, false, false, false);
         ok(d.state == Game.PLAYING && d.hp == 3 && d.invuln > 0, "dopo la morte si riparte con 3 punti vita e invulnerabilità");
-        // cella energetica: in vista sul terreno, si prende camminando
+        // gettone d'oro del livello 1: dentro la base della prima piramide, dietro una finta parete
         Game b = fresh();
-        ok(b.battery != null && b.level.solid((int) b.battery[0], 10) && b.battery[1] > 8.5f, "la cella energetica è sul terreno, a portata di cammino");
-        b.player.x = b.battery[0] - 2; b.player.y = 8.8f;
-        run(b, 1.2f, false, true, false);
-        ok(b.batteryOwned && b.battery == null, "camminando si prende la cella energetica");
+        ok(b.coin != null && b.level.get((int) b.coin[0], (int) b.coin[1]) == Level.FAKE, "il gettone è nascosto dentro la finta parete: " + (b.coin == null ? "-" : (int) b.coin[0]));
+        b.enemies.clear();
+        b.player.x = b.coin[0] + 5; b.player.y = 8.8f;
+        run(b, 1.2f, true, false, false);
+        ok(b.coinOwned && b.coin == null, "tornando indietro contro il gradino più basso si entra nella finta parete e si prende il gettone");
+        Game ft = fresh();
+        int fx = -1; for (int x = 0; x < ft.level.w && fx < 0; x++) if (ft.level.get(x, 9) == Level.FAKE) fx = x;
+        ft.player.x = fx + 0.2f; ft.player.y = 6.5f; ft.player.vy = 0;
+        run(ft, 0.6f, false, false, false);
+        ok(ft.player.onGround && ft.player.y + ft.player.h <= 9.05f, "sopra la finta parete si sta in piedi come sulla pietra: piedi a " + (ft.player.y + ft.player.h));
 
-        // oggetto segreto: solo colpendo da sotto il mattoncino giusto
-        Game sg = fresh();
+        // gettone nel mattoncino (livello 7): solo colpendo da sotto quello giusto
+        Game sg = new Game(new MemorySave(), 7);
         int secrets = 0, sx = -1, sy = -1;
         for (int y = 0; y < sg.level.h; y++) for (int x = 0; x < sg.level.w; x++) if (sg.level.get(x, y) == Level.SECRET) { secrets++; sx = x; sy = y; }
-        ok(secrets == 1, "nel livello c'è un solo mattoncino segreto: (" + sx + "," + sy + ")");
+        ok(secrets == 1 && sg.coin == null, "nel livello 7 c'è un solo mattoncino segreto: (" + sx + "," + sy + ")");
         for (int y = 0; y < sg.level.h; y++) for (int x = 0; x < sg.level.w; x++) {
             if (sg.level.get(x, y) == Level.BRICK) sg.hitBlock(x, y);
         }
-        ok(!sg.secretOwned, "colpire gli altri mattoncini non dà il chip");
+        ok(!sg.coinOwned, "colpire gli altri mattoncini non dà il gettone");
         sg.player.x = sx + 0.19f; sg.player.y = sy + 1.0f; sg.player.vy = -8f;       // testa sotto il mattoncino, in salita
         for (int i = 0; i < 30; i++) { sg.setInput(false, false, true); sg.update(1f / 60f); }
-        ok(sg.secretOwned && sg.level.get(sx, sy) == Level.USED, "dando la capocciata al mattoncino segreto si ottiene il chip");
+        ok(sg.coinOwned && sg.level.get(sx, sy) == Level.USED, "dando la capocciata al mattoncino segreto si ottiene il gettone");
+
+        // gettone addosso a un nemico (livello 3, il primo corvo): eliminandolo schizza fuori
+        Game fg = new Game(new MemorySave(), 3);
+        ok(fg.coinFoe != null && fg.coinFoe.type == Enemy.CROW, "nel livello 3 il gettone ce l'ha un corvo");
+        fg.coinFoe.flatTime = 0.45f;
+        fg.update(1f / 60f);
+        ok(fg.coinOwned && fg.coinFoe == null, "schiacciando il corvo giusto si ottiene il gettone");
+        for (int id : new int[] {1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31, 33}) {
+            Game q = new Game(new MemorySave(), id);
+            int sec = 0; for (int y = 0; y < q.level.h; y++) for (int x = 0; x < q.level.w; x++) if (q.level.get(x, y) == Level.SECRET) sec++;
+            int ways = (q.coin != null ? 1 : 0) + (q.coinFoe != null ? 1 : 0) + sec;
+            ok(ways == 1, "livello " + id + ": un gettone d'oro e un solo nascondiglio");
+        }
 
         // gemma completa: tutti i pezzi sparsi più le casse bonus
         Game gm = fresh();
@@ -165,16 +184,16 @@ public class Check {
         // ricominciando il livello i collezionabili ripartono da zero; il record resta salvato
         MemorySave ms = new MemorySave();
         Game s1 = new Game(ms);
-        s1.hitBlock(sx, sy);
-        s1.player.x = s1.battery[0]; s1.player.y = s1.battery[1] - 0.3f;
+        float[] cpos = s1.coin.clone();
+        s1.player.x = cpos[0]; s1.player.y = cpos[1] - 0.3f;
         s1.update(1f / 60f);
-        ok(s1.secretOwned && s1.batteryOwned && ms.has("l1_secret") && ms.has("l1_battery"), "chip e cella ottenuti e registrati");
+        ok(s1.coinOwned && ms.has("l1_coin"), "gettone ottenuto e registrato");
         s1.newGame();
-        ok(!s1.secretOwned && !s1.batteryOwned && !s1.gemOwned && s1.gems == 0, "ricominciando il livello i collezionabili sono azzerati");
-        ok(s1.battery != null && s1.level.get(sx, sy) == Level.SECRET, "e la cella e il mattoncino segreto sono di nuovo al loro posto");
-        ok(ms.has("l1_secret"), "il record dei collezionabili mai ottenuti resta salvato");
+        ok(!s1.coinOwned && !s1.gemOwned && s1.gems == 0, "ricominciando il livello i collezionabili sono azzerati");
+        ok(s1.coin != null, "e il gettone è di nuovo al suo posto");
+        ok(ms.has("l1_coin"), "il record dei collezionabili mai ottenuti resta salvato");
         Game s2 = new Game(ms);
-        ok(!s2.secretOwned && !s2.batteryOwned, "anche riaprendo il gioco si riparte da zero");
+        ok(!s2.coinOwned, "anche riaprendo il gioco si riparte da zero");
 
         // trottola: travolge i nemici senza perdere punti vita, poi ha un tempo di ricarica
         Game sp = fresh();

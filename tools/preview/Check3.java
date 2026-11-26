@@ -64,7 +64,6 @@ public class Check3 {
     /** Bot: va avanti scegliendo una colonna percorribile, salta burroni e gradini, usa la giravolta sui nemici e sulle casse. */
     static boolean bot(boolean verbose) {
         World3D w = fresh();
-        w.batteryOwned = true;
         boolean jump = false, held = false;
         float jumpTimer = 0;
         for (int f = 0; f < 60 * 240; f++) {
@@ -201,11 +200,12 @@ public class Check3 {
         run(w, 0.35f, 0, 0, false, true);
         ok(w.spinning() && !w.onGround && w.vy <= 0 && w.vy >= -1.7f, String.format("giravolta in aria: plana (velocità di discesa %.1f)", -w.vy));
 
-        // cella e gemma completa
+        // gettone d'oro: nella nicchia di pietra sul bordo destro
         w = fresh();
-        w.px = 0; w.pz = 51;
-        run(w, 0.6f, 0, 1, false, false);
-        ok(w.batteryOwned, "camminando si prende la cella energetica");
+        ok(w.coin != null && w.cell(4, (int) w.coin[2] - 1) == 3 && w.cell(4, (int) w.coin[2] + 1) == 3 && w.cell(3, (int) w.coin[2]) == 3, "il gettone sta in una nicchia chiusa da tre blocchi alti");
+        w.px = w.coin[0]; w.pz = w.coin[2]; w.py = 0;
+        run(w, 0.1f, 0, 0, false, false);
+        ok(w.coinOwned && w.coin == null, "entrando nella nicchia si prende il gettone");
         w = fresh();
         int crates = 0; for (boolean c : w.crate) if (c) crates++;
         ok(w.gemTotal == w.gemsList.size() + crates && crates > 0, "totale gemme = pezzi sparsi + casse: " + w.gemTotal);

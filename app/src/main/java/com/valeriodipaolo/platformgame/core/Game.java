@@ -37,11 +37,12 @@ public final class Game {
     public final List<Enemy> enemies = new ArrayList<Enemy>();
     /** Pezzi di gemma ancora da raccogliere: {x, y} della casella. */
     public final List<float[]> shards = new ArrayList<float[]>();
-    /** Oggetti che schizzano fuori dalle casse: {x, y, vy, età, tipo (0 gemma, 1 chip)}. */
+    /** Oggetti che schizzano fuori dalle casse: {x, y, vy, età, tipo (0 gemma, 1 gettone d'oro)}. */
     public final List<float[]> pops = new ArrayList<float[]>();
-    /** Cella energetica ancora sul terreno: {x, y}, oppure null se già presa in questa partita. */
-    public float[] battery;
-    /** Apertura del portone di fine livello (0..1): si apre solo con la cella di energia; la catapulta (t >= 0) riporta all'inizio. */
+    /** Gettone d'oro ancora da prendere in un punto del livello {x, y}, oppure null; coinFoe = il nemico che lo porta addosso. */
+    public float[] coin;
+    public Enemy coinFoe;
+    /** Apertura del portone di fine livello (0..1): si apre da solo all'arrivo; la catapulta (t >= 0) riporta all'inizio. */
     public float gateOpen, launchT = -1;
     private float lfx, lfy;
     /** Posizione del muro di fuoco (NaN = nessun fuoco in questo livello). */
@@ -66,7 +67,7 @@ public final class Game {
      * Collezionabili ottenuti in questa partita: si azzerano quando si ricomincia il livello (non quando si perde una vita
      * e si riparte dal punto sicuro). Il record di quelli mai ottenuti resta in {@link #save}.
      */
-    public boolean batteryOwned, secretOwned, gemOwned;
+    public boolean coinOwned, gemOwned;
     public String toast;
     public float toastTime;
     /** Secondi di invulnerabilità rimasti dopo un colpo (o dopo la ricomparsa). */
@@ -105,6 +106,7 @@ public final class Game {
 
     private void loadLevel() {
         level = levelNo > 24 ? LevelsC.build(levelNo) : levelNo > 12 ? LevelsB.build(levelNo) : levelNo == 11 ? LevelEleven.build() : levelNo == 9 ? LevelNine.build() : levelNo == 7 ? LevelSeven.build() : levelNo == 5 ? LevelFive.build() : levelNo == 3 ? LevelThree.build() : LevelOne.build();
+        Coins2D.place(level, levelNo);
         level.sealEnd();
         gateOpen = 0;
         launchT = -1;
@@ -127,8 +129,9 @@ public final class Game {
         for (int y = 0; y < level.h; y++) {
             for (int x = 0; x < level.w; x++) if (level.get(x, y) == Level.BONUS) gemTotal++;
         }
-        battery = level.battery == null ? null : new float[] {level.battery[0], level.battery[1]};
-        batteryOwned = secretOwned = gemOwned = false;      // ricominciando il livello si riparte da zero
+        coin = level.coin == null ? null : new float[] {level.coin[0], level.coin[1]};
+        coinFoe = level.coinFoe >= 0 && level.coinFoe < enemies.size() ? enemies.get(level.coinFoe) : null;
+        coinOwned = gemOwned = false;      // ricominciando il livello si riparte da zero
         pops.clear();
         toast = null;
         toastTime = 0;
@@ -441,12 +444,7 @@ public final class Game {
         } else if (c == Level.SECRET) {
             level.set(tx, ty, Level.USED);
             pops.add(new float[] {tx, ty - 1, -14f, 0, 1});
-            if (!secretOwned) {
-                secretOwned = true;
-                save.set(level.id + "_secret");
-                score += 1000;
-                showToast("Chip segreto trovato!");
-            }
+            gotCoin();
         }
         for (Enemy e : enemies) {                          // chi sta sopra la casella colpita vola via
             if (e.dead || e.flung || e.flatTime > 0 || (e.type == Enemy.SNAIL && e.mode < 2)) continue;
@@ -545,6 +543,11 @@ public final class Game {
                 if (player.x + player.w > e.x - 0.1f && player.x < e.x + e.w + 0.1f && player.y + player.h > e.y - 0.9f && player.y < e.y + e.h) hurt();
             }
         }
+        if (coinFoe != null && (coinFoe.flung || coinFoe.flatTime > 0)) {      // il nemico che aveva addosso il gettone: eliminato, il gettone schizza fuori
+            pops.add(new float[] {coinFoe.x + coinFoe.w / 2 - 0.5f, coinFoe.y - 0.6f, -14f, 0, 1});
+            coinFoe = null;
+            gotCoin();
+        } else if (coinFoe != null && coinFoe.dead) coinFoe = null;
         for (int i = shots.size() - 1; i >= 0; i--) {              // palle di neve
             float[] q = shots.get(i);
             q[3] += 30f * dt;
@@ -713,15 +716,20 @@ public final class Game {
                 checkGem();
             }
         }
-        if (battery != null && p.x < battery[0] + 0.9f && p.x + p.w > battery[0] && p.y < battery[1] + 0.9f && p.y + p.h > battery[1]) {
-            battery = null;
-            if (!batteryOwned) {
-                batteryOwned = true;
-                save.set(level.id + "_battery");
-                score += 500;
-                showToast("Chiave trovata!");
-            }
+        if (coin != null && p.x < coin[0] + 0.85f && p.x + p.w > coin[0] + 0.15f && p.y < coin[1] + 0.85f && p.y + p.h > coin[1] + 0.15f) {
+            pops.add(new float[] {coin[0], coin[1], -9f, 0, 1});
+            coin = null;
+            gotCoin();
         }
+    }
+
+    /** Gettone d'oro trovato: vale per il record anche se poi si ricomincia. */
+    private void gotCoin() {
+        if (coinOwned) return;
+        coinOwned = true;
+        save.set(level.id + "_coin");
+        score += 1000;
+        showToast("Gettone d'oro trovato!");
     }
 
     /** Con l'ultimo pezzo di gemma si ottiene la gemma completa. */
@@ -749,15 +757,12 @@ public final class Game {
         player.vy = -15f;
     }
 
-    /** Portone: con la cella di energia si apre all'avvicinarsi; il livello finisce qualche passo dopo l'ingresso. */
+    /** Portone: si apre da solo all'avvicinarsi; il livello finisce qualche passo dopo l'ingresso. */
     private void stepGate(float dt) {
         float fx = level.flagX;
-        if (batteryOwned && player.x > fx - 6f && gateOpen < 1f) {
+        if (player.x > fx - 6f && gateOpen < 1f) {
             gateOpen = Math.min(1f, gateOpen + dt);
             if (gateOpen > 0.6f) for (int y = level.flagBaseY - 3; y < level.flagBaseY; y++) if (level.get(level.flagX, y) == Level.DOOR) level.set(level.flagX, y, Level.EMPTY);
-        } else if (!batteryOwned && player.x > fx - 4.5f && toastTime <= 0) {
-            toast = "Serve la chiave per aprire il portone";
-            toastTime = 2.4f;
         }
         if (state == PLAYING && gateOpen > 0.6f && player.x + player.w / 2 >= fx + 1.5f) win();      // il robot entra nel varco e sparisce nell'oscurità del portone
         // catapulta: sopra la sua piattaforma, la trottola lancia il robot all'inizio del livello
