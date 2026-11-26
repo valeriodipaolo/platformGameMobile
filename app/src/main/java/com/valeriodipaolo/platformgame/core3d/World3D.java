@@ -72,7 +72,8 @@ public final class World3D {
     public static final float GUST = 1.7f, GUST_PUSH = 4.6f;
     /** Tratti in carrello: {z0, z1}; il carrello corre da solo, si sterza e si salta. */
     public final List<float[]> carts = new ArrayList<float[]>();
-    public static final float CART_SPEED = 9.5f, CART_X = 1.05f;
+    /** Velocità del carrello: parte da CART_SPEED e cresce fino a CART_SPEED + CART_RAMP alla fine del tratto. */
+    public static final float CART_SPEED = 10f, CART_RAMP = 3f, CART_X = 1.05f;
     public int flagZ;
     /** Portone di fine livello: si apre (0..1) da solo all'arrivo. */
     public float gateOpen;
@@ -340,6 +341,12 @@ public final class World3D {
         return false;
     }
 
+    /** Velocità del carrello alla riga z: il ritmo cresce man mano che si avanza. */
+    public float cartSpeed(float z) {
+        for (float[] c : carts) if (z >= c[0] && z < c[1]) return CART_SPEED + CART_RAMP * Math.max(0f, Math.min(1f, (z - c[0]) / (c[1] - c[0])));
+        return CART_SPEED;
+    }
+
     public boolean inCart() {
         for (float[] c : carts) if (pz >= c[0] && pz < c[1]) return true;
         return false;
@@ -471,7 +478,7 @@ public final class World3D {
         if (inQuick) max *= 0.38f;                         // sabbie mobili: si arranca
         boolean steering = joyX != 0 || joyY != 0;
         float tx = joyX * max, tz = joyY * max;
-        if (cart) { tx = joyX * 5.5f; tz = CART_SPEED; steering = true; }     // il carrello va da solo: si sterza tra i binari
+        if (cart) { tx = joyX * 6f; tz = cartSpeed(pz); steering = true; }     // il carrello va da solo: si sterza tra i binari
         boolean flung = springBoost > 0 && !onGround;            // lanciato dal fiore: tiene la spinta fino all'atterraggio, sterzando di poco
         if (flung) { tx = springDx + joyX * 3f; tz = springDz + joyY * 3f; steering = true; }
         float rate = onGround ? (steering ? ACCEL : FRICTION) : (steering ? AIR_ACCEL : AIR_FRICTION);
@@ -482,7 +489,7 @@ public final class World3D {
         // a terra il robot si gira verso dove va; in aria non si volta
         float sp = (float) Math.sqrt(vx * vx + vz * vz);
         if (onGround && sp > 0.5f) {
-            float want = (float) Math.atan2(vx, vz), d = want - yaw;
+            float want = (float) Math.atan2(vx, vz) * (cart ? 0.35f : 1f), d = want - yaw;      // in carrello guarda avanti, si piega appena
             while (d > Math.PI) d -= 2 * Math.PI;
             while (d < -Math.PI) d += 2 * Math.PI;
             yaw += d * Math.min(1f, 16f * dt);

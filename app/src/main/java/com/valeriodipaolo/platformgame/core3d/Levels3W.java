@@ -178,7 +178,7 @@ public final class Levels3W {
                     skin(add(w, Enemy3.BEETLE, other - 2f, z + 9.5f, false, -1f, 1f, 0), Enemy3.SKIN_MOUSE); len = 10; break;
             }
             n++;
-            int gap = stage == 0 ? 12 + r.nextInt(3) : stage == 1 ? 10 + r.nextInt(3) : 8 + r.nextInt(3);
+            int gap = stage == 0 ? 10 + r.nextInt(3) : stage == 1 ? 9 + r.nextInt(2) : 8 + r.nextInt(2);
             z += len + gap - 2;
         }
         gemLine(w, 0, end + 2, end + 8);
@@ -190,8 +190,9 @@ public final class Levels3W {
      * l'arco dei livelli a piedi è troppo corto per la velocità del carrello e le prime gemme si perdevano.
      */
     private static void cartArc(World3D w, int z) {
-        for (float d = -0.5f; d <= 6.6f; d += 1.4f) {
-            float t = (d + 1.2f) / World3D.CART_SPEED, y = 10.5f * t - 12f * t * t;
+        float spd = w.cartSpeed(z);
+        for (int i = 0; i < 6; i++) {
+            float d = -0.5f + i * spd * 0.13f, t = (d + 1.2f) / spd, y = 10.5f * t - 12f * t * t;
             gem(w, 0, Math.max(0.7f, y + 0.55f), z + d);
         }
     }
