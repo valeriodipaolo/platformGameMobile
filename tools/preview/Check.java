@@ -325,6 +325,32 @@ public class Check {
         ok(Controls.zone(2399, 1079, 2400, 1080) == Controls.JUMP && Controls.zone(spx + 0.5f * sz, 5, 2400, 1080) == Controls.SPIN, "vale sull'intera altezza, anche in alto e agli angoli");
         ok(Controls.zone(1300, 300, 2400, 1080) == Controls.JUMP, "il salto resta valido su tutta la metà destra tranne la fascia della trottola");
 
+        // casse 2D: si aprono con la capocciata, atterrandoci sopra e con la giravolta; le rinforzate solo con la giravolta
+        {
+            Game cg = new Game(new MemorySave(), 3);
+            cg.enemies.clear();
+            int bx = -1, by = -1, qx = -1, qy = -1, ox = -1, oy = -1;
+            for (int x = 0; x < cg.level.w; x++) for (int y = 2; y < cg.level.h; y++) {
+                char c = cg.level.get(x, y);
+                boolean freeAbove = !cg.level.solid(x, y - 1) && !cg.level.solid(x, y - 2);
+                if (c == Level.BONUS && freeAbove && bx < 0) { bx = x; by = y; }
+                else if (c == Level.BONUS && freeAbove && ox < 0 && x > bx + 3) { ox = x; oy = y; }
+                if (c == Level.STEEL && freeAbove && qx < 0) { qx = x; qy = y; }
+            }
+            int g0 = cg.gems;
+            cg.player.x = bx + 0.2f; cg.player.y = by - 3f; cg.player.vy = 0;
+            run(cg, 0.5f, false, false, false);
+            ok(cg.level.get(bx, by) == Level.USED && cg.gems == g0 + 1, "atterrando sopra una cassa la si apre (" + bx + "," + by + ")");
+            g0 = cg.gems;
+            cg.player.x = qx + 0.2f; cg.player.y = qy - 3f; cg.player.vy = 0;
+            run(cg, 0.5f, false, false, false);
+            ok(cg.level.get(qx, qy) == Level.STEEL && cg.gems == g0, "atterrando sopra una cassa rinforzata resta chiusa");
+            for (int i = 0; i < 90; i++) cg.update(1f / 60f);
+            cg.player.x = ox - 0.75f; cg.player.y = oy - 0.1f; cg.player.vx = 0; cg.player.vy = 0;
+            cg.setInput(false, false, false, true); cg.update(1f / 60f); cg.setInput(false, false, false, false);
+            for (int i = 0; i < 6; i++) cg.update(1f / 120f);
+            ok(cg.level.get(ox, oy) == Level.USED, "la giravolta apre anche una cassa normale toccandola di lato");
+        }
         System.out.println(fails == 0 ? "TUTTO OK" : fails + " controlli falliti");
         System.exit(fails == 0 ? 0 : 1);
     }

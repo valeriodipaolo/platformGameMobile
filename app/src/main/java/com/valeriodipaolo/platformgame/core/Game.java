@@ -373,12 +373,26 @@ public final class Game {
             p.vy = Math.min(MAX_FALL, p.vy + ((p.vy < 0 && (jump || springBoost > 0)) ? GRAVITY_HOLD : GRAVITY) * dt);
         }
 
+        boolean wasGround = p.onGround;
+        float fallV = p.vy;
         p.move(level, dt);
         if (p.headTx >= 0) hitBlock(p.headTx, p.headTy);
-        if (spinActive) {                                           // la giravolta spacca le casse rinforzate che tocca
+        if (p.onGround && !wasGround && fallV > 2f) {                 // atterrando sopra una cassa la si apre e si rimbalza
+            int fy = (int) Math.floor(p.y + p.h + 0.02f);
+            boolean opened = false;
+            for (int tx = (int) Math.floor(p.x); tx <= (int) Math.floor(p.x + p.w - 0.001f); tx++) {
+                char c = level.get(tx, fy);
+                if (c == Level.BONUS || (c == Level.STEEL && spinActive)) { hitBlock(tx, fy); opened = true; }
+                else if (c == Level.STEEL) hitBlock(tx, fy);                     // rinforzata: resta chiusa (e compare l'avviso)
+            }
+            if (opened) { p.vy = jump ? -15f : -10f; p.onGround = false; airJumps = 1; coyote = 0; }
+        }
+        if (spinActive) {                                           // la giravolta apre le casse che tocca, anche le rinforzate
             for (int ty = (int) Math.floor(p.y - SPIN_REACH); ty <= (int) Math.floor(p.y + p.h + SPIN_REACH); ty++)
-                for (int tx = (int) Math.floor(p.x - SPIN_REACH); tx <= (int) Math.floor(p.x + p.w + SPIN_REACH); tx++)
-                    if (level.get(tx, ty) == Level.STEEL) hitBlock(tx, ty);
+                for (int tx = (int) Math.floor(p.x - SPIN_REACH); tx <= (int) Math.floor(p.x + p.w + SPIN_REACH); tx++) {
+                    char c = level.get(tx, ty);
+                    if (c == Level.STEEL || c == Level.BONUS) hitBlock(tx, ty);
+                }
         }
         if (springBoost > 0) springBoost -= dt;
         springAge += dt;

@@ -107,6 +107,25 @@ public class CheckIsland {
         w = at(40, 0, 33f); z0 = w.pz;
         run(w, 0.8f, 0, 0, false);
         ok(w.pz - z0 > 5f && w.inCart(), "il carrello corre da solo: " + (w.pz - z0) + " caselle in 0,8 s");
+        // casse 3D in tutti i livelli: atterrandoci sopra o con la giravolta si aprono; le rinforzate solo con la giravolta
+        {
+            World3D cw = at(2, 0, 3);
+            int wood = -1, steel = -1;
+            for (int kk = 0; kk < cw.crate.length; kk++) if (cw.crate[kk] && cw.height[kk] == 0) {
+                if (cw.crateKind[kk] == World3D.C_WOOD && wood < 0) wood = kk;
+                if (cw.crateKind[kk] == World3D.C_STEEL && steel < 0) steel = kk;
+            }
+            ok(wood >= 0 && steel >= 0, "nel livello 2 ci sono casse di legno e rinforzate");
+            cw.px = wood % World3D.W - World3D.HALF + 0.5f; cw.pz = wood / World3D.W + 0.5f; cw.py = 2.5f; cw.vy = 0; cw.invuln = 99;
+            run(cw, 0.6f, 0, 0, false);
+            ok(!cw.crate[wood], "atterrando sopra una cassa di legno la si rompe");
+            cw.px = steel % World3D.W - World3D.HALF + 0.5f; cw.pz = steel / World3D.W + 0.5f; cw.py = 2.5f; cw.vy = 0;
+            run(cw, 0.6f, 0, 0, false);
+            ok(cw.crate[steel] && cw.py > 0.9f, "sopra la cassa rinforzata ci si sta in piedi: non si rompe");
+            run(cw, 1.0f, 0, 0, false);
+            for (int i = 0; i < 40; i++) { cw.setInput(0, 0, false, i < 2); cw.update(1f / 60f); }
+            ok(!cw.crate[steel], "la giravolta rompe la cassa rinforzata");
+        }
         System.out.println(fails == 0 ? "TUTTO OK" : fails + " FALLITI");
     }
 }
