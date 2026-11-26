@@ -79,7 +79,7 @@ public final class Game {
 
     private boolean left, right, jump, jumpWas, spin, spinWas;
     private float jumpBuffer, coyote, acc, checkpointX, checkpointY;
-    private boolean spinActive;
+    private boolean spinActive, steelHint;
     private int airJumps;
 
     public Game() {
@@ -125,11 +125,12 @@ public final class Game {
         for (float[] c : level.shards) shards.add(new float[] {c[0], c[1]});
         gemTotal = shards.size();
         for (int y = 0; y < level.h; y++) {
-            for (int x = 0; x < level.w; x++) if (level.get(x, y) == Level.BONUS) gemTotal++;
+            for (int x = 0; x < level.w; x++) if (level.get(x, y) == Level.BONUS || level.get(x, y) == Level.STEEL) gemTotal++;
         }
         coin = level.coin == null ? null : new float[] {level.coin[0], level.coin[1]};
         coinFoe = level.coinFoe >= 0 && level.coinFoe < enemies.size() ? enemies.get(level.coinFoe) : null;
         coinOwned = gemOwned = false;      // ricominciando il livello si riparte da zero
+        steelHint = false;
         pops.clear();
         toast = null;
         toastTime = 0;
@@ -374,6 +375,11 @@ public final class Game {
 
         p.move(level, dt);
         if (p.headTx >= 0) hitBlock(p.headTx, p.headTy);
+        if (spinActive) {                                           // la giravolta spacca le casse rinforzate che tocca
+            for (int ty = (int) Math.floor(p.y - SPIN_REACH); ty <= (int) Math.floor(p.y + p.h + SPIN_REACH); ty++)
+                for (int tx = (int) Math.floor(p.x - SPIN_REACH); tx <= (int) Math.floor(p.x + p.w + SPIN_REACH); tx++)
+                    if (level.get(tx, ty) == Level.STEEL) hitBlock(tx, ty);
+        }
         if (springBoost > 0) springBoost -= dt;
         springAge += dt;
         if (p.onGround) {                                           // fiore a molla: rimbalzo alto, tenendo la salita lenta come con il salto premuto
@@ -425,11 +431,15 @@ public final class Game {
     /** Casella colpita da sotto con la testa. */
     public void hitBlock(int tx, int ty) {
         char c = level.get(tx, ty);
-        if (c != Level.BONUS && c != Level.BRICK && c != Level.SECRET) return;
+        if (c != Level.BONUS && c != Level.BRICK && c != Level.SECRET && c != Level.STEEL) return;
         bumpTx = tx;
         bumpTy = ty;
         bumpAge = 0;
-        if (c == Level.BONUS) {
+        if (c == Level.STEEL && !spinActive) {         // rinforzata: la capocciata non basta
+            if (!steelHint) { steelHint = true; showToast("Cassa rinforzata: serve la giravolta"); }
+            return;
+        }
+        if (c == Level.BONUS || c == Level.STEEL) {
             level.set(tx, ty, Level.USED);
             gems++;
             score += 200;

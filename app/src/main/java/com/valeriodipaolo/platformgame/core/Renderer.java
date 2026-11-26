@@ -74,8 +74,9 @@ public final class Renderer {
                     case Level.SECRET: img = th == 5 ? Img.HV_BRICK : th == 4 ? Img.SP_BRICK : th == 3 ? Img.FR_BRICK : th == 2 ? Img.AR_BRICK : au ? Img.AU_BRICK : Img.BRICK; break;
                     case Level.CRUMBLE: img = th == 5 ? Img.HV_CRUMBLE : Img.FR_CRUMBLE; break;
                     case Level.SPRING: img = th == 5 ? Img.HV_SPRING : Img.SP_SPRING; break;
-                    case Level.BONUS: img = th == 5 ? Img.HV_BONUS : th == 4 ? Img.SP_BONUS : th == 3 ? Img.FR_BONUS : th == 2 ? Img.AR_BONUS : au ? Img.AU_BONUS : Img.BONUS; break;
-                    case Level.USED: img = th == 5 ? Img.HV_USED : th == 4 ? Img.SP_USED : th == 3 ? Img.FR_USED : th == 2 ? Img.AR_USED : au ? Img.AU_USED : Img.USED; break;
+                    case Level.BONUS: img = Img.CRATE2; break;               // le casse di legno dell'isola, in tutti i mondi
+                    case Level.STEEL: img = Img.CRATE2_STEEL; break;
+                    case Level.USED: img = Img.CRATE2_USED; break;
                     default: img = th == 5 ? Img.HV_STONE : th == 4 ? Img.SP_STONE : th == 3 ? Img.FR_STONE : th == 2 ? Img.AR_STONE : au ? Img.AU_STONE : Img.STONE; break;
                 }
                 float off = 0;

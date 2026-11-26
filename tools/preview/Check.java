@@ -178,8 +178,19 @@ public class Check {
             gm.update(1f / 120f);
         }
         ok(gm.shards.isEmpty() && !gm.gemOwned, "presi tutti i pezzi sparsi ma non le casse, la gemma non è ancora completa");
-        for (int y = 0; y < gm.level.h; y++) for (int x = 0; x < gm.level.w; x++) if (gm.level.get(x, y) == Level.BONUS) gm.hitBlock(x, y);
-        ok(gm.gemOwned && gm.gems == gm.gemTotal, "con anche le casse bonus si ottiene la gemma completa");
+        int steel = 0;
+        for (int y = 0; y < gm.level.h; y++) for (int x = 0; x < gm.level.w; x++) if (gm.level.get(x, y) == Level.BONUS) gm.hitBlock(x, y); else if (gm.level.get(x, y) == Level.STEEL) steel++;
+        ok(steel > 0 && !gm.gemOwned, "le casse rinforzate (" + steel + ") non si aprono con la capocciata: gemma non ancora completa");
+        // la giravolta contro la cassa rinforzata la apre
+        for (int y = 0; y < gm.level.h; y++) for (int x = 0; x < gm.level.w; x++) if (gm.level.get(x, y) == Level.STEEL) {
+            for (int i = 0; i < 120; i++) { gm.setInput(false, false, false, false); gm.update(1f / 60f); }      // finita la giravolta di prima
+            gm.hitBlock(x, y);
+            ok(gm.level.get(x, y) == Level.STEEL, "capocciata semplice sulla cassa rinforzata: resta chiusa");
+            gm.player.x = x - 0.7f; gm.player.y = y + 0.1f; gm.player.vx = 0; gm.player.vy = 0;
+            gm.setInput(false, false, false, true); gm.update(1f / 60f); gm.setInput(false, false, false, false);
+            for (int i = 0; i < 10; i++) gm.update(1f / 120f);
+        }
+        ok(gm.gemOwned && gm.gems == gm.gemTotal, "con la giravolta anche le rinforzate si aprono e si ottiene la gemma completa");
 
         // ricominciando il livello i collezionabili ripartono da zero; il record resta salvato
         MemorySave ms = new MemorySave();

@@ -574,7 +574,6 @@ public final class Scene3D {
             }
         }
 
-        dynamite = dynSpark = null;
         buildTrees();
         if (heaven) buildPuffs(w, z0, z1);
         else if (dry != 0) buildDry(w, z0, z1);
@@ -1385,6 +1384,7 @@ public final class Scene3D {
         crate = b.build(Img.BONUS, false, true);
         crate.spec = 0.1f; crate.shine = 20f;
         if ((autumn && !spring && !jungle) || aurora) buildPumpkin();
+        buildCrates();
         if (jungle || dry != 0) buildIsland();
         buildBoom();
         padDome = padTop = null;
@@ -2218,15 +2218,22 @@ public final class Scene3D {
         boomRing = b.build(-1, true, false);
     }
 
-    private void buildIsland() {
-        crateKinds = new Mesh[5];
-        int[] tex = {Img.R3J_CRATE, Img.R3J_TNT, Img.R3J_NITRO, Img.R3J_BOUNCE, Img.R3J_CHECK};
-        for (int k = 0; k < 5; k++) {
+    /** Casse dell'isola, usate in tutti i livelli: legno, dinamite (al posto della TNT), instabile, molla, ripartenza, rinforzata. */
+    private void buildCrates() {
+        crateKinds = new Mesh[6];
+        int[] tex = {Img.R3J_CRATE, Img.R3J_TNT, Img.R3J_NITRO, Img.R3J_BOUNCE, Img.R3J_CHECK, Img.R3J_STEEL};
+        for (int k = 0; k < 6; k++) {
             MeshBuilder b = new MeshBuilder();
             b.roundBox(0, 0.5f, 0, 0.94f, 0.94f, 0.94f, 0.07f, 63, 3);
             crateKinds[k] = b.build(tex[k], false, true);
-            crateKinds[k].spec = 0.15f; crateKinds[k].shine = 18f;
+            crateKinds[k].spec = k == 5 ? 0.35f : 0.15f; crateKinds[k].shine = k == 5 ? 30f : 18f;
         }
+        dynamite = MineModels.dynamite();
+        dynSpark = MineModels.spark();
+        springBox = CrateModels.spring();
+    }
+
+    private void buildIsland() {
         buildBoom();
         MeshBuilder b = new MeshBuilder();                                          // pestello: blocco di pietra scolpita con la faccia di un idolo
         b.roundBox(0, 0.8f, 0, 0.98f, 1.6f, 0.98f, 0.08f);
@@ -2299,7 +2306,30 @@ public final class Scene3D {
     private void drawIslandCrate(World3D w, Gfx3D g, int k) {
         int kind = w.crateKind[k];
         float t = w.crateT[k];
-        if (kind == World3D.C_NITRO && dynamite != null) {              // miniera: fascio di dinamite con la miccia che sfrigola
+        if (kind == World3D.C_TNT) {                                    // dinamite: con la miccia spenta finché non la si accende saltandoci sopra
+            Mat4.rotateY(m, 0.6f * ((k * 7) % 5 - 2) / 2f);
+            boolean lit = t > 0;
+            float sw = lit ? 1f + 0.12f * t / World3D.TNT_FUSE : 1f;
+            float fl = lit && (float) Math.sin(t * (4f + 10f * t / World3D.TNT_FUSE) * 6.283f) > 0 ? 1f : 0f;
+            Mat4.scale(m, sw, sw, sw);
+            g.draw(dynamite, m, 1, 1, 1, 1, 0.08f + 0.55f * fl);
+            if (lit) {
+                float sp = 0.85f + 0.4f * (float) Math.sin(w.time * 47f + k * 3) * (float) Math.sin(w.time * 23f);
+                Mat4.translate(m, MineModels.FUSE_X, MineModels.FUSE_Y - 0.12f * t / World3D.TNT_FUSE, MineModels.FUSE_Z);   // la miccia si accorcia
+                Mat4.rotateY(m, w.time * 13f + k);
+                Mat4.scale(m, sp, sp, sp);
+                g.draw(dynSpark, m, 1, 1, 1, 1, 1f);
+            }
+            return;
+        }
+        if (kind == World3D.C_BOUNCE) {                                 // molla: si schiaccia e rimbalza quando ci si atterra
+            float sq = 1f;
+            if (t > 0 && w.time - t < 0.3f) sq = 1f - 0.35f * (float) Math.sin(Math.PI * (w.time - t) / 0.3f);
+            Mat4.scale(m, 1f, sq, 1f);
+            g.draw(springBox, m, 1, 1, 1, 1, 0.08f);
+            return;
+        }
+        if (kind == World3D.C_NITRO && dry == 24) {                     // miniera: fascio di dinamite con la miccia che sfrigola
             Mat4.rotateY(m, 0.6f * ((k * 7) % 5 - 2) / 2f + 0.03f * (float) Math.sin(w.time * 29f + k));
             g.draw(dynamite, m, 1, 1, 1, 1, 0.1f + 0.08f * (float) Math.sin(w.time * 9f + k));
             float fl = 0.75f + 0.35f * (float) Math.sin(w.time * 47f + k * 3) * (float) Math.sin(w.time * 23f);
@@ -2619,7 +2649,7 @@ public final class Scene3D {
 
     // ------------------------------------------------------------------ deserto, fabbrica, miniera
 
-    private Mesh dynamite, dynSpark;
+    private Mesh dynamite, dynSpark, springBox;
     private Mesh cartMesh, beltBase, chevron, laserBeam, laserPost, quickPool, cactus, dustMote;
 
     /** Contorno dei mondi senza bosco: cactus e massi nel deserto, tubi e serbatoi in fabbrica, travi e lanterne in miniera, binari. */
@@ -2684,7 +2714,6 @@ public final class Scene3D {
         mineCart(b);
         cartMesh = b.build(-1, false, true);
         cartMesh.spec = 0.35f; cartMesh.shine = 22f;
-        if (dry == 24) { dynamite = MineModels.dynamite(); dynSpark = MineModels.spark(); }
         b = new MeshBuilder();
         b.quad(-0.5f, 0.02f, -0.5f, 0.5f, 0.02f, -0.5f, 0.5f, 0.02f, 0.5f, -0.5f, 0.02f, 0.5f, 0, 1, 0, 0, 0, 1, 1);
         beltBase = b.build(Img.R3F_BELT, false, true);

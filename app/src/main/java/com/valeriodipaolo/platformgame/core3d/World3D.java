@@ -41,7 +41,7 @@ public final class World3D {
     // ---- isola tropicale (livelli 35-37)
     /** Tipo di ogni cassa (null = tutte normali, come nei livelli di prima): legno, esplosiva a tempo, instabile, a molla, ripartenza. */
     public byte[] crateKind;
-    public static final byte C_WOOD = 0, C_TNT = 1, C_NITRO = 2, C_BOUNCE = 3, C_CHECK = 4;
+    public static final byte C_WOOD = 0, C_TNT = 1, C_NITRO = 2, C_BOUNCE = 3, C_CHECK = 4, C_STEEL = 5;
     /** Esplosiva accesa: secondi dall'accensione (0 = spenta). Cassa a molla: istante dell'ultimo rimbalzo. */
     public float[] crateT;
     public static final float TNT_FUSE = 3f, BOOM_R = 1.75f;
@@ -159,6 +159,8 @@ public final class World3D {
         noSidePaths();
         gemsOffThorns();
         seasonSkins();
+        if (crateKind == null) crateKind = new byte[crate.length];      // le casse dell'isola in tutti i livelli: si rompono anche saltandoci sopra
+        reinforce();
         Coins3D.place(this);
         if (coinFoeIdx >= 0 && coinFoeIdx < enemies.size()) coinFoe = enemies.get(coinFoeIdx);
         gemTotal = gemsList.size();
@@ -339,6 +341,12 @@ public final class World3D {
         float z = k / W + 0.5f;
         for (float[] c : carts) if (z >= c[0] && z < c[1]) return true;
         return false;
+    }
+
+    /** Una cassa di legno ogni tre diventa rinforzata: ci si sale sopra senza romperla, la apre solo la giravolta. */
+    private void reinforce() {
+        int n = 0;
+        for (int k = 0; k < crate.length; k++) if (crate[k] && crateKind[k] == C_WOOD && n++ % 3 == 2) crateKind[k] = C_STEEL;
     }
 
     /** Velocità del carrello alla riga z: il ritmo cresce man mano che si avanza. */
@@ -1231,6 +1239,8 @@ public final class World3D {
         }
         if (best < 0) return;
         switch (crateKind[best]) {
+            case C_STEEL:                                  // rinforzata: regge come un blocco, saltandoci sopra non si apre
+                return;
             case C_BOUNCE:
                 vy = 12.5f; crateT[best] = time; bounceBoost = 0.6f;     // stessa altezza che si tenga premuto il salto o no
                 break;

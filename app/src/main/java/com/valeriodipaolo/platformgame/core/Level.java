@@ -14,6 +14,8 @@ public final class Level {
     public static final char SPRING = 'P';
     /** Finta parete: si disegna come la pietra, davanti al robot, ma ci si passa attraverso (nasconde il gettone d'oro). */
     public static final char FAKE = 'F';
+    /** Cassa rinforzata: come la cassa bonus, ma una capocciata non basta; si rompe solo con la giravolta. */
+    public static final char STEEL = 'R';
 
     public final int w, h;
     private final char[] t;

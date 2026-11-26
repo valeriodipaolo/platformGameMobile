@@ -17,6 +17,8 @@ public final class Coins2D {
         for (int y = 0; y < lv.h; y++) for (int x = 0; x < lv.w; x++) if (lv.get(x, y) == Level.SECRET) lv.set(x, y, Level.BRICK);
         lv.coin = null;
         lv.coinFoe = -1;
+        int nb = 0;                                    // una cassa ogni tre diventa rinforzata (si apre solo con la giravolta)
+        for (int x = 0; x < lv.w; x++) for (int y = 0; y < lv.h; y++) if (lv.get(x, y) == Level.BONUS && nb++ % 3 == 2) lv.set(x, y, Level.STEEL);
         switch (id) {
             case 1: carve(lv, 96); break;          // la prima piramide
             case 3: lv.coinFoe = 1; break;         // il primo corvo

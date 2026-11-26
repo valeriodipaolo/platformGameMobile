@@ -75,7 +75,9 @@ public final class Img {
      * 2 camminatore schiacciato, 3-4 spinoso, 5-6 volatile, 7 saltatore a terra, 8 in aria, 9 schiacciato. S2_SN: tartaruga (0-2) e lumaca (3-5).
      */
     public static final int S2 = 321, S2_SN = 381;
-    public static final int COUNT = 387;
+    /** Casse di legno (stile isola) anche nel 2D: piena, aperta, rinforzata; e la rinforzata 3D. */
+    public static final int CRATE2 = 387, CRATE2_USED = 388, CRATE2_STEEL = 389, R3J_STEEL = 390;
+    public static final int COUNT = 391;
 
 
     /** Fotogramma j (0..23) del ciclo di corsa. */
@@ -132,6 +134,7 @@ public final class Img {
         "s2_3_0", "s2_3_1", "s2_3_2", "s2_3_3", "s2_3_4", "s2_3_5", "s2_3_6", "s2_3_7", "s2_3_8", "s2_3_9",
         "s2_4_0", "s2_4_1", "s2_4_2", "s2_4_3", "s2_4_4", "s2_4_5", "s2_4_6", "s2_4_7", "s2_4_8", "s2_4_9",
         "s2_5_0", "s2_5_1", "s2_5_2", "s2_5_3", "s2_5_4", "s2_5_5", "s2_5_6", "s2_5_7", "s2_5_8", "s2_5_9",
-        "s2_sn_0", "s2_sn_1", "s2_sn_2", "s2_sn_3", "s2_sn_4", "s2_sn_5"
+        "s2_sn_0", "s2_sn_1", "s2_sn_2", "s2_sn_3", "s2_sn_4", "s2_sn_5",
+        "crate2d", "crate2d_used", "crate2d_steel", "r3j_steel"
     };
 }
