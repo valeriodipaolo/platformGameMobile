@@ -155,7 +155,7 @@ public final class Levels3W {
                 case 1:                                            // due binari interrotti: resta una corsia sola
                     pit(w, z, z + 2, lane, lane); pit(w, z, z + 2, other, other); gemLine(w, free - 2, z - 1, z + 2); len = 3; break;
                 case 2:                                            // fossa su tutta la larghezza: si salta
-                    pit(w, z, z + 2, 0, 4); arc(w, 0, z, z + 2);
+                    pit(w, z, z + 2, 0, 4); cartArc(w, z);
                     if (mineCoinZ < 0 && z > 380) mineCoinZ = z;
                     len = 3; break;
                 case 3:                                            // cassa di nitroglicerina su un binario
@@ -169,7 +169,7 @@ public final class Levels3W {
                 case 7:                                            // binario rotto e cassa sull'altro: passa solo la terza corsia
                     pit(w, z, z + 2, lane, lane); crateK(w, other, z + 1, World3D.C_NITRO); gemLine(w, free - 2, z - 1, z + 2); len = 3; break;
                 case 8:                                            // salto, e appena atterrati una cassa da schivare
-                    pit(w, z, z + 1, 0, 4); arc(w, 0, z, z + 1); crateK(w, lane, z + 9, World3D.C_NITRO); gem(w, other - 2, 0.7f, z + 9.5f); len = 10; break;
+                    pit(w, z, z + 1, 0, 4); cartArc(w, z); crateK(w, lane, z + 9, World3D.C_NITRO); gem(w, other - 2, 0.7f, z + 9.5f); len = 10; break;
                 case 9:                                            // due binari rotti, poi un pipistrello
                     pit(w, z, z + 2, lane, lane); pit(w, z, z + 2, other, other); gemLine(w, free - 2, z - 1, z + 2);
                     skin(add(w, Enemy3.CROW, 0, z + 11.5f, false, -1f, 1f, 0.9f), Enemy3.SKIN_BAT); len = 12; break;
@@ -183,6 +183,17 @@ public final class Levels3W {
         }
         gemLine(w, 0, end + 2, end + 8);
         w.flagZ = MINE_LEN - 2;
+    }
+
+    /**
+     * Arco di gemme sul binario centrale che segue la parabola vera del carrello lanciato (salto spiccato poco prima della fossa):
+     * l'arco dei livelli a piedi è troppo corto per la velocità del carrello e le prime gemme si perdevano.
+     */
+    private static void cartArc(World3D w, int z) {
+        for (float d = -0.5f; d <= 6.6f; d += 1.4f) {
+            float t = (d + 1.2f) / World3D.CART_SPEED, y = 10.5f * t - 12f * t * t;
+            gem(w, 0, Math.max(0.7f, y + 0.55f), z + d);
+        }
     }
 
     /**

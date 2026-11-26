@@ -161,7 +161,7 @@ public final class World3D {
         Coins3D.place(this);
         if (coinFoeIdx >= 0 && coinFoeIdx < enemies.size()) coinFoe = enemies.get(coinFoeIdx);
         gemTotal = gemsList.size();
-        for (int k = 0; k < crate.length; k++) if (crate[k] && k != coinCrate && (crateKind == null || crateKind[k] != C_BOUNCE)) gemTotal++;
+        for (int k = 0; k < crate.length; k++) if (crate[k] && k != coinCrate && (crateKind == null || crateKind[k] != C_BOUNCE) && !hazardOnly(k)) gemTotal++;
         if (crateKind != null) crateT = new float[crate.length];
         coinOwned = gemOwned = false;
         pops.clear();
@@ -327,6 +327,17 @@ public final class World3D {
         if (a < r[3] + 0.5f) return 1 - (a - r[3]) / 0.5f;
         r[2] = -1;
         return 0;
+    }
+
+    /**
+     * Cassa esplosiva sul percorso del carrello: è solo un ostacolo (farla scoppiare costa un punto vita), quindi non contiene
+     * gemme e non conta nel totale. Sull'isola invece le esplosive si fanno saltare da lontano e valgono come le altre.
+     */
+    private boolean hazardOnly(int k) {
+        if (crateKind == null || (crateKind[k] != C_TNT && crateKind[k] != C_NITRO)) return false;
+        float z = k / W + 0.5f;
+        for (float[] c : carts) if (z >= c[0] && z < c[1]) return true;
+        return false;
     }
 
     public boolean inCart() {
@@ -1183,7 +1194,7 @@ public final class World3D {
         crate[k] = false;
         float cx = k % W - HALF + 0.5f, cz = k / W + 0.5f;
         if (k == coinCrate) gotCoin(cx, 0.8f, cz);
-        else { gems++; checkGem(); }
+        else if (!hazardOnly(k)) { gems++; checkGem(); }
         booms.add(new float[] {cx, cz, 0});
         float dx = px - cx, dz = pz - cz;
         if (dx * dx + dz * dz < BOOM_R * BOOM_R && py < 2.2f) hurt();
