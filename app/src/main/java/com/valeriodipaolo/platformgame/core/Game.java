@@ -532,7 +532,7 @@ public final class Game {
             if (e.grace > 0) e.grace -= dt;
             // la lumaca col guscio è invulnerabile alla giravolta; chiusa nel guscio (dopo il salto in testa) la giravolta la uccide
             if (snail && e.mode == 0 && spinActive && touches(player, e, SPIN_REACH) && !(player.vy > 0 && player.y + player.h - e.y < 0.75f)) continue;      // la giravolta contro il guscio non fa male né a lei né al robot
-            boolean spinHit = spinActive && spinnable(e) && !(snail && e.mode == 0) && touches(player, e, SPIN_REACH);
+            boolean spinHit = spinActive && spinnable(e) && !(snail && e.mode == 0) && (touches(player, e, SPIN_REACH) || plantBiteTouch(e));
             if (spinHit) {                             // saltata in testa e poi travolta nel guscio: muore con due colpi                      // la trottola travolge i nemici
                 if (e.grace <= 0) {
                     e.flung = true;
@@ -597,8 +597,7 @@ public final class Game {
         switch (e.type) {
             case Enemy.LAPILLO: case Enemy.STAR: return false;
             case Enemy.CHESTNUT: return e.mode == 3;
-            case Enemy.PLANT: return e.mode != 2;
-            default: return true;
+            default: return true;                                   // anche la pianta alzata a mordere: la giravolta la stende
         }
     }
 
@@ -715,6 +714,14 @@ public final class Game {
         int ty = Math.max(0, (int) Math.floor(e.y + e.h));
         while (ty < level.h && !level.solid(tx, ty)) ty++;
         return ty;
+    }
+
+    /** La giravolta raggiunge la testa della pianta carnivora quando è alzata a mordere (una casella sopra il vaso). */
+    private boolean plantBiteTouch(Enemy e) {
+        if (e.type != Enemy.PLANT || e.mode != 2) return false;
+        Body p = player;
+        float m = SPIN_REACH;
+        return p.x - m < e.x + e.w + 0.1f && p.x + p.w + m > e.x - 0.1f && p.y - m < e.y + e.h && p.y + p.h + m > e.y - 0.9f;
     }
 
     private static boolean touches(Body a, Body b, float m) {

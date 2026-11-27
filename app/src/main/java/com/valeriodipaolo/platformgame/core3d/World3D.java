@@ -1007,7 +1007,18 @@ public final class World3D {
                     e.reach = e.hopT * (u < 0.35f ? (1f - (1f - u / 0.35f) * (1f - u / 0.35f)) : u < 0.55f ? 1f : Math.max(0f, 1f - (u - 0.55f) / 0.45f));
                     if (state == PLAYING && u < 0.6f) {
                         float hx = e.x + (float) Math.sin(e.yaw) * e.reach, hz = e.z + (float) Math.cos(e.yaw) * e.reach;
-                        if (Math.abs(hx - px) < 0.55f && Math.abs(hz - pz) < 0.55f && py < e.y + 1.4f && py + PLAYER_H > e.y + 0.3f) hurt();
+                        boolean head = py < e.y + 1.4f && py + PLAYER_H > e.y + 0.3f;
+                        if (spinActive && head && Math.abs(hx - px) < 0.55f + SPIN_REACH && Math.abs(hz - pz) < 0.55f + SPIN_REACH) {
+                            e.flung = true;                    // la giravolta stende anche la testa allungata verso il robot
+                            float l = Math.max(0.01f, (float) Math.sqrt((e.x - px) * (e.x - px) + (e.z - pz) * (e.z - pz)));
+                            e.vx = (e.x - px) / l * 6f;
+                            e.vz = (e.z - pz) / l * 6f + 3f;
+                            e.vy = 8f;
+                            e.reach = 0;
+                            score += 100;
+                            return true;
+                        }
+                        if (Math.abs(hx - px) < 0.55f && Math.abs(hz - pz) < 0.55f && head) hurt();
                     }
                     if (u >= 1f) { e.mode = 0; e.t = 0; e.reach = 0; }
                 }

@@ -33,7 +33,7 @@ final class Coins3D {
             case 26: nook(w, 0, 185); break;
             case 28: w.coin = new float[] {0f, 6.1f, 139.5f}; break;   // altissimo dopo la terza molla: ci arriva solo chi plana in giravolta
             case 30: w.coinFoeIdx = 5; break;             // una pianta carnivora
-            case 32: crate(w, 115); break;
+            case 32: nook(w, 4, 121); break;          // nella radura, dietro i blocchi sul bordo destro: si entra col doppio salto
             case 34: sky(w, 0, 85, 4.0f); break;          // sopra l'altopiano più alto
             case 35: bounceCrate(w, 212); break;      // la cassa a molla sul bordo, verso la fine
             case 36: w.coinFoeIdx = 2; break;             // il totem nel cortile

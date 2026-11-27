@@ -256,7 +256,7 @@ public final class LevelsB {
         b.plat(323, 9, 2); b.en(323.5f, 8, Enemy.FROG, 0, 0); b.gem(321.5f, 6); b.gem(325.5f, 6);
         // doppia molla: il primo fiore lancia sul secondo, sospeso; tra i due un campo di rovi con le piante
         b.sh(329, 9, 3); b.pad(334); b.thorn(338); b.en(341, Enemy.PLANT); b.thorn(344); b.thorn(347); b.plat(350, 7, 4); b.sh(350, 5, 4); b.en(356, Enemy.FROG);
-        b.row(360, 6, "B?B"); b.en(366, Enemy.PLANT); b.thorn(362);
+        b.row(360, 6, "B?B"); b.en(366, Enemy.PLANT); b.thornTop(362);
         // quarto fiume
         b.pad(372); b.flight(372); b.en(387, Enemy.FROG); b.en(392, Enemy.FROG); b.sh(389, 6, 3);
         b.hill(397, 407, 4); b.en(402, Enemy.PLANT); b.sh(399, 4, 2); b.sh(404, 4, 2); b.thorn(410); b.en(413, Enemy.HOG, 411, 420); b.row(414, 6, "?B?"); b.en(424, Enemy.PLANT);
@@ -367,7 +367,16 @@ public final class LevelsB {
     void sun(float x, float y, float r, float w) { lv.enemies.add(new float[] {x, y, Enemy.SUNNY, w, r}); }
 
     void jet(int x, float phase, float period) { lv.jets.add(new float[] {x, stand(x) + 1, period, phase}); }
-    void thorn(int x) { lv.thorns.add(new float[] {x, stand(x)}); }
+    /** Rovo sul terreno (mai sulle mensole o sulle casse sopra, dove starebbe sotto le gemme). */
+    void thorn(int x) { lv.thorns.add(new float[] {x, ground(x)}); }
+    /** Rovo sulla prima superficie dall'alto (sopra un mattone o una mensola). */
+    void thornTop(int x) { lv.thorns.add(new float[] {x, stand(x)}); }
+    /** Riga libera subito sopra il terreno, cercando dal basso. */
+    int ground(int x) {
+        int y = H - 1;
+        while (y >= 0 && lv.solid(x, y)) y--;
+        return y;
+    }
     void pad(int x) { lv.set(x, stand(x) + 1, Level.SPRING); }
 
     void flight(int x) {
