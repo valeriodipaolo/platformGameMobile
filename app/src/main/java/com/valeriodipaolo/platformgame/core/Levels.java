@@ -16,7 +16,7 @@ public final class Levels {
             "Pioggia di ricci", "Fuga dal rogo (3D)", "Scala celeste", "La vetta (3D)",
             "Isola: le casse", "Isola: il masso", "Isola: il fiume",
             "Le dune", "La fabbrica", "La miniera",
-            "Carrello nel bosco (3D)", "Carrello nella neve (3D)", "Binari tra le nuvole (3D)"};
+            "Carrello nel bosco (3D)", "Carrello nella neve (3D)", "Corsa tra le nuvole (3D)"};
 
     /** "LIVELLO 7 · Querceto": numero nell'ordine di gioco e nome. */
     public static String title(int id) { return "LIVELLO " + (slot(id) + 1) + "  \u00B7  " + NAMES[id].replace(" (3D)", ""); }

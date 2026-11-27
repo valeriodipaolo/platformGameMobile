@@ -220,4 +220,65 @@ final class MineModels {
                     x1 + a[0] * h, y1 + a[1] * h, z1 + a[2] * h, nx / nl, ny / nl, nz / nl, 0, 0, 1, 1);
         }
     }
+
+    /** Il robot sta in piedi sulla nuvola, con i piedi un poco affondati nel soffice. */
+    static final float CLOUD_RIDE = 0.34f;
+
+    /**
+     * Nuvola da cavalcare al posto del carrello: un cumulo di sbuffi bianchi più grandi al centro e piccoli ai bordi, piatto sotto
+     * e gonfio sopra, con un velo azzurrino in ombra; davanti e dietro si sfrangia in batuffoli più piccoli.
+     */
+    static Mesh cloud() {
+        MeshBuilder b = new MeshBuilder();
+        java.util.Random r = new java.util.Random(4343);
+        float[][] puffs = {
+            {0, 0.2f, 0, 0.42f}, {-0.3f, 0.17f, 0.18f, 0.3f}, {0.3f, 0.17f, 0.18f, 0.3f}, {-0.3f, 0.17f, -0.2f, 0.3f}, {0.3f, 0.17f, -0.2f, 0.3f},
+            {0, 0.22f, 0.4f, 0.3f}, {0, 0.2f, -0.45f, 0.32f}, {-0.48f, 0.12f, 0, 0.22f}, {0.48f, 0.12f, 0, 0.22f},
+            {-0.18f, 0.12f, 0.62f, 0.18f}, {0.2f, 0.11f, 0.6f, 0.17f}, {-0.2f, 0.12f, -0.68f, 0.2f}, {0.18f, 0.1f, -0.75f, 0.16f}, {0, 0.1f, -0.92f, 0.12f}
+        };
+        for (float[] p : puffs) {
+            int mk = b.mark();
+            float t = 0.94f + 0.06f * r.nextFloat();
+            b.colorf(t, t * 0.84f, t * 0.66f);                                     // dorata dal sole: si stacca dal pavimento di nuvole bianche
+            b.ellipsoid(p[0], p[1], p[2], p[3], p[3] * 0.72f, p[3], 14, 9);
+            b.rough(mk, p[3] * 0.08f, 6f, 90 + (int) (p[3] * 100), false);
+        }
+        b.colorf(0.86f, 0.62f, 0.56f);                                             // pancia in ombra, rosata
+        b.ellipsoid(0, 0.06f, -0.05f, 0.55f, 0.08f, 0.82f, 16, 6);
+        Mesh m = b.build(-1, false, true);
+        m.spec = 0.02f; m.shine = 4f;
+        return m;
+    }
+
+    /** Nuvoletta temporalesca bassa sul percorso (prende il posto della dinamite in cielo): sbuffi grigio piombo, pancia scura. */
+    static Mesh thunderCloud() {
+        MeshBuilder b = new MeshBuilder();
+        java.util.Random r = new java.util.Random(77);
+        float[][] puffs = {{0, 0.55f, 0, 0.34f}, {-0.26f, 0.48f, 0.05f, 0.24f}, {0.27f, 0.5f, -0.04f, 0.25f}, {0.05f, 0.7f, 0.06f, 0.24f}, {-0.1f, 0.5f, -0.22f, 0.2f}, {0.12f, 0.48f, 0.22f, 0.2f}};
+        for (float[] p : puffs) {
+            int mk = b.mark();
+            float t = 0.36f + 0.1f * r.nextFloat();
+            b.colorf(t, t * 1.02f, t * 1.1f);
+            b.ellipsoid(p[0], p[1], p[2], p[3], p[3] * 0.75f, p[3], 12, 8);
+            b.rough(mk, p[3] * 0.1f, 6f, 300 + (int) (p[3] * 100), false);
+        }
+        b.colorf(0.2f, 0.21f, 0.25f);
+        b.ellipsoid(0, 0.36f, 0, 0.42f, 0.08f, 0.36f, 14, 6);
+        Mesh m = b.build(-1, false, true);
+        m.spec = 0.02f; m.shine = 4f;
+        return m;
+    }
+
+    /** Fulmine a zig-zag sotto la nuvoletta, fino al pavimento (si disegna luminoso, a lampi). */
+    static Mesh bolt() {
+        MeshBuilder b = new MeshBuilder().color(255, 240, 120);
+        float[][] p = {{0, 0.36f, 0}, {0.08f, 0.25f, 0}, {-0.05f, 0.18f, 0.02f}, {0.07f, 0.08f, 0}, {0, 0f, 0}};
+        for (int i = 0; i + 1 < p.length; i++) {
+            float[] a = p[i], c = p[i + 1];
+            float w = 0.03f * (1 - i * 0.18f);
+            b.vert(a[0] - w, a[1], a[2], 0, 0, 1, 0, 0); b.vert(a[0] + w, a[1], a[2], 0, 0, 1, 0, 0); b.vert(c[0], c[1], c[2], 0, 0, 1, 0, 0);
+            b.vert(a[0], a[1], a[2] - w, 1, 0, 0, 0, 0); b.vert(a[0], a[1], a[2] + w, 1, 0, 0, 0, 0); b.vert(c[0], c[1], c[2], 1, 0, 0, 0, 0);
+        }
+        return b.build(-1, false, false);
+    }
 }

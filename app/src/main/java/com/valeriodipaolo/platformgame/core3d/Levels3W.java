@@ -207,6 +207,7 @@ public final class Levels3W {
 
     /** Animaletto che attraversa i binari: topo in miniera, altrove quello della stagione. */
     private static void walker(World3D w, float x, float z, boolean mine) {
+        if (w.theme == 12) { add(w, Enemy3.WHIRL, x, z, false, -1f, 1f, 0); return; }     // tra le nuvole: un mulinello di vento
         Enemy3 e = add(w, Enemy3.BEETLE, x, z, false, -1f, 1f, 0);
         if (mine) e.skin = Enemy3.SKIN_MOUSE;
     }

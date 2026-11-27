@@ -588,7 +588,8 @@ public final class Scene3D {
             decor.build(w, z0, z1);
         }
         if (dry == 0) buildRays(z0, z1);
-        if (!w.carts.isEmpty() && dry != 24) buildRails(w, z0, z1, new Random(77));     // varianti della miniera nei temi principali
+        if (!w.carts.isEmpty() && dry != 24 && !heaven) buildRails(w, z0, z1, new Random(77));     // varianti della miniera nei temi principali (in cielo niente binari)
+        cloudRide = heaven && !w.carts.isEmpty() ? MineModels.cloud() : null;     // varianti della miniera nei temi principali
         buildObjects();
 
         // ---- da builder a mesh, con materiale
@@ -2279,6 +2280,8 @@ public final class Scene3D {
             crateKinds[k].spec = k == 5 ? 0.35f : 0.15f; crateKinds[k].shine = k == 5 ? 30f : 18f;
         }
         dynamite = MineModels.dynamite();
+        thunderCloud = MineModels.thunderCloud();
+        bolt = MineModels.bolt();
         dynSpark = MineModels.spark();
         springBox = CrateModels.spring();
         MeshBuilder cb = new MeshBuilder();
@@ -2399,6 +2402,16 @@ public final class Scene3D {
             if (t > 0 && w.time - t < 0.3f) sq = 1f - 0.35f * (float) Math.sin(Math.PI * (w.time - t) / 0.3f);
             Mat4.scale(m, 1f, sq, 1f);
             g.draw(springBox, m, 1, 1, 1, 1, 0.08f);
+            return;
+        }
+        if (kind == World3D.C_NITRO && !w.carts.isEmpty() && heaven) {           // in cielo: nuvoletta temporalesca che scarica fulmini
+            Mat4.translate(m, 0, 0.04f * (float) Math.sin(w.time * 2f + k), 0);
+            Mat4.rotateY(m, 0.6f * ((k * 7) % 5 - 2) / 2f);
+            g.draw(thunderCloud, m, 1, 1, 1, 1, 0.05f);
+            if ((float) Math.sin(w.time * 5.3f + k * 2.1f) > 0.55f && ((int) (w.time * 30f) % 3 != 0)) {
+                Mat4.rotateY(m, k * 1.7f);
+                g.draw(bolt, m, 1, 1, 1, 1, 1f);
+            }
             return;
         }
         if (kind == World3D.C_NITRO && !w.carts.isEmpty()) {                     // miniera: fascio di dinamite con la miccia che sfrigola
@@ -2551,6 +2564,7 @@ public final class Scene3D {
         if (blink) return;
         float[] b = m;
         boolean riding = cartMesh != null && w.inCart() && w.state == World3D.PLAYING;
+        Mesh ride = cloudRide != null ? cloudRide : cartMesh;
         float baseY = w.py + bumpAt(w.px, w.pz) - (w.onGround && w.quickAt(w.px, w.pz) ? 0.08f + 0.3f * w.sinkT : 0f);
         if (riding) {                                  // il carrello resta dritto sui binari: si inclina in curva, beccheggia in volo, sobbalza
             float lean = -0.045f * w.vx + 0.025f * (float) Math.sin(w.time * 11f), pitch = w.onGround ? 0.012f * (float) Math.sin(w.time * 17f) : -0.025f * w.vy;
@@ -2558,12 +2572,13 @@ public final class Scene3D {
             Mat4.translate(a2, w.px, baseY + (w.onGround ? 0.012f * (float) Math.abs(Math.sin(w.time * 13f)) : 0f), w.pz);
             Mat4.rotateZ(a2, lean);
             Mat4.rotateX(a2, pitch);
-            g.draw(cartMesh, a2, 1, 1, 1, 1, 0);
+            if (cloudRide != null) Mat4.translate(a2, 0, 0.05f * (float) Math.sin(w.time * 2.4f), 0);    // la nuvola ondeggia piano
+            g.draw(ride, a2, 1, 1, 1, 1, cloudRide != null ? 0.12f : 0);
         }
         Mat4.setIdentity(b);
         if (riding) {                                  // il robot sta dentro la vasca, con i piedi sul fondo, e si piega con il carrello
             System.arraycopy(a2, 0, b, 0, 16);
-            Mat4.translate(b, 0, MineModels.RIDE, 0);
+            Mat4.translate(b, 0, cloudRide != null ? MineModels.CLOUD_RIDE : MineModels.RIDE, 0);
         } else Mat4.translate(b, w.px, baseY, w.pz);
         Mat4.rotateY(b, w.yaw + (w.spinning() ? w.spinAngle : 0));
         if (w.state == World3D.DYING) Mat4.rotateX(b, -w.stateTime * 5f);
@@ -2761,7 +2776,8 @@ public final class Scene3D {
 
     // ------------------------------------------------------------------ deserto, fabbrica, miniera
 
-    private Mesh dynamite, dynSpark, springBox;
+    private Mesh dynamite, dynSpark, springBox, thunderCloud, bolt;
+    private Mesh cloudRide;
     private Mesh cartMesh, beltBase, chevron, laserBeam, laserGlow, laserHalo, laserLens, laserPost, quickPool, cactus, dustMote;
 
     /** Contorno dei mondi senza bosco: cactus e massi nel deserto, tubi e serbatoi in fabbrica, travi e lanterne in miniera, binari. */
