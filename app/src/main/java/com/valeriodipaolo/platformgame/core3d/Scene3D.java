@@ -2436,6 +2436,17 @@ public final class Scene3D {
         return f + 3.1f + 1.6f + 0.15f;
     }
 
+    /** Un raggio laser lungo len centrato in (x, y, z): anima, alone e foschia, con un leggero tremolio. */
+    private void laser(Gfx3D g, float x, float y, float z, float len, float on, float fl) {
+        float sx = len / (World3D.W + 0.2f);
+        Mat4.setIdentity(m); Mat4.translate(m, x, y, z); Mat4.scale(m, sx, 1, 1);
+        g.draw(laserHalo, m, 1, 1, 1, 0.16f * on * fl, 1);
+        Mat4.setIdentity(m); Mat4.translate(m, x, y, z); Mat4.scale(m, sx, fl, fl);
+        g.draw(laserGlow, m, 1, 1, 1, 0.55f * on, 1);
+        Mat4.setIdentity(m); Mat4.translate(m, x, y, z); Mat4.scale(m, sx, 1, 1);
+        g.draw(laserBeam, m, 1, 1, 1, on, 1);
+    }
+
     private void drawIslandProps(World3D w, Gfx3D g) {
         for (float[] c : w.crushers) {
             float z = c[1] + 0.5f;
@@ -2751,7 +2762,7 @@ public final class Scene3D {
     // ------------------------------------------------------------------ deserto, fabbrica, miniera
 
     private Mesh dynamite, dynSpark, springBox;
-    private Mesh cartMesh, beltBase, chevron, laserBeam, laserPost, quickPool, cactus, dustMote;
+    private Mesh cartMesh, beltBase, chevron, laserBeam, laserGlow, laserHalo, laserLens, laserPost, quickPool, cactus, dustMote;
 
     /** Contorno dei mondi senza bosco: cactus e massi nel deserto, tubi e serbatoi in fabbrica, travi e lanterne in miniera, binari. */
     private void buildDry(World3D w, int z0, int z1) {
@@ -2798,15 +2809,44 @@ public final class Scene3D {
         b = new MeshBuilder().color(250, 200, 40);
         b.quad(-0.28f, 0.04f, -0.08f, 0f, 0.04f, 0.14f, 0.28f, 0.04f, -0.08f, 0f, 0.04f, 0.02f, 0, 1, 0, 0, 0, 1, 1);
         chevron = b.build(-1, false, true);
-        b = new MeshBuilder().color(255, 60, 50);
-        b.box(0, 0, 0, World3D.W + 0.2f, 0.07f, 0.07f);
+        // raggio laser: un'anima sottile quasi bianca, un alone rosso e una foschia larga e tenue (tre tubi lungo x, trasparenti)
+        float bl = World3D.W + 0.2f;
+        float[][] axis = {{-bl / 2, 0, 0}, {0, 0, 0}, {bl / 2, 0, 0}};
+        b = new MeshBuilder();
+        FoeModels.tube(b, axis, new float[] {0.014f, 0.014f, 0.014f}, 8, FoeModels.flat(new float[] {1f, 0.92f, 0.9f}));
         laserBeam = b.build(-1, true, false);
         b = new MeshBuilder();
-        b.colorf(0.3f, 0.3f, 0.34f);
-        b.box(0, 0.6f, 0, 0.3f, 1.2f, 0.3f);
-        b.colorf(1f, 0.3f, 0.25f);
-        b.box(0, 0.55f, 0, 0.34f, 0.12f, 0.34f);
+        FoeModels.tube(b, axis, new float[] {0.045f, 0.045f, 0.045f}, 10, FoeModels.flat(new float[] {1f, 0.18f, 0.12f}));
+        laserGlow = b.build(-1, true, false);
+        b = new MeshBuilder();
+        FoeModels.tube(b, axis, new float[] {0.11f, 0.11f, 0.11f}, 10, FoeModels.flat(new float[] {1f, 0.3f, 0.2f}));
+        laserHalo = b.build(-1, true, false);
+        // emettitore: colonna d'acciaio smussata su una piastra imbullonata, bande gialle e nere alla base, due finestrelle
+        // da cui escono i raggi (rivolte verso +x: il pilastro di destra si disegna girato) e una spia in cima
+        b = new MeshBuilder();
+        b.colorf(0.34f, 0.35f, 0.38f);
+        b.roundBox(0, 0.03f, 0, 0.46f, 0.06f, 0.46f, 0.02f);
+        b.colorf(0.62f, 0.63f, 0.66f);
+        for (int i = 0; i < 4; i++) b.cylinder((i % 2 == 0 ? -1 : 1) * 0.18f, 0.06f, 0.08f, (i < 2 ? -1 : 1) * 0.18f, 0.022f, 0.022f, 6, true, false);
+        b.colorf(0.24f, 0.25f, 0.28f);
+        b.roundBox(0, 0.68f, 0, 0.28f, 1.24f, 0.28f, 0.05f);
+        for (int i = 0; i < 4; i++) {                                         // bande di pericolo
+            if (i % 2 == 0) b.colorf(1f, 0.78f, 0.1f); else b.colorf(0.08f, 0.08f, 0.09f);
+            b.box(0, 0.1f + i * 0.045f, 0, 0.295f, 0.045f, 0.295f);
+        }
+        b.colorf(0.16f, 0.16f, 0.18f);
+        for (int k = 0; k < 2; k++) b.roundBox(0.13f, 0.3f + k * 0.3f, 0, 0.06f, 0.14f, 0.18f, 0.02f);   // alloggi delle lenti
+        b.colorf(0.5f, 0.52f, 0.56f);
+        b.roundBox(0, 1.33f, 0, 0.34f, 0.07f, 0.34f, 0.02f);                    // cappello
+        b.colorf(0.12f, 0.12f, 0.14f);
+        for (int k = 0; k < 5; k++) b.box(-0.141f, 0.85f + k * 0.07f, 0, 0.005f, 0.035f, 0.16f);   // feritoie di raffreddamento
         laserPost = b.build(-1, false, true);
+        laserPost.spec = 0.45f; laserPost.shine = 30f;
+        b = new MeshBuilder();
+        b.colorf(1f, 0.25f, 0.18f);
+        for (int k = 0; k < 2; k++) b.ellipsoid(0.165f, 0.3f + k * 0.3f, 0, 0.012f, 0.045f, 0.045f, 10, 6);
+        b.ellipsoid(0, 1.39f, 0, 0.05f, 0.04f, 0.05f, 8, 5);
+        laserLens = b.build(-1, false, true);
         b = new MeshBuilder();
         b.quad(-0.5f, 0, -0.5f, 0.5f, 0, -0.5f, 0.5f, 0, 0.5f, -0.5f, 0, 0.5f, 0, 1, 0, 0, 0, 1, 1);
         quickPool = b.build(Img.R3S_QUICK, false, true);
@@ -2860,7 +2900,7 @@ public final class Scene3D {
             Mat4.rotateY(m, ang);
             g.draw(beltBase, m, 1, 1, 1, 1, 0.05f);
             for (int i = 0; i < 2; i++) {                                // frecce che scorrono nel verso del nastro
-                float u = ((w.time * World3D.BELT_SPEED * 0.9f + i * 0.5f) % 1f + 1f) % 1f;
+                float u = ((w.time * (d <= 2 ? World3D.BELT_SIDE : World3D.BELT_SPEED) * 0.9f + i * 0.5f) % 1f + 1f) % 1f;
                 Mat4.setIdentity(m);
                 Mat4.translate(m, cx, y, z + 0.5f);
                 Mat4.rotateY(m, ang);
@@ -2881,22 +2921,24 @@ public final class Scene3D {
             float z = l[0] + 0.5f;
             if (z < nearZ || z > farZ) continue;
             float base = Math.max(0, w.height[(int) l[0] * World3D.W + 2]);
+            float on = World3D.laserOn(l, w.time);
             for (int sd = -1; sd <= 1; sd += 2) {
                 Mat4.setIdentity(m);
                 Mat4.translate(m, sd * (World3D.HALF + 0.2f), base, z);
-                g.draw(laserPost, m, 1, 1, 1, 1, 0.3f);
+                if (sd > 0) Mat4.rotateY(m, (float) Math.PI);                // le finestrelle guardano il sentiero
+                g.draw(laserPost, m, 1, 1, 1, 1, 0.04f);
+                g.draw(laserLens, m, 1, 1, 1, 1, 0.25f + 0.75f * on);
             }
-            float on = World3D.laserOn(l, w.time);
             if (on <= 0) continue;
+            float fl = 0.85f + 0.15f * (float) Math.sin(w.time * 47f + z) * (float) Math.sin(w.time * 13f);
             for (int k = 0; k < 2; k++) {                                // due raggi, alle ginocchia e alla vita
-                Mat4.setIdentity(m);
-                Mat4.translate(m, 0, base + 0.3f + k * 0.3f, z);
+                float y = base + 0.3f + k * 0.3f;
                 if (l[3] >= 0) {                                         // varco spento: il raggio è spezzato in due
                     float gx = l[3] - World3D.HALF + 0.5f;
                     float left = gx - 0.5f + World3D.HALF + 0.1f, right = World3D.HALF + 0.1f - (gx + 0.5f);
-                    if (left > 0.05f) { Mat4.setIdentity(m); Mat4.translate(m, -World3D.HALF - 0.1f + left / 2, base + 0.3f + k * 0.3f, z); Mat4.scale(m, left / (World3D.W + 0.2f), 1, 1); g.draw(laserBeam, m, 1, 1, 1, on, 1); }
-                    if (right > 0.05f) { Mat4.setIdentity(m); Mat4.translate(m, World3D.HALF + 0.1f - right / 2, base + 0.3f + k * 0.3f, z); Mat4.scale(m, right / (World3D.W + 0.2f), 1, 1); g.draw(laserBeam, m, 1, 1, 1, on, 1); }
-                } else g.draw(laserBeam, m, 1, 1, 1, on, 1);
+                    if (left > 0.05f) laser(g, -World3D.HALF - 0.1f + left / 2, y, z, left, on, fl);
+                    if (right > 0.05f) laser(g, World3D.HALF + 0.1f - right / 2, y, z, right, on, fl);
+                } else laser(g, 0, y, z, World3D.W + 0.2f, on, fl);
             }
         }
         if (dry == 20) for (float[] t : w.thorns) {                    // nel deserto le spine sono cactus

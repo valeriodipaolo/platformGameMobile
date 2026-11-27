@@ -61,6 +61,8 @@ public final class World3D {
     /** Nastri trasportatori: direzione per casella (0 nessuno, 1 verso destra, 2 sinistra, 3 avanti, 4 indietro). */
     public byte[] belt;
     public static final float BELT_SPEED = 3.4f;
+    /** I nastri che spingono di lato vanno più piano: a 3,4 m/s portavano il robot giù dal bordo prima di poter reagire. */
+    public static final float BELT_SIDE = 1.6f;
     /** Barriere laser: {z, periodo, fase, colonna spenta (-1 nessuna)}; accese nella prima metà del periodo, all'altezza delle ginocchia. */
     public final List<float[]> lasers = new ArrayList<float[]>();
     /** Sabbie mobili per casella: rallentano, il salto è più corto, e chi ci resta troppo affonda. */
@@ -566,7 +568,7 @@ public final class World3D {
         float ex = 0, ez = 0;
         if (onGround && belt != null) {
             int bi = Math.max(0, Math.min(length - 1, zi(pz))) * W + Math.max(0, Math.min(W - 1, xi(px)));
-            switch (belt[bi]) { case 1: ex = BELT_SPEED; break; case 2: ex = -BELT_SPEED; break; case 3: ez = BELT_SPEED; break; case 4: ez = -BELT_SPEED; break; default: break; }
+            switch (belt[bi]) { case 1: ex = BELT_SIDE; break; case 2: ex = -BELT_SIDE; break; case 3: ez = BELT_SPEED; break; case 4: ez = -BELT_SPEED; break; default: break; }
         }
         ex += windPush(pz, time);
         // spostamento: un asse alla volta, fermandosi contro blocchi e casse più alti dei piedi
