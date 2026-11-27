@@ -31,7 +31,7 @@ final class Coins3D {
             case 22: crate(w, 136); break;
             case 24: w.coinFoeIdx = 6; break;             // il falco tra le colonne
             case 26: nook(w, 0, 185); break;
-            case 28: sky(w, 2, 99, 4.0f); break;          // sopra il grande blocco di ghiaccio
+            case 28: w.coin = new float[] {0f, 6.1f, 139.5f}; break;   // altissimo dopo la terza molla: ci arriva solo chi plana in giravolta
             case 30: w.coinFoeIdx = 5; break;             // una pianta carnivora
             case 32: crate(w, 115); break;
             case 34: sky(w, 0, 85, 4.0f); break;          // sopra l'altopiano più alto
