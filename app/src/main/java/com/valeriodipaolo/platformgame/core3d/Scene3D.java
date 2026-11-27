@@ -361,6 +361,11 @@ public final class Scene3D {
     private void build(World3D w) {
         builtFor = w.length;
         lvl = w;
+        int[] standing = null;                      // le caselle che il masso può abbattere non vanno nel terreno fisso: si disegnano a parte
+        if (w.breakH != null) {
+            standing = new int[w.height.length];
+            for (int i = 0; i < w.height.length; i++) { standing[i] = w.height[i]; if (w.breakH[i] != 0) w.height[i] = w.breakFloor[i]; }
+        }
         heaven = w.theme == 12;
         pitD = heaven ? 2.2f : PIT_DEPTH;
         spring = w.theme == 10;
@@ -614,6 +619,63 @@ public final class Scene3D {
             }
         }
         mbs = null;
+        if (standing != null) System.arraycopy(standing, 0, w.height, 0, standing.length);
+        buildBreakables(w);
+    }
+
+    private Mesh[] breakCols;
+    private Mesh debrisMesh;
+
+    /** Colonne di pietra del tempio alte 1..6 blocchi (per le caselle abbattibili) e il frammento di pietra dei detriti. */
+    private void buildBreakables(World3D w) {
+        breakCols = null; debrisMesh = null;
+        if (w.breakH == null) return;
+        int tex = ktex.length > K_STONE ? ktex[K_STONE] : -1;
+        breakCols = new Mesh[7];
+        for (int h = 1; h <= 6; h++) {
+            MeshBuilder s = new MeshBuilder();
+            for (int k = 0; k < h; k++) {
+                s.colorf(0.96f + 0.08f * hash(h, k, 3), 0.96f + 0.06f * hash(h, k, 9), 0.96f);
+                int mk = s.mark();
+                s.roundBox(0, k + 0.5f, 0, 0.98f, 0.98f, 0.98f, 0.3f, 63 & ~8, 2);
+                s.rough(mk, 0.17f, 1.3f, 5 + k);
+                s.colorf(0.58f, 0.55f, 0.5f);
+                s.box(0, k + 0.5f, 0, 0.8f, 0.8f, 0.8f);
+            }
+            breakCols[h] = s.build(tex, false, true);
+            breakCols[h].spec = 0.07f; breakCols[h].shine = 14f;
+        }
+        MeshBuilder d = new MeshBuilder();
+        d.colorf(0.92f, 0.9f, 0.86f);
+        int mk = d.mark();
+        d.roundBox(0, 0, 0, 1f, 0.8f, 0.9f, 0.18f, 63, 1);
+        d.rough(mk, 0.12f, 2.5f, 11);
+        debrisMesh = d.build(tex, false, true);
+        debrisMesh.spec = 0.07f; debrisMesh.shine = 14f;
+    }
+
+    /** Colonne ancora in piedi e detriti che volano quando il masso le travolge. */
+    private void drawBreakables(World3D w, Gfx3D g) {
+        if (breakCols == null) return;
+        int z0 = Math.max(0, (int) nearZ - 1), z1 = Math.min(w.length - 1, (int) farZ + 1);
+        for (int z = z0; z <= z1; z++) for (int x = 0; x < World3D.W; x++) {
+            int i = z * World3D.W + x;
+            if (w.breakH[i] == 0) continue;
+            int f = w.breakFloor[i], h = w.height[i] - f;
+            if (h <= 0) continue;
+            Mat4.setIdentity(m);
+            Mat4.translate(m, x - World3D.HALF + 0.5f, f, z + 0.5f);
+            g.draw(breakCols[Math.min(6, h)], m, 1, 1, 1, 1, 0);
+        }
+        for (float[] d : w.debris) {
+            Mat4.setIdentity(m);
+            Mat4.translate(m, d[0], d[1], d[2]);
+            Mat4.rotateY(m, d[6] * 0.7f);
+            Mat4.rotateX(m, d[6]);
+            float sc = d[9] * Math.min(1f, d[8] * 2f);
+            Mat4.scale(m, sc, sc, sc);
+            g.draw(debrisMesh, m, 1, 1, 1, 1, 0);
+        }
     }
 
     /** Tratto di sentiero battuto sopra una casella di prato: quattro strisce per lato, appoggiate al terreno. */
@@ -1726,7 +1788,8 @@ public final class Scene3D {
         float eyeY = back ? camY + 3.3f : camEye;
         // davanti al robot, più in alto, guardando indietro: si vede il masso che arriva e il robot che corre verso lo schermo
         // nella fuga la camera sta lontana e alta davanti al robot: gli ostacoli verso cui corre si vedono con 2-3 secondi d'anticipo
-        Mat4.lookAt(view, camX * (1 - 0.6f * bk), eyeY + lift + 5.2f * bk, camZ - 6.0f + 2.2f * mazeK + 21f * bk, camX * 0.9f * (1 - 0.6f * bk), camY + 1.0f + lift - 0.3f * bk, camZ + 5f - 2.5f * bk);
+        float shk = w.shake * 0.1f * (float) Math.sin(w.time * 53f), shx = w.shake * 0.07f * (float) Math.sin(w.time * 41f + 1f);   // il masso che sfonda fa tremare la camera
+        Mat4.lookAt(view, camX * (1 - 0.6f * bk) + shx, eyeY + lift + shk + 5.2f * bk, camZ - 6.0f + 2.2f * mazeK + 21f * bk, camX * 0.9f * (1 - 0.6f * bk), camY + 1.0f + lift - 0.3f * bk, camZ + 5f - 2.5f * bk);
         nearZ = back ? w.pz - 60f : w.pz - 4f;
         farZ = back ? w.pz + 34f : w.pz + 120f;                       // tutto quello che c'è tra il robot e la camera va disegnato
         Mat4.perspective(proj, 58f, aspect, 0.3f, 400f);
@@ -2506,7 +2569,7 @@ public final class Scene3D {
             Mat4.rotateZ(m, 0.04f * (float) Math.sin(w.time * 1.6f + z * 0.7f) + (r[2] >= 0 ? 0.1f * (float) Math.sin(w.time * 30f) * (1 - sink) : 0));
             g.draw(raftMesh, m, 1, 1, 1, 1, isle == 18 ? 0.25f : 0);
         }
-        if (w.chase == 2) drawBoulder(w, g);
+        if (w.chase == 2) { drawBoulder(w, g); drawBreakables(w, g); }
     }
 
     /** Esplosioni (casse TNT, ricci di castagno che cadono). */

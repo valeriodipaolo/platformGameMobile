@@ -122,6 +122,7 @@ public final class Levels3J {
         for (int z = 226; z < 252; z++) for (int x = 0; x < W; x++) set(w, x, z, 3);
         gemLine3(w, 0, 3.7f, 230, 240);
         w.flagZ = 246;
+        w.makeBreakable(0, 226);                             // muri, colonne e pestelli: il masso li travolge, non ci passa attraverso
     }
 
     // ------------------------------------------------------------------ 37: il fiume delle lucciole

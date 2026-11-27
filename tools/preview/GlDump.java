@@ -91,6 +91,7 @@ public class GlDump implements Gfx3D {
         Scene3D sc = new Scene3D();
         w.px = x; w.pz = z; w.py = Math.max(0, w.topAt(x, z)) + 0.01f;
         int upd = Integer.getInteger("upd", 40);
+        if (System.getProperty("firez") != null) w.fireZ = Float.parseFloat(System.getProperty("firez"));
         float fw = Float.parseFloat(System.getProperty("fwd", "0.6"));
         for (int i = 0; i < upd; i++) { w.setInput(0, i > 25 ? fw : 0f, false, false); w.hp = 99; w.update(1f / 60f); }
         if (System.getProperty("open") != null) w.gateOpen = 1f;

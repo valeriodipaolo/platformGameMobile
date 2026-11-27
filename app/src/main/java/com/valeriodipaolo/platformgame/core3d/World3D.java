@@ -47,6 +47,16 @@ public final class World3D {
     public static final float TNT_FUSE = 3f, BOOM_R = 1.75f;
     /** Esplosioni in corso: {x, z, età}. */
     public final List<float[]> booms = new ArrayList<float[]>();
+    /**
+     * Masso del tempio che distrugge: per ogni casella abbattibile l'altezza originale (0 = non abbattibile) e la quota del
+     * pavimento su cui resta quando il masso la travolge. I detriti {x, y, z, vx, vy, vz, angolo, velocità angolare, vita, misura}
+     * volano via e rimbalzano; i pestelli travolti si ricordano per rimetterli se il robot riparte da più indietro.
+     */
+    public byte[] breakH, breakFloor;
+    public final List<float[]> debris = new ArrayList<float[]>();
+    private final List<float[]> smashedCrushers = new ArrayList<float[]>();
+    private int smashedTo;
+    public float shake;
     /** Raggio dello scoppio del riccio di castagno. */
     static final float BURR_R = 1.75f;
     /** Pestelli di pietra del tempio: {colonna 0..4, z, periodo, fase}. */
@@ -148,7 +158,7 @@ public final class World3D {
         gems = 0;
         lives = START_LIVES;
         sealed = false;
-        crateKind = null; crateT = null; booms.clear(); crushers.clear(); rafts.clear(); raftIdx = null; camBackUntil = -1f;
+        crateKind = null; crateT = null; booms.clear(); crushers.clear(); rafts.clear(); breakH = null; breakFloor = null; debris.clear(); smashedCrushers.clear(); smashedTo = 0; shake = 0; raftIdx = null; camBackUntil = -1f;
         belt = null; lasers.clear(); quick = null; sinkT = 0; winds.clear(); carts.clear(); mazes.clear();
         coin = null; coinCrate = -1; coinFoeIdx = -1; coinFoe = null; coinPop = null;
         if (levelNo > 37) Levels3W.build(this, levelNo); else if (levelNo > 34) Levels3J.build(this, levelNo); else if (levelNo > 24) Levels3C.build(this, levelNo); else if (levelNo > 12) Levels3B.build(this, levelNo); else if (levelNo == 12) LevelTwelve.build(this); else if (levelNo == 10) LevelTen.build(this); else if (levelNo == 8) LevelEight.build(this); else if (levelNo == 6) LevelSix.build(this); else if (levelNo == 4) LevelFour.build(this); else LevelTwo.build(this);
@@ -334,11 +344,13 @@ public final class World3D {
         if (state == PLAYING) {
             stepPlayer(dt);
             stepFire(dt);
+            if (!debris.isEmpty() || shake > 0) stepDebris(dt);
             stepIsland(dt);
             stepEnemies(dt); stepShots(dt);
             pickups();
             stepGate(dt);
         } else if (state == DYING) {
+            if (!debris.isEmpty() || shake > 0) stepDebris(dt);
             vy -= 30f * dt;
             py += vy * dt;
             stepEnemies(dt);
@@ -348,6 +360,7 @@ public final class World3D {
                     place();
                     invuln = 2.5f;
                     if (!Float.isNaN(fireZ)) fireZ = Math.min(fireZ, cpZ - 14f);
+                    if (breakH != null) unsmash();
                 } else {
                     state = GAME_OVER;
                     stateTime = 0;
@@ -473,6 +486,95 @@ public final class World3D {
         return new float[] {x, dy, sc, vis ? 1f : 0f, solid ? 1f : 0f};
     }
 
+    /** Il davanti del masso rispetto alla linea che uccide (il masso ha raggio 2,3 ed è disegnato poco dietro). */
+    public static final float BOULDER_FRONT = 1.4f;
+
+    /** Rende abbattibili dal masso tutte le caselle più alte del pavimento della loro riga. */
+    public void makeBreakable(int z0, int z1) {
+        if (breakH == null) { breakH = new byte[height.length]; breakFloor = new byte[height.length]; }
+        for (int z = Math.max(0, z0); z < Math.min(length, z1); z++) {
+            int floor = 99;                                   // pavimento: la casella più bassa della riga (il varco nei muri)
+            for (int x = 0; x < W; x++) { int h = height[z * W + x]; if (h != PIT) floor = Math.min(floor, Math.max(0, h)); }
+            if (floor == 99) continue;
+            for (int x = 0; x < W; x++) {
+                int i = z * W + x, h = height[i];
+                if (h != PIT && h > floor && h < 99) { breakH[i] = (byte) h; breakFloor[i] = (byte) floor; }
+            }
+        }
+    }
+
+    /** Il masso travolge tutto quello che ha davanti fino a front: muri e colonne crollano in detriti, pestelli e nemici volano via. */
+    private void smash(float front) {
+        int to = (int) Math.floor(front);
+        for (int z = Math.max(0, smashedTo); z <= Math.min(length - 1, to); z++) {
+            for (int x = 0; x < W; x++) {
+                int i = z * W + x;
+                if (breakH == null || breakH[i] == 0 || height[i] <= breakFloor[i]) continue;
+                int h = height[i], f = breakFloor[i];
+                height[i] = f;
+                for (int k = 0; k < (h - f) * 3; k++) spawnDebris(x - HALF + 0.5f, f + 0.4f + k * 0.33f, z + 0.5f, 1f);
+                shake = Math.max(shake, 0.6f);
+            }
+            for (int c = crushers.size() - 1; c >= 0; c--) {
+                float[] cr = crushers.get(c);
+                if ((int) cr[1] != z) continue;
+                crushers.remove(c);
+                smashedCrushers.add(cr);
+                float f = Math.max(0, height[(int) cr[1] * W + (int) cr[0]]);
+                for (int k = 0; k < 6; k++) spawnDebris(cr[0] - HALF + 0.5f, f + 3.2f + k * 0.25f, cr[1] + 0.5f, 1.2f);
+                shake = Math.max(shake, 0.8f);
+            }
+        }
+        smashedTo = Math.max(smashedTo, to + 1);
+        for (Enemy3 e : enemies) {
+            if (e.dead || e.z > front) continue;
+            if (e == coinFoe) coinFoe = null;                   // travolto dal masso: il gettone che aveva addosso è perso
+            e.dead = true; e.flung = true; e.vy = 9f; e.vz = 7f; e.vx = e.x >= 0 ? 3f : -3f;
+        }
+    }
+
+    private float rnd = 0.5f;
+
+    private float rnd() { rnd = (rnd * 9301f + 0.49297f) % 1f; return rnd; }
+
+    private void spawnDebris(float x, float y, float z, float size) {
+        if (debris.size() > 160) debris.remove(0);
+        float a = rnd() * 6.283f;
+        debris.add(new float[] {x + (rnd() - 0.5f) * 0.7f, y, z + (rnd() - 0.5f) * 0.4f,
+                (float) Math.cos(a) * (1.5f + 3f * rnd()), 3f + 5f * rnd(), 5f + 6f * rnd(), rnd() * 6.283f, (rnd() - 0.5f) * 14f, 2.2f + rnd(), size * (0.18f + 0.22f * rnd())});
+    }
+
+    /** Detriti: gravità, rimbalzo smorzato sul terreno, e svaniscono. */
+    private void stepDebris(float dt) {
+        shake = Math.max(0, shake - dt * 1.8f);
+        for (int i = debris.size() - 1; i >= 0; i--) {
+            float[] d = debris.get(i);
+            d[8] -= dt;
+            if (d[8] <= 0) { debris.remove(i); continue; }
+            d[4] -= 25f * dt;
+            d[0] += d[3] * dt; d[1] += d[4] * dt; d[2] += d[5] * dt; d[6] += d[7] * dt;
+            int xi = Math.max(0, Math.min(W - 1, xi(d[0]))), zi = Math.max(0, Math.min(length - 1, zi(d[2])));
+            float g = Math.abs(d[0]) < HALF ? Math.max(0, height[zi * W + xi]) : 0f;
+            if (height[zi * W + xi] == PIT && Math.abs(d[0]) < HALF) g = -50f;
+            if (d[1] < g + d[9] * 0.5f && d[4] < 0) { d[1] = g + d[9] * 0.5f; d[4] *= -0.35f; d[3] *= 0.6f; d[5] *= 0.6f; d[7] *= 0.6f; }
+        }
+    }
+
+    /** Il robot riparte da più indietro: muri, colonne e pestelli davanti al masso tornano al loro posto. */
+    private void unsmash() {
+        int from = Float.isNaN(fireZ) ? 0 : (int) Math.floor(fireZ + BOULDER_FRONT) + 1;
+        for (int z = Math.max(0, from); z < length; z++) for (int x = 0; x < W; x++) {
+            int i = z * W + x;
+            if (breakH[i] != 0) height[i] = breakH[i];
+        }
+        for (int c = smashedCrushers.size() - 1; c >= 0; c--) {
+            float[] cr = smashedCrushers.get(c);
+            if (cr[1] >= from) { crushers.add(cr); smashedCrushers.remove(c); }
+        }
+        smashedTo = Math.min(smashedTo, from);
+        debris.clear();
+    }
+
     private void stepFire(float dt) {
         if (!Float.isNaN(hiveZ) && hiveAt < 0 && pz >= hiveZ + 1.5f) {      // il nido cade: lo sciame esce e inizia l'inseguimento
             hiveAt = time;
@@ -483,6 +585,7 @@ public final class World3D {
             for (float[] z : fireZones) if (pz >= z[0]) { speed = z[1]; gap = z.length > 2 ? z[2] : 1e9f; }
             fireZ += speed * dt;
             if (gap < 1e8f) fireZ = Math.max(fireZ, pz - gap);          // il fuoco non resta mai troppo indietro
+            if (chase == 2) smash(fireZ + BOULDER_FRONT);
             if (pz < fireZ + 0.2f) { die(); return; }
         }
         for (float[] t : thorns) {                         // rovi
