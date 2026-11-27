@@ -1,112 +1,76 @@
 package com.valeriodipaolo.platformgame.core;
 
-/** Primo livello. Il terreno occupa le righe 10 e 11; il giocatore cammina sulla riga 10. */
+/**
+ * Primo livello, "Il prato": un percorso tutto suo, che insegna una cosa alla volta le abilità del robot. Niente tubi, niente file di
+ * mattoni a mezz'aria e niente scalinata finale: colline erbose, ruscelli da saltare, sporgenze di roccia, il fiore a molla che lancia
+ * in alto, il doppio salto e la planata, le casse di legno (quelle rinforzate si aprono con la giravolta). Il terreno occupa le righe
+ * 10 e 11; il robot cammina sulla riga 10.
+ */
 public final class LevelOne {
     private LevelOne() {}
 
-    private static final int H = 12, GROUND_Y = 10;
-
     public static Level build() {
-        Level lv = new Level(212, H);
-        ground(lv, 0, 61);
-        ground(lv, 65, 103);
-        ground(lv, 107, 140);
-        ground(lv, 144, 211);
-        lv.startX = 3;
-        lv.startY = GROUND_Y - 1.2f;
+        LevelsB b = new LevelsB(228, 1, 0);
+        b.g(0, 44); b.g(49, 90); b.g(95, 124); b.g(131, 227);
 
-        // --- primo tratto: monete, casse e primo nemico
-        shards(lv, 9, 9, 4);
-        row(lv, 17, 7, "?");
-        row(lv, 22, 7, "B?B?B");
-        row(lv, 24, 4, "?");
-        enemy(lv, 27);
-        column(lv, 33, 2);
-        enemy(lv, 37);
-        column(lv, 41, 3);
-        shards(lv, 44, 9, 3);
-        enemy(lv, 46);
-        enemy(lv, 47.5f);
-        column(lv, 50, 3);
-        shards(lv, 51, 6, 1);
-        row(lv, 55, 7, "BB?");
+        // 1. il prato d'ingresso: si cammina raccogliendo gemme, la prima cassa si apre saltandoci sotto o sopra
+        b.sh(6, 9, 4);
+        b.row(17, 7, "?");
+        b.en(24, Enemy.SNAIL, 21, 27);                        // la lumaca: saltandole sopra si chiude nel guscio
+        b.hill(28, 37, 2); b.sh(30, 7, 6);                    // la prima collina, con le gemme sul crinale
+        b.en(41, Enemy.BEETLE, 38, 43);
 
-        // --- primo burrone, con un arco di monete
-        shard(lv, 62, 6); shard(lv, 63, 5.5f); shard(lv, 64, 6);
+        // 2. il ruscello: un salto corto, le gemme ad arco indicano dove andare
+        b.arc(45, 4);
 
-        // --- secondo tratto
-        row(lv, 70, 7, "?B?");
-        enemy(lv, 75);
-        enemy(lv, 77);
-        row(lv, 82, 7, "BBBBHBBB");          // (il vecchio mattoncino segreto: ora il nascondiglio del gettone lo decide Coins2D)
-        shards(lv, 83, 6, 6);
-        row(lv, 91, 4, "BB?B");
-        enemy(lv, 93);
-        stairsUp(lv, 100, 4);                 // scalinata, burrone, scalinata
-        stairsDown(lv, 107, 4);
+        // 3. il fiore a molla: lancia sulla sporgenza alta, dove aspettano gemme e una cassa
+        b.sh(51, 9, 2);
+        b.pad(54);
+        b.plat(56, 3, 6); b.sh(57, 2, 4); b.row(61, 2, "?");
+        // sotto la sporgenza si passa anche a piedi, con una ghianda che saltella
+        b.en(59, 9, Enemy.ACORN, 0, 0);
 
-        // --- terzo tratto
-        row(lv, 116, 7, "?");
-        row(lv, 119, 7, "?");
-        row(lv, 122, 7, "?");
-        row(lv, 119, 4, "?");
-        enemy(lv, 121);
-        enemy(lv, 126);
-        enemy(lv, 128);
-        column(lv, 132, 2);
-        shards(lv, 134, 9, 4);
-        enemy(lv, 137);
-        shard(lv, 141, 5); shard(lv, 142, 4.6f); shard(lv, 143, 5);
+        // 4. le terrazze di roccia: si sale con due salti (o un doppio salto) fino al grappolo di gemme in alto
+        b.plat(66, 7, 3); b.plat(71, 5, 3); b.sh(71, 3, 3); b.plat(76, 7, 2);
+        b.en(73, 9, Enemy.BEETLE, 66, 79);
 
-        // --- ultimo tratto
-        row(lv, 149, 7, "B?B");
-        enemy(lv, 153);
-        row(lv, 158, 7, "BBB?BBB");
-        row(lv, 160, 4, "???");
-        enemy(lv, 164);
-        enemy(lv, 166);
-        column(lv, 171, 2);
-        shards(lv, 174, 9, 4);
-        stairsUp(lv, 181, 7);
-        column(lv, 188, 7);
+        // 5. il boschetto delle casse: tre casse in fila, ci si sale sopra; il riccio non si schiaccia, si salta o si stende con la giravolta
+        b.row(84, 7, "???");
+        b.sh(83, 9, 6);
+        b.en(87, Enemy.HOG, 80, 90);
 
-        // --- traguardo
-        lv.flagX = 198;
-        lv.flagBaseY = GROUND_Y;
-        return lv;
-    }
+        // 6. il torrente largo: col doppio salto lo si passa comodi
+        b.arc(91, 4);
 
-    private static void ground(Level lv, int x0, int x1) {
-        for (int x = x0; x <= x1; x++) {
-            for (int y = GROUND_Y; y < H; y++) lv.set(x, y, Level.GROUND);
-        }
-    }
+        // 7. lo sperone di roccia: ci si sale sopra (gemme in cima); dentro, dietro una finta parete, il gettone
+        for (int x = 104; x <= 107; x++) b.col(x, 3);
+        b.sh(104, 6, 4);
+        b.en(100, Enemy.SNAIL, 96, 102);
+        b.en(112, Enemy.ACORN);
+        b.hill(115, 122, 2); b.sh(116, 7, 5);
 
-    private static void row(Level lv, int x, int y, String s) {
-        for (int i = 0; i < s.length(); i++) lv.set(x + i, y, s.charAt(i));
-    }
+        // 8. lo stagno: largo sei, si passa con il doppio salto e la planata; le gemme scendono piano verso l'altra sponda
+        b.lv.shards.add(new float[] {125.5f, 6.0f}); b.lv.shards.add(new float[] {127f, 5.6f}); b.lv.shards.add(new float[] {128.5f, 6.0f}); b.lv.shards.add(new float[] {130f, 6.8f});
+        b.crow(128f, 4.5f, 123, 134);
 
-    private static void column(Level lv, int x, int height) {
-        for (int i = 1; i <= height; i++) lv.set(x, GROUND_Y - i, Level.STONE);
-    }
+        // 9. il prato fiorito: casse a coppie, un'altra collina, ghiande e scarabei
+        b.row(138, 6, "??"); b.sh(137, 9, 4);
+        b.en(143, Enemy.BEETLE, 140, 147);
+        b.hill(149, 160, 3); b.sh(151, 6, 8);
+        b.en(155, Enemy.ACORN);
+        b.en(164, Enemy.HOG, 162, 168);
 
-    private static void stairsUp(Level lv, int x, int steps) {
-        for (int i = 0; i < steps; i++) column(lv, x + i, i + 1);
-    }
+        // 10. il secondo fiore a molla porta sul sentiero alto delle gemme; sotto, chi resta a terra incontra le lumache
+        b.pad(170);
+        b.plat(172, 4, 9); b.sh(173, 3, 7);
+        b.en(176, 9, Enemy.SNAIL, 172, 181); b.sh(174, 9, 6);
 
-    private static void stairsDown(Level lv, int x, int steps) {
-        for (int i = 0; i < steps; i++) column(lv, x + i, steps - i);
-    }
+        // 11. l'ultima collina e il prato davanti al portone
+        b.hill(188, 199, 3); b.sh(190, 6, 8); b.en(194, Enemy.BEETLE, 189, 199);
+        b.row(204, 6, "?"); b.sh(207, 9, 4);
 
-    private static void shard(Level lv, float x, float y) {
-        lv.shards.add(new float[] {x, y});
-    }
-
-    private static void shards(Level lv, int x, int y, int n) {
-        for (int i = 0; i < n; i++) shard(lv, x + i, y);
-    }
-
-    private static void enemy(Level lv, float x) {
-        lv.enemies.add(new float[] {x, GROUND_Y - 1});
+        b.lv.flagX = 216;
+        b.lv.flagBaseY = LevelsB.G;
+        return b.lv;
     }
 }

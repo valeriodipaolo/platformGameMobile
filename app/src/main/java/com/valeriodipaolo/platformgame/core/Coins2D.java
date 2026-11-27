@@ -20,7 +20,7 @@ public final class Coins2D {
         int nb = 0;                                    // una cassa ogni tre diventa rinforzata (si apre solo con la giravolta)
         for (int x = 0; x < lv.w; x++) for (int y = 0; y < lv.h; y++) if (lv.get(x, y) == Level.BONUS && nb++ % 3 == 2) lv.set(x, y, Level.STEEL);
         switch (id) {
-            case 1: carve(lv, 96); break;          // la prima piramide
+            case 1: carve(lv, 96); break;          // dentro lo sperone di roccia
             case 3: lv.coinFoe = 1; break;         // il primo corvo
             case 5: carve(lv, 190); break;         // la piramide doppia verso la fine
             case 7: brick(lv, 204, 7); break;      // il mattoncino a sinistra dell'ultima cassa

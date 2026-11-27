@@ -78,9 +78,9 @@ public class Check {
         for (int y = 0; y < lv.h; y++) for (int x = 0; x < lv.w; x++) {
             char c = lv.get(x, y);
             if (c != Level.BRICK && c != Level.BONUS) continue;
-            int rise = 9 - y;                         // casella sopra la quale c'è il terreno: bordo superiore a y, piedi a 10
-            if (y == 4) continue;                     // fila alta: si raggiunge da quella bassa, controllata sotto
-            if (10 - y > 4.5f) { unreachable++; System.out.println("blocco troppo alto: " + x + "," + y); }
+            int below = y + 1;                        // la prima superficie sotto la cassa (terreno, roccia o altra cassa) da cui la si raggiunge
+            while (below < lv.h && !lv.solid(x, below)) below++;
+            if (below - y > 4.5f) { unreachable++; System.out.println("blocco troppo alto: " + x + "," + y); }
         }
         ok(unreachable == 0, "blocchi bassi: si può salirci sopra dal terreno (bordo a 3 caselle)");
 
@@ -130,13 +130,13 @@ public class Check {
         }
         run(d, 2.5f, false, false, false);
         ok(d.state == Game.PLAYING && d.hp == 3 && d.invuln > 0, "dopo la morte si riparte con 3 punti vita e invulnerabilità");
-        // gettone d'oro del livello 1: dentro la base della prima piramide, dietro una finta parete
+        // gettone d'oro del livello 1: dentro lo sperone di roccia, dietro una finta parete
         Game b = fresh();
         ok(b.coin != null && b.level.get((int) b.coin[0], (int) b.coin[1]) == Level.FAKE, "il gettone è nascosto dentro la finta parete: " + (b.coin == null ? "-" : (int) b.coin[0]));
         b.enemies.clear();
         b.player.x = b.coin[0] + 5; b.player.y = 8.8f;
         run(b, 1.2f, true, false, false);
-        ok(b.coinOwned && b.coin == null, "tornando indietro contro il gradino più basso si entra nella finta parete e si prende il gettone");
+        ok(b.coinOwned && b.coin == null, "tornando indietro contro lo sperone di roccia si entra nella finta parete e si prende il gettone");
         Game ft = fresh();
         int fx = -1; for (int x = 0; x < ft.level.w && fx < 0; x++) if (ft.level.get(x, 9) == Level.FAKE) fx = x;
         ft.player.x = fx + 0.2f; ft.player.y = 6.5f; ft.player.vy = 0;
