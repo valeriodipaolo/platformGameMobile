@@ -1872,8 +1872,9 @@ public final class Scene3D {
         for (Enemy3 e : w.enemies) {
             if (e.dead || e.flung || e.z < near || e.z > far) continue;
             Mat4.setIdentity(m);
-            float sy = e.flies() ? 0 : e.type == Enemy3.ACORN ? e.baseY : e.y;
-            float ss = 1.5f * (e.type == Enemy3.ACORN || e.flies() ? Math.max(0.5f, 1f - (e.y - sy) * 0.2f) : 1f);
+            boolean hop = e.type == Enemy3.ACORN || e.type == Enemy3.FROG;            // chi salta lascia l'ombra a terra, più piccola
+            float sy = e.flies() ? 0 : hop ? e.baseY : e.y;
+            float ss = 1.5f * (hop || e.flies() ? Math.max(0.5f, 1f - (e.y - sy) * 0.2f) : 1f);
             Mat4.translate(m, e.x, sy + bumpAt(e.x, e.z) + 0.03f, e.z);
             Mat4.scale(m, ss, 1, ss);
             g.draw(shadow, m, 1, 1, 1, 0.8f, 1);

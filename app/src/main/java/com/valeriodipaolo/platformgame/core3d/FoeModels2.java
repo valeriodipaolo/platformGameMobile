@@ -227,12 +227,66 @@ final class FoeModels2 {
         FoeModels.tube(b, 0, -0.06f, -0.12f, 0, -0.2f, -0.24f, 0.06f, 0.03f, 8, FoeModels.along(mid, dark));
         // ciuffi
         for (int sd = -1; sd <= 1; sd += 2) FoeModels.tube(b, sd * 0.12f, 0.58f, 0.02f, sd * 0.16f, 0.67f, -0.03f, 0.05f, 0.012f, 6, FoeModels.along(mid, dark));
+        // mantello di piume vere: file sovrapposte di piumette a goccia, con la punta che si stacca dal corpo e il colore
+        // del piumaggio (gocce sul petto, barre sul dorso); così la sagoma non è più liscia come plastica
+        float[] fc = new float[3];
+        for (int i = 4; i < nn - 3; i++) {
+            float cy = c2[i][1], cz0 = c2[i][2], ra = rx2[i], rb = ry2[i];
+            int around = 22;
+            for (int k = 0; k < around; k++) {
+                float h1 = (float) Math.abs(Math.sin(i * 91.7f + k * 47.3f)), h2 = (float) Math.abs(Math.sin(i * 13.1f + k * 7.9f + 2f));
+                double a = (k + (i % 2) * 0.5 + (h1 - 0.5f) * 0.7f) * 2 * Math.PI / around;     // file sfalsate e irregolari
+                float ca = (float) Math.cos(a), sa = (float) Math.sin(a);
+                float px = ra * ca, pz = cz0 + rb * sa;
+                if (sa > 0.55f && cy > 0.32f && cy < 0.56f) continue;          // lì c'è il disco facciale
+                float nx = ca / ra, nz = sa / rb, nl = (float) Math.sqrt(nx * nx + nz * nz);
+                nx /= nl; nz /= nl;
+                float slope = (ry2[Math.min(nn - 1, i + 1)] - ry2[Math.max(0, i - 1)]) * 2f;   // il corpo si stringe o allarga: la piuma segue
+                float ny = -slope * 0.5f;
+                float sx = -nz, sz = nx;                                        // laterale (tangente orizzontale)
+                plumage.col(i / (float) nn, (float) a, px, cy, pz, fc);
+                float tone = 0.9f + 0.2f * h2;
+                FoeModels.mix(fc, mid, 0.3f, fc);                                  // contrasto più morbido: niente scacchiera
+                b.colorf(Math.min(1f, fc[0] * tone), Math.min(1f, fc[1] * tone), Math.min(1f, fc[2] * tone));
+                float w = (0.018f + 0.01f * (ra / 0.25f)) * (0.75f + 0.5f * h2), len = 0.04f + 0.025f * h1;
+                float cyk = cy + (h2 - 0.5f) * 0.012f;
+                float tw = (h1 - 0.5f) * 0.02f;                                     // punta un po' storta
+                float bx = px + nx * 0.002f, by = cyk + 0.02f, bz = pz + nz * 0.002f;          // radice (nascosta sotto la fila di sopra)
+                float tx = px + nx * 0.016f + sx * tw, ty = cyk - len * 0.7f + ny * 0.01f, tz = pz + nz * 0.016f + sz * tw;   // punta staccata dal corpo
+                float mx = px + nx * 0.011f, my = cyk - len * 0.2f, mz = pz + nz * 0.011f;
+                b.vert(bx, by, bz, nx, 0.2f, nz, 0, 0); b.vert(mx + sx * w, my, mz + sz * w, nx, 0.2f, nz, 0, 0); b.vert(tx, ty, tz, nx, 0.2f, nz, 0, 0);
+                b.vert(bx, by, bz, nx, 0.2f, nz, 0, 0); b.vert(tx, ty, tz, nx, 0.2f, nz, 0, 0); b.vert(mx - sx * w, my, mz - sz * w, nx, 0.2f, nz, 0, 0);
+                b.colorf(fc[0] * 0.55f, fc[1] * 0.5f, fc[2] * 0.45f);                       // rachide scuro al centro della piuma
+                b.vert(mx + sx * 0.003f, my, mz + sz * 0.003f, nx, 0.2f, nz, 0, 0); b.vert(tx + nx * 0.001f, ty, tz + nz * 0.001f, nx, 0.2f, nz, 0, 0);
+                b.vert(bx + nx * 0.004f, by - 0.01f, bz + nz * 0.004f, nx, 0.2f, nz, 0, 0);
+            }
+        }
         owlBody = fin2(b, Img.FOE_OWL, 0.04f, 6f);
         // disco facciale: due conche chiare con il bordo scuro, becco in mezzo
         b = new MeshBuilder();
         for (int sd = -1; sd <= 1; sd += 2) {
             b.colorf(0.46f, 0.34f, 0.23f); b.ellipsoid(sd * 0.09f, 0.43f, 0.165f, 0.115f, 0.125f, 0.035f, 14, 8);
             b.colorf(0.72f, 0.60f, 0.44f); b.ellipsoid(sd * 0.088f, 0.43f, 0.172f, 0.1f, 0.11f, 0.03f, 14, 8);
+        }
+        for (int sd = -1; sd <= 1; sd += 2) {                               // piumette sottili che si irraggiano dagli occhi
+            float ex = sd * 0.088f, ey = 0.43f;
+            for (int k = 0; k < 26; k++) {
+                double a = k * 2 * Math.PI / 26;
+                float ca = (float) Math.cos(a), sa = (float) Math.sin(a), r0 = 0.035f, r1 = 0.098f + 0.01f * (k % 2);
+                float z0 = 0.2f, z1 = 0.185f;
+                if (k % 2 == 0) b.colorf(0.5f, 0.38f, 0.26f); else b.colorf(0.82f, 0.7f, 0.52f);
+                float px = -sa * 0.006f, py = ca * 0.006f;
+                b.vert(ex + ca * r0 - px, ey + sa * r0 - py, z0, 0, 0, 1, 0, 0); b.vert(ex + ca * r0 + px, ey + sa * r0 + py, z0, 0, 0, 1, 0, 0);
+                b.vert(ex + ca * r1, ey + sa * r1 * 1.08f, z1, 0, 0, 1, 0, 0);
+            }
+            for (int k = 0; k < 34; k++) {                                   // orlo scuro del disco: corona di piumette appuntite
+                double a = k * 2 * Math.PI / 34;
+                float ca = (float) Math.cos(a), sa = (float) Math.sin(a), r0 = 0.1f, r1 = 0.128f + 0.008f * (k % 3);
+                if (k % 2 == 0) b.colorf(0.3f, 0.2f, 0.13f); else b.colorf(0.42f, 0.3f, 0.2f);
+                float px = -sa * 0.009f, py = ca * 0.009f;
+                b.vert(ex + ca * r0 - px, ey + (sa * r0 - py) * 1.08f, 0.182f, 0, 0, 1, 0, 0); b.vert(ex + ca * r0 + px, ey + (sa * r0 + py) * 1.08f, 0.182f, 0, 0, 1, 0, 0);
+                b.vert(ex + ca * r1, ey + sa * r1 * 1.08f, 0.165f, 0, 0, 1, 0, 0);
+            }
         }
         b.colorf(0.62f, 0.50f, 0.36f); b.ellipsoid(0, 0.44f, 0.19f, 0.035f, 0.1f, 0.03f, 8, 6);       // costola di piume tra gli occhi
         FoeModels.tube(b, new float[][] {{0, 0.41f, 0.2f}, {0, 0.38f, 0.255f}, {0, 0.335f, 0.25f}}, new float[] {0.03f, 0.02f, 0.004f}, 8, FoeModels.along(rgb(200, 180, 110), rgb(70, 62, 50)));
@@ -258,6 +312,17 @@ final class FoeModels2 {
             float x1 = x0 + (float) Math.cos(an) * L, z1 = z0 + (float) Math.sin(an) * L;
             float[][] cf = {{x0, -0.005f * k, z0}, {(x0 + x1) / 2, -0.01f - 0.005f * k, (z0 + z1) / 2}, {x1, -0.015f - 0.005f * k, z1}};
             FoeModels.loft(b, cf, new float[] {0.07f, 0.075f, 0.03f}, new float[] {0.007f, 0.007f, 0.003f}, 0, 1, 0, 6, 1f, FoeModels.along(mid, mid), 1f, 1.5f);
+        }
+        // copritrici: tre file di piumette sovrapposte sul dorso dell'ala, barrate, che coprono la radice delle remiganti
+        for (int row = 0; row < 3; row++) for (int k = 0; k < 9 - row; k++) {
+            float x = 0.03f + k * 0.045f + row * 0.02f, z = -0.01f - row * 0.045f, y = 0.022f - row * 0.004f;
+            float h = (float) Math.abs(Math.sin(k * 37.1f + row * 11.3f));
+            float[] col = new float[3];
+            FoeModels.mix(row == 0 ? light : mid, dark, ((k + row) % 3 == 0 ? 0.6f : 0.2f) + 0.2f * h, col);
+            b.colorf(col[0], col[1], col[2]);
+            float w = 0.026f, l = 0.06f + 0.015f * h;
+            b.vert(x, y, z + 0.015f, 0, 1, 0, 0, 0); b.vert(x + w, y - 0.002f, z - l * 0.4f, 0, 1, 0, 0, 0); b.vert(x + 0.004f, y + 0.004f, z - l, 0, 1, 0, 0, 0);
+            b.vert(x, y, z + 0.015f, 0, 1, 0, 0, 0); b.vert(x + 0.004f, y + 0.004f, z - l, 0, 1, 0, 0, 0); b.vert(x - w, y - 0.002f, z - l * 0.4f, 0, 1, 0, 0, 0);
         }
         owlWing = fin2(b, Img.FOE_OWLWING, 0.03f, 6f);
         // zampe piumate con quattro dita e artigli neri
