@@ -374,15 +374,9 @@ public final class World3D {
         return 0;
     }
 
-    /**
-     * Cassa esplosiva sul percorso del carrello: è solo un ostacolo (farla scoppiare costa un punto vita), quindi non contiene
-     * gemme e non conta nel totale. Sull'isola invece le esplosive si fanno saltare da lontano e valgono come le altre.
-     */
+    /** Le esplosive (dinamite) sono solo ostacoli, in tutti i livelli: farle scoppiare non dà gemme e non contano nel totale. */
     private boolean hazardOnly(int k) {
-        if (crateKind == null || (crateKind[k] != C_TNT && crateKind[k] != C_NITRO)) return false;
-        float z = k / W + 0.5f;
-        for (float[] c : carts) if (z >= c[0] && z < c[1]) return true;
-        return false;
+        return crateKind != null && (crateKind[k] == C_TNT || crateKind[k] == C_NITRO);
     }
 
     /** Una cassa di legno ogni tre diventa rinforzata: ci si sale sopra senza romperla, la apre solo la giravolta. */
