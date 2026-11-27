@@ -24,7 +24,7 @@ public final class Coins2D {
             case 3: lv.coinFoe = 1; break;         // il primo corvo
             case 5: carve(lv, 190); break;         // la piramide doppia verso la fine
             case 7: brick(lv, 204, 7); break;      // il mattoncino a sinistra dell'ultima cassa
-            case 9: brick(lv, 122, 4); break;      // la fila alta prima della collina
+            case 9: lv.coin = new float[] {45f, 0.5f}; break;    // in cima al primo burrone, sopra l'arco di gemme: trampolino e planata in giravolta
             case 11: carve(lv, 184); break;        // la piramide sopra le nuvole
             case 13: lv.coinFoe = 22; break;       // il corvo sopra la piramide doppia
             case 15: brick(lv, 179, 6); break;     // l'ultimo mattoncino della fila lunga

@@ -99,6 +99,22 @@ public final class Hud3D {
         }
     }
 
+    /**
+     * Pulsante della croce sotto il punto (x, y): 0 su, 1 giù, 2 sinistra, 3 destra, -1 nessuno. Conta solo il dito sopra il
+     * disegno del pulsante (con un bordo di tolleranza minimo), così fuori dai pulsanti il robot non si muove.
+     */
+    public static int crossButton(float x, float y, float sw, float sh) {
+        float r = joyRadius(sw, sh), cx = joyHomeX(sw, sh), cy = joyHomeY(sw, sh), bs = r * 0.78f, off = r * 0.66f, rr = bs * 0.56f;
+        float[][] c = {{cx, cy - off}, {cx, cy + off}, {cx - off, cy}, {cx + off, cy}};
+        int best = -1;
+        float bd = rr * rr;
+        for (int i = 0; i < 4; i++) {
+            float dx = x - c[i][0], dy = y - c[i][1], d = dx * dx + dy * dy;
+            if (d <= bd) { bd = d; best = i; }
+        }
+        return best;
+    }
+
     /** Croce direzionale: quattro pulsanti tondi come salto e giravolta, a croce; quello premuto è pieno, gli altri velati. */
     private static void drawCross(Painter p, float cx, float cy, float r, float dx, float dy) {
         float bs = r * 0.78f, off = r * 0.66f;

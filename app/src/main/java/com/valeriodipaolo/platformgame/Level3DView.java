@@ -146,8 +146,14 @@ final class Level3DView extends FrameLayout {
 
             boolean j = false, s = false;
             float dx = 0, dy = 0;
+            boolean[] cross = new boolean[4];
             for (int i = 0; i < e.getPointerCount(); i++) {
                 if (i == lifted) continue;
+                if (dpad && e.getX(i) < w * 0.5f) {           // croce: si cammina solo con il dito sopra un pulsante
+                    int b = Hud3D.crossButton(e.getX(i), e.getY(i), w, h);
+                    if (b >= 0) cross[b] = true;
+                    continue;
+                }
                 if (e.getPointerId(i) == joyId) {
                     dx = (e.getX(i) - joyCx) / radius;
                     dy = (e.getY(i) - joyCy) / radius;
@@ -166,20 +172,16 @@ final class Level3DView extends FrameLayout {
             joyDx = dx;
             joyDy = dy;
             // zona morta piccola e piena velocità già a poco più di metà corsa: risposta pronta
-            if (len < (digital || dpad ? 0.3f : 0.12f)) {
-                joyX = joyY = 0;
-            } else if (dpad) {
-                // croce: bracci larghi (±30° attorno agli assi), diagonali solo nello spicchio stretto degli angoli
-                double a = Math.toDegrees(Math.atan2(-dy, dx));
-                double r = ((a % 90) + 90) % 90;                       // 0..90 dentro il quadrante
-                double snap = r < 30 ? 0 : r > 60 ? 90 : 45;
-                double ang = Math.toRadians(a - r + snap);
-                joyX = (float) Math.cos(ang);
-                joyY = (float) Math.sin(ang);
-                if (Math.abs(joyX) < 1e-3f) joyX = 0;
-                if (Math.abs(joyY) < 1e-3f) joyY = 0;
+            if (dpad) {
+                // croce: direzione pura del pulsante sotto il dito (due dita su due pulsanti = diagonale); fuori dai pulsanti fermo
+                joyX = (cross[3] ? 1f : 0f) - (cross[2] ? 1f : 0f);
+                joyY = (cross[0] ? 1f : 0f) - (cross[1] ? 1f : 0f);
+                float jl = (float) Math.sqrt(joyX * joyX + joyY * joyY);
+                if (jl > 1f) { joyX /= jl; joyY /= jl; }
                 joyDx = joyX;
                 joyDy = -joyY;
+            } else if (len < (digital ? 0.3f : 0.12f)) {
+                joyX = joyY = 0;
             } else if (digital) {
                 // otto direzioni, tutto o niente: l'angolo si arrotonda al multiplo di 45° più vicino e la velocità è sempre piena
                 double ang = Math.round(Math.atan2(-dy, dx) / (Math.PI / 4)) * (Math.PI / 4);

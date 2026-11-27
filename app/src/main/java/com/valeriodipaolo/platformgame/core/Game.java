@@ -79,7 +79,7 @@ public final class Game {
 
     private boolean left, right, jump, jumpWas, spin, spinWas;
     private float jumpBuffer, coyote, acc, checkpointX, checkpointY;
-    private boolean spinActive, steelHint;
+    private boolean spinActive;
     private int airJumps;
 
     public Game() {
@@ -130,7 +130,6 @@ public final class Game {
         coin = level.coin == null ? null : new float[] {level.coin[0], level.coin[1]};
         coinFoe = level.coinFoe >= 0 && level.coinFoe < enemies.size() ? enemies.get(level.coinFoe) : null;
         coinOwned = gemOwned = false;      // ricominciando il livello si riparte da zero
-        steelHint = false;
         pops.clear();
         toast = null;
         toastTime = 0;
@@ -449,10 +448,7 @@ public final class Game {
         bumpTx = tx;
         bumpTy = ty;
         bumpAge = 0;
-        if (c == Level.STEEL && !spinActive) {         // rinforzata: la capocciata non basta
-            if (!steelHint) { steelHint = true; showToast("Cassa rinforzata: serve la giravolta"); }
-            return;
-        }
+        if (c == Level.STEEL && !spinActive) return;   // rinforzata: la capocciata non basta (sta a chi gioca capire come aprirla)
         if (c == Level.BONUS || c == Level.STEEL) {
             level.set(tx, ty, Level.USED);
             gems++;
