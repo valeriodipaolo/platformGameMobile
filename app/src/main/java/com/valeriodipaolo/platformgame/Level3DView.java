@@ -107,7 +107,7 @@ final class Level3DView extends FrameLayout {
         protected void onDraw(Canvas canvas) {
             painter.begin(canvas);
             hud.dpad = dpad;
-            hud.draw(world, painter, getWidth(), getHeight(), joyId != -1, joyCx, joyCy, joyDx, joyDy, renderer.error);
+            hud.draw(world, painter, getWidth(), getHeight(), dpad || joyId != -1, joyCx, joyCy, joyDx, joyDy, renderer.error);
             postInvalidateOnAnimation();
         }
 
@@ -150,8 +150,8 @@ final class Level3DView extends FrameLayout {
             for (int i = 0; i < e.getPointerCount(); i++) {
                 if (i == lifted) continue;
                 if (dpad && e.getX(i) < w * 0.5f) {           // croce: si cammina solo con il dito sopra un pulsante
-                    int b = Hud3D.crossButton(e.getX(i), e.getY(i), w, h);
-                    if (b >= 0) cross[b] = true;
+                    int m = Hud3D.crossButtons(e.getX(i), e.getY(i), w, h);      // un dito tra due pulsanti li preme entrambi
+                    for (int k = 0; k < 4; k++) if ((m & (1 << k)) != 0) cross[k] = true;
                     continue;
                 }
                 if (e.getPointerId(i) == joyId) {

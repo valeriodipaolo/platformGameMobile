@@ -58,8 +58,12 @@ public final class Hud3D {
         float jr = joyRadius(sw, sh);
         float cx = joyHomeX(sw, sh), cy = joyHomeY(sw, sh);           // il joystick resta fermo nella sua posizione
         boolean sky = w.theme == 12;                       // sulle nuvole i comandi bianchi non si vedrebbero: fondo scuro
-        if (sky) p.image(Img.HV_PAD, cx - jr * 1.05f, cy - jr * 1.05f, 2.1f * jr, 2.1f * jr, false, 1);
-        if (dpad) drawCross(p, cx, cy, jr, joyActive ? joyDx : 0, joyActive ? joyDy : 0);
+        if (sky && !dpad) p.image(Img.HV_PAD, cx - jr * 1.05f, cy - jr * 1.05f, 2.1f * jr, 2.1f * jr, false, 1);
+        if (sky && dpad) {
+            float e = crossOff(sw, sh) + crossSize(sw, sh) * 0.6f;
+            p.image(Img.HV_PAD, crossX(sw, sh) - e, crossY(sw, sh) - e, 2 * e, 2 * e, false, 1);
+        }
+        if (dpad) drawCross(p, sw, sh, joyActive ? joyDx : 0, joyActive ? joyDy : 0);
         else {
             p.image(Img.JOY_BASE, cx - jr, cy - jr, 2 * jr, 2 * jr, false, joyActive ? 1f : 0.7f);
             float kr = jr * 0.46f;
@@ -99,25 +103,31 @@ public final class Hud3D {
         }
     }
 
+    /** Geometria della croce: pulsanti grandi quasi come salto e giravolta, centro della croce in basso a sinistra. */
+    public static float crossSize(float sw, float sh) { return 0.19f * sh; }
+    public static float crossOff(float sw, float sh) { return 0.155f * sh; }
+    public static float crossX(float sw, float sh) { return 0.04f * sw + crossOff(sw, sh) + crossSize(sw, sh) / 2; }
+    public static float crossY(float sw, float sh) { return sh - 0.04f * sh - crossOff(sw, sh) - crossSize(sw, sh) / 2; }
+
     /**
-     * Pulsante della croce sotto il punto (x, y): 0 su, 1 giù, 2 sinistra, 3 destra, -1 nessuno. Conta solo il dito sopra il
-     * disegno del pulsante (con un bordo di tolleranza minimo), così fuori dai pulsanti il robot non si muove.
+     * Pulsanti della croce sotto il punto (x, y), come maschera di bit: 1 su, 2 giù, 4 sinistra, 8 destra. L'area di ogni pulsante
+     * sborda un poco oltre il disegno, così tra due pulsanti vicini (su e destra, per esempio) il pollice li preme entrambi e il
+     * robot va in obliquo; al centro della croce e fuori dai pulsanti non si preme niente.
      */
-    public static int crossButton(float x, float y, float sw, float sh) {
-        float r = joyRadius(sw, sh), cx = joyHomeX(sw, sh), cy = joyHomeY(sw, sh), bs = r * 0.78f, off = r * 0.66f, rr = bs * 0.56f;
+    public static int crossButtons(float x, float y, float sw, float sh) {
+        float cx = crossX(sw, sh), cy = crossY(sw, sh), off = crossOff(sw, sh), rr = 0.135f * sh;
         float[][] c = {{cx, cy - off}, {cx, cy + off}, {cx - off, cy}, {cx + off, cy}};
-        int best = -1;
-        float bd = rr * rr;
+        int mask = 0;
         for (int i = 0; i < 4; i++) {
-            float dx = x - c[i][0], dy = y - c[i][1], d = dx * dx + dy * dy;
-            if (d <= bd) { bd = d; best = i; }
+            float dx = x - c[i][0], dy = y - c[i][1];
+            if (dx * dx + dy * dy <= rr * rr) mask |= 1 << i;
         }
-        return best;
+        return mask;
     }
 
     /** Croce direzionale: quattro pulsanti tondi come salto e giravolta, a croce; quello premuto è pieno, gli altri velati. */
-    private static void drawCross(Painter p, float cx, float cy, float r, float dx, float dy) {
-        float bs = r * 0.78f, off = r * 0.66f;
+    private static void drawCross(Painter p, float sw, float sh, float dx, float dy) {
+        float bs = crossSize(sw, sh), off = crossOff(sw, sh), cx = crossX(sw, sh), cy = crossY(sw, sh);
         p.image(Img.DPAD_UP, cx - bs / 2, cy - off - bs / 2, bs, bs, false, dy < -0.3f ? 1f : 0.7f);
         p.image(Img.DPAD_DOWN, cx - bs / 2, cy + off - bs / 2, bs, bs, false, dy > 0.3f ? 1f : 0.7f);
         p.image(Img.DPAD_LEFT, cx - off - bs / 2, cy - bs / 2, bs, bs, false, dx < -0.3f ? 1f : 0.7f);
