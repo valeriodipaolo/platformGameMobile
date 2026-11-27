@@ -445,10 +445,12 @@ public final class Game {
     public void hitBlock(int tx, int ty) {
         char c = level.get(tx, ty);
         if (c != Level.BONUS && c != Level.BRICK && c != Level.SECRET && c != Level.STEEL) return;
-        bumpTx = tx;
-        bumpTy = ty;
-        bumpAge = 0;
         if (c == Level.STEEL && !spinActive) return;   // rinforzata: la capocciata non basta (sta a chi gioca capire come aprirla)
+        if (c != Level.BRICK) {                        // saltella solo la casella che si apre; i mattoncini restano fermi
+            bumpTx = tx;
+            bumpTy = ty;
+            bumpAge = 0;
+        }
         if (c == Level.BONUS || c == Level.STEEL) {
             level.set(tx, ty, Level.USED);
             gems++;
