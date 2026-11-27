@@ -126,7 +126,7 @@ public class Check3 {
         World3D w = fresh();
         run(w, 0.3f, 0, 0, false, false);
         run(w, 0.5f, 1, 0, false, false);
-        ok(w.px > 1.5f && w.px <= World3D.HALF - World3D.R + 0.01f, String.format("joystick a destra: va a destra e si ferma al bordo (x=%.2f)", w.px));
+        ok(w.px > 1.5f && w.px <= World3D.HALF - World3D.R_WALL + 0.01f, String.format("joystick a destra: va a destra e si ferma al bordo (x=%.2f)", w.px));
         float z0 = w.pz;
         run(w, 0.5f, 0, 1, false, false);
         ok(w.pz > z0 + 2.5f, "joystick in avanti: avanza nel corridoio");
@@ -167,7 +167,7 @@ public class Check3 {
         w = fresh();
         w.px = -2; w.pz = 20; 
         run(w, 1f, 0, 1, false, false);
-        ok(w.pz < 22 - World3D.R + 0.01f, String.format("il muretto di pietra ferma il robot (z=%.2f)", w.pz));
+        ok(w.pz < 22 - World3D.R_WALL + 0.01f, String.format("il muretto di pietra ferma il robot (z=%.2f)", w.pz));
         run(w, 0.25f, 0, 1, true, false);
         run(w, 0.6f, 0, 1, false, false);
         ok(w.pz > 22, "saltando si scavalca il muretto");
@@ -176,7 +176,7 @@ public class Check3 {
         w = fresh();
         w.px = 0; w.pz = 23.5f;
         run(w, 0.6f, 0, 1, false, false);
-        ok(w.pz < 25 - World3D.R + 0.01f && w.crate[25 * World3D.W + 2], "la cassa ferma il robot");
+        ok(w.pz < 25 - World3D.R_WALL + 0.01f && w.crate[25 * World3D.W + 2], "la cassa ferma il robot");
         int g0 = w.gems;
         run(w, 0.3f, 0, 1, false, true);
         ok(!w.crate[25 * World3D.W + 2] && w.gems == g0 + 1, "la giravolta rompe la cassa e dà un pezzo di gemma");

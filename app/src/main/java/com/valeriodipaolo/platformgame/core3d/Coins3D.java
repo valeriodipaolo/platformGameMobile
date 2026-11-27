@@ -30,7 +30,7 @@ final class Coins3D {
             case 20: nook(w, 4, 160); break;
             case 22: crate(w, 136); break;
             case 24: w.coinFoeIdx = 6; break;             // il falco tra le colonne
-            case 26: nook(w, 0, 185); break;
+            case 26: break;                               // nel vicolo cieco più profondo del labirinto grande (Levels3C)
             case 28: w.coin = new float[] {0f, 6.1f, 139.5f}; break;   // altissimo dopo la terza molla: ci arriva solo chi plana in giravolta
             case 30: w.coinFoeIdx = 5; break;             // una pianta carnivora
             case 32: nook(w, 4, 121); break;          // nella radura, dietro i blocchi sul bordo destro: si entra col doppio salto

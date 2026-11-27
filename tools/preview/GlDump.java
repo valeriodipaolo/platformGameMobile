@@ -91,7 +91,8 @@ public class GlDump implements Gfx3D {
         Scene3D sc = new Scene3D();
         w.px = x; w.pz = z; w.py = Math.max(0, w.topAt(x, z)) + 0.01f;
         int upd = Integer.getInteger("upd", 40);
-        for (int i = 0; i < upd; i++) { w.setInput(0, i > 25 ? 0.6f : 0f, false, false); w.hp = 99; w.update(1f / 60f); }
+        float fw = Float.parseFloat(System.getProperty("fwd", "0.6"));
+        for (int i = 0; i < upd; i++) { w.setInput(0, i > 25 ? fw : 0f, false, false); w.hp = 99; w.update(1f / 60f); }
         if (System.getProperty("open") != null) w.gateOpen = 1f;
         if (System.getProperty("focus") != null) {                 // inquadra da vicino il primo nemico con quell'aspetto
             int sk = Integer.getInteger("focus");
@@ -114,6 +115,7 @@ public class GlDump implements Gfx3D {
         o.writeFloat(Gfx3D.LX); o.writeFloat(Gfx3D.LY); o.writeFloat(Gfx3D.LZ);
         GlDump d = new GlDump(o);
         sc.render(w, d, 1280f / 576f);       // un primo giro prepara le mesh (alcune nascono al primo disegno)
+        for (int i = Integer.getInteger("warm", 0); i > 0; i--) sc.render(w, d, 1280f / 576f);   // la camera si assesta (si scarta)
         o.writeByte(9);                      // 9 = da qui inizia il fotogramma da mostrare
         sc.render(w, d, 1280f / 576f);
         o.writeByte(0);

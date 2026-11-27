@@ -88,7 +88,7 @@ public final class Scene3D {
     private Mesh crate, gem, coin, shadow, ring, gateStone, gateDoor, gateLight;
     private final HeroModel hero = new HeroModel();
     private int builtFor = -1;
-    private float camX, camY = 0, camZ, camEye;
+    private float camX, camY = 0, camZ, camEye, mazeK;
     private boolean camEyeInit;
     private float backK, nearZ, farZ;
     private boolean back;
@@ -390,6 +390,7 @@ public final class Scene3D {
         mbs = new MeshBuilder[K_N][nChunks];
         buildFade(w, z0, z1);
         genTrees(z0, z1);
+        buildMazeSides(w);
 
         b = new MeshBuilder();                                         // cielo: occupa la parte alta dello schermo, con la foschia all'orizzonte
         float skyLow = heaven ? -1f : 0.18f;                           // in cielo il fondale riempie tutto lo schermo, anche sotto l'orizzonte
@@ -649,6 +650,35 @@ public final class Scene3D {
     }
 
     /** Nel cielo il sentiero è una lastra di nuvola sospesa: ciuffi sotto ai bordi, un orlo soffice sopra e, molto in basso, qualche nuvola lontana per dare l'altezza. */
+    /**
+     * Labirinto: i corridoi sui bordi hanno anche loro un muro dalla parte del bosco (fuori dalla griglia), alto quanto quelli
+     * interni, con le stesse pietre sbozzate: da fuori il labirinto è un blocco chiuso, dentro i corridoi sono tutti uguali.
+     */
+    private void buildMazeSides(World3D w) {
+        for (float[] m : w.mazes) {
+            for (int z = (int) m[0]; z < (int) m[1]; z++) {
+                MeshBuilder s = mb(K_STONE, z);
+                for (int side = -1; side <= World3D.W; side += World3D.W + 1) {
+                    float fx = side - World3D.HALF;
+                    for (int k = 0; k < Levels3C.MAZE_H; k++) {
+                        s.colorf(0.96f + 0.08f * hash(side + 9, z, k), 0.96f + 0.06f * hash(side + 9, z, k + 7), 0.96f);
+                        int faces = 63 & ~8;
+                        if (k + 1 < Levels3C.MAZE_H) faces &= ~4;
+                        faces &= side < 0 ? ~2 : ~1;                         // la faccia verso il bosco non si vede mai da dentro
+                        if (z > (int) m[0]) faces &= ~32;
+                        if (z + 1 < (int) m[1]) faces &= ~16;
+                        int mk = s.mark();
+                        s.roundBox(fx + 0.5f, k + 0.5f, z + 0.5f, 0.98f, 0.98f, 0.98f, 0.3f, faces, 2);
+                        s.rough(mk, 0.17f, 1.3f, 5);
+                        s.colorf(0.58f, 0.55f, 0.5f);
+                        s.box(fx + 0.5f, k + 0.5f, z + 0.5f, 0.8f, 0.8f, 0.8f);
+                        if (z + 1 < (int) m[1]) s.box(fx + 0.5f, k + 0.5f, z + 1f, 0.8f, 0.8f, 0.42f);
+                    }
+                }
+            }
+        }
+    }
+
     private void buildPuffs(World3D w, int z0, int z1) {
         Random r = new Random(11);
         for (float z = z0; z < z1; z += 1.5f) {                       // pancia della lastra: bolle sotto ai due bordi e sotto ai ponti
@@ -1655,7 +1685,8 @@ public final class Scene3D {
         if (builtFor != w.length) build(w);
 
         // camera dietro le spalle: segue il giocatore, un po' meno di traverso, e l'altezza del terreno con dolcezza
-        float tx = w.px * 0.6f, tz = w.pz;
+        mazeK += ((w.inMaze(w.pz) ? 1f : 0f) - mazeK) * 0.05f;        // nel labirinto la camera resta nel corridoio e sale sopra i muri
+        float tx = w.px * (0.6f + 0.4f * mazeK), tz = w.pz;
         boolean wantBack = w.pz < w.camBackUntil;
         if (!camInit) { camX = tx; camZ = tz; camY = w.groundY; camInit = true; backK = wantBack ? 1 : 0; }
         backK += ((wantBack ? 1f : 0f) - backK) * 0.035f;            // si gira con calma alla fine della fuga
@@ -1683,6 +1714,7 @@ public final class Scene3D {
                 if (h >= base + 2.5f) eye = Math.max(eye, head + (h + 0.45f - head) * 6f / d);   // solo gli ostacoli alti fanno alzare l'occhio
             }
             eye = Math.min(eye, base + 11f);
+            eye = eye + (base + 8.3f - eye) * mazeK;                        // nel labirinto: alta e vicina, guarda giù nel corridoio
         }
         if (!camEyeInit) { camEye = eye; camEyeInit = true; }
         camEye += (eye - camEye) * (eye > camEye ? 0.18f : 0.06f);       // sale in fretta (mai coperto), scende con calma
@@ -1691,7 +1723,7 @@ public final class Scene3D {
         float eyeY = back ? camY + 3.3f : camEye;
         // davanti al robot, più in alto, guardando indietro: si vede il masso che arriva e il robot che corre verso lo schermo
         // nella fuga la camera sta lontana e alta davanti al robot: gli ostacoli verso cui corre si vedono con 2-3 secondi d'anticipo
-        Mat4.lookAt(view, camX * (1 - 0.6f * bk), eyeY + lift + 5.2f * bk, camZ - 6.0f + 21f * bk, camX * 0.9f * (1 - 0.6f * bk), camY + 1.0f + lift - 0.3f * bk, camZ + 5f - 2.5f * bk);
+        Mat4.lookAt(view, camX * (1 - 0.6f * bk), eyeY + lift + 5.2f * bk, camZ - 6.0f + 2.2f * mazeK + 21f * bk, camX * 0.9f * (1 - 0.6f * bk), camY + 1.0f + lift - 0.3f * bk, camZ + 5f - 2.5f * bk);
         nearZ = back ? w.pz - 60f : w.pz - 4f;
         farZ = back ? w.pz + 34f : w.pz + 120f;                       // tutto quello che c'è tra il robot e la camera va disegnato
         Mat4.perspective(proj, 58f, aspect, 0.3f, 400f);

@@ -72,6 +72,8 @@ public final class World3D {
     public static final float GUST = 1.7f, GUST_PUSH = 1.3f;     // raffica leggera: sposta di poco, si corregge senza fatica
     /** Tratti in carrello: {z0, z1}; il carrello corre da solo, si sterza e si salta. */
     public final List<float[]> carts = new ArrayList<float[]>();
+    /** Tratti a labirinto {z0, z1}: muri alti, la camera sale e segue il robot nel corridoio. */
+    public final List<float[]> mazes = new ArrayList<float[]>();
     /** Velocità del carrello: parte da CART_SPEED e cresce fino a CART_SPEED + CART_RAMP alla fine del tratto. */
     public static final float CART_SPEED = 10f, CART_RAMP = 3f, CART_X = 1.05f;
     public int flagZ;
@@ -145,7 +147,7 @@ public final class World3D {
         lives = START_LIVES;
         sealed = false;
         crateKind = null; crateT = null; booms.clear(); crushers.clear(); rafts.clear(); raftIdx = null; camBackUntil = -1f;
-        belt = null; lasers.clear(); quick = null; sinkT = 0; winds.clear(); carts.clear();
+        belt = null; lasers.clear(); quick = null; sinkT = 0; winds.clear(); carts.clear(); mazes.clear();
         coin = null; coinCrate = -1; coinFoeIdx = -1; coinFoe = null; coinPop = null;
         if (levelNo > 37) Levels3W.build(this, levelNo); else if (levelNo > 34) Levels3J.build(this, levelNo); else if (levelNo > 24) Levels3C.build(this, levelNo); else if (levelNo > 12) Levels3B.build(this, levelNo); else if (levelNo == 12) LevelTwelve.build(this); else if (levelNo == 10) LevelTen.build(this); else if (levelNo == 8) LevelEight.build(this); else if (levelNo == 6) LevelSix.build(this); else if (levelNo == 4) LevelFour.build(this); else LevelTwo.build(this);
         if (!rafts.isEmpty()) {                          // prima delle rifiniture: le zattere a galla contano come terreno
@@ -239,6 +241,21 @@ public final class World3D {
     static int xi(float x) { return (int) Math.floor(x + HALF); }
     static int zi(float z) { return (int) Math.floor(z); }
 
+    /**
+     * Quota su cui poggiano i piedi: la più alta sotto l'impronta tra quelle non più alte di poco dei piedi. Accostati a un muro
+     * (l'ingombro contro i muri è più stretto dell'impronta) il muro non conta: si resta sul pavimento.
+     */
+    public float footAt(float x, float z, float feet) {
+        int best = PIT;
+        for (int cz = zi(z - R); cz <= zi(z + R); cz++) {
+            for (int cx = xi(x - R); cx <= xi(x + R); cx++) {
+                int h = cell(cx, cz);
+                if (h != 99 && h > best && h <= feet + 0.6f) best = h;
+            }
+        }
+        return best == PIT ? -1000f : best;
+    }
+
     /** Quota più alta sotto l'impronta del giocatore; molto negativa se sotto c'è solo vuoto. */
     public float topAt(float x, float z) {
         int best = PIT;
@@ -251,7 +268,16 @@ public final class World3D {
         return best == PIT ? -1000f : best;
     }
 
+    /**
+     * Ingombro del robot contro muri e blocchi: un po' più stretto del raggio con cui poggia i piedi, così nei varchi larghi una
+     * casella si passa anche senza essere perfettamente centrati (una leggera compenetrazione con lo spigolo non si nota).
+     */
+    public static final float R_WALL = 0.2f;
+    /** Di quanto, al massimo, il robot viene accompagnato di lato verso un varco quando sbatte contro il suo spigolo. */
+    static final float NUDGE = 0.4f, NUDGE_SPEED = 4f;
+
     private boolean blocked(float x, float z, float feet) {
+        final float R = R_WALL;
         for (int cz = zi(z - R); cz <= zi(z + R); cz++) {
             for (int cx = xi(x - R); cx <= xi(x + R); cx++) {
                 int h = cell(cx, cz);
@@ -259,6 +285,22 @@ public final class World3D {
             }
         }
         return false;
+    }
+
+    /**
+     * Il robot sbatte contro lo spigolo di un varco: se spostandolo di poco di lato (sull'altro asse) il passo sarebbe libero, lo si
+     * accompagna verso il varco invece di fermarlo. Restituisce lo spostamento laterale di questo fotogramma (0 se non c'è varco).
+     */
+    private float slide(float x, float z, boolean alongZ, float dt) {
+        float feet = py;
+        for (float off = 0.05f; off <= NUDGE + 1e-4f; off += 0.05f) {
+            for (int sgn = -1; sgn <= 1; sgn += 2) {
+                float o = off * sgn;
+                boolean free = alongZ ? !blocked(x + o, z, feet) && !blocked(px + o, pz, feet) : !blocked(x, z + o, feet) && !blocked(px, pz + o, feet);
+                if (free) return Math.signum(o) * Math.min(off, NUDGE_SPEED * dt);
+            }
+        }
+        return 0;
     }
 
     // ------------------------------------------------------------------ aggiornamento
@@ -313,7 +355,7 @@ public final class World3D {
             vy = Math.max(-MAX_FALL, vy - GRAVITY * dt);
             py += vy * dt;
             if (stateTime < 1.2f) { pz += vz * dt; yaw = 0; runPhase += vz * dt * 2.1f; }
-            float g = topAt(px, pz);
+            float g = footAt(px, pz, py);
             if (py <= g) { py = g; vy = 0; onGround = true; }
         }
         jumpWas = jump;
@@ -536,12 +578,16 @@ public final class World3D {
         // spostamento: un asse alla volta, fermandosi contro blocchi e casse più alti dei piedi
         float nx = px + (vx + ex) * dt;
         if (cart && Math.abs(nx) > CART_X) { nx = Math.signum(nx) * CART_X; vx = 0; }   // il carrello resta sui tre binari centrali
-        if (blocked(nx, pz, py)) vx = 0; else px = nx;
+        if (!blocked(nx, pz, py)) px = nx;
+        else if (Math.abs(vx) > 0.5f && !cart) { float d = slide(nx, pz, false, dt); if (d != 0) pz += d; else vx = 0; }
+        else vx = 0;
         float nz = pz + (vz + ez) * dt;
-        if (blocked(px, nz, py)) vz = 0; else pz = nz;
+        if (!blocked(px, nz, py)) pz = nz;
+        else if (Math.abs(vz) > 0.5f && !cart) { float d = slide(px, nz, true, dt); if (d != 0) px += d; else vz = 0; }
+        else vz = 0;
 
         py += vy * dt;
-        float g = topAt(px, pz);
+        float g = footAt(px, pz, py);
         onGround = false;
         if (py <= g && vy <= 0 && py > g - 0.6f) {
             py = g;
@@ -1068,8 +1114,14 @@ public final class World3D {
      * Le strutture alte (3 blocchi o più) vanno da un bordo all'altro: se una colonna laterale resta più bassa della vicina
      * alta, la si alza alla stessa quota, così non si può girare attorno alla struttura camminando ai lati.
      */
+    public boolean inMaze(float z) {
+        for (float[] m : mazes) if (z >= m[0] && z <= m[1]) return true;
+        return false;
+    }
+
     private void noSidePaths() {
         for (int z = 0; z < length; z++) {
+            if (inMaze(z + 0.5f)) continue;                     // nel labirinto i corridoi laterali sono voluti
             int h = height[z * W + 1];
             if (h == PIT || h < 3) continue;
             boolean flat = true;

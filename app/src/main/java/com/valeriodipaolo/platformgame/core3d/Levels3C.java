@@ -48,41 +48,140 @@ public final class Levels3C {
     }
 
     // ------------------------------------------------------------------ 26: il labirinto del querceto
-    // Idea: muri alti tre blocchi con un solo varco. Prima un muro e il varco al centro; poi i varchi che cambiano lato, con un nemico
-    // dentro; poi il colpo di scena: dietro al varco c'è un burrone e bisogna cambiare corsia in volo; infine il labirinto lungo.
+    // Idea: tre veri labirinti, con muri di pietra alti cinque blocchi (neanche il doppio salto li scavalca). In ognuno c'è una sola
+    // strada che porta all'uscita: tutte le altre finiscono in un vicolo cieco. Le gemme sono sparse in tutti i corridoi allo stesso
+    // modo, così non tradiscono la strada giusta; i vicoli ciechi più lunghi premiano chi esplora con una cassa, e nel più profondo
+    // dell'ultimo labirinto c'è il gettone. Tra un labirinto e l'altro, all'aperto, una radura e i burroni da saltare.
+    static final int MAZE_H = 5;
+
     private static void maze(World3D w) {
         gemLine(w, 0, 0, 5); crate(w, 1, 9); crate(w, 3, 9);
-        // 1. il primo muro: un varco al centro, le gemme lo attraversano
-        wallH(w, 14, 2, 3); gemLine(w, 0, 11, 17);
-        wallH(w, 22, 0, 3); wallH(w, 28, 4, 3); gemLine(w, -2, 20, 24); gemLine(w, 2, 26, 30); hog(w, 0, 25, false, -2f, 2f);
-        pit(w, 34, 37, 0, 4); arc(w, 2, 34, 37);
-        // 2. i varchi custoditi: un gufo sopra il primo, una castagna appesa nel secondo, una lumaca dietro il terzo
-        wallH(w, 44, 1, 3); owl(w, 1, 40, 48, 3.2f); gem(w, -1, 0.7f, 44.5f);
-        wallH(w, 50, 3, 3); chest(w, 3, 52, 3.4f); gem(w, 1, 0.7f, 50.5f);
-        wallH(w, 56, 0, 3); snail(w, 0, 60, 57, 64); gem(w, -2, 0.7f, 56.5f);
-        wallH(w, 66, 4, 3); acorn(w, 0f, 69); gem(w, 2, 0.7f, 66.5f);
+        // 1. il primo labirinto, corto: si impara che le strade si biforcano e che si può tornare indietro
+        gemLine(w, 0, 11, 15);
+        carveMaze(w, 18, 8, 1, MAZE_A, false);
         // la radura della chiave: una terrazza nel mezzo, con il gufo di guardia
-        for (int x = 1; x <= 3; x++) { set(w, x, 76, 1); for (int z = 77; z <= 83; z++) set(w, x, z, 2); set(w, x, 84, 1); }
-        owl(w, 2, 77, 84, 4.1f); gemLine3(w, 0, 2.7f, 78, 79); gemLine3(w, 0, 2.7f, 81, 82);
-        crate(w, 0, 90); crate(w, 4, 90); hog(w, 2, 93, false, -2f, 2f);
-        // 3. il colpo di scena: subito dopo il varco c'è il vuoto, e il varco successivo è dall'altra parte: si sterza in volo
+        for (int x = 1; x <= 3; x++) { set(w, x, 40, 1); for (int z = 41; z <= 47; z++) set(w, x, z, 2); set(w, x, 48, 1); }
+        owl(w, 2, 41, 48, 4.1f); gemLine3(w, 0, 2.7f, 42, 43); gemLine3(w, 0, 2.7f, 45, 46);
+        crate(w, 0, 53); crate(w, 4, 53); hog(w, 0, 56, false, -2f, 2f);
+        // 2. il secondo labirinto, più lungo, con qualche nemico nei corridoi dritti
+        carveMaze(w, 64, 16, 0, MAZE_B, true);
+        // 3. all'aperto: dopo il varco c'è il vuoto e il varco successivo è dall'altra parte, si sterza in volo
         wallH(w, 100, 2, 3); pit(w, 101, 103, 0, 4); wallH(w, 106, 0, 3); pit(w, 107, 109, 0, 4); wallH(w, 112, 4, 3); pit(w, 113, 115, 0, 4);
         arc(w, -1, 101, 103); arc(w, 1, 107, 109); gem(w, 0, 0.7f, 104.5f); gem(w, 1, 0.7f, 110.5f); gem(w, 2, 0.7f, 116.5f);
         snail(w, 2, 120, 117, 124);
         // gradini di pietra: alti uno e due, si sale e si scende a zig-zag
         stones(w, 128, new int[] {1, 2, 1, 2, 1}); stones(w, 129, new int[] {1, 2, 1, 2, 1}); chest(w, 2, 132, 3.6f);
-        stones(w, 136, new int[] {2, 1, 1, 1, 2}); stones(w, 137, new int[] {2, 2, 1, 2, 2}); owl(w, 2, 134, 142, 3.6f);
-        // 4. il labirinto lungo: sei muri a distanza corta, un nemico diverso in ogni stanza
-        wallH(w, 148, 1, 3); hog(w, 0, 150, false, -2f, 2f); wallH(w, 152, 3, 3); chest(w, 3, 154, 3.4f); wallH(w, 156, 0, 3);
-        snail(w, 0, 158, 157, 159); wallH(w, 160, 4, 3); acorn(w, 0f, 162); wallH(w, 164, 2, 3); owl(w, 2, 164, 170, 3.2f); wallH(w, 168, 1, 3);
-        gem(w, -1, 0.7f, 148.5f); gem(w, 1, 0.7f, 152.5f); gem(w, -2, 0.7f, 156.5f); gem(w, 2, 0.7f, 160.5f); gem(w, 0, 0.7f, 164.5f); gem(w, -1, 0.7f, 168.5f);
-        // gli ultimi burroni, larghi: si salta di corsia in corsia
-        pit(w, 176, 180, 0, 4); arc(w, 0, 176, 180); hog(w, 2, 184, false, -2f, 2f); pit(w, 188, 192, 0, 4); arc(w, 0, 188, 192);
-        for (int x = 0; x < W; x += 2) crate(w, x, 198);
-        wallH(w, 204, 2, 3); chest(w, 2, 207, 3.4f); wallH(w, 212, 0, 3); wallH(w, 216, 4, 3); owl(w, 2, 212, 220, 3.4f);
-        gem(w, 0, 0.7f, 204.5f); gem(w, -2, 0.7f, 212.5f); gem(w, 2, 0.7f, 216.5f); gemLine(w, 0, 222, 228);
+        stones(w, 136, new int[] {2, 1, 1, 1, 2}); stones(w, 137, new int[] {2, 2, 1, 2, 2}); owl(w, 2, 134, 141, 3.6f);
+        // 4. il labirinto grande: il più lungo, con più nemici; nel vicolo cieco più profondo il gettone
+        carveMaze(w, 146, 24, 2, MAZE_C, true);
+        // l'uscita: un burrone largo e la discesa verso il portone
+        for (int x = 0; x < W; x += 2) crate(w, x, 199);
+        pit(w, 204, 208, 0, 4); arc(w, 0, 204, 208); hog(w, 0, 213, false, -2f, 2f);
+        pit(w, 217, 219, 0, 4); arc(w, 0, 217, 219); gemLine(w, 0, 222, 228);
         w.flagZ = 232;
     }
+
+    /** I tre labirinti: {seme, colonna d'uscita}, scelti perché la strada giusta serpeggi e i vicoli ciechi siano lunghi e tanti. */
+    static final long[] MAZE_A = {1160, 2}, MAZE_B = {884, 1}, MAZE_C = {5, 2};
+
+    /**
+     * Albero dei passaggi di un labirinto perfetto di tre colonne per rows righe (cella i = riga * 3 + colonna), costruito "a
+     * crescita" partendo dalla cella d'ingresso: un po' prosegue l'ultimo corridoio aperto (corridoi lunghi), un po' riparte da un
+     * punto a caso (tante biforcazioni). parent[i] è la cella da cui si è arrivati in i, -1 per l'ingresso.
+     */
+    static int[] mazeTree(int rows, int cin, long seed) {
+        int n = rows * 3;
+        int[] parent = new int[n];
+        java.util.Arrays.fill(parent, -2);
+        java.util.Random rnd = new java.util.Random(seed * 7919L + rows);
+        java.util.ArrayList<Integer> active = new java.util.ArrayList<Integer>();
+        parent[cin] = -1;
+        active.add(cin);
+        int[] nb = new int[4];
+        while (!active.isEmpty()) {
+            int ai = rnd.nextFloat() < 0.65f ? active.size() - 1 : rnd.nextInt(active.size());
+            int c = active.get(ai), r = c / 3, col = c % 3, k = 0;
+            if (r > 0 && parent[c - 3] == -2) nb[k++] = c - 3;
+            if (r < rows - 1 && parent[c + 3] == -2) nb[k++] = c + 3;
+            if (col > 0 && parent[c - 1] == -2) nb[k++] = c - 1;
+            if (col < 2 && parent[c + 1] == -2) nb[k++] = c + 1;
+            if (k == 0) { active.remove(ai); continue; }
+            int v = nb[rnd.nextInt(k)];
+            parent[v] = c;
+            active.add(v);
+        }
+        return parent;
+    }
+
+    /**
+     * Scava un labirinto a partire dalla riga z0: celle libere alle colonne 0, 2, 4 e alle righe z0, z0+2, ...; muri alti MAZE_H
+     * tutto intorno, con l'ingresso nella fila z0-1 (colonna cin) e l'uscita nella fila z0+2*rows-1. Gemme sparse in modo uniforme
+     * in tutti i corridoi; casse in fondo ai vicoli ciechi più lunghi; nemici nei corridoi dritti; il gettone, se richiesto, nel
+     * vicolo cieco più profondo (solo nell'ultimo labirinto).
+     */
+    private static void carveMaze(World3D w, int z0, int rows, int cin, long[] spec, boolean foes) {
+        int cout = (int) spec[1];
+        int[] par = mazeTree(rows, cin, spec[0]);
+        int n = rows * 3, zEnd = z0 + 2 * rows - 1;
+        for (int z = z0 - 1; z <= zEnd; z++) for (int x = 0; x < W; x++) set(w, x, z, MAZE_H);
+        for (int i = 0; i < n; i++) set(w, 2 * (i % 3), z0 + 2 * (i / 3), 0);
+        for (int i = 0; i < n; i++) if (par[i] >= 0) {
+            int a = i, b = par[i];
+            set(w, (a % 3) + (b % 3), z0 + (a / 3) + (b / 3), 0);         // la casella fra le due celle
+        }
+        set(w, 2 * cin, z0 - 1, 0);
+        set(w, 2 * cout, zEnd, 0);
+        w.mazes.add(new float[] {z0 - 1, zEnd + 1});
+        // vie: strada giusta e distanza di ogni cella dalla strada
+        boolean[] onPath = new boolean[n];
+        for (int i = (rows - 1) * 3 + cout; i >= 0; i = par[i]) onPath[i] = true;
+        int[] deg = new int[n];
+        for (int i = 0; i < n; i++) if (par[i] >= 0) { deg[i]++; deg[par[i]]++; }
+        int[] depth = new int[n];
+        for (int pass = 0; pass < n; pass++) for (int i = 0; i < n; i++) if (!onPath[i] && par[i] >= 0) depth[i] = depth[par[i]] + 1;
+        // gemme: una cella ogni tre lungo l'ordine di righe, sia sulla strada giusta sia nei vicoli: non dicono dove andare
+        for (int i = 0; i < n; i++) if ((i / 3 + (i % 3) * 2) % 3 == 1) gem(w, 2 * (i % 3) - 2f, 0.7f, z0 + 2 * (i / 3) + 0.5f);
+        // in fondo ai vicoli ciechi: il più profondo dell'ultimo labirinto tiene il gettone, i tre più lunghi dopo una cassa
+        java.util.ArrayList<Integer> tips = new java.util.ArrayList<Integer>();
+        for (int i = 0; i < n; i++) if (!onPath[i] && deg[i] == 1) tips.add(i);
+        tips.sort((p, q) -> depth[q] - depth[p]);
+        int t0 = 0;
+        if (spec == MAZE_C && !tips.isEmpty()) {
+            int i = tips.get(0);
+            float x = 2 * (i % 3) - 2f, z = z0 + 2 * (i / 3) + 0.5f;
+            w.gemsList.removeIf(g -> Math.abs(g[0] - x) < 0.3f && Math.abs(g[2] - z) < 0.3f);
+            w.coin = new float[] {x, 0.6f, z};
+            t0 = 1;
+        }
+        for (int k = t0; k < Math.min(tips.size(), t0 + (rows >= 16 ? 3 : 1)); k++) {
+            int i = tips.get(k);
+            if (depth[i] < 2) break;
+            final float x = 2 * (i % 3) - 2f, z = z0 + 2 * (i / 3) + 0.5f;
+            w.gemsList.removeIf(g -> Math.abs(g[0] - x) < 0.3f && Math.abs(g[2] - z) < 0.3f);
+            crate(w, 2 * (i % 3), z0 + 2 * (i / 3));
+        }
+        if (!foes) return;
+        // nemici: nei corridoi dritti lungo z di almeno tre celle, uno ogni due corridoi, mai vicino all'ingresso
+        int placed = 0, every = 0;
+        for (int col = 0; col < 3; col++) {
+            int r = 1;
+            while (r < rows) {
+                int r1 = r;
+                while (r1 + 1 < rows && linked(par, (r1 + 1) * 3 + col, r1 * 3 + col)) r1++;
+                if (r1 - r >= 2 && r >= 2) {
+                    if (every++ % 2 == 0) {
+                        int za = z0 + 2 * r, zb = z0 + 2 * r1;
+                        if (placed % 2 == 0) hog(w, cx(2 * col), (za + zb) / 2f + 0.5f, true, za + 0.5f, zb + 0.5f);
+                        else snail(w, 2 * col, (za + zb) / 2, za, zb);
+                        placed++;
+                    }
+                }
+                r = r1 + 1;
+            }
+        }
+    }
+
+    private static boolean linked(int[] par, int a, int b) { return par[a] == b || par[b] == a; }
 
     // ------------------------------------------------------------------ 28: l'arcipelago gelato
     // Idea: il lago è fatto di isole e i fiori a molla di neve sono i ponti. Prima un salto con molla su un'isola grande; poi isole sempre
