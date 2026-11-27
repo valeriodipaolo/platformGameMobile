@@ -1534,7 +1534,9 @@ public final class Scene3D {
         // portone del traguardo: una muraglia di pietre irregolari altissima (la cima non si vede) e larga oltre il bosco,
         // l'arco del portone, e dietro i battenti un corridoio buio che finisce in una luce bianca: oltre non si vede nulla
         b = new MeshBuilder();
+        gateY = Math.max(0, lvl.flagZ >= 0 && lvl.flagZ < lvl.length ? lvl.height[lvl.flagZ * World3D.W + 2] : 0);   // il portone poggia sul pavimento davanti
         {
+            final float gy = gateY;
             java.util.Random rg = new java.util.Random(77);
             float y = -0.6f;
             int row = 0;
@@ -1544,7 +1546,7 @@ public final class Scene3D {
                 while (x < 16f) {
                     float sw = sh * (1.1f + 0.9f * rg.nextFloat());
                     float cx = x + sw / 2;
-                    boolean door = Math.abs(cx) < 1.3f + sw / 2 - 0.05f && y < 3.7f;              // vano del portone
+                    boolean door = Math.abs(cx) < 1.3f + sw / 2 - 0.05f && y < gy + 3.7f && y + sh > gy + 0.05f;              // vano del portone
                     if (!door) {
                         float t = 0.82f + 0.24f * rg.nextFloat();
                         b.colorf(t, t * (0.96f + 0.06f * rg.nextFloat()), t * (0.92f + 0.06f * rg.nextFloat()));
@@ -1566,14 +1568,14 @@ public final class Scene3D {
             b.box(0, 23f, 0.55f, 5.2f, 40f, 0.4f);
             // arco: pilastri e architrave più chiari
             b.colorf(1.02f, 1.0f, 0.96f);
-            for (int side = -1; side <= 1; side += 2) for (int k = 0; k < 4; k++) { int mk = b.mark(); b.roundBox(side * 1.6f, 0.45f + k * 0.9f, -0.1f, 0.62f, 0.88f, 1.2f, 0.1f, 63, 1); b.rough(mk, 0.04f, 2f, 400 + k + side * 9); }
-            for (int i = 0; i < 5; i++) { int mk = b.mark(); b.roundBox(-1.68f + i * 0.84f, 3.95f, -0.1f, 0.82f, 0.8f, 1.25f, 0.1f, 63, 1); b.rough(mk, 0.04f, 2f, 420 + i); }
+            for (int side = -1; side <= 1; side += 2) for (int k = 0; k < 4; k++) { int mk = b.mark(); b.roundBox(side * 1.6f, gy + 0.45f + k * 0.9f, -0.1f, 0.62f, 0.88f, 1.2f, 0.1f, 63, 1); b.rough(mk, 0.04f, 2f, 400 + k + side * 9); }
+            for (int i = 0; i < 5; i++) { int mk = b.mark(); b.roundBox(-1.68f + i * 0.84f, gy + 3.95f, -0.1f, 0.82f, 0.8f, 1.25f, 0.1f, 63, 1); b.rough(mk, 0.04f, 2f, 420 + i); }
             // corridoio dietro i battenti: pareti e volta scure
             b.colorf(0.16f, 0.15f, 0.14f);
-            b.box(-1.45f, 1.9f, 3.2f, 0.3f, 3.8f, 6.4f);
-            b.box(1.45f, 1.9f, 3.2f, 0.3f, 3.8f, 6.4f);
-            b.box(0, 3.75f, 3.2f, 2.9f, 0.3f, 6.4f);
-            b.box(0, -0.05f, 3.2f, 2.9f, 0.1f, 6.4f);
+            b.box(-1.45f, gy + 1.9f, 3.2f, 0.3f, 3.8f, 6.4f);
+            b.box(1.45f, gy + 1.9f, 3.2f, 0.3f, 3.8f, 6.4f);
+            b.box(0, gy + 3.75f, 3.2f, 2.9f, 0.3f, 6.4f);
+            b.box(0, gy - 0.05f, 3.2f, 2.9f, 0.1f, 6.4f);
         }
         gateStone = b.build(Img.R3_ROCK, false, true);
         gateStone.castShadow = false;
@@ -1799,13 +1801,14 @@ public final class Scene3D {
         Mat4.setIdentity(m);
         Mat4.translate(m, 0, 0, gz);
         g.draw(gateStone, m, 1, 1, 1, 1, 0);
+        Mat4.translate(m, 0, gateY, 0);
         g.draw(gateLight, m, 1, 1, 1, 1, 1);
         Mat4.setIdentity(m);
-        Mat4.translate(m, -1.3f, 0, gz);
+        Mat4.translate(m, -1.3f, gateY, gz);
         Mat4.rotateY(m, -open);
         g.draw(gateDoor, m, 1, 1, 1, 1, 0);
         Mat4.setIdentity(m);
-        Mat4.translate(m, 1.3f, 0, gz);
+        Mat4.translate(m, 1.3f, gateY, gz);
         Mat4.rotateY(m, (float) Math.PI + open);
         g.draw(gateDoor, m, 1, 1, 1, 1, 0);
         if (fire && open > 0.05f) {                    // dietro al portone che si apre non c'è altro che fuoco: la fine della vita del robot
@@ -1814,7 +1817,7 @@ public final class Scene3D {
                 for (int i = -4; i <= 4; i++) {
                     float fl = 0.85f + 0.3f * (float) Math.sin(w.time * (7f + row * 2f + (i & 3)) + i * 1.7f + row);
                     Mat4.setIdentity(m);
-                    Mat4.translate(m, i * 0.62f + 0.2f * row, 0f, gz + 0.25f + row * 0.7f);
+                    Mat4.translate(m, i * 0.62f + 0.2f * row, gateY, gz + 0.25f + row * 0.7f);
                     Mat4.rotateY(m, w.time * 0.5f + i + row);
                     Mat4.scale(m, 1.5f * up, (3.2f + 0.9f * row) * fl * up, 1.5f * up);
                     g.draw(flame, m, 1f, 1f, 1f, 0.95f, 1f);
@@ -2252,7 +2255,8 @@ public final class Scene3D {
     // ------------------------------------------------------------------ isola tropicale
 
     private Mesh[] crateKinds;
-    private Mesh boomBall, boomRing, crusherBlock, crusherChain, raftMesh, boulderMesh;
+    private float gateY;
+    private Mesh boomBall, boomRing, crusherBlock, crusherChain, crusherBeam, crusherPost, raftMesh, boulderMesh;
 
     private void buildBoom() {
         if (boomBall != null) return;
@@ -2289,9 +2293,27 @@ public final class Scene3D {
         b.roundBox(0, 0.8f, 0, 0.98f, 1.6f, 0.98f, 0.08f);
         crusherBlock = b.build(dry == 22 ? Img.R3F_BLOCK : Img.R3J_TEMPLE, false, true);
         crusherBlock.spec = 0.1f; crusherBlock.shine = 12f;
+        // il pestello non pende più da una fune che sale fino al cielo: scorre sotto una trave orizzontale che attraversa il sentiero
+        // sopra la sua corsa (portale con due pilastri fuori dalle corsie), appeso a due catenelle sottili e corte
         b = new MeshBuilder().color(70, 66, 60);
-        b.cylinder(0, 0, 9f, 0, 0.06f, 0.06f, 6, false, false);
+        b.cylinder(0, 0, 1f, 0, 0.022f, 0.022f, 5, false, false);
         crusherChain = b.build(-1, false, true);
+        b = new MeshBuilder();
+        if (dry == 22) {                                                            // fabbrica: trave a doppia T d'acciaio
+            b.color(92, 96, 102);
+            b.box(0, 0.03f, 0, 6.1f, 0.06f, 0.34f); b.box(0, 0.32f, 0, 6.1f, 0.06f, 0.34f); b.box(0, 0.175f, 0, 6.1f, 0.26f, 0.07f);
+        } else {                                                                    // tempio: architrave di legno scuro con le legature
+            b.color(96, 70, 46);
+            b.roundBox(0, 0.17f, 0, 6.1f, 0.34f, 0.32f, 0.06f);
+            b.color(150, 128, 84);
+            for (float x : new float[] {-2.2f, -0.8f, 0.8f, 2.2f}) b.roundBox(x, 0.17f, 0, 0.12f, 0.4f, 0.38f, 0.04f);
+        }
+        crusherBeam = b.build(-1, false, true);
+        crusherBeam.spec = 0.08f; crusherBeam.shine = 10f;
+        b = new MeshBuilder();
+        b.color(dry == 22 ? 84 : 112, dry == 22 ? 88 : 104, dry == 22 ? 94 : 92);
+        b.roundBox(0, 0.5f, 0, 0.36f, 1f, 0.36f, 0.05f);                            // pilastro di altezza 1, scalato in verticale
+        crusherPost = b.build(-1, false, true);
         b = new MeshBuilder();                                          // zattera: quattro tronchi legati
         for (int i = 0; i < 4; i++) {
             float x = -0.36f + i * 0.24f;
@@ -2407,6 +2429,13 @@ public final class Scene3D {
         }
     }
 
+    /** Quota della trave dei pestelli della riga z: subito sopra la corsa del più alto (in alto il blocco arriva a 3,1 + 1,6). */
+    private static float crusherBeamY(World3D w, float z) {
+        float f = 0;
+        for (float[] o : w.crushers) if (o[1] == z) f = Math.max(f, Math.max(0, w.height[(int) o[1] * World3D.W + (int) o[0]]));
+        return f + 3.1f + 1.6f + 0.15f;
+    }
+
     private void drawIslandProps(World3D w, Gfx3D g) {
         for (float[] c : w.crushers) {
             float z = c[1] + 0.5f;
@@ -2416,9 +2445,27 @@ public final class Scene3D {
             Mat4.setIdentity(m);
             Mat4.translate(m, x, bot, z);
             g.draw(crusherBlock, m, 1, 1, 1, 1, 0.05f + 0.25f * warn);
-            Mat4.setIdentity(m);
-            Mat4.translate(m, x, bot + 1.6f, z);
-            g.draw(crusherChain, m, 1, 1, 1, 1, 0);
+            float beam = crusherBeamY(w, c[1]);
+            for (int sd = -1; sd <= 1; sd += 2) {                       // due catenelle corte fino alla trave
+                Mat4.setIdentity(m);
+                Mat4.translate(m, x + 0.28f * sd, bot + 1.6f, z);
+                Mat4.scale(m, 1, Math.max(0.05f, beam - bot - 1.6f), 1);
+                g.draw(crusherChain, m, 1, 1, 1, 1, 0);
+            }
+            boolean first = true;                                        // una trave per riga, anche con tre pestelli affiancati
+            for (float[] o : w.crushers) { if (o == c) break; if (o[1] == c[1]) { first = false; break; } }
+            if (first) {
+                Mat4.setIdentity(m);
+                Mat4.translate(m, 0, beam, z);
+                g.draw(crusherBeam, m, 1, 1, 1, 1, 0);
+                for (int sd = -1; sd <= 1; sd += 2) {
+                    float px = sd * 2.85f, gy = Math.max(0, w.height[(int) c[1] * World3D.W + (sd < 0 ? 0 : World3D.W - 1)]);
+                    Mat4.setIdentity(m);
+                    Mat4.translate(m, px, gy - 0.2f, z);
+                    Mat4.scale(m, 1, beam + 0.55f - gy, 1);
+                    g.draw(crusherPost, m, 1, 1, 1, 1, 0);
+                }
+            }
             Mat4.setIdentity(m);                                         // ombra che si stringe mentre il blocco scende
             Mat4.translate(m, x, groundAt(x, z) + 0.03f, z);
             float sc = 1.6f - 0.25f * Math.min(1f, (bot - floor) / 3.1f);
