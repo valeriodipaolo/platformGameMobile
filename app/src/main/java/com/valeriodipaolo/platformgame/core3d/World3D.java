@@ -200,6 +200,7 @@ public final class World3D {
         reinforce();
         Coins3D.place(this);
         if (coinFoeIdx >= 0 && coinFoeIdx < enemies.size()) coinFoe = enemies.get(coinFoeIdx);
+        gemsList.removeIf(g -> g[2] < 1.5f + 0.6f && g[1] < 2.5f);     // niente gemme dietro (o sotto) il punto di partenza: si parte e si va avanti
         gemTotal = gemsList.size();
         for (int k = 0; k < crate.length; k++) if (crate[k] && k != coinCrate && (crateKind == null || crateKind[k] != C_BOUNCE) && !hazardOnly(k)) gemTotal++;
         if (crateKind != null) crateT = new float[crate.length];
