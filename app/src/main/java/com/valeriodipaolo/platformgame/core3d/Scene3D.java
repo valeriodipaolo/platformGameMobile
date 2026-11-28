@@ -2736,6 +2736,17 @@ public final class Scene3D {
             Mat4.rotateX(a2, pitch);
             g.draw(ride, a2, 1, 1, 1, 1, 0);
         }
+        if (riding) { lastCartX = w.px; lastCartZ = w.pz; }
+        else if (cartMesh != null && !Levels3W.isRun(w.levelNo)) {      // fuori dal tratto: il carrello resta sui binari dove lo si è lasciato
+            for (float[] c : w.carts) {
+                float cz = w.pz < c[0] ? c[0] + 0.5f : w.pz >= c[1] && c[1] - lastCartZ < 3f ? c[1] - 0.2f : Float.NaN;
+                if (Float.isNaN(cz)) continue;
+                float cx = w.pz < c[0] ? 0f : lastCartX;
+                Mat4.setIdentity(a2);
+                Mat4.translate(a2, cx, Math.max(0f, groundAt(cx, cz)), cz);
+                g.draw(cartMesh, a2, 1, 1, 1, 1, 0);
+            }
+        }
         Mat4.setIdentity(b);
         if (riding) {                                  // il robot sta dentro la vasca, con i piedi sul fondo, e si piega con il carrello
             System.arraycopy(a2, 0, b, 0, 16);
@@ -2748,6 +2759,7 @@ public final class Scene3D {
     }
 
     private final float[] a2 = new float[16];
+    private float lastCartX, lastCartZ = -99f;
 
     /** Carrello da miniera: vasca d'acciaio svasata e arrugginita, bordo ribattuto, rinforzi, ruote con il bordino su due assi. */
     private static void mineCart(MeshBuilder b) { MineModels.cart(b); }

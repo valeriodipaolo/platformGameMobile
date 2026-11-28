@@ -144,7 +144,7 @@ public final class Levels3W {
      */
     private static void cartRun(World3D w, int total, long seed, boolean mine) {
         int end = total - 12;
-        cart(w, 2, end);
+        cart(w, 0, end);                                   // si parte già dentro: il carrello c'è dal primo istante
         gemLine(w, 0, 6, 14);
         java.util.Random r = new java.util.Random(seed);
         int z = 24, n = mine ? 0 : (int) (seed % 5), nextRest = 100;      // le varianti partono da un punto diverso della sequenza
@@ -219,7 +219,7 @@ public final class Levels3W {
      */
     private static void runCourse(World3D w, int total, long seed, int chase) {
         int end = total - 12;
-        cart(w, 2, end);
+        cart(w, 0, end);                                   // si parte già dentro: il carrello c'è dal primo istante
         gemLine(w, 0, 6, 14);
         java.util.Random r = new java.util.Random(seed);
         int z = 26, n = (int) (seed % 7), nextRest = 110, coinZ = -1;

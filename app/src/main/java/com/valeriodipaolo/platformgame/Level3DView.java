@@ -107,7 +107,7 @@ final class Level3DView extends FrameLayout {
         protected void onDraw(Canvas canvas) {
             painter.begin(canvas);
             hud.dpad = dpad;
-            hud.draw(world, painter, getWidth(), getHeight(), dpad || joyId != -1 || !world.carts.isEmpty(), joyCx, joyCy, joyDx, joyDy, renderer.error);
+            hud.draw(world, painter, getWidth(), getHeight(), dpad || joyId != -1 || world.inCart(), joyCx, joyCy, joyDx, joyDy, renderer.error);
             postInvalidateOnAnimation();
         }
 
@@ -143,7 +143,7 @@ final class Level3DView extends FrameLayout {
             }
             int lifted = (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_POINTER_UP) ? idx : -1;
             if (lifted != -1 && e.getPointerId(lifted) == joyId) { joyId = -1; }
-            if (!world.carts.isEmpty()) {                    // carrello e corse: solo destra/sinistra (come nel 2D), salto e giravolta
+            if (world.inCart()) {                            // sul carrello o di corsa: solo destra/sinistra (come nel 2D), salto e giravolta
                 boolean l = false, r = false, j = false, sp = false;
                 for (int i = 0; i < e.getPointerCount(); i++) {
                     if (i == lifted) continue;

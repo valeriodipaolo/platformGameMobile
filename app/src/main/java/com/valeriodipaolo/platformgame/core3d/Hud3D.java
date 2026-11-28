@@ -73,12 +73,12 @@ public final class Hud3D {
         float jr = joyRadius(sw, sh);
         float cx = joyHomeX(sw, sh), cy = joyHomeY(sw, sh);           // il joystick resta fermo nella sua posizione
         boolean sky = w.theme == 12;                       // sulle nuvole i comandi bianchi non si vedrebbero: fondo scuro
-        if (sky && !dpad && w.carts.isEmpty()) p.image(Img.HV_PAD, cx - jr * 1.05f, cy - jr * 1.05f, 2.1f * jr, 2.1f * jr, false, 1);
-        if (sky && dpad && w.carts.isEmpty()) {
+        if (sky && !dpad && !w.inCart()) p.image(Img.HV_PAD, cx - jr * 1.05f, cy - jr * 1.05f, 2.1f * jr, 2.1f * jr, false, 1);
+        if (sky && dpad && !w.inCart()) {
             float e = crossOff(sw, sh) + crossSize(sw, sh) * 0.6f;
             p.image(Img.HV_PAD, crossX(sw, sh) - e, crossY(sw, sh) - e, 2 * e, 2 * e, false, 1);
         }
-        boolean steer = !w.carts.isEmpty();               // carrello e corse: si sterza soltanto, con destra e sinistra come nel 2D
+        boolean steer = w.inCart() && w.state == World3D.PLAYING;   // sul carrello o di corsa: si sterza soltanto, con destra e sinistra come nel 2D
         float bs0 = Controls.size(sw, sh), bty0 = Controls.btnY(sw, sh);
         if (steer) {
             if (sky) for (float bxx : new float[] {Controls.leftX(sw, sh), Controls.rightX(sw, sh)}) p.image(Img.HV_PAD, bxx - 0.1f * bs0, bty0 - 0.1f * bs0, 1.2f * bs0, 1.2f * bs0, false, 1);
