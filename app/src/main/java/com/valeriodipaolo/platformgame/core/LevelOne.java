@@ -26,9 +26,9 @@ public final class LevelOne {
         // 3. il fiore a molla: lancia sulla sporgenza alta, dove aspettano gemme e una cassa
         b.sh(51, 9, 2);
         b.pad(54);
-        b.plat(56, 3, 6); b.sh(57, 2, 4); b.row(61, 2, "?");
+        b.plat(59, 3, 9); b.sh(60, 2, 6); b.row(67, 2, "?");          // la sporgenza comincia quattro caselle dopo il fiore: si sale sopra, non ci si sbatte sotto
         // sotto la sporgenza si passa anche a piedi, con una ghianda che saltella
-        b.en(59, 9, Enemy.ACORN, 0, 0);
+        b.en(61, 9, Enemy.ACORN, 0, 0);
 
         // 4. le terrazze di roccia: si sale con due salti (o un doppio salto) fino al grappolo di gemme in alto
         b.plat(66, 7, 3); b.plat(71, 5, 3); b.sh(71, 3, 3); b.plat(76, 7, 2);
@@ -62,7 +62,7 @@ public final class LevelOne {
 
         // 10. il secondo fiore a molla porta sul sentiero alto delle gemme; sotto, chi resta a terra incontra le lumache
         b.pad(170);
-        b.plat(172, 4, 9); b.sh(173, 3, 7);
+        b.plat(175, 4, 12); b.sh(176, 3, 10);
         b.en(176, 9, Enemy.SNAIL, 172, 181); b.sh(174, 9, 6);
 
         // 11. l'ultima collina e il prato davanti al portone

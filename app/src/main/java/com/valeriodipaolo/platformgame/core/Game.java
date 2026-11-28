@@ -352,9 +352,9 @@ public final class Game {
         coyote = p.onGround ? 0.14f : coyote - dt;
         if (p.onGround) airJumps = 1;
         if (jumpBuffer > 0 && coyote > 0) {
-            p.vy = -JUMP_V;
+            p.vy = Math.min(p.vy, -JUMP_V);              // appena lanciati dal fiore a molla il salto non deve frenare la spinta
             jumpBuffer = coyote = 0;
-        } else if (press && !p.onGround && airJumps > 0 && p.vy < 1f) {
+        } else if (press && !p.onGround && airJumps > 0 && p.vy < 1f && p.vy > -AIR_JUMP_V) {   // salendo più veloci (molla) il doppio salto resta da parte
             // doppio salto: vale solo in salita (o proprio sulla cima), non quando si sta già scendendo
             p.vy = -AIR_JUMP_V;
             airJumps--;
