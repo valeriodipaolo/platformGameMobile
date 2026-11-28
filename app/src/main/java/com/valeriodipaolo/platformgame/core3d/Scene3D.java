@@ -476,10 +476,15 @@ public final class Scene3D {
                             // giunti tra le pietre: pietra in ombra, non nero (con le pietre irregolari se ne vedono molti)
                             if (heaven) s.colorf(0.78f, 0.78f, 0.8f); else s.colorf(0.58f, 0.55f, 0.5f);
                             s.box(fx + 0.5f, k + 0.5f, z + 0.5f, 0.8f, 0.8f, 0.8f);
-                            if (x + 1 < W && vis(w, x + 1, z) > k) s.box(fx + 1f, k + 0.5f, z + 0.5f, 0.42f, 0.8f, 0.8f);
-                            if (vis(w, x, z + 1) > k) s.box(fx + 0.5f, k + 0.5f, z + 1f, 0.8f, 0.8f, 0.42f);
+                            boolean nx = x + 1 < W && vis(w, x + 1, z) > k, nz = vis(w, x, z + 1) > k;
+                            if (nx) s.box(fx + 1f, k + 0.5f, z + 0.5f, 0.42f, 0.8f, 0.8f);
+                            if (nz) s.box(fx + 0.5f, k + 0.5f, z + 1f, 0.8f, 0.8f, 0.42f);
+                            if (nx && nz && vis(w, x + 1, z + 1) > k) s.box(fx + 1f, k + 0.5f, z + 1f, 0.42f, 0.8f, 0.42f);   // spigolo tra quattro pietre
                             if (k + 1 < h) {
                                 s.box(fx + 0.5f, k + 1f, z + 0.5f, 0.8f, 0.42f, 0.8f);
+                                // incroci dei giunti: dove si incontrano quattro pietre restava un buco scuro, come se non poggiassero
+                                if (nx && vis(w, x + 1, z) > k + 1) s.box(fx + 1f, k + 1f, z + 0.5f, 0.42f, 0.42f, 0.8f);
+                                if (nz && vis(w, x, z + 1) > k + 1) s.box(fx + 0.5f, k + 1f, z + 1f, 0.8f, 0.42f, 0.42f);
                                 s.quad(fx + 0.1f, k + 1f, z + 0.1f, fx + 0.9f, k + 1f, z + 0.1f, fx + 0.9f, k + 1f, z + 0.9f, fx + 0.1f, k + 1f, z + 0.9f, 0, 1, 0, 0, 0, 1, 1);
                             }
                         }
@@ -755,15 +760,21 @@ public final class Scene3D {
                         s.colorf(0.96f + 0.08f * hash(side + 9, z, k), 0.96f + 0.06f * hash(side + 9, z, k + 7), 0.96f);
                         int faces = 63 & ~8;
                         if (k + 1 < Levels3C.MAZE_H) faces &= ~4;
-                        faces &= side < 0 ? ~2 : ~1;                         // la faccia verso il bosco non si vede mai da dentro
                         if (z > (int) m[0]) faces &= ~32;
                         if (z + 1 < (int) m[1]) faces &= ~16;
                         int mk = s.mark();
                         s.roundBox(fx + 0.5f, k + 0.5f, z + 0.5f, 0.98f, 0.98f, 0.98f, 0.3f, faces, 2);
                         s.rough(mk, 0.17f, 1.3f, 5);
                         s.colorf(0.58f, 0.55f, 0.5f);
+                        boolean nz = z + 1 < (int) m[1], up = k + 1 < Levels3C.MAZE_H;
                         s.box(fx + 0.5f, k + 0.5f, z + 0.5f, 0.8f, 0.8f, 0.8f);
-                        if (z + 1 < (int) m[1]) s.box(fx + 0.5f, k + 0.5f, z + 1f, 0.8f, 0.8f, 0.42f);
+                        if (nz) s.box(fx + 0.5f, k + 0.5f, z + 1f, 0.8f, 0.8f, 0.42f);
+                        if (up) s.box(fx + 0.5f, k + 1f, z + 0.5f, 0.8f, 0.42f, 0.8f);
+                        if (nz && up) s.box(fx + 0.5f, k + 1f, z + 1f, 0.8f, 0.42f, 0.42f);
+                        // verso il sentiero la colonna laterale si salda al muro d'ingresso e d'uscita del labirinto
+                        float ix = side < 0 ? fx + 1f : fx;
+                        s.box(ix, k + 0.5f, z + 0.5f, 0.42f, 0.8f, 0.8f);
+                        if (up) s.box(ix, k + 1f, z + 0.5f, 0.42f, 0.42f, 0.8f);
                     }
                 }
             }
