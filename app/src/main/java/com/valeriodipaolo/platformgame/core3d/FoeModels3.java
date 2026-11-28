@@ -306,7 +306,7 @@ final class FoeModels3 {
         if (tortShell == null) buildTortoise();
         boolean hide = e.mode == 1, flip = e.mode == 2;
         System.arraycopy(m, 0, a, 0, 16);
-        Mat4.scale(a, 1.25f, 1.25f, 1.25f);
+        Mat4.scale(a, 2.0f, 2.0f, 2.0f);                         // grossa: si vede bene e ci si salta sopra senza fatica
         if (flip) { Mat4.translate(a, 0, 0.33f, 0); Mat4.rotateZ(a, (float) Math.PI); }   // rovesciata sul guscio
         g.draw(tortShell, a, 1, 1, 1, 1, 0);
         float out = hide ? 0.3f : 1f;

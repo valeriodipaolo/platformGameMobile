@@ -917,7 +917,8 @@ public final class World3D {
             boolean snail = e.type == Enemy3.SNAIL;
             if (e.grace > 0) e.grace -= dt;
             float ax = Math.abs(e.x - px), az = Math.abs(e.z - pz);
-            boolean vertical = py < e.y + 0.6f && py + PLAYER_H > e.y;
+            boolean big = e.skin == Enemy3.SKIN_TORTOISE;                // la tartaruga è grossa: più alta, e più facile da prendere dall'alto
+            boolean vertical = py < e.y + (big ? 0.9f : 0.6f) && py + PLAYER_H > e.y;
             boolean spinNear = spinActive && ax < 0.75f + SPIN_REACH && az < 0.75f + SPIN_REACH && vertical;
             if (spinNear && snail && e.mode == 0 && !(vy < 0 && py > e.y + 0.25f)) continue;      // la giravolta contro il guscio non fa male né a lei né al robot
             if (snail && e.mode == 1 && !spinNear) continue;      // chiusa nel guscio è innocua
@@ -929,7 +930,11 @@ public final class World3D {
                 e.vz = (e.z - pz) / l * 6f + 3f;
                 e.vy = 8f;
                 score += 100;
-            } else if (ax < 0.75f && az < 0.75f && vertical) {
+            } else if (big && ax < 1.0f && az < 1.0f && vertical && vy < 0 && py > e.y + 0.4f && stompable3(e)) {
+                if (e.mode < 2) { e.mode = 1; e.t = 4f; } else e.flatTime = 0.45f;   // sul guscio grande si atterra anche di striscio
+                vy = JUMP_V;
+                airJumps = 1;
+            } else if (ax < (big ? 0.85f : 0.75f) && az < (big ? 0.85f : 0.75f) && vertical) {
                 if (stompable3(e) && vy < 0 && py > e.y + 0.25f) {     // schiacciato dall'alto (il riccio punge)
                     if (snail && e.mode < 2) { e.mode = 1; e.t = 4f; } else e.flatTime = 0.45f;
                     vy = JUMP_V;                               // rimbalzo come un salto singolo (più alto tenendo premuto)
