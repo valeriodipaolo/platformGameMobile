@@ -21,7 +21,7 @@ public final class Coins2D {
         for (int x = 0; x < lv.w; x++) for (int y = 0; y < lv.h; y++) if (lv.get(x, y) == Level.BONUS && nb++ % 3 == 2) lv.set(x, y, Level.STEEL);
         switch (id) {
             case 1: carve(lv, 96); break;          // dentro lo sperone di roccia
-            case 3: lv.coinFoe = 1; break;         // il primo corvo
+            case 3: brick(lv, 75, 7); break;       // l'ultimo mattoncino del primo muretto: esce con una testata o con la giravolta
             case 5: carve(lv, 190); break;         // la piramide doppia verso la fine
             case 7: brick(lv, 204, 7); break;      // il mattoncino a sinistra dell'ultima cassa
             case 9: lv.coin = new float[] {45f, 0.5f}; break;    // in cima al primo burrone, sopra l'arco di gemme: trampolino e planata in giravolta

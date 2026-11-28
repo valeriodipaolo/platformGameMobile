@@ -386,11 +386,11 @@ public final class Game {
             }
             if (opened) { p.vy = -JUMP_V; p.onGround = false; airJumps = 1; coyote = 0; }     // rimbalzo come un salto singolo (più alto tenendo premuto)
         }
-        if (spinActive) {                                           // la giravolta apre le casse che tocca, anche le rinforzate
+        if (spinActive) {                                           // la giravolta apre le casse che tocca, anche le rinforzate e il mattoncino segreto
             for (int ty = (int) Math.floor(p.y - SPIN_REACH); ty <= (int) Math.floor(p.y + p.h + SPIN_REACH); ty++)
                 for (int tx = (int) Math.floor(p.x - SPIN_REACH); tx <= (int) Math.floor(p.x + p.w + SPIN_REACH); tx++) {
                     char c = level.get(tx, ty);
-                    if (c == Level.STEEL || c == Level.BONUS) hitBlock(tx, ty);
+                    if (c == Level.STEEL || c == Level.BONUS || c == Level.SECRET) hitBlock(tx, ty);     // anche il mattoncino col gettone
                 }
         }
         if (springBoost > 0) springBoost -= dt;

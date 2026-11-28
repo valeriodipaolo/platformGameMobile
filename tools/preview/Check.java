@@ -156,12 +156,19 @@ public class Check {
         for (int i = 0; i < 30; i++) { sg.setInput(false, false, true); sg.update(1f / 60f); }
         ok(sg.coinOwned && sg.level.get(sx, sy) == Level.USED, "dando la capocciata al mattoncino segreto si ottiene il gettone");
 
-        // gettone addosso a un nemico (livello 3, il primo corvo): eliminandolo schizza fuori
-        Game fg = new Game(new MemorySave(), 3);
-        ok(fg.coinFoe != null && fg.coinFoe.type == Enemy.CROW, "nel livello 3 il gettone ce l'ha un corvo");
+        // gettone addosso a un nemico (livello 31, il primo gufo): eliminandolo schizza fuori
+        Game fg = new Game(new MemorySave(), 31);
+        ok(fg.coinFoe != null && fg.coinFoe.type == Enemy.OWL, "nel livello 31 il gettone ce l'ha un gufo");
         fg.coinFoe.flatTime = 0.45f;
         fg.update(1f / 60f);
-        ok(fg.coinOwned && fg.coinFoe == null, "schiacciando il corvo giusto si ottiene il gettone");
+        ok(fg.coinOwned && fg.coinFoe == null, "eliminando il gufo giusto si ottiene il gettone");
+        // livello 3: il gettone è nell'ultimo mattoncino del primo muretto; esce con la giravolta (oltre che con la testata)
+        Game sp3 = new Game(new MemorySave(), 3);
+        ok(sp3.level.get(75, 7) == Level.SECRET, "livello 3: il mattoncino segreto è l'ultimo del primo muretto (75,7)");
+        sp3.enemies.clear();
+        sp3.player.x = 76.0f; sp3.player.y = 10f - sp3.player.h; sp3.player.vy = 0;      // di fianco al mattoncino: salto e giravolta
+        for (int i = 0; i < 40; i++) { sp3.setInput(false, false, i < 8, i >= 8 && i < 11); sp3.update(1f / 60f); }
+        ok(sp3.coinOwned, "livello 3: saltando e facendo la giravolta accanto al mattoncino segreto esce il gettone");
         for (int id : new int[] {1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31, 33}) {
             Game q = new Game(new MemorySave(), id);
             int sec = 0; for (int y = 0; y < q.level.h; y++) for (int x = 0; x < q.level.w; x++) if (q.level.get(x, y) == Level.SECRET) sec++;
