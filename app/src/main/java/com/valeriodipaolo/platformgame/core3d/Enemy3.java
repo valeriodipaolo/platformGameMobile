@@ -24,6 +24,8 @@ public final class Enemy3 {
     public final boolean alongZ;
     public final float lo, hi;
     public float dir = 1, anim;
+    /** Direzione morbida (-1..1) che insegue dir, e verso disegnato che ruota con calma: niente dietrofront di colpo. */
+    public float sdir = Float.NaN, dyaw = Float.NaN;
     public boolean dead, flung;
     public float flatTime, vx, vy, vz;
     /** Fase del comportamento dei nemici nuovi (talpa, lumaca, castagna...) e punto di partenza. */

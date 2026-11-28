@@ -22,6 +22,8 @@ public final class Enemy extends Body {
     /** Colpito da sotto: vola via ribaltato senza urtare nulla. */
     public boolean flung;
     public float dir = -1;
+    /** Direzione "morbida" (-1..1) che insegue dir: il nemico rallenta, si gira e riparte invece di invertire di colpo. */
+    public float sdir = Float.NaN;
     public float anim;
     /** Nuvola temporalesca (STORM) e mulinello (WHIRL, non si schiaccia: si travolge con la giravolta). */
     /** Corvo: quota media e tratto di volo. Ghianda: tempo al prossimo salto. */

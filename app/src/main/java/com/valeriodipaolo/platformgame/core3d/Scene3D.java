@@ -502,7 +502,7 @@ public final class Scene3D {
             if (heaven) wallX(d, HALF, z, -1);
         }
 
-        b = fire ? new MeshBuilder().color(255, 96, 22) : new MeshBuilder().color(10, 18, 14);   // fondo dei burroni (lava nell'incendio)
+        b = fire ? new MeshBuilder().color(255, 96, 22) : new MeshBuilder().color(7, 6, 5);     // fondo dei burroni: buio (lava nell'incendio); prima verdastro, sembrava un buco
         // più largo del corridoio: il vuoto frastagliato entra nei lati; nei livelli bui (miniera, notte) arriva fin sotto le pareti,
         // così da una fessura tra due superfici si vede il fondo scuro e non il cielo chiaro
         float fw = dry == 24 || isle == 18 ? 30f : HALF + 1.4f;
@@ -1247,7 +1247,7 @@ public final class Scene3D {
 
     /** Altezza della superficie realmente disegnata ai lati del sentiero (interpolazione della maglia), non quella teorica. */
     float meshAt(float x, float z) {
-        if (lip > 0 && edgeField(x, z) < 0.05f) return groundAt(x, z) - pitD;   // nel vuoto frastagliato: la decorazione finisce giù, invisibile
+        if (lip > 0 && edgeField(x, z) < 0.05f) return groundAt(x, z) - pitD - 30f;   // nel vuoto frastagliato: la decorazione finisce sotto il fondo, dove non si vede (sul fondo si vedeva)
         float d = Math.abs(x) - HALF;
         if (d <= 0) return groundAt(x, z);
         float sg = Math.signum(x);
@@ -1973,11 +1973,23 @@ public final class Scene3D {
             }
         }
 
+        enemyDt = lastEnemyT < 0 || w.time < lastEnemyT ? 0f : Math.min(0.1f, w.time - lastEnemyT);
+        lastEnemyT = w.time;
         for (Enemy3 e : w.enemies) {
             if (e.dead || e.z < near || e.z > far) continue;
             Mat4.setIdentity(m);
             Mat4.translate(m, e.x, e.y + bumpAt(e.x, e.z), e.z);
             float yawE = e.alongZ ? (e.dir > 0 ? 0 : (float) Math.PI) : (e.dir > 0 ? (float) Math.PI / 2 : -(float) Math.PI / 2);
+            // il verso disegnato ruota con calma verso quello di marcia (un mezzo giro in circa mezzo secondo)
+            if (Float.isNaN(e.dyaw)) e.dyaw = yawE;
+            else {
+                float d = yawE - e.dyaw;
+                while (d > Math.PI) d -= 2 * Math.PI;
+                while (d < -Math.PI) d += 2 * Math.PI;
+                float st = Math.min(1f, enemyDt * 6.5f);
+                e.dyaw += d * st + Math.signum(d) * Math.min(Math.abs(d) * (1 - st), enemyDt * 2f);
+            }
+            yawE = e.dyaw;
             if (e.type == Enemy3.OWL) yawE = e.yaw;
             if (e.type == Enemy3.PLANT || (e.type == Enemy3.FROG && e.skin == 0)) yawE = e.yaw;   // trappola e rana guardano il robot
             if (e.type == Enemy3.SNOWMAN && e.skin == 0) yawE = e.face == 0 ? (float) Math.PI : e.face * (float) Math.PI / 2;
@@ -2759,6 +2771,7 @@ public final class Scene3D {
     }
 
     private final float[] a2 = new float[16];
+    private float enemyDt, lastEnemyT = -1f;
     private float lastCartX, lastCartZ = -99f;
 
     /** Carrello da miniera: vasca d'acciaio svasata e arrugginita, bordo ribattuto, rinforzi, ruote con il bordino su due assi. */

@@ -497,19 +497,19 @@ public final class Game {
             } else if (e.type == Enemy.STORM) {                         // la nuvola temporalesca vaga lenta, poi si ferma, si carica e scaglia un fulmine in verticale
                 e.hop += dt;
                 if (stormPhase(e.hop) == 0) {
-                    e.x += e.dir * 1.3f * dt;
+                    e.x += steer(e, dt) * 1.3f * dt;
                     if (e.x > e.hi) { e.x = e.hi; e.dir = -1; } else if (e.x < e.lo) { e.x = e.lo; e.dir = 1; }
                 }
                 e.y = e.baseY + (float) Math.sin(e.anim * 1.8f) * 0.25f;
                 e.anim += dt;
             } else if (e.type == Enemy.CROW) {                          // il corvo vola a onde sopra il percorso, senza urtare nulla
-                e.x += e.dir * 4.6f * dt;
+                e.x += steer(e, dt) * 4.6f * dt;
                 if (e.x > e.hi) { e.x = e.hi; e.dir = -1; } else if (e.x < e.lo) { e.x = e.lo; e.dir = 1; }
                 e.y = e.baseY + (float) Math.sin(e.anim * 3.6f) * 0.8f;
                 e.anim += dt;
             } else {
                 float speed = e.type == Enemy.HOG ? ENEMY_SPEED * 0.75f : e.type == Enemy.WHIRL ? ENEMY_SPEED * 1.7f : ENEMY_SPEED;
-                e.vx = e.dir * speed;
+                e.vx = steer(e, dt) * speed;                       // rallenta, si gira e riparte
                 if (e.type == Enemy.ACORN) {                       // la ghianda sta ferma, poi spicca un balzo in avanti
                     e.hop -= dt;
                     if (e.onGround && e.hop <= 0) { e.vy = -15.5f; e.hop = 0.4f; }      // balzi ravvicinati e rapidi
@@ -517,9 +517,9 @@ public final class Game {
                 }
                 e.vy = Math.min(MAX_FALL, e.vy + GRAVITY * dt);
                 e.move(level, dt);
-                if (e.hitWall) e.dir = -e.dir;
+                if (e.hitWall) { if (e.dir * e.vx >= 0) e.dir = -e.dir; e.sdir = 0; }
                 if (e.type == Enemy.WHIRL) {                       // il mulinello resta sul suo tratto: torna indietro ai bordi e ai limiti
-                    if (e.onGround && !level.solid((int) Math.floor(e.x + e.w / 2 + e.dir * 0.6f), (int) Math.floor(e.y + e.h + 0.1f))) e.dir = -e.dir;
+                    if (e.onGround && !level.solid((int) Math.floor(e.x + e.w / 2 + e.dir * 0.6f), (int) Math.floor(e.y + e.h + 0.1f))) { e.dir = -e.dir; e.sdir = 0; }
                     if (e.x > e.hi) e.dir = -1; else if (e.x < e.lo) e.dir = 1;
                 }
                 e.anim += dt;
@@ -605,12 +605,23 @@ public final class Game {
         return e.onGround && !level.solid((int) Math.floor(e.x + e.w / 2 + e.dir * 0.6f), (int) Math.floor(e.y + e.h + 0.1f));
     }
 
+    /** Tempo che un nemico impiega a girarsi (da tutta velocità in un verso a tutta velocità nell'altro). */
+    private static final float TURN_TIME = 0.45f;
+
+    /** Aggiorna la direzione morbida del nemico verso quella voluta e la restituisce. */
+    static float steer(Enemy e, float dt) {
+        if (Float.isNaN(e.sdir)) e.sdir = e.dir;
+        float step = 2f / TURN_TIME * dt;
+        e.sdir += Math.max(-step, Math.min(step, e.dir - e.sdir));
+        return e.sdir;
+    }
+
     private void walk(Enemy e, float speed, float dt, boolean keepOnLedge) {
-        e.vx = e.dir * speed;
+        e.vx = steer(e, dt) * speed;
         e.vy = Math.min(MAX_FALL, e.vy + GRAVITY * dt);
         e.move(level, dt);
-        if (e.hitWall) e.dir = -e.dir;
-        else if (keepOnLedge && edgeAhead(e)) e.dir = -e.dir;
+        if (e.hitWall) { if (e.dir * e.vx >= 0) e.dir = -e.dir; e.sdir = 0; }
+        else if (keepOnLedge && edgeAhead(e)) { if (Math.signum(e.sdir) == Math.signum(e.dir)) e.dir = -e.dir; e.sdir = 0; }      // sul bordo si ferma subito, poi si gira
         if (e.hi > e.lo) { if (e.x > e.hi) e.dir = -1; else if (e.x < e.lo) e.dir = 1; }
         if (e.y > level.h + 2) e.dead = true;
     }
@@ -642,7 +653,7 @@ public final class Game {
                     // e sembrava sparire e ricomparire altrove)
                     boolean out = e.x > e.hi || e.x < e.lo;
                     if (e.x > e.hi) e.dir = -1; else if (e.x < e.lo) e.dir = 1;
-                    e.x += e.dir * (out ? 2.6f : 1.5f) * dt;
+                    e.x += steer(e, dt) * (out ? 2.6f : 1.5f) * dt;
                     e.y = e.baseY + 0.2f * (float) Math.sin(e.anim * 2f);
                     if (Math.abs(dx) < 5f && player.y > e.baseY + 1f) { e.mode = 1; e.t = 0; e.dir = dx >= 0 ? 1 : -1; e.hop = Math.max(1f, player.y - e.baseY + 0.3f); }
                 } else if (e.mode == 1) {

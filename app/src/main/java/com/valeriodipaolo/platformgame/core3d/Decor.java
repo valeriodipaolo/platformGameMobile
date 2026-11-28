@@ -200,6 +200,7 @@ final class Decor {
             float a = rot + i * 6.283f / n + (r.nextFloat() - 0.5f) * 0.6f, ca = (float) Math.cos(a), sa = (float) Math.sin(a);
             float len = r0 * (3.2f + 2.4f * r.nextFloat());
             float ex = x + ca * len, ez = z + sa * len, mx = x + ca * len * 0.5f, mz = z + sa * len * 0.5f;
+            if (s.meshAt(ex, ez) < y - 1.5f || s.meshAt(mx, mz) < y - 1.5f) continue;     // la radice finirebbe nel vuoto di un burrone
             FoeModels.loft(tb, new float[][] {{x + ca * r0 * 0.3f, y + 0.75f, z + sa * r0 * 0.3f}, {x + ca * r0 * 1.2f, y + 0.36f, z + sa * r0 * 1.2f},
                             {mx, s.meshAt(mx, mz) + r0 * 0.25f, mz}, {ex, s.meshAt(ex, ez) - 0.1f, ez}},
                     new float[] {r0 * 0.6f, r0 * 0.55f, r0 * 0.36f, r0 * 0.1f}, new float[] {r0 * 0.75f, r0 * 0.6f, r0 * 0.38f, r0 * 0.1f},

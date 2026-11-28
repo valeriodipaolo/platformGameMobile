@@ -211,7 +211,9 @@ public final class Renderer {
                 float bw = strike ? 0.9f * s : 0.5f * s;
                 p.image(Img.HV_BOLT, bx - bw / 2, by - 0.1f * s, bw, bot - by + 0.1f * s, ((int) (g.time * 30f) & 1) == 0, Math.max(0.05f, a));
             }
-            p.image(img, x - w / 2, (e.y + e.h + 0.03f) * s - h, w, h, e.dir > 0, 1);
+            float sd = Float.isNaN(e.sdir) ? e.dir : e.sdir;                   // girandosi lo sprite si stringe e si ribalta a metà giro
+            float tw = w * (0.3f + 0.7f * Math.min(1f, Math.abs(sd)));
+            p.image(img, x - tw / 2, (e.y + e.h + 0.03f) * s - h, tw, h, sd > 0 || (sd == 0 && e.dir > 0), 1);
             if (e == g.coinFoe) {                      // chi ha addosso il gettone luccica d'oro ogni tanto, per un attimo
                 float gl = (g.time + e.x0 * 0.37f) % 3.2f;
                 if (gl < 0.35f) {

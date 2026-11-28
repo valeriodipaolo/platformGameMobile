@@ -934,10 +934,11 @@ public final class World3D {
                 if (Enemy3.stormPhase(e.hopT) != 0) speed = 0;
             }
             if (Float.isNaN(e.floor)) e.floor = e.type == Enemy3.ACORN ? e.baseY : e.y;
-            float nx = e.x, nz = e.z;
-            if (e.alongZ) nz += e.dir * speed * dt; else nx += e.dir * speed * dt;
+            float nx = e.x, nz = e.z, sd = steer(e, dt);
+            if (e.alongZ) nz += sd * speed * dt; else nx += sd * speed * dt;
             if (enemyBlocked(e, nx, nz)) {
-                e.dir = -e.dir;                                 // un blocco, una cassa, un muro o il bordo di un burrone: fa dietrofront
+                if (Math.signum(sd) == Math.signum(e.dir)) e.dir = -e.dir;   // un blocco, una cassa, un muro o il bordo di un burrone: si ferma e si gira
+                e.sdir = 0;
             } else {
                 e.x = nx;
                 e.z = nz;
@@ -1052,6 +1053,17 @@ public final class World3D {
     static final float PLANT_RANGE = 2.6f, PLANT_REACH = 1.9f;
 
     /** Ruota l'angolo a verso b di al più step radianti. */
+    /** Tempo che un nemico impiega a girarsi da tutta velocità in un verso a tutta velocità nell'altro. */
+    static final float TURN_TIME = 0.5f;
+
+    /** Direzione morbida del nemico: insegue dir, così rallenta, si ferma e riparte nell'altro verso. */
+    static float steer(Enemy3 e, float dt) {
+        if (Float.isNaN(e.sdir)) e.sdir = e.dir;
+        float step = 2f / TURN_TIME * dt;
+        e.sdir += Math.max(-step, Math.min(step, e.dir - e.sdir));
+        return e.sdir;
+    }
+
     static float turnTo(float a, float b, float step) {
         float d = b - a;
         while (d > Math.PI) d -= 2 * Math.PI;
