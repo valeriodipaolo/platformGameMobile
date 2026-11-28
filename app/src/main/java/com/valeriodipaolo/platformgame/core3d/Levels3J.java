@@ -89,8 +89,8 @@ public final class Levels3J {
     private static void temple(World3D w) {
         w.chase = 2;                                         // il masso rotola alle spalle per tutto il livello
         w.fireStart = -12f;
-        w.fireZones = new float[][] {{0, 3.6f, 12}, {60, 4.2f, 11}, {120, 4.6f, 10}, {180, 5.0f, 10}, {226, 0f}};
-        w.camBackUntil = 226;
+        w.fireZones = new float[][] {{0, 3.6f, 12}, {60, 4.2f, 11}, {120, 4.6f, 10}, {180, 5.0f, 10}};
+        w.camBackUntil = 1e9f;                               // la camera guarda il masso finché non si incaglia
         gemLine(w, 0, 0, 7);
         // 1. si scappa: un fosso, due muri del tempio con il varco che cambia lato
         pit(w, 12, 14, 0, 4); arc(w, 0, 12, 14);
@@ -113,16 +113,22 @@ public final class Levels3J {
         // il colpo di scena: il pavimento si stringe sopra il vuoto mentre il masso accelera
         pit(w, 132, 150, 0, 1); pit(w, 132, 150, 3, 4); gemLine(w, 0, 132, 150); crusher(w, 2, 138, 2.2f, 0.5f); crusher(w, 2, 145, 2.2f, 1.6f);
         templeWall(w, 156, 0); templeWall(w, 160, 4); templeWall(w, 164, 2); gem(w, -2, 0.7f, 156.5f); gem(w, 2, 0.7f, 160.5f); gem(w, 0, 0.7f, 164.5f);
-        // 4. la scalinata finale: gradini, pestelli in cima a ogni gradino, tiki che tirano dall'alto
-        for (int z = 172; z < 226; z++) for (int x = 0; x < W; x++) set(w, x, z, z < 180 ? 1 : z < 190 ? 2 : 3);
+        // 4. la salita finale: una rampa senza gradini su cui il masso rotola su; pestelli, tiki e una buca da saltare. In cima due
+        //    pilastri massicci stringono il passaggio a una corsia: il masso ci si incaglia e la fuga finisce
+        for (int z = 172; z < 226; z++) for (int x = 0; x < W; x++) set(w, x, z, 0);
+        pit(w, 206, 209, 0, 4); templeRow3(w, 214);
+        for (int z = 220; z <= 221; z++) for (int x = 0; x < W; x++) if (x != 2) set(w, x, z, 7);
+        w.makeRamp(172, 226, 0f, 3f);
         crusher(w, 1, 176, 2.2f, 0f); crusher(w, 3, 176, 2.2f, 1.1f); crusher(w, 2, 186, 2.0f, 0.4f); crusher(w, 0, 186, 2.0f, 1.4f); crusher(w, 4, 186, 2.0f, 1.4f);
-        tiki(w, 0, 196, 3f); tiki(w, 4, 200, 3f);
-        pit(w, 206, 209, 0, 4); arcAt(w, 206, 209, 3f); templeRow3(w, 214); crusher(w, 1, 214, 2.0f, 0f); crusher(w, 2, 214, 2.0f, 0.7f); crusher(w, 3, 214, 2.0f, 1.4f);
-        gemLine3(w, 0, 3.7f, 192, 204); gemLine3(w, 0, 3.7f, 216, 224);
+        tiki(w, 0, 196, w.rampY(196.5f)); tiki(w, 4, 200, w.rampY(200.5f));
+        arcAt(w, 206, 209, w.rampY(207.5f)); crusher(w, 1, 214, 2.0f, 0f); crusher(w, 2, 214, 2.0f, 0.7f); crusher(w, 3, 214, 2.0f, 1.4f);
+        for (int z = 192; z <= 204; z++) gem(w, 0, w.rampY(z + 0.5f) + 0.7f, z + 0.5f);
+        for (int z = 216; z <= 224; z++) if (z < 220 || z > 221) gem(w, 0, w.rampY(z + 0.5f) + 0.7f, z + 0.5f);
+        w.boulderStop = 220f - World3D.BOULDER_FRONT - 0.2f;
         for (int z = 226; z < 252; z++) for (int x = 0; x < W; x++) set(w, x, z, 3);
         gemLine3(w, 0, 3.7f, 230, 240);
         w.flagZ = 246;
-        w.makeBreakable(0, 226);                             // muri, colonne e pestelli: il masso li travolge, non ci passa attraverso
+        w.makeBreakable(0, 219);                             // muri, colonne e pestelli: il masso li travolge, non ci passa attraverso (i pilastri finali no)
     }
 
     // ------------------------------------------------------------------ 37: il fiume delle lucciole

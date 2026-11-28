@@ -53,6 +53,18 @@ public final class World3D {
      * volano via e rimbalzano; i pestelli travolti si ricordano per rimetterli se il robot riparte da più indietro.
      */
     public byte[] breakH, breakFloor;
+    /**
+     * Rampa a tutta larghezza (il tempio): tra rampZ0 e rampZ1 il pavimento sale senza gradini da rampH0 a rampH1. Le caselle della
+     * rampa tengono in height la quota intera più bassa; quella vera, continua, la dà rampY.
+     */
+    public float rampZ0 = Float.NaN, rampZ1, rampH0, rampH1;
+    /**
+     * Il masso si incaglia quando il suo filo arriva a boulderStop (tra due pilastri che non riesce a sfondare); da lì parte la breve
+     * scena in cui la camera torna dietro al robot: per CINE secondi il giocatore non ha i comandi.
+     */
+    public float boulderStop = Float.NaN, cineT = -1f;
+    public static final float CINE = 1.9f;
+    public boolean[] rampCell;
     public final List<float[]> debris = new ArrayList<float[]>();
     private final List<float[]> smashedCrushers = new ArrayList<float[]>();
     private int smashedTo;
@@ -158,7 +170,7 @@ public final class World3D {
         gems = 0;
         lives = START_LIVES;
         sealed = false;
-        crateKind = null; crateT = null; booms.clear(); crushers.clear(); rafts.clear(); breakH = null; breakFloor = null; debris.clear(); smashedCrushers.clear(); smashedTo = 0; shake = 0; raftIdx = null; camBackUntil = -1f;
+        crateKind = null; crateT = null; booms.clear(); crushers.clear(); rafts.clear(); breakH = null; breakFloor = null; rampCell = null; rampZ0 = Float.NaN; boulderStop = Float.NaN; cineT = -1f; debris.clear(); smashedCrushers.clear(); smashedTo = 0; shake = 0; raftIdx = null; camBackUntil = -1f;
         belt = null; lasers.clear(); quick = null; sinkT = 0; winds.clear(); carts.clear(); mazes.clear();
         coin = null; coinCrate = -1; coinFoeIdx = -1; coinFoe = null; coinPop = null;
         if (levelNo > 37) Levels3W.build(this, levelNo); else if (levelNo > 34) Levels3J.build(this, levelNo); else if (levelNo > 24) Levels3C.build(this, levelNo); else if (levelNo > 12) Levels3B.build(this, levelNo); else if (levelNo == 12) LevelTwelve.build(this); else if (levelNo == 10) LevelTen.build(this); else if (levelNo == 8) LevelEight.build(this); else if (levelNo == 6) LevelSix.build(this); else if (levelNo == 4) LevelFour.build(this); else LevelTwo.build(this);
@@ -212,6 +224,7 @@ public final class World3D {
 
     /** joyX: -1 sinistra .. 1 destra; joyY: -1 indietro .. 1 avanti. */
     public void setInput(float joyX, float joyY, boolean jump, boolean spin) {
+        if (cineLocked()) { joyX = 0; joyY = 0; jump = false; spin = false; }
         float l = (float) Math.sqrt(joyX * joyX + joyY * joyY);
         if (l > 1) { joyX /= l; joyY /= l; }
         this.joyX = joyX;
@@ -253,16 +266,54 @@ public final class World3D {
     static int xi(float x) { return (int) Math.floor(x + HALF); }
     static int zi(float z) { return (int) Math.floor(z); }
 
+    /** Quota della rampa al punto z (fuori dalla rampa: la quota del suo estremo più vicino). */
+    public float rampY(float z) {
+        float u = (z - rampZ0) / (rampZ1 - rampZ0);
+        return rampH0 + (rampH1 - rampH0) * Math.max(0f, Math.min(1f, u));
+    }
+
+    /** Trasforma le righe [z0, z1) in rampa (le buche restano buche). */
+    public void makeRamp(int z0, int z1, float h0, float h1) {
+        rampZ0 = z0; rampZ1 = z1; rampH0 = h0; rampH1 = h1;
+        if (rampCell == null) rampCell = new boolean[height.length];
+        for (int z = z0; z < z1; z++) for (int x = 0; x < W; x++) {
+            int i = z * W + x;
+            if (height[i] != 0) continue;                    // buche e ostacoli restano quello che sono
+            rampCell[i] = true;
+            height[i] = (int) Math.floor(rampY(z) + 1e-4f);
+        }
+    }
+
+    /** Quota del pavimento al centro della casella (sulla rampa quella continua). */
+    public float floorAt(int cx, int cz) {
+        if (isRamp(cx, cz)) return rampY(cz + 0.5f);
+        return Math.max(0, height[cz * W + cx]);
+    }
+
+    /** È una casella di rampa? */
+    public boolean isRamp(int cx, int cz) {
+        return rampCell != null && cx >= 0 && cx < W && cz >= 0 && cz < length && rampCell[cz * W + cx];
+    }
+
+    /** Quota della superficie della casella (cx, cz) nel punto z: continua sulla rampa, a gradino altrove. */
+    private float surface(int cx, int cz, float z) {
+        int h = cell(cx, cz);
+        if (h != PIT && h != 99 && isRamp(cx, cz)) return rampY(Math.max(cz, Math.min(cz + 1f, z)));
+        return h;
+    }
+
     /**
      * Quota su cui poggiano i piedi: la più alta sotto l'impronta tra quelle non più alte di poco dei piedi. Accostati a un muro
      * (l'ingombro contro i muri è più stretto dell'impronta) il muro non conta: si resta sul pavimento.
      */
     public float footAt(float x, float z, float feet) {
-        int best = PIT;
+        float best = PIT;
         for (int cz = zi(z - R); cz <= zi(z + R); cz++) {
             for (int cx = xi(x - R); cx <= xi(x + R); cx++) {
-                int h = cell(cx, cz);
-                if (h != 99 && h > best && h <= feet + 0.6f) best = h;
+                int c = cell(cx, cz);
+                if (c == 99 || c == PIT) continue;
+                float h = surface(cx, cz, z);
+                if (h > best && h <= feet + 0.6f) best = h;
             }
         }
         return best == PIT ? -1000f : best;
@@ -270,11 +321,13 @@ public final class World3D {
 
     /** Quota più alta sotto l'impronta del giocatore; molto negativa se sotto c'è solo vuoto. */
     public float topAt(float x, float z) {
-        int best = PIT;
+        float best = PIT;
         for (int cz = zi(z - R); cz <= zi(z + R); cz++) {
             for (int cx = xi(x - R); cx <= xi(x + R); cx++) {
-                int h = cell(cx, cz);
-                if (h != 99 && h > best) best = h;
+                int c = cell(cx, cz);
+                if (c == 99 || c == PIT) continue;
+                float h = surface(cx, cz, z);
+                if (h > best) best = h;
             }
         }
         return best == PIT ? -1000f : best;
@@ -293,7 +346,9 @@ public final class World3D {
         for (int cz = zi(z - R); cz <= zi(z + R); cz++) {
             for (int cx = xi(x - R); cx <= xi(x + R); cx++) {
                 int h = cell(cx, cz);
-                if (h != PIT && h > feet + 0.05f) return true;
+                if (h == PIT) continue;
+                if (h != 99 && isRamp(cx, cz)) { if (rampY(Math.min(cz + 1f, z + R)) > feet + 0.3f) return true; continue; }   // la rampa si sale camminando
+                if (h > feet + 0.05f) return true;
             }
         }
         return false;
@@ -316,6 +371,12 @@ public final class World3D {
     }
 
     // ------------------------------------------------------------------ aggiornamento
+
+    /** Durante la scena del masso incagliato i comandi sono tolti al giocatore. */
+    public boolean cineLocked() { return cineT >= 0 && cineT < CINE; }
+
+    /** Il masso si è incagliato: la camera può tornare dietro al robot. */
+    public boolean boulderStuck() { return cineT >= 0; }
 
     public void update(float dt) {
         acc += Math.min(dt, 0.05f);
@@ -520,7 +581,7 @@ public final class World3D {
                 if ((int) cr[1] != z) continue;
                 crushers.remove(c);
                 smashedCrushers.add(cr);
-                float f = Math.max(0, height[(int) cr[1] * W + (int) cr[0]]);
+                float f = floorAt((int) cr[0], (int) cr[1]);
                 for (int k = 0; k < 6; k++) spawnDebris(cr[0] - HALF + 0.5f, f + 3.2f + k * 0.25f, cr[1] + 0.5f, 1.2f);
                 shake = Math.max(shake, 0.8f);
             }
@@ -583,8 +644,14 @@ public final class World3D {
         if (!Float.isNaN(fireZ)) {
             float speed = 0, gap = 1e9f;
             for (float[] z : fireZones) if (pz >= z[0]) { speed = z[1]; gap = z.length > 2 ? z[2] : 1e9f; }
+            if (cineT >= 0) speed = 0;                                   // incagliato: non si muove più
             fireZ += speed * dt;
-            if (gap < 1e8f) fireZ = Math.max(fireZ, pz - gap);          // il fuoco non resta mai troppo indietro
+            if (gap < 1e8f && cineT < 0) fireZ = Math.max(fireZ, pz - gap);   // il fuoco non resta mai troppo indietro
+            if (chase == 2 && !Float.isNaN(boulderStop) && fireZ >= boulderStop) {
+                fireZ = boulderStop;
+                if (cineT < 0) { cineT = 0; shake = 1.2f; for (int k = 0; k < 14; k++) spawnDebris((k % 5) - HALF + 0.5f, 1f + k * 0.3f, boulderStop + BOULDER_FRONT + 0.3f, 1.1f); }
+            }
+            if (cineT >= 0) { cineT += dt; if (cineLocked()) { joyX = 0; joyY = 0; jump = false; spin = false; } }
             if (chase == 2) smash(fireZ + BOULDER_FRONT);
             if (pz < fireZ + 0.2f) { die(); return; }
         }
@@ -687,7 +754,9 @@ public final class World3D {
 
         py += vy * dt;
         float g = footAt(px, pz, py);
+        boolean wasGround = onGround;
         onGround = false;
+        if (wasGround && vy <= 0 && py > g && py - g < 0.12f) py = g;     // in discesa sulla rampa i piedi restano attaccati
         if (py <= g && vy <= 0 && py > g - 0.6f) {
             py = g;
             vy = 0;
@@ -1218,6 +1287,12 @@ public final class World3D {
         return false;
     }
 
+    /** Gemme in basso sulle corsie laterali della riga z: quel passaggio è voluto, non va riempito (le gemme finirebbero sepolte). */
+    private boolean gemsBeside(int z, int h) {
+        for (float[] g : gemsList) if ((int) Math.floor(g[2]) == z && Math.abs(g[0]) > HALF - 1f && g[1] < h) return true;
+        return false;
+    }
+
     private void noSidePaths() {
         for (int z = 0; z < length; z++) {
             if (inMaze(z + 0.5f)) continue;                     // nel labirinto i corridoi laterali sono voluti
@@ -1227,7 +1302,7 @@ public final class World3D {
             for (int x = 1; x < W - 1; x++) if (height[z * W + x] != h) flat = false;
             int l = height[z * W], r = height[z * W + W - 1];
             // solo il "balcone": tutto il centro alla stessa quota e entrambi i lati più bassi (le corsie a zig-zag restano)
-            if (flat && (l == PIT || l < h) && (r == PIT || r < h)) { height[z * W] = h; height[z * W + W - 1] = h; }
+            if (flat && (l == PIT || l < h) && (r == PIT || r < h) && !gemsBeside(z, h)) { height[z * W] = h; height[z * W + W - 1] = h; }
         }
     }
 
@@ -1455,7 +1530,7 @@ public final class World3D {
         }
         for (float[] c : crushers) {                         // pestello: schiaccia chi è sotto quando cade
             if (Math.abs(c[1] + 0.5f - pz) > 1.5f) continue;
-            float bx = c[0] - HALF + 0.5f, bz = c[1] + 0.5f, bot = Math.max(0, height[(int) c[1] * W + (int) c[0]]) + crusherBottom(c, time);
+            float bx = c[0] - HALF + 0.5f, bz = c[1] + 0.5f, bot = floorAt((int) c[0], (int) c[1]) + crusherBottom(c, time);
             float ox = 0.5f + R - 0.05f - Math.abs(px - bx), oz = 0.5f + R - 0.05f - Math.abs(pz - bz);
             if (ox <= 0 || oz <= 0 || bot >= py + PLAYER_H - 0.1f) continue;
             boolean falling = crusherBottom(c, time) < crusherBottom(c, time - 0.03f) - 1e-4f;
@@ -1504,7 +1579,7 @@ public final class World3D {
     }
 
     private void stepGate(float dt) {
-        if (pz > flagZ - 6f && gateOpen < 1f) gateOpen = Math.min(1f, gateOpen + dt);
+        if (pz > flagZ - 30f && gateOpen < 1f) gateOpen = Math.min(1f, gateOpen + dt * 0.8f);      // si apre già quando lo si vede da lontano
         if (state == PLAYING && gateOpen > 0.6f && pz >= flagZ + 3.4f) win();
     }
 

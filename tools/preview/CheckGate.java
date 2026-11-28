@@ -26,9 +26,14 @@ public class CheckGate {
         World3D w = new World3D(new MemorySave(), id);
         w.enemies.clear(); w.fireZ = Float.NaN; w.fireStart = Float.NaN; w.hiveZ = Float.NaN; w.thorns.clear(); w.jets.clear(); w.logs.clear();
         ok(w.cell(2, w.flagZ) == 99 && w.cell(0, w.flagZ) == 99, "livello " + id + ": portone chiuso, muro invalicabile");
-        w.pz = w.flagZ - 12; w.px = 0; w.py = Math.max(0, w.topAt(w.px, w.pz)) + 0.01f; w.invuln = 99;
+        w.pz = w.flagZ - 40; w.px = 0; w.py = Math.max(0, w.topAt(w.px, w.pz)) + 0.01f; w.invuln = 99;
         for (int i = 0; i < 10; i++) { w.setInput(0, 0, false, false); w.update(1f / 60f); }
-        ok(w.gateOpen == 0 && w.fade() == 0, "livello " + id + ": da lontano il portone è chiuso");
+        ok(w.gateOpen == 0 && w.fade() == 0, "livello " + id + ": molto lontano il portone è ancora chiuso");
+        w.pz = w.flagZ - 20;
+        while (w.topAt(w.px, w.pz) < 0 && w.pz < w.flagZ - 8) w.pz += 1f;          // un punto con il pavimento sotto
+        w.py = Math.max(0, w.topAt(w.px, w.pz)) + 0.01f;
+        for (int i = 0; i < 120; i++) { w.setInput(0, 0, false, false); w.update(1f / 60f); }
+        ok(w.gateOpen > 0.6f && w.fade() == 0, "livello " + id + ": quando lo si vede arrivando, il portone è già aperto");
         w.pz = w.flagZ - 3; w.px = 0; w.py = Math.max(0, w.topAt(w.px, w.pz)) + 0.01f;
         float fadeIn = 0;
         for (int i = 0; i < 900 && w.state == World3D.PLAYING; i++) { w.setInput(0, 1, false, false); w.update(1f / 60f); fadeIn = Math.max(fadeIn, w.fade()); }

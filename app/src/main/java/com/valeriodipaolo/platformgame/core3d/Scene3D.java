@@ -416,6 +416,7 @@ public final class Scene3D {
                 int h = vis(w, x, z);
                 float fx = x - World3D.HALF;
                 if (h == World3D.PIT) continue;
+                if (w.isRamp(x, z)) { rampCell(w, x, z, fx); continue; }
                 if (h == 0) {
                     MeshBuilder g = mb(K_GRASS, z);
                     boolean nearPit = false;
@@ -621,6 +622,29 @@ public final class Scene3D {
         mbs = null;
         if (standing != null) System.arraycopy(standing, 0, w.height, 0, standing.length);
         buildBreakables(w);
+    }
+
+    /**
+     * Casella della rampa del tempio: lastricato inclinato in quattro lastre (leggermente diverse di tono, con le fughe), fianchi di
+     * pietra sui bordi del sentiero e sopra le buche.
+     */
+    private void rampCell(World3D w, int x, int z, float fx) {
+        MeshBuilder s = mb(K_STONE, z);
+        float y0 = w.rampY(z), y1 = w.rampY(z + 1), slope = y1 - y0;
+        float ny = 1f / (float) Math.sqrt(1 + slope * slope), nz = -slope * ny;
+        for (int sx = 0; sx < 2; sx++) for (int sz = 0; sz < 2; sz++) {
+            float ax = fx + sx * 0.5f + 0.02f, bx = fx + sx * 0.5f + 0.48f, az = z + sz * 0.5f + 0.02f, bz = z + sz * 0.5f + 0.48f;
+            float ya = w.rampY(az), yb = w.rampY(bz), t = 0.9f + 0.14f * hash(x * 2 + sx, z * 2 + sz, 5);
+            s.colorf(t, t * 0.98f, t * 0.94f);
+            s.quad(ax, ya + 0.02f, az, bx, ya + 0.02f, az, bx, yb + 0.02f, bz, ax, yb + 0.02f, bz, 0, ny, nz, ax * 0.5f, az * 0.5f, bx * 0.5f, bz * 0.5f);
+        }
+        s.colorf(0.45f, 0.42f, 0.38f);                                       // fughe: il letto di malta sotto le lastre
+        s.quad(fx, y0, z, fx + 1, y0, z, fx + 1, y1, z + 1, fx, y1, z + 1, 0, ny, nz, 0, 0, 0.5f, 0.5f);
+        s.colorf(0.85f, 0.82f, 0.78f);
+        if (x == 0) s.quad(fx, -0.6f, z + 1, fx, -0.6f, z, fx, y0, z, fx, y1, z + 1, -1, 0, 0, z * 0.5f, -0.3f, (z + 1) * 0.5f, y1 * 0.5f);
+        if (x == World3D.W - 1) s.quad(fx + 1, -0.6f, z, fx + 1, -0.6f, z + 1, fx + 1, y1, z + 1, fx + 1, y0, z, 1, 0, 0, z * 0.5f, -0.3f, (z + 1) * 0.5f, y1 * 0.5f);
+        if (z > 0 && vis(w, x, z - 1) == World3D.PIT) s.quad(fx, -3f, z, fx + 1, -3f, z, fx + 1, y0, z, fx, y0, z, 0, 0, -1, fx * 0.5f, -1.5f, (fx + 1) * 0.5f, y0 * 0.5f);
+        if (vis(w, x, z + 1) == World3D.PIT) s.quad(fx + 1, -3f, z + 1, fx, -3f, z + 1, fx, y1, z + 1, fx + 1, y1, z + 1, 0, 0, 1, fx * 0.5f, -1.5f, (fx + 1) * 0.5f, y1 * 0.5f);
     }
 
     private Mesh[] breakCols;
@@ -1752,7 +1776,7 @@ public final class Scene3D {
         // camera dietro le spalle: segue il giocatore, un po' meno di traverso, e l'altezza del terreno con dolcezza
         mazeK += ((w.inMaze(w.pz) ? 1f : 0f) - mazeK) * 0.05f;        // nel labirinto la camera resta nel corridoio e sale sopra i muri
         float tx = w.px * (0.6f + 0.4f * mazeK), tz = w.pz;
-        boolean wantBack = w.pz < w.camBackUntil;
+        boolean wantBack = w.pz < w.camBackUntil && !w.boulderStuck();     // finita la fuga (masso incagliato) la camera torna dietro con calma
         if (!camInit) { camX = tx; camZ = tz; camY = w.groundY; camInit = true; backK = wantBack ? 1 : 0; }
         backK += ((wantBack ? 1f : 0f) - backK) * 0.035f;            // si gira con calma alla fine della fuga
         back = backK > 0.5f;
@@ -2508,7 +2532,7 @@ public final class Scene3D {
     /** Quota della trave dei pestelli della riga z: subito sopra la corsa del più alto (in alto il blocco arriva a 3,1 + 1,6). */
     private static float crusherBeamY(World3D w, float z) {
         float f = 0;
-        for (float[] o : w.crushers) if (o[1] == z) f = Math.max(f, Math.max(0, w.height[(int) o[1] * World3D.W + (int) o[0]]));
+        for (float[] o : w.crushers) if (o[1] == z) f = Math.max(f, w.floorAt((int) o[0], (int) o[1]));
         return f + 3.1f + 1.6f + 0.15f;
     }
 
@@ -2527,7 +2551,7 @@ public final class Scene3D {
         for (float[] c : w.crushers) {
             float z = c[1] + 0.5f;
             if (z < nearZ || z > farZ + (back ? 0 : 4)) continue;
-            float floor = Math.max(0, w.height[(int) c[1] * World3D.W + (int) c[0]]), bot = floor + World3D.crusherBottom(c, w.time), warn = World3D.crusherWarn(c, w.time);
+            float floor = w.floorAt((int) c[0], (int) c[1]), bot = floor + World3D.crusherBottom(c, w.time), warn = World3D.crusherWarn(c, w.time);
             float x = c[0] - World3D.HALF + 0.5f + 0.03f * warn * (float) Math.sin(w.time * 60f);
             Mat4.setIdentity(m);
             Mat4.translate(m, x, bot, z);
@@ -2546,7 +2570,7 @@ public final class Scene3D {
                 Mat4.translate(m, 0, beam, z);
                 g.draw(crusherBeam, m, 1, 1, 1, 1, 0);
                 for (int sd = -1; sd <= 1; sd += 2) {
-                    float px = sd * 2.85f, gy = Math.max(0, w.height[(int) c[1] * World3D.W + (sd < 0 ? 0 : World3D.W - 1)]);
+                    float px = sd * 2.85f, gy = w.floorAt(sd < 0 ? 0 : World3D.W - 1, (int) c[1]);
                     Mat4.setIdentity(m);
                     Mat4.translate(m, px, gy - 0.2f, z);
                     Mat4.scale(m, 1, beam + 0.55f - gy, 1);
@@ -2592,13 +2616,15 @@ public final class Scene3D {
     private void drawBoulder(World3D w, Gfx3D g) {
         if (Float.isNaN(w.fireZ) || w.fireZ < w.pz - 40f) return;
         float rad = 2.3f, z = w.fireZ - rad * 0.3f;
+        float gy = Math.max(0f, groundAt(0, Math.max(0f, z)));
+        if (!Float.isNaN(w.rampZ0) && z > w.rampZ0 - rad) gy = Math.max(Math.max(0f, w.rampY(z)), gy < 0 ? 0 : Math.min(gy, w.rampY(z) + 0.01f));   // sulla rampa sale senza scatti (e passa sopra le buche)
         Mat4.setIdentity(m);
-        Mat4.translate(m, 0, Math.max(0f, groundAt(0, Math.max(0f, z))) + rad - 0.15f, z);
-        Mat4.rotateX(m, w.fireZ / rad);
+        Mat4.translate(m, 0, gy + rad - 0.15f, z);
+        Mat4.rotateX(m, w.fireZ / rad + (w.boulderStuck() ? 0.04f * (float) Math.sin(w.time * 30f) * Math.max(0, 1 - w.cineT) : 0));
         Mat4.scale(m, rad, rad, rad);
         g.draw(boulderMesh, m, 1, 1, 1, 1, 0.05f);
         Mat4.setIdentity(m);
-        Mat4.translate(m, 0, Math.max(0f, groundAt(0, Math.max(0f, z))) + 0.05f, z);
+        Mat4.translate(m, 0, gy + 0.05f, z);
         Mat4.scale(m, rad * 2.2f, 1, rad * 1.6f);
         g.draw(shadow, m, 1, 1, 1, 1, 1);
     }
