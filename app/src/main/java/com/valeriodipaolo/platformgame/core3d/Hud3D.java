@@ -33,6 +33,11 @@ public final class Hud3D {
         p.image(Img.GEM_FULL, ix + isz * 1.25f, iy, isz, isz, false, w.gemOwned ? 1f : 0.4f);
         p.text(com.valeriodipaolo.platformgame.core.Levels.title(w.levelNo), sw / 2, base - 0.52f * s, 0.3f * s, Painter.ALIGN_CENTER, 0xFFFFE082);   // numero e nome del livello
         p.text("PUNTI " + w.score, sw / 2, base, ts, Painter.ALIGN_CENTER, WHITE);
+        if (com.valeriodipaolo.platformgame.core.Debug.on) {
+            int cs = w.debugCoinState();
+            p.text("DEBUG  ·  gemme saltate: " + w.debugSkipped() + "  ·  gettone: " + (cs == 2 ? "preso" : cs == 1 ? "SALTATO" : "davanti"),
+                    sw / 2, base + 0.7f * ts, 0.6f * ts, Painter.ALIGN_CENTER, cs == 1 ? 0xFFFF5252 : 0xFFFFEB3B);
+        }
         p.text("VITE " + w.lives, sw - m, base, ts, Painter.ALIGN_RIGHT, WHITE);
         float pip = 0.36f * s, gap = 0.12f * s, py = base + 0.22f * s;
         for (int i = 0; i < World3D.MAX_HP; i++) {

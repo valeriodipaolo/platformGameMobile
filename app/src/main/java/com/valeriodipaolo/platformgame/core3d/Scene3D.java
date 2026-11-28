@@ -1941,6 +1941,7 @@ public final class Scene3D {
             Mat4.scale(m, 1.3f, 1.3f, 1.3f);
             g.draw(gem, m, 1, 1, 1, 1, 0.7f);
         }
+        if (com.valeriodipaolo.platformgame.core.Debug.on) drawCoinBeacon(w, g);
         if (w.coin != null && w.coin[2] > near && w.coin[2] < far) {      // il gettone d'oro gira su se stesso
             Mat4.setIdentity(m);
             Mat4.translate(m, w.coin[0], w.coin[1] + 0.07f * (float) Math.sin(w.time * 3f), w.coin[2]);
@@ -2652,7 +2653,35 @@ public final class Scene3D {
     }
 
     /** Il masso del tempio: rotola alle spalle del robot (che lo vede arrivare, con la camera girata). */
-    private Mesh snowWall, snowPuff, lavaSheet;
+    private Mesh snowWall, snowPuff, lavaSheet, beaconBall, beaconBeam;
+
+    /** Debug: bagliore pulsante e colonna di luce alta dove si trova il gettone (dentro una cassa, addosso a un nemico, ovunque). */
+    private void drawCoinBeacon(World3D w, Gfx3D g) {
+        float[] c = w.debugCoinPos();
+        if (c == null) return;
+        if (beaconBall == null) {
+            MeshBuilder b = new MeshBuilder();
+            b.colorf(1f, 0.85f, 0.25f);
+            b.ellipsoid(0, 0, 0, 1f, 1f, 1f, 14, 10);
+            beaconBall = b.build(-1, true, false);
+            b = new MeshBuilder();
+            b.colorf(1f, 0.9f, 0.35f);
+            b.cylinder(0, 0f, 1f, 0, 1f, 1f, 10, false, false);
+            beaconBeam = b.build(-1, true, false);
+        }
+        float pul = 0.5f + 0.5f * (float) Math.sin(w.time * 6f);
+        for (int k = 1; k <= 3; k++) {
+            float r = 0.35f + 0.35f * k + 0.2f * pul;
+            Mat4.setIdentity(m);
+            Mat4.translate(m, c[0], c[1], c[2]);
+            Mat4.scale(m, r, r, r);
+            g.draw(beaconBall, m, 1, 1, 1, (0.28f + 0.2f * pul) / k, 1f);
+        }
+        Mat4.setIdentity(m);
+        Mat4.translate(m, c[0], c[1], c[2]);
+        Mat4.scale(m, 0.12f + 0.05f * pul, 40f, 0.12f + 0.05f * pul);
+        g.draw(beaconBeam, m, 1, 1, 1, 0.35f + 0.25f * pul, 1f);
+    }
 
     /**
      * Nelle fughe l'inseguitore, quando arriva tra la camera e il robot, si abbassa (0 = alto quanto deve, 1 = basso): un muro di

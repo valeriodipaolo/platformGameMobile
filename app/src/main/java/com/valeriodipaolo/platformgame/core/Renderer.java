@@ -296,6 +296,25 @@ public final class Renderer {
             p.image(Img.SPIN_FX, (g.djX - cam) * s - w / 2, g.djY * s - h / 2, w, h, false, f * 0.9f);
         }
 
+        if (Debug.on) {                                     // debug: bagliore pulsante dove si trova il gettone (anche dentro un mattoncino)
+            float[] c = g.debugCoinPos();
+            if (c != null) {
+                float pul = 0.5f + 0.5f * (float) Math.sin(g.time * 6f), dbgX = (c[0] - cam) * s, dbgY = c[1] * s;
+                for (int k = 3; k >= 1; k--) {
+                    float r = (0.6f + 0.45f * k + 0.25f * pul) * s;
+                    p.image(Img.HV_SPARK, dbgX - r, dbgY - r, 2 * r, 2 * r, false, (0.22f + 0.2f * pul) / k);
+                }
+                float r = (1.0f + 0.3f * pul) * s, t = 0.08f * s;
+                int col = ((int) (120 + 100 * pul) << 24) | 0xFFD54F;
+                p.rect(dbgX - r, dbgY - r, 2 * r, t, col); p.rect(dbgX - r, dbgY + r - t, 2 * r, t, col);
+                p.rect(dbgX - r, dbgY - r, t, 2 * r, col); p.rect(dbgX + r - t, dbgY - r, t, 2 * r, col);
+                if (dbgX < 0 || dbgX > sw) {                           // fuori schermo: una freccia sul bordo indica da che parte
+                    float ax = dbgX < 0 ? 0.25f * s : sw - 1.05f * s;
+                    p.text(dbgX < 0 ? "◀ gettone" : "gettone ▶", dbgX < 0 ? ax : sw - 0.25f * s, Math.max(2.5f * s, Math.min(sh - 3f * s, dbgY)), 0.45f * s, dbgX < 0 ? Painter.ALIGN_LEFT : Painter.ALIGN_RIGHT, 0xFFFFD54F);
+                }
+            }
+        }
+
         // ---- punteggio e collezionabili
         float m = 0.06f * sw, ts = 0.5f * s, base = 0.95f * s;
         p.image(Img.GEM + 3, m, 0.34f * s, 0.78f * s, 0.78f * s, false, 1);
@@ -306,6 +325,11 @@ public final class Renderer {
         p.image(Img.GEM_FULL, ix, iy, isz, isz, false, g.gemOwned ? 1f : 0.4f);
         p.text(com.valeriodipaolo.platformgame.core.Levels.title(g.levelNo), sw / 2, base - 0.52f * s, 0.3f * s, Painter.ALIGN_CENTER, 0xFFFFE082);   // numero e nome del livello
         p.text("PUNTI " + g.score, sw / 2, base, ts, Painter.ALIGN_CENTER, WHITE);
+        if (Debug.on) {
+            int cs = g.debugCoinState();
+            p.text("DEBUG  ·  gemme saltate: " + g.debugSkipped() + "  ·  gettone: " + (cs == 2 ? "preso" : cs == 1 ? "SALTATO" : "davanti"),
+                    sw / 2, base + 0.7f * ts, 0.6f * ts, Painter.ALIGN_CENTER, cs == 1 ? 0xFFFF5252 : 0xFFFFEB3B);
+        }
         p.text("VITE " + g.lives, sw - m, base, ts, Painter.ALIGN_RIGHT, WHITE);
         float pip = 0.36f * s, gap = 0.12f * s, py = base + 0.22f * s;
         for (int i = 0; i < Game.MAX_HP; i++) {

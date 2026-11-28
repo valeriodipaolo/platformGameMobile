@@ -441,6 +441,37 @@ public final class Game {
         }
     }
 
+    // ------------------------------------------------------------------ debug
+
+    /** Debug: gemme lasciate indietro (pezzi a terra e casse non aperte alle spalle del robot). */
+    public int debugSkipped() {
+        float lim = player.x - Debug.BEHIND;
+        int n = 0;
+        for (float[] c : shards) if (c[0] < lim) n++;
+        for (int y = 0; y < level.h; y++) for (int x = 0; x < Math.min(level.w, (int) lim); x++) {
+            char c = level.get(x, y);
+            if (c == Level.BONUS || c == Level.STEEL) n++;
+        }
+        return n;
+    }
+
+    /** Debug: dov'è il gettone ({x, y} al centro), o null se è già stato preso. */
+    public float[] debugCoinPos() {
+        if (coinOwned) return null;
+        if (coin != null) return new float[] {coin[0] + 0.5f, coin[1] + 0.5f};
+        if (coinFoe != null) return coinFoe.dead ? null : new float[] {coinFoe.x + coinFoe.w / 2, coinFoe.y + coinFoe.h / 2};
+        for (int y = 0; y < level.h; y++) for (int x = 0; x < level.w; x++) if (level.get(x, y) == Level.SECRET) return new float[] {x + 0.5f, y + 0.5f};
+        return null;
+    }
+
+    /** Debug: stato del gettone: 0 ancora davanti, 1 saltato (alle spalle o perso), 2 preso. */
+    public int debugCoinState() {
+        if (coinOwned) return 2;
+        float[] c = debugCoinPos();
+        if (c == null) return 1;
+        return c[0] < player.x - Debug.BEHIND ? 1 : 0;
+    }
+
     /** Casella colpita da sotto con la testa. */
     public void hitBlock(int tx, int ty) {
         char c = level.get(tx, ty);

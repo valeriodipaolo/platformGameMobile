@@ -25,6 +25,7 @@ final class MenuView extends View {
         this.listener = listener;
         prefs = ctx.getSharedPreferences("platformgame", Context.MODE_PRIVATE);
         ctrl = Math.max(0, Math.min(2, prefs.getInt("ctrlmode", 0)));
+        com.valeriodipaolo.platformgame.core.Debug.on = prefs.getBoolean("debug", false);
         painter = new AndroidPainter(ctx);
     }
 
@@ -43,6 +44,10 @@ final class MenuView extends View {
     private float ctrlX(int i) { return getWidth() * (0.5f + 0.165f * (i - 1)) - ctrlW() / 2; }
     private float ctrlY() { return getHeight() * 0.885f; }
     private static final String[] CTRL = {"ANALOGICO", "DIGITALE", "CROCE"};
+
+    /** Selettore di debug, in basso a destra: gemme saltate, gettone saltato e bagliore sul gettone. */
+    private float dbgW() { return getWidth() * 0.1f; }
+    private float dbgX() { return getWidth() * 0.97f - dbgW(); }
     private static final String[] CTRL_HINT = {"più spingi, più corri", "levetta a otto direzioni, sempre a piena velocità", "croce direzionale, sempre a piena velocità"};
 
     @Override
@@ -66,6 +71,9 @@ final class MenuView extends View {
             painter.text(subById[Levels.ORDER[i]], x + btnW() / 2, y + btnH() * 0.8f, 0.15f * s, Painter.ALIGN_CENTER, green ? 0xFFC8E6C9 : 0xFFB3E5FC);
         }
         painter.text("Comandi 3D: " + CTRL_HINT[ctrl], w / 2, heroY() - h * 0.015f, 0.3f * s, Painter.ALIGN_CENTER, 0xFFFFFFFF);
+        boolean dbg = com.valeriodipaolo.platformgame.core.Debug.on;
+        painter.rect(dbgX(), ctrlY(), dbgW(), heroW() * 0.7f, dbg ? 0xFFFF7043 : 0xCC3A2414);
+        painter.text(dbg ? "DEBUG ON" : "DEBUG OFF", dbgX() + dbgW() / 2, ctrlY() + heroW() * 0.47f, 0.3f * s, Painter.ALIGN_CENTER, dbg ? 0xFF1A0E05 : 0xFFFFCCBC);
         for (int i = 0; i < 3; i++) {
             boolean on = i == ctrl;
             painter.rect(ctrlX(i), ctrlY(), ctrlW(), heroW() * 0.7f, on ? 0xFF4FC3F7 : 0xCC14324A);
@@ -76,6 +84,13 @@ final class MenuView extends View {
     @Override
     public boolean onTouchEvent(MotionEvent e) {
         if (e.getActionMasked() == MotionEvent.ACTION_UP) {
+            if (e.getX() >= dbgX() && e.getX() <= dbgX() + dbgW() && e.getY() >= ctrlY() - heroW() * 0.1f && e.getY() <= ctrlY() + heroW() * 0.8f) {
+                boolean v = !com.valeriodipaolo.platformgame.core.Debug.on;
+                com.valeriodipaolo.platformgame.core.Debug.on = v;
+                prefs.edit().putBoolean("debug", v).apply();
+                invalidate();
+                return true;
+            }
             for (int i = 0; i < 3; i++) {
                 if (e.getX() >= ctrlX(i) && e.getX() <= ctrlX(i) + ctrlW() && e.getY() >= ctrlY() - heroW() * 0.1f && e.getY() <= ctrlY() + heroW() * 0.8f) {
                     ctrl = i;

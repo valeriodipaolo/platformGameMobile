@@ -299,6 +299,38 @@ public final class World3D {
         pz += Math.max(-step, Math.min(step, tz - pz));
     }
 
+    // ------------------------------------------------------------------ debug
+
+    /** Debug: gemme lasciate indietro (a terra e nelle casse ancora intere alle spalle del robot). */
+    public int debugSkipped() {
+        float lim = pz - com.valeriodipaolo.platformgame.core.Debug.BEHIND;
+        int n = 0;
+        for (float[] g : gemsList) if (g[2] < lim) n++;
+        for (int k = 0; k < crate.length; k++) {
+            if (!crate[k] || k == coinCrate || (crateKind != null && crateKind[k] == C_BOUNCE) || hazardOnly(k)) continue;
+            if (k / W + 0.5f < lim) n++;
+        }
+        return n;
+    }
+
+    /** Debug: dov'è il gettone {x, y, z}, o null se preso o perso. */
+    public float[] debugCoinPos() {
+        if (coinOwned) return null;
+        if (coinPop != null) return new float[] {coinPop[0], coinPop[1], coinPop[2]};
+        if (coin != null) return coin.clone();
+        if (coinCrate >= 0) return crate[coinCrate] ? new float[] {coinCrate % W - HALF + 0.5f, 0.6f, coinCrate / W + 0.5f} : null;
+        if (coinFoe != null) return coinFoe.dead ? null : new float[] {coinFoe.x, coinFoe.y + 0.5f, coinFoe.z};
+        return null;
+    }
+
+    /** Debug: 0 il gettone è ancora davanti, 1 saltato (alle spalle o perso), 2 preso. */
+    public int debugCoinState() {
+        if (coinOwned) return 2;
+        float[] c = debugCoinPos();
+        if (c == null) return 1;
+        return c[2] < pz - com.valeriodipaolo.platformgame.core.Debug.BEHIND ? 1 : 0;
+    }
+
     /** Quota della rampa al punto z (fuori dalla rampa: la quota del suo estremo più vicino). */
     public float rampY(float z) {
         float u = (z - rampZ0) / (rampZ1 - rampZ0);
