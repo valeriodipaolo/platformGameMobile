@@ -932,7 +932,7 @@ public final class World3D {
             } else if (ax < 0.75f && az < 0.75f && vertical) {
                 if (stompable3(e) && vy < 0 && py > e.y + 0.25f) {     // schiacciato dall'alto (il riccio punge)
                     if (snail && e.mode < 2) { e.mode = 1; e.t = 4f; } else e.flatTime = 0.45f;
-                    vy = jump ? 9f : 6.5f;
+                    vy = JUMP_V;                               // rimbalzo come un salto singolo (più alto tenendo premuto)
                     airJumps = 1;
                     score += snail && e.mode == 1 ? 0 : 100;
                 } else if (!(snail && e.grace > 0)) {
@@ -977,7 +977,7 @@ public final class World3D {
             score += 100;
         } else if (ax < 0.7f && az < 0.7f && vy < 0 && py > e.y + 1.2f && py < e.y + 1.9f) {
             e.flatTime = 0.45f;
-            vy = jump ? 9f : 6.5f;
+            vy = JUMP_V;                               // rimbalzo come un salto singolo (più alto tenendo premuto)
             airJumps = 1;
             score += 100;
         }
@@ -996,7 +996,7 @@ public final class World3D {
         } else if (ax < 0.75f && az < 0.75f && vertical) {
             if (stompable && vy < 0 && py > e.y + 0.25f) {
                 e.flatTime = 0.45f;
-                vy = jump ? 9f : 6.5f;
+                vy = JUMP_V;                               // rimbalzo come un salto singolo (più alto tenendo premuto)
                 airJumps = 1;
                 score += 100;
             } else {
@@ -1483,14 +1483,14 @@ public final class World3D {
                 break;
             case C_TNT:
                 if (crateT[best] <= 0) crateT[best] = 0.001f;
-                vy = 7.5f;
+                vy = JUMP_V;
                 break;
             case C_NITRO:
                 explode(best);
                 return;
             default:
                 breakCrate(best);
-                vy = 7.5f;
+                vy = JUMP_V;                                 // rimbalzo come un salto singolo
                 break;
         }
         onGround = false;

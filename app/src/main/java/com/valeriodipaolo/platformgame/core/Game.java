@@ -384,7 +384,7 @@ public final class Game {
                 if (c == Level.BONUS || (c == Level.STEEL && spinActive)) { hitBlock(tx, fy); opened = true; }
                 else if (c == Level.STEEL) hitBlock(tx, fy);                     // rinforzata: resta chiusa (e compare l'avviso)
             }
-            if (opened) { p.vy = jump ? -15f : -10f; p.onGround = false; airJumps = 1; coyote = 0; }
+            if (opened) { p.vy = -JUMP_V; p.onGround = false; airJumps = 1; coyote = 0; }     // rimbalzo come un salto singolo (più alto tenendo premuto)
         }
         if (spinActive) {                                           // la giravolta apre le casse che tocca, anche le rinforzate
             for (int ty = (int) Math.floor(p.y - SPIN_REACH); ty <= (int) Math.floor(p.y + p.h + SPIN_REACH); ty++)
@@ -543,7 +543,7 @@ public final class Game {
             } else if (player.overlaps(e)) {
                 if (stompable(e) && player.vy > 0 && player.y + player.h - e.y < 0.75f) {
                     if (snail && e.mode < 2) { e.mode = 1; e.t = 4f; } else e.flatTime = 0.45f;     // la lumaca si chiude nel guscio
-                    player.vy = jump ? -15f : -10f;
+                    player.vy = -JUMP_V;                // rimbalzo come un salto singolo (più alto tenendo premuto)
                     airJumps = 1;                       // rimbalzando su un nemico si può rifare il doppio salto
                     score += snail && e.mode == 1 ? 0 : 100;
                 } else if (!(snail && (e.mode == 1 || e.grace > 0))) {

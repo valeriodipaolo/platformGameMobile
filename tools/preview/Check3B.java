@@ -129,6 +129,9 @@ public class Check3B {
             }
             float fwd = 1f;                                  // davanti a una cassa a molla rallenta, per atterrarci sopra
             if (rel && b.crateKind != null) for (int z = zi(b.pz); z <= zi(b.pz) + 2 && z < b.length; z++) { int k = z * World3D.W + xi(b.px); if (k >= 0 && k < b.crate.length && b.crate[k] && b.crateKind[k] == World3D.C_BOUNCE && b.time - b.crateT[k] > 0.5f) fwd = 0.3f; }
+            // in volo, in discesa sopra un isolotto che finisce subito: frena per atterrarci (come farebbe un giocatore)
+            if (!rel && !b.onGround && b.vy < 0 && b.cell(xi(b.px), zi(b.pz)) != World3D.PIT && b.cell(xi(b.px), zi(b.pz + 1.2f)) == World3D.PIT
+                    && b.py - Math.max(0, b.topAt(b.px, b.pz)) < 2.5f) fwd = 0f;
             b.setInput(jx, fwd, jump, false);
             if (System.getProperty("tr") != null && b.pz > Float.parseFloat(System.getProperty("tr")) && b.pz < Float.parseFloat(System.getProperty("tr")) + 20 && ((int) (time * 60)) % 6 == 0) System.out.printf("z %.2f x %.2f cur %d y %.2f og %b jt %.2f%n", b.pz, b.px, cur, b.py, b.onGround, jt);
             int lv0 = b.lives;
