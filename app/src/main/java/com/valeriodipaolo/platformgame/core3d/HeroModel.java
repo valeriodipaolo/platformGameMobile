@@ -320,13 +320,16 @@ public final class HeroModel {
     public static float phaseScale() { return 0.72f; }
 
     /** base = posizione e orientamento del robot nel mondo. */
+    /** Il robot è seduto nel carrello: niente animazione di corsa, sta fermo (si inclina col carrello). */
+    public boolean still;
+
     public void draw(Gfx3D g, float[] base, World3D w) {
         updateCape(w);
         boolean first = animT < 0 || w.time < animT;
         float dt = first ? 1f : Math.min(0.1f, w.time - animT);
         animT = w.time;
-        float sp = (float) Math.sqrt(w.vx * w.vx + w.vz * w.vz);
-        boolean spin = w.spinning(), air = !w.onGround && !spin;
+        float sp = still ? 0f : (float) Math.sqrt(w.vx * w.vx + w.vz * w.vz);
+        boolean spin = w.spinning(), air = !still && !w.onGround && !spin;
         // coefficienti rispetto all'animazione di base: corsa e salto accentuati, atterraggio secco
         final float phK = phaseScale(), swK = 1.55f, bobK = 2.3f, leanK = 1.9f,
                 rollK = 2f, twK = 2f, liftK = 3f, airK = 1.55f,

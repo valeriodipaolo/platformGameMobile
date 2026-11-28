@@ -54,16 +54,37 @@ public final class Hud3D {
             p.text(w.toast, sw / 2, 2.6f * s, 0.7f * s, Painter.ALIGN_CENTER, (a << 24) | 0xFFE082);
         }
 
+        // fuga: quando l'inseguitore si avvicina, i bordi dello schermo si arrossano (più forte quanto più è vicino)
+        if (!w.carts.isEmpty() && !Float.isNaN(w.fireZ) && w.state == World3D.PLAYING) {
+            float chaseGap = w.pz - w.fireZ, k = Math.max(0f, Math.min(1f, (8.5f - chaseGap) / 5.5f));
+            if (k > 0) {
+                float pulse = 0.75f + 0.25f * (float) Math.sin(w.time * 9f);
+                for (int i = 0; i < 6; i++) {
+                    int a = (int) (k * pulse * (110 - i * 17));
+                    if (a <= 0) continue;
+                    float t = (i + 1) * 0.035f * sh;
+                    int c = (a << 24) | 0xC01010;
+                    p.rect(0, sh - t, sw, t, c); p.rect(0, 0, 0.4f * t, sh, c); p.rect(sw - 0.4f * t, 0, 0.4f * t, sh, c);
+                }
+            }
+        }
+
         // joystick: compare dove si appoggia il dito, altrimenti resta nella posizione di riposo
         float jr = joyRadius(sw, sh);
         float cx = joyHomeX(sw, sh), cy = joyHomeY(sw, sh);           // il joystick resta fermo nella sua posizione
         boolean sky = w.theme == 12;                       // sulle nuvole i comandi bianchi non si vedrebbero: fondo scuro
-        if (sky && !dpad) p.image(Img.HV_PAD, cx - jr * 1.05f, cy - jr * 1.05f, 2.1f * jr, 2.1f * jr, false, 1);
-        if (sky && dpad) {
+        if (sky && !dpad && w.carts.isEmpty()) p.image(Img.HV_PAD, cx - jr * 1.05f, cy - jr * 1.05f, 2.1f * jr, 2.1f * jr, false, 1);
+        if (sky && dpad && w.carts.isEmpty()) {
             float e = crossOff(sw, sh) + crossSize(sw, sh) * 0.6f;
             p.image(Img.HV_PAD, crossX(sw, sh) - e, crossY(sw, sh) - e, 2 * e, 2 * e, false, 1);
         }
-        if (dpad) drawCross(p, sw, sh, joyActive ? joyDx : 0, joyActive ? joyDy : 0);
+        boolean steer = !w.carts.isEmpty();               // carrello e corse: si sterza soltanto, con destra e sinistra come nel 2D
+        float bs0 = Controls.size(sw, sh), bty0 = Controls.btnY(sw, sh);
+        if (steer) {
+            if (sky) for (float bxx : new float[] {Controls.leftX(sw, sh), Controls.rightX(sw, sh)}) p.image(Img.HV_PAD, bxx - 0.1f * bs0, bty0 - 0.1f * bs0, 1.2f * bs0, 1.2f * bs0, false, 1);
+            p.image(Img.BTN_LEFT, Controls.leftX(sw, sh), bty0, bs0, bs0, false, joyActive && joyDx < -0.3f ? 1f : 0.8f);
+            p.image(Img.BTN_RIGHT, Controls.rightX(sw, sh), bty0, bs0, bs0, false, joyActive && joyDx > 0.3f ? 1f : 0.8f);
+        } else if (dpad) drawCross(p, sw, sh, joyActive ? joyDx : 0, joyActive ? joyDy : 0);
         else {
             p.image(Img.JOY_BASE, cx - jr, cy - jr, 2 * jr, 2 * jr, false, joyActive ? 1f : 0.7f);
             float kr = jr * 0.46f;

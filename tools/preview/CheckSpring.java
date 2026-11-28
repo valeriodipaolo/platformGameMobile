@@ -162,7 +162,7 @@ public class CheckSpring {
                 if (rr < prev) { sorted = false; System.out.println("  fuori ordine: livello " + id + " tema " + tth); }
                 prev = rr;
             }
-            ok(Levels.ORDER.length == 43 && seen.size() == 43 && sorted && Levels.next(40) == 0 && Levels.ORDER[0] == 1,
+            ok(Levels.ORDER.length == 46 && seen.size() == 46 && sorted && Levels.next(40) == 0 && Levels.ORDER[0] == 1,
                     "ordine dei livelli: estate, autunno, inverno, primavera, incendio, cielo, poi isola, dune, fabbrica e miniera");
         }
         System.out.println(fails == 0 ? "TUTTO OK" : fails + " FALLITI");

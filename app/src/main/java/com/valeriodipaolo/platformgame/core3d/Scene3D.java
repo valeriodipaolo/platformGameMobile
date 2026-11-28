@@ -603,8 +603,7 @@ public final class Scene3D {
             decor.build(w, z0, z1);
         }
         if (dry == 0) buildRays(z0, z1);
-        if (!w.carts.isEmpty() && dry != 24 && !heaven) buildRails(w, z0, z1, new Random(77));     // varianti della miniera nei temi principali (in cielo niente binari)
-        cloudRide = heaven && !w.carts.isEmpty() ? MineModels.cloud() : null;     // varianti della miniera nei temi principali
+        if (!w.carts.isEmpty() && dry != 24 && !Levels3W.isRun(w.levelNo)) buildRails(w, z0, z1, new Random(77));     // varianti della miniera nei temi principali (nelle corse a piedi niente binari)     // varianti della miniera nei temi principali
         buildObjects();
 
         // ---- da builder a mesh, con materiale
@@ -2023,6 +2022,8 @@ public final class Scene3D {
         if (dry != 0) drawDryProps(w, g);
         drawBooms(w, g);
         if (w.chase == 1) { drawHive(w, g); drawBees(w, g); }
+        if (w.chase == 3) drawAvalanche(w, g);
+        if (w.chase == 4) drawLavaFlood(w, g);
         for (int c = 0; c < nChunks; c++) {
             float cz0 = zBase + c * CH;
             if (!back && land[K_RAY][c] != null && cz0 + CH > camZ - 6f && cz0 < camZ + 60f) g.draw(land[K_RAY][c], ident, 1, 1, 1, 0.15f, 1);
@@ -2266,6 +2267,7 @@ public final class Scene3D {
             float x = bx + rad * (float) Math.cos(t), z = w.fireZ + 1.2f + depth + rad * 0.8f * (float) Math.sin(t);
             float y = by + 0.3f * (float) Math.sin(t * 1.3f + ph);
             if (z < camPos + 0.8f) continue;                      // dietro la camera
+            if (!w.carts.isEmpty() && z < camPos + 4.5f && Math.abs(x) < 1.6f && !scout) continue;   // nelle fughe la massa non copre il centro della visuale
             float gy = groundAt(Math.max(-2.4f, Math.min(2.4f, x)), Math.max(0f, z));
             drawBee(x, gy + y, z, -(float) Math.sin(t) * rad, (float) Math.cos(t) * rad * 0.8f, w.time + ph, scout ? 0.95f : 0.8f);
         }
@@ -2345,12 +2347,13 @@ public final class Scene3D {
             }
         }
         if (!Float.isNaN(w.fireZ) && w.fireZ > camZ - 12f) {
+            float low = chaserLow(w);                                      // tra la camera e il robot le fiamme si abbassano: non accecano
             for (int i = -4; i <= 4; i++) {
                 float fl = 0.85f + 0.3f * (float) Math.sin(w.time * (6f + i * 0.7f) + i * 1.9f);
                 Mat4.setIdentity(m);
                 Mat4.translate(m, i * 1.3f, groundAt(Math.max(-2.4f, Math.min(2.4f, i * 1.3f)), Math.max(0f, w.fireZ)) - 0.3f, w.fireZ + 0.3f * (i % 2));
-                Mat4.scale(m, 3.2f, 6.5f * fl, 3.2f);
-                g.draw(flame, m, 1f, 1f, 1f, 0.95f, 1f);
+                Mat4.scale(m, 3.2f, 6.5f * fl * (1f - 0.75f * low), 3.2f);
+                g.draw(flame, m, 1f, 1f, 1f, 0.95f - 0.35f * low, 1f);
             }
         }
     }
@@ -2383,6 +2386,7 @@ public final class Scene3D {
         }
         dynamite = MineModels.dynamite();
         thunderCloud = MineModels.thunderCloud();
+        iceSpikes = MineModels.iceSpikes(); lavaRock = MineModels.lavaRock(); lavaGlow = MineModels.lavaGlow(); bramble = MineModels.bramble();
         bolt = MineModels.bolt();
         dynSpark = MineModels.spark();
         springBox = CrateModels.spring();
@@ -2506,6 +2510,13 @@ public final class Scene3D {
             g.draw(springBox, m, 1, 1, 1, 1, 0.08f);
             return;
         }
+        if (kind == World3D.C_NITRO && Levels3W.isRun(w.levelNo) && !heaven) {     // nelle fughe: l'ostacolo del tema, non la dinamite
+            Mat4.rotateY(m, k * 1.3f);
+            if (aurora) g.draw(iceSpikes, m, 1, 1, 1, 1, 0.08f);
+            else if (fire) { g.draw(lavaRock, m, 1, 1, 1, 1, 0); g.draw(lavaGlow, m, 1, 1, 1, 1, 0.75f + 0.25f * (float) Math.sin(w.time * 3f + k)); }
+            else g.draw(bramble, m, 1, 1, 1, 1, 0);
+            return;
+        }
         if (kind == World3D.C_NITRO && !w.carts.isEmpty() && heaven) {           // in cielo: nuvoletta temporalesca che scarica fulmini
             Mat4.translate(m, 0, 0.04f * (float) Math.sin(w.time * 2f + k), 0);
             Mat4.rotateY(m, 0.6f * ((k * 7) % 5 - 2) / 2f);
@@ -2609,6 +2620,7 @@ public final class Scene3D {
             g.draw(raftMesh, m, 1, 1, 1, 1, isle == 18 ? 0.25f : 0);
         }
         if (w.chase == 2) { drawBoulder(w, g); drawBreakables(w, g); }
+
     }
 
     /** Esplosioni (casse TNT, ricci di castagno che cadono). */
@@ -2628,6 +2640,52 @@ public final class Scene3D {
     }
 
     /** Il masso del tempio: rotola alle spalle del robot (che lo vede arrivare, con la camera girata). */
+    private Mesh snowWall, snowPuff, lavaSheet;
+
+    /**
+     * Nelle fughe l'inseguitore, quando arriva tra la camera e il robot, si abbassa (0 = alto quanto deve, 1 = basso): un muro di
+     * fiamme o di neve alto cinque metri davanti alla camera coprirebbe tutto il percorso proprio nel momento più pericoloso.
+     */
+    private float chaserLow(World3D w) {
+        if (w.carts.isEmpty() || Float.isNaN(w.fireZ)) return 0f;
+        float cam = w.pz - 6f;
+        return Math.max(0f, Math.min(1f, (w.fireZ - (cam - 1.5f)) / 2.5f));
+    }
+
+    /** La valanga: un muro di neve che rotola (due strati sfasati) e sbuffi di polvere bianca sparati in avanti. */
+    private void drawAvalanche(World3D w, Gfx3D g) {
+        if (Float.isNaN(w.fireZ) || w.fireZ < w.pz - 40f) return;
+        if (snowWall == null) { snowWall = MineModels.snowWall(); snowPuff = MineModels.snowPuff(); }
+        float z = w.fireZ, gy = Math.max(0f, groundAt(0, Math.max(0f, z)));
+        for (int layer = 0; layer < 2; layer++) {
+            Mat4.setIdentity(m);
+            Mat4.translate(m, layer * 0.6f - 0.3f, gy - 0.2f + 0.15f * (float) Math.sin(w.time * 5f + layer * 2f), z - layer * 0.8f);
+            Mat4.rotateY(m, layer * 3.1f);
+            float sc = 1f + 0.05f * (float) Math.sin(w.time * 7f + layer), low = chaserLow(w);
+            Mat4.scale(m, sc, sc * (1f + 0.1f * layer) * (1f - 0.7f * low), sc);
+            g.draw(snowWall, m, 1, 1, 1, 1, 0.25f);
+        }
+        for (int i = 0; i < 26; i++) {
+            float h1 = hash(i, 2, 3), h2 = hash(i, 5, 7), h3 = hash(i, 11, 13);
+            float u = (w.time * (0.8f + h3 * 0.6f) + h1) % 1f;
+            float x = (h2 - 0.5f) * 7.5f, y = gy + 0.5f + (3.5f * h1 + u * 1.2f) * (1f - 0.7f * chaserLow(w)), pz = z + 0.6f + u * (2.5f + 2.5f * h3);
+            Mat4.setIdentity(m);
+            Mat4.translate(m, x, y, pz);
+            float s2 = 0.35f + 0.6f * u;
+            Mat4.scale(m, s2, s2, s2);
+            g.draw(snowPuff, m, 1, 1, 1, 0.55f * (1 - u), 0.3f);
+        }
+    }
+
+    /** La lava: una lingua incandescente che avanza dietro al robot (il muro di fiamme del tema la accompagna). */
+    private void drawLavaFlood(World3D w, Gfx3D g) {
+        if (Float.isNaN(w.fireZ) || w.fireZ < w.pz - 45f) return;
+        if (lavaSheet == null) lavaSheet = MineModels.lavaSheet();
+        Mat4.setIdentity(m);
+        Mat4.translate(m, 0, Math.max(0f, groundAt(0, Math.max(0f, w.fireZ))) + 0.25f, w.fireZ);
+        g.draw(lavaSheet, m, 1, 1, 1, 1, 0.85f + 0.15f * (float) Math.sin(w.time * 2.3f));
+    }
+
     private void drawBoulder(World3D w, Gfx3D g) {
         if (Float.isNaN(w.fireZ) || w.fireZ < w.pz - 40f) return;
         float rad = 2.3f, z = w.fireZ - rad * 0.3f;
@@ -2667,8 +2725,8 @@ public final class Scene3D {
         boolean blink = w.state == World3D.PLAYING && w.invuln > 0 && !w.spinning() && ((int) (w.time * 14f) % 2 == 0);
         if (blink) return;
         float[] b = m;
-        boolean riding = cartMesh != null && w.inCart() && w.state == World3D.PLAYING;
-        Mesh ride = cloudRide != null ? cloudRide : cartMesh;
+        boolean riding = cartMesh != null && w.inCart() && w.state == World3D.PLAYING && !Levels3W.isRun(w.levelNo);   // nelle corse si va a piedi
+        Mesh ride = cartMesh;
         float baseY = w.py + bumpAt(w.px, w.pz) - (w.onGround && w.quickAt(w.px, w.pz) ? 0.08f + 0.3f * w.sinkT : 0f);
         if (riding) {                                  // il carrello resta dritto sui binari: si inclina in curva, beccheggia in volo, sobbalza
             float lean = -0.045f * w.vx + 0.025f * (float) Math.sin(w.time * 11f), pitch = w.onGround ? 0.012f * (float) Math.sin(w.time * 17f) : -0.025f * w.vy;
@@ -2676,16 +2734,16 @@ public final class Scene3D {
             Mat4.translate(a2, w.px, baseY + (w.onGround ? 0.012f * (float) Math.abs(Math.sin(w.time * 13f)) : 0f), w.pz);
             Mat4.rotateZ(a2, lean);
             Mat4.rotateX(a2, pitch);
-            if (cloudRide != null) Mat4.translate(a2, 0, 0.05f * (float) Math.sin(w.time * 2.4f), 0);    // la nuvola ondeggia piano
-            g.draw(ride, a2, 1, 1, 1, 1, cloudRide != null ? 0.12f : 0);
+            g.draw(ride, a2, 1, 1, 1, 1, 0);
         }
         Mat4.setIdentity(b);
         if (riding) {                                  // il robot sta dentro la vasca, con i piedi sul fondo, e si piega con il carrello
             System.arraycopy(a2, 0, b, 0, 16);
-            Mat4.translate(b, 0, cloudRide != null ? MineModels.CLOUD_RIDE : MineModels.RIDE, 0);
+            Mat4.translate(b, 0, MineModels.RIDE, 0);
         } else Mat4.translate(b, w.px, baseY, w.pz);
         Mat4.rotateY(b, w.yaw + (w.spinning() ? w.spinAngle : 0));
         if (w.state == World3D.DYING) Mat4.rotateX(b, -w.stateTime * 5f);
+        hero.still = riding;                          // nel carrello sta fermo, non corre
         hero.draw(g, b, w);
     }
 
@@ -2880,8 +2938,7 @@ public final class Scene3D {
 
     // ------------------------------------------------------------------ deserto, fabbrica, miniera
 
-    private Mesh dynamite, dynSpark, springBox, thunderCloud, bolt;
-    private Mesh cloudRide;
+    private Mesh dynamite, dynSpark, springBox, thunderCloud, bolt, iceSpikes, lavaRock, lavaGlow, bramble;
     private Mesh cartMesh, beltBase, chevron, laserBeam, laserGlow, laserHalo, laserLens, laserPost, quickPool, cactus, dustMote;
 
     /** Contorno dei mondi senza bosco: cactus e massi nel deserto, tubi e serbatoi in fabbrica, travi e lanterne in miniera, binari. */

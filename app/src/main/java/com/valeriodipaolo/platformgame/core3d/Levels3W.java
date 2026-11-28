@@ -18,13 +18,19 @@ public final class Levels3W {
 
     private static final int W = World3D.W5;
 
-    public static int theme(int id) { return id == 39 ? 22 : id == 40 ? 24 : id == 41 ? 2 : id == 42 ? 6 : id == 43 ? 12 : 20; }
+    public static int theme(int id) { return id == 39 ? 22 : id == 40 ? 24 : id == 41 ? 2 : id == 42 ? 6 : id == 43 ? 12 : id == 44 ? 6 : id == 45 ? 8 : id == 46 ? 10 : 20; }
+
+    /** Livelli di corsa a piedi (si corre da soli, si sterza a destra e a sinistra): la corsa tra le nuvole e le tre fughe. */
+    public static boolean isRun(int id) { return id >= 43 && id <= 46; }
+
+    /** Lunghezza delle corse: lunghe, con tre tratti di difficoltà crescente. */
+    static final int RUN_LEN = 660;
 
     /** Varianti della miniera nei temi principali: lo stesso viaggio in carrello nel bosco d'estate, nella neve e sulle nuvole. */
     static final int RAIL_LEN = 400;
 
     public static void build(World3D w, int id) {
-        int len = id == 38 ? 236 : id == 39 ? 244 : id == 40 ? MINE_LEN : RAIL_LEN;
+        int len = id == 38 ? 236 : id == 39 ? 244 : id == 40 ? MINE_LEN : isRun(id) ? RUN_LEN : RAIL_LEN;
         w.length = len;
         w.height = new int[len * W];
         w.crate = new boolean[len * W];
@@ -44,7 +50,10 @@ public final class Levels3W {
             case 40: cartRun(w, MINE_LEN, 4040, true); break;
             case 41: cartRun(w, RAIL_LEN, 4141, false); break;
             case 42: cartRun(w, RAIL_LEN, 4242, false); break;
-            case 43: cartRun(w, RAIL_LEN, 4343, false); break;
+            case 43: runCourse(w, RUN_LEN, 4343, 0); break;                 // corsa tra le nuvole: niente inseguitore
+            case 44: runCourse(w, RUN_LEN, 4444, 3); break;                 // fuga dalla valanga
+            case 45: runCourse(w, RUN_LEN, 4545, 4); break;                 // fuga dalla lava
+            case 46: runCourse(w, RUN_LEN, 4646, 1); break;                 // fuga dallo sciame
             default: dunes(w); break;
         }
     }
@@ -198,6 +207,122 @@ public final class Levels3W {
         w.flagZ = total - 2;
         if (mineCoinZ > 0) w.coin = new float[] {-1f, 4.0f, mineCoinZ - 1f + 0.8f * w.cartSpeed(mineCoinZ)};
     }
+
+
+    // ------------------------------------------------------------------ corse a piedi (43-46)
+    /**
+     * Corsa a piedi: il robot corre da solo sempre più veloce e si sterza tra le tre corsie centrali (solo destra e sinistra), si
+     * salta. Tre tratti di difficoltà crescente, con rettilinei di respiro ogni tanto (dove si salva la ripartenza). Oltre agli
+     * ostacoli delle corse in carrello: il ponte a zig-zag (una sola corsia che cambia lato), il burrone lungo da passare col doppio
+     * salto e lo slalom tra gli ostacoli. chase: 0 nessuno, 1 sciame, 3 valanga, 4 lava; l'inseguitore resta a qualche metro dietro
+     * e ogni colpo preso (che fa inciampare il robot) lo avvicina: due errori ravvicinati e raggiunge il robot.
+     */
+    private static void runCourse(World3D w, int total, long seed, int chase) {
+        int end = total - 12;
+        cart(w, 2, end);
+        gemLine(w, 0, 6, 14);
+        java.util.Random r = new java.util.Random(seed);
+        int z = 26, n = (int) (seed % 7), nextRest = 110, coinZ = -1;
+        int s1 = total * 30 / 100, s2 = total * 65 / 100;
+        while (z < end - 30) {
+            if (z >= nextRest) {
+                gemLine(w, 0, z + 3, z + 9);
+                z += 18;
+                nextRest += 105 + r.nextInt(20);
+                continue;
+            }
+            int stage = z < s1 ? 0 : z < s2 ? 1 : 2;
+            int lane = 1 + r.nextInt(3), other = lane == 2 ? (r.nextBoolean() ? 1 : 3) : 2, free = 6 - lane - other;
+            int kind = stage == 0 ? RUN_EASY[n % RUN_EASY.length] : stage == 1 ? RUN_MID[n % RUN_MID.length] : RUN_HARD[n % RUN_HARD.length];
+            int len;
+            if (kind == 2 || kind == 8 || kind == 12) z += 4;
+            switch (kind) {
+                case 0: pit(w, z, z + 2, lane, lane); gemLine(w, other - 2, z - 1, z + 2); len = 3; break;
+                case 1: pit(w, z, z + 2, lane, lane); pit(w, z, z + 2, other, other); gemLine(w, free - 2, z - 1, z + 2); len = 3; break;
+                case 2: pit(w, z, z + 2, 0, 4); len = jumpGems(w, z, 0f) - z; break;
+                case 3: crateK(w, lane, z, World3D.C_NITRO); gem(w, other - 2, 0.7f, z + 0.5f); len = 1; break;
+                case 4: crateK(w, lane, z, World3D.C_NITRO); crateK(w, other, z, World3D.C_NITRO); gemLine(w, free - 2, z - 1, z + 1); len = 1; break;
+                case 5: flyer(w, z + 0.5f, false); len = 1; break;
+                case 6: walker(w, lane - 2f, z + 0.5f, false); len = 1; break;
+                case 7: pit(w, z, z + 2, lane, lane); crateK(w, other, z + 1, World3D.C_NITRO); gemLine(w, free - 2, z - 1, z + 2); len = 3; break;
+                case 8: {
+                    pit(w, z, z + 1, 0, 4);
+                    int after = jumpGems(w, z, 0f), side = r.nextBoolean() ? 1 : 3;
+                    crateK(w, side, after + 4, World3D.C_NITRO);
+                    len = after + 5 - z;
+                    break;
+                }
+                case 9: pit(w, z, z + 2, lane, lane); pit(w, z, z + 2, other, other); gemLine(w, free - 2, z - 1, z + 2); flyer(w, z + 11.5f, false); len = 12; break;
+                case 11: {                                        // ponte a zig-zag: resta una corsia sola, che si sposta di una alla volta
+                    int[] seq = r.nextBoolean() ? new int[] {1, 2, 3, 2, 1} : new int[] {3, 2, 1, 2, 3};
+                    int segs = stage == 0 ? 3 : stage == 1 ? 4 : 5, seg = stage == 2 ? 4 : 5;
+                    for (int k = 0; k < segs; k++) {
+                        int open = seq[k], zs = z + k * seg;
+                        for (int q = zs; q < zs + seg; q++) for (int c = 1; c <= 3; c++) {
+                            boolean overlap = k > 0 && c == seq[k - 1] && q < zs + 2;      // al cambio di lato le due corsie restano aperte insieme per due caselle
+                            if (c != open && !overlap) pit(w, q, q, c, c);
+                        }
+                        pit(w, zs, zs + seg - 1, 0, 0); pit(w, zs, zs + seg - 1, 4, 4);
+                        for (int q = zs + 1; q < zs + seg - 1; q += 2) gem(w, open - 2, 0.7f, q + 0.5f);
+                    }
+                    len = segs * seg;
+                    break;
+                }
+                case 12: {                                        // burrone lungo: col salto semplice non basta, serve il doppio salto
+                    float spd = w.cartSpeed(z);
+                    int L = Math.max(9, Math.round(0.95f * spd));
+                    pit(w, z, z + L - 1, 0, 4);
+                    gemLine(w, 0, z - 6, z - 3);
+                    for (int k = 1; k < L; k += 2) {
+                        float u = k / (float) L;
+                        gem(w, 0, 1.6f + 2.2f * 4f * u * (1f - u), z + k + 0.5f);
+                    }
+                    if (coinZ < 0 && z > total / 3) {             // il gettone: in alto e di lato, sopra il primo burrone lungo dopo un terzo di corsa
+                        coinZ = z;
+                        w.coin = new float[] {-1f, 4.6f, z + L * 0.5f};
+                    }
+                    int land = z + L + 1;
+                    gemLine(w, 0, land, land + 3);
+                    len = land + 4 - z;
+                    break;
+                }
+                case 13: {                                        // slalom: in ogni fila resta libera una corsia sola, sempre diversa
+                    int[] frees = r.nextBoolean() ? new int[] {3, 1, 2, 3} : new int[] {1, 3, 2, 1};
+                    int rows = stage == 2 ? 4 : 3, gapZ = stage == 2 ? 6 : 7;
+                    for (int k = 0; k < rows; k++) {
+                        int zz = z + k * gapZ;
+                        for (int c = 1; c <= 3; c++) if (c != frees[k]) crateK(w, c, zz, World3D.C_NITRO);
+                        gem(w, frees[k] - 2, 0.7f, zz + 0.5f);
+                    }
+                    len = rows * gapZ;
+                    break;
+                }
+                case 14: flyer(w, z + 0.5f, false); flyer(w, z + 6.5f, false); len = 7; break;
+                default:
+                    crateK(w, lane, z, World3D.C_NITRO); gem(w, other - 2, 0.7f, z + 0.5f);
+                    walker(w, other - 2f, z + 9.5f, false); len = 10; break;
+            }
+            n++;
+            int gap = stage == 0 ? 10 + r.nextInt(3) : stage == 1 ? 9 + r.nextInt(2) : 8 + r.nextInt(2);
+            z += len + gap - 2;
+        }
+        gemLine(w, 0, end + 2, end + 8);
+        w.flagZ = total - 2;
+        if (chase != 0) {
+            w.chase = chase;
+            w.fireStart = -14f;
+            w.fireZ = -14f;
+            w.fireZones = new float[][] {{0, World3D.CART_SPEED - 1.2f, RUN_GAP}};
+        }
+    }
+
+    /** Distanza massima dell'inseguitore dietro al robot nelle fughe. */
+    static final float RUN_GAP = 9f;
+
+    /** Sequenze degli ostacoli nelle corse a piedi (vedi runCourse; 11 zig-zag, 12 burrone lungo, 13 slalom, 14 due volatili). */
+    private static final int[] RUN_EASY = {0, 5, 3, 11, 6, 2, 0, 4, 13, 5, 1, 6, 12, 3};
+    private static final int[] RUN_MID = {11, 7, 12, 5, 2, 13, 9, 4, 11, 10, 6, 12, 1, 14, 7};
+    private static final int[] RUN_HARD = {12, 11, 13, 9, 14, 7, 12, 4, 10, 11, 8, 13, 12, 1, 14, 6, 11};
 
     /** Volatile che svolazza di traverso all'altezza del robot: pipistrello in miniera, altrove l'uccello della stagione. */
     private static void flyer(World3D w, float z, boolean mine) {

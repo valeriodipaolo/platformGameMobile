@@ -16,7 +16,8 @@ public final class Levels {
             "Pioggia di ricci", "Fuga dal rogo (3D)", "Scala celeste", "La vetta (3D)",
             "Isola: le casse", "Isola: il masso", "Isola: il fiume",
             "Le dune", "La fabbrica", "La miniera",
-            "Carrello nel bosco (3D)", "Carrello nella neve (3D)", "Corsa tra le nuvole (3D)"};
+            "Carrello nel bosco (3D)", "Carrello nella neve (3D)", "Corsa tra le nuvole (3D)",
+            "Fuga dalla valanga (3D)", "Fuga dalla lava (3D)", "Fuga dallo sciame (3D)"};
 
     /** "LIVELLO 7 · Querceto": numero nell'ordine di gioco e nome. */
     public static String title(int id) { return "LIVELLO " + (slot(id) + 1) + "  \u00B7  " + NAMES[id].replace(" (3D)", ""); }
@@ -27,9 +28,9 @@ public final class Levels {
      */
     public static final int[] ORDER = {1, 2, 13, 14, 29, 41,
             3, 4, 15, 16, 31, 26,
-            5, 6, 17, 18, 27, 28, 42,
-            9, 10, 25, 22, 21, 30,
-            7, 8, 19, 20, 32,
+            5, 6, 17, 18, 27, 28, 42, 44,
+            9, 10, 25, 22, 21, 30, 46,
+            7, 8, 19, 20, 32, 45,
             11, 12, 23, 24, 33, 34, 43,
             35, 36, 37, 38, 39, 40};
 

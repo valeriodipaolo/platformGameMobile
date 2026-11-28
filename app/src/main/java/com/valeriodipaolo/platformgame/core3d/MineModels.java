@@ -281,4 +281,115 @@ final class MineModels {
         }
         return b.build(-1, false, false);
     }
+
+    /** Ostacolo della valanga: un mucchio di lame di ghiaccio azzurro che spuntano dalla neve. */
+    static Mesh iceSpikes() {
+        MeshBuilder b = new MeshBuilder();
+        java.util.Random r = new java.util.Random(61);
+        b.colorf(0.93f, 0.96f, 1f);
+        b.ellipsoid(0, 0.08f, 0, 0.5f, 0.16f, 0.45f, 14, 6);                            // mucchietto di neve alla base
+        for (int k = 0; k < 9; k++) {
+            float a = k * 0.7f + r.nextFloat(), d = 0.1f + 0.28f * r.nextFloat(), h = 0.45f + 0.55f * r.nextFloat();
+            float t = 0.75f + 0.25f * r.nextFloat();
+            b.colorf(0.62f * t, 0.84f * t, 1f * t);
+            float x = d * (float) Math.cos(a), z = d * (float) Math.sin(a);
+            b.bipyramid(x, 0.12f + h * 0.4f, z, 0.07f + 0.05f * r.nextFloat(), h * 0.55f, 5);
+        }
+        Mesh m = b.build(-1, false, true);
+        m.spec = 0.8f; m.shine = 60f;
+        return m;
+    }
+
+    /** Ostacolo della lava: masso di lava raffreddata, nero, con le crepe incandescenti (le crepe si disegnano luminose a parte). */
+    static Mesh lavaRock() {
+        MeshBuilder b = new MeshBuilder();
+        b.colorf(0.16f, 0.12f, 0.11f);
+        b.rock(0, 0.32f, 0, 0.5f, 0.42f, 0.45f, 7171, 9, 7);
+        b.rock(0.28f, 0.18f, 0.2f, 0.24f, 0.2f, 0.22f, 7272, 7, 5);
+        Mesh m = b.build(-1, false, true);
+        m.spec = 0.25f; m.shine = 20f;
+        return m;
+    }
+
+    static Mesh lavaGlow() {
+        MeshBuilder b = new MeshBuilder();
+        java.util.Random r = new java.util.Random(73);
+        for (int k = 0; k < 7; k++) {
+            float a = k * 0.9f + r.nextFloat();
+            b.colorf(1f, 0.45f + 0.25f * r.nextFloat(), 0.08f);
+            float x = 0.43f * (float) Math.cos(a), z = 0.4f * (float) Math.sin(a), y = 0.12f + 0.4f * r.nextFloat();
+            b.ellipsoid(x, y, z, 0.05f, 0.09f + 0.05f * r.nextFloat(), 0.05f, 6, 4);
+        }
+        b.colorf(1f, 0.55f, 0.1f);
+        b.ellipsoid(0, 0.02f, 0, 0.62f, 0.04f, 0.56f, 14, 4);                           // pozza incandescente sotto
+        return b.build(-1, false, false);
+    }
+
+    /** Ostacolo dello sciame: un roveto spinoso e fitto, con qualche fiore. */
+    static Mesh bramble() {
+        MeshBuilder b = new MeshBuilder();
+        java.util.Random r = new java.util.Random(83);
+        for (int k = 0; k < 7; k++) {
+            float t = 0.7f + 0.3f * r.nextFloat();
+            b.colorf(0.2f * t, 0.38f * t, 0.14f * t);
+            int mk = b.mark();
+            b.ellipsoid((r.nextFloat() - 0.5f) * 0.6f, 0.25f + 0.25f * r.nextFloat(), (r.nextFloat() - 0.5f) * 0.5f, 0.26f, 0.24f, 0.24f, 10, 7);
+            b.rough(mk, 0.05f, 6f, 90 + k);
+        }
+        b.colorf(0.42f, 0.28f, 0.16f);
+        for (int k = 0; k < 26; k++) {                                                     // spine
+            float a = r.nextFloat() * 6.283f, e = (r.nextFloat() - 0.2f) * 1.2f, rr = 0.42f;
+            float x = rr * (float) Math.cos(a) * (float) Math.cos(e), y = 0.32f + rr * 0.8f * (float) Math.sin(e), z = rr * (float) Math.sin(a) * (float) Math.cos(e);
+            b.bipyramid(x, y, z, 0.02f, 0.07f, 4);
+        }
+        for (int k = 0; k < 5; k++) {
+            b.colorf(1f, 0.55f + 0.4f * r.nextFloat(), 0.75f);
+            float a = r.nextFloat() * 6.283f;
+            b.ellipsoid(0.38f * (float) Math.cos(a), 0.45f + 0.15f * r.nextFloat(), 0.34f * (float) Math.sin(a), 0.05f, 0.04f, 0.05f, 6, 4);
+        }
+        Mesh m = b.build(-1, false, true);
+        m.spec = 0.08f; m.shine = 8f;
+        return m;
+    }
+
+    /** Fronte della valanga: un muro di sbuffi di neve, più fitti e grossi in basso, largo quanto il sentiero e oltre. */
+    static Mesh snowWall() {
+        MeshBuilder b = new MeshBuilder();
+        java.util.Random r = new java.util.Random(91);
+        for (int k = 0; k < 70; k++) {
+            float y = (float) Math.pow(r.nextFloat(), 1.6f) * 4.6f, rad = 0.55f + 0.9f * r.nextFloat() * (1.2f - y / 6f);
+            float x = (r.nextFloat() - 0.5f) * 8.4f, z = (r.nextFloat() - 0.7f) * 1.6f - y * 0.18f;
+            float t = 0.9f + 0.1f * r.nextFloat();
+            b.colorf(t * 0.95f, t * 0.97f, t);
+            int mk = b.mark();
+            b.ellipsoid(x, y + rad * 0.4f, z, rad, rad * 0.85f, rad, 10, 7);
+            b.rough(mk, rad * 0.12f, 3f, 500 + k);
+        }
+        Mesh m = b.build(-1, false, true);
+        m.spec = 0.05f; m.shine = 6f;
+        return m;
+    }
+
+    /** Sbuffo di neve polverosa che la valanga spara davanti a sé (semitrasparente). */
+    static Mesh snowPuff() {
+        MeshBuilder b = new MeshBuilder();
+        b.colorf(1f, 1f, 1f);
+        b.ellipsoid(0, 0, 0, 1f, 0.8f, 1f, 10, 7);
+        return b.build(-1, true, true);
+    }
+
+    /** Lingua di lava che avanza: una lastra incandescente con qualche crosta scura (si disegna luminosa). */
+    static Mesh lavaSheet() {
+        MeshBuilder b = new MeshBuilder();
+        java.util.Random r = new java.util.Random(97);
+        b.colorf(1f, 0.42f, 0.06f);
+        b.quad(-4.2f, 0, -40f, 4.2f, 0, -40f, 4.2f, 0, 0.4f, -4.2f, 0, 0.4f, 0, 1, 0, 0, 0, 1, 1);
+        for (int k = 0; k < 9; k++) {                                              // fronte gonfio
+            b.colorf(1f, 0.55f + 0.2f * r.nextFloat(), 0.1f);
+            b.ellipsoid(-4f + k * 1f, 0.15f, 0.2f, 0.6f, 0.35f, 0.5f, 10, 6);
+        }
+        b.colorf(0.25f, 0.1f, 0.05f);
+        for (int k = 0; k < 40; k++) b.ellipsoid((r.nextFloat() - 0.5f) * 8f, 0.03f, -r.nextFloat() * 38f, 0.2f + 0.4f * r.nextFloat(), 0.04f, 0.2f + 0.5f * r.nextFloat(), 6, 3);
+        return b.build(-1, false, false);
+    }
 }

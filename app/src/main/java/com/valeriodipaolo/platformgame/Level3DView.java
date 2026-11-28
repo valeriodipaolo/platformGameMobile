@@ -107,7 +107,7 @@ final class Level3DView extends FrameLayout {
         protected void onDraw(Canvas canvas) {
             painter.begin(canvas);
             hud.dpad = dpad;
-            hud.draw(world, painter, getWidth(), getHeight(), dpad || joyId != -1, joyCx, joyCy, joyDx, joyDy, renderer.error);
+            hud.draw(world, painter, getWidth(), getHeight(), dpad || joyId != -1 || !world.carts.isEmpty(), joyCx, joyCy, joyDx, joyDy, renderer.error);
             postInvalidateOnAnimation();
         }
 
@@ -143,6 +143,21 @@ final class Level3DView extends FrameLayout {
             }
             int lifted = (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_POINTER_UP) ? idx : -1;
             if (lifted != -1 && e.getPointerId(lifted) == joyId) { joyId = -1; }
+            if (!world.carts.isEmpty()) {                    // carrello e corse: solo destra/sinistra (come nel 2D), salto e giravolta
+                boolean l = false, r = false, j = false, sp = false;
+                for (int i = 0; i < e.getPointerCount(); i++) {
+                    if (i == lifted) continue;
+                    int zone = Controls.zone(e.getX(i), e.getY(i), w, h);
+                    if (zone == Controls.LEFT) l = true; else if (zone == Controls.RIGHT) r = true;
+                    else if (zone == Controls.JUMP) j = true; else if (zone == Controls.SPIN) sp = true;
+                }
+                joyId = -1;
+                joyX = (r ? 1f : 0f) - (l ? 1f : 0f);
+                joyY = 0;
+                joyDx = joyX; joyDy = 0;
+                inJump = j; inSpin = sp;
+                return true;
+            }
 
             boolean j = false, s = false;
             float dx = 0, dy = 0;
