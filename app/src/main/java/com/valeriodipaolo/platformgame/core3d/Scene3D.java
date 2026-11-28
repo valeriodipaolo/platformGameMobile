@@ -342,7 +342,7 @@ public final class Scene3D {
                 for (float z = z0; z < z1; z += (autumn && row < 2 ? 3.3f + row * 0.6f : 2.1f + row * 0.5f)) {
                     Tree t = new Tree();
                     t.row = row;
-                    t.x = side * (HALF + (lvl.theme == 4 || lvl.theme >= 10 ? 4.4f : 3.0f) + row * 2.6f + r.nextFloat() * 2.0f);
+                    t.x = side * (HALF + (lvl.theme == 4 || lvl.theme >= 10 ? 4.4f : 3.0f) + (lvl.mazes.isEmpty() ? 0 : 3f) + row * 2.6f + r.nextFloat() * 2.0f);   // col labirinto visto dall'alto, alberi più lontani dalle siepi
                     t.z = z + r.nextFloat() * 1.8f;
                     t.h = 5.0f + r.nextFloat() * 4.0f + row * 0.5f;
                     t.rad = t.h * 0.25f * (0.85f + 0.3f * r.nextFloat());
@@ -1807,7 +1807,7 @@ public final class Scene3D {
                 if (h >= base + 2.5f) eye = Math.max(eye, head + (h + 0.45f - head) * 6f / d);   // solo gli ostacoli alti fanno alzare l'occhio
             }
             eye = Math.min(eye, base + 11f);
-            eye = eye + (base + 8.3f - eye) * mazeK;                        // nel labirinto: alta e vicina, guarda giù nel corridoio
+            eye = eye + (base + 13f - eye) * mazeK;                         // nel labirinto: dall'alto, quasi a picco, come una mappa
         }
         if (!camEyeInit) { camEye = eye; camEyeInit = true; }
         camEye += (eye - camEye) * (eye > camEye ? 0.18f : 0.06f);       // sale in fretta (mai coperto), scende con calma
@@ -1817,7 +1817,7 @@ public final class Scene3D {
         // davanti al robot, più in alto, guardando indietro: si vede il masso che arriva e il robot che corre verso lo schermo
         // nella fuga la camera sta lontana e alta davanti al robot: gli ostacoli verso cui corre si vedono con 2-3 secondi d'anticipo
         float shk = w.shake * 0.1f * (float) Math.sin(w.time * 53f), shx = w.shake * 0.07f * (float) Math.sin(w.time * 41f + 1f);   // il masso che sfonda fa tremare la camera
-        Mat4.lookAt(view, camX * (1 - 0.6f * bk) + shx, eyeY + lift + shk + 5.2f * bk, camZ - 6.0f + 2.2f * mazeK + 21f * bk, camX * 0.9f * (1 - 0.6f * bk), camY + 1.0f + lift - 0.3f * bk, camZ + 5f - 2.5f * bk);
+        Mat4.lookAt(view, camX * (1 - 0.6f * bk) + shx, eyeY + lift + shk + 5.2f * bk, camZ - 6.0f + 3.6f * mazeK + 21f * bk, camX * (0.9f + 0.1f * mazeK) * (1 - 0.6f * bk), camY + 1.0f + lift - 0.3f * bk - mazeK, camZ + 5f - 2.6f * mazeK - 2.5f * bk);
         nearZ = back ? w.pz - 60f : w.pz - 4f;
         farZ = back ? w.pz + 34f : w.pz + 120f;                       // tutto quello che c'è tra il robot e la camera va disegnato
         Mat4.perspective(proj, 58f, aspect, 0.3f, 400f);

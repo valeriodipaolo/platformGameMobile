@@ -183,6 +183,7 @@ public final class World3D {
         crateKind = null; crateT = null; booms.clear(); crushers.clear(); rafts.clear(); breakH = null; breakFloor = null; rampCell = null; rampZ0 = Float.NaN; boulderStop = Float.NaN; cineT = -1f; debris.clear(); smashedCrushers.clear(); smashedTo = 0; shake = 0; raftIdx = null; camBackUntil = -1f;
         belt = null; lasers.clear(); quick = null; sinkT = 0; winds.clear(); carts.clear(); mazes.clear();
         coin = null; coinCrate = -1; coinFoeIdx = -1; coinFoe = null; coinPop = null;
+        setWidth(levelNo == 26 ? Levels3C.MAZE_W : W5);                 // il labirinto è largo, gli altri livelli hanno cinque corsie
         if (levelNo > 37) Levels3W.build(this, levelNo); else if (levelNo > 34) Levels3J.build(this, levelNo); else if (levelNo > 24) Levels3C.build(this, levelNo); else if (levelNo > 12) Levels3B.build(this, levelNo); else if (levelNo == 12) LevelTwelve.build(this); else if (levelNo == 10) LevelTen.build(this); else if (levelNo == 8) LevelEight.build(this); else if (levelNo == 6) LevelSix.build(this); else if (levelNo == 4) LevelFour.build(this); else LevelTwo.build(this);
         if (!rafts.isEmpty()) {                          // prima delle rifiniture: le zattere a galla contano come terreno
             raftIdx = new int[length * W];
