@@ -638,8 +638,11 @@ public final class Game {
                 break;
             case Enemy.OWL:
                 if (e.mode == 0) {                           // sorvola il suo tratto; se il robot passa sotto, picchia
-                    e.x += e.dir * 1.5f * dt;
-                    if (e.x > e.hi) { e.x = e.hi; e.dir = -1; } else if (e.x < e.lo) { e.x = e.lo; e.dir = 1; }
+                    // dopo una picchiata può trovarsi fuori dal suo tratto: ci torna volando (prima veniva riportato di colpo al bordo,
+                    // e sembrava sparire e ricomparire altrove)
+                    boolean out = e.x > e.hi || e.x < e.lo;
+                    if (e.x > e.hi) e.dir = -1; else if (e.x < e.lo) e.dir = 1;
+                    e.x += e.dir * (out ? 2.6f : 1.5f) * dt;
                     e.y = e.baseY + 0.2f * (float) Math.sin(e.anim * 2f);
                     if (Math.abs(dx) < 5f && player.y > e.baseY + 1f) { e.mode = 1; e.t = 0; e.dir = dx >= 0 ? 1 : -1; e.hop = Math.max(1f, player.y - e.baseY + 0.3f); }
                 } else if (e.mode == 1) {
