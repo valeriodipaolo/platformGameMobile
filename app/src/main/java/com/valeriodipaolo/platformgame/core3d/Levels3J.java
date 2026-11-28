@@ -16,7 +16,7 @@ import static com.valeriodipaolo.platformgame.core3d.Levels3B.*;
 public final class Levels3J {
     private Levels3J() {}
 
-    private static final int W = World3D.W;
+    private static final int W = World3D.W5;
 
     public static int theme(int id) { return id == 36 ? 16 : id == 37 ? 18 : 14; }
 

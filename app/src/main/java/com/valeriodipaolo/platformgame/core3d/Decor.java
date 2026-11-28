@@ -7,6 +7,9 @@ import java.util.Random;
  * mucchi di foglie, cumuli di neve e cristalli di ghiaccio. Solo estetica: non toccano le regole del gioco.
  */
 final class Decor {
+    /** Metà larghezza del sentiero del livello che si sta costruendo (la imposta Scene3D). */
+    static float half = World3D.HALF5;
+
     private static final float PI = (float) Math.PI;
     private final Scene3D s;
     private final float[] l = new float[3];
@@ -121,8 +124,8 @@ final class Decor {
     private void log(float x, float z, float len, float rad, float ang, Random r) {
         float dx = (float) Math.cos(ang), dz = (float) Math.sin(ang);
         float reach = len / 2 * Math.abs(dx) + rad * 1.3f + 0.15f;           // il tronco non entra nel sentiero percorribile
-        float edge = Math.abs(x) - World3D.HALF;
-        if (edge < reach) x = Math.signum(x) * (World3D.HALF + reach);
+        float edge = Math.abs(x) - half;
+        if (edge < reach) x = Math.signum(x) * (half + reach);
         float ax = x - dx * len / 2, az = z - dz * len / 2, bx = x + dx * len / 2, bz = z + dz * len / 2;
         float ya = rest(ax, az, rad) + rad * 0.72f, yb = rest(bx, bz, rad) + rad * 0.72f;
         float ym = Math.max((ya + yb) / 2, rest(x, z, rad) + rad * 0.72f);
@@ -166,7 +169,7 @@ final class Decor {
     /** Ceppo: base che si allarga nelle radici, taglio in cima con gli anelli. */
     private void stump(float x, float z, float rad, float h, Random r) {
         float need = rad * 1.8f + 0.1f;
-        if (Math.abs(x) - World3D.HALF < need) x = Math.signum(x) * (World3D.HALF + need);
+        if (Math.abs(x) - half < need) x = Math.signum(x) * (half + need);
         float y = rest(x, z, rad * 1.5f);
         light(x, z);
         final float[] bark = lit(250, 236, 220, 0.95f), dark = lit(170, 150, 130, 0.7f);
@@ -207,7 +210,7 @@ final class Decor {
     /** Cespuglio basso con bacche. */
     private void bush(float x, float z, float size, Random r) {
         float need = size * 1.5f + 0.1f;                                      // lobi compresi, restano fuori dal sentiero
-        if (Math.abs(x) - World3D.HALF < need) x = Math.signum(x) * (World3D.HALF + need);
+        if (Math.abs(x) - half < need) x = Math.signum(x) * (half + need);
         float y = s.meshAt(x, z);
         light(x, z);
         MeshBuilder bb = s.mb(Scene3D.K_BLOB, z), pb = s.mb(Scene3D.K_PROP, z);
@@ -293,7 +296,7 @@ final class Decor {
 
     void build(World3D w, int z0, int z1) {
         Random r = new Random(77);
-        float half = World3D.HALF;
+        float half = w.HALF;
         for (int side = -1; side <= 1; side += 2) {
             for (float z = z0 + 2; z < z1; z += 4f + r.nextFloat() * 4f) {
                 float x = side * (half + 0.5f + r.nextFloat() * 4.2f);
@@ -327,7 +330,7 @@ final class Decor {
         for (float z = 0; z < w.length; z += 0.9f + r.nextFloat() * 1.2f) {
             float sd = r.nextBoolean() ? 1 : -1, x = Scene3D.trailX(z) + sd * (Scene3D.TRAIL_HW * (0.7f + 0.5f * r.nextFloat()));
             int xi = (int) Math.floor(x + half), zi = (int) Math.floor(z);
-            if (xi < 0 || xi >= World3D.W || Scene3D.vis(w, xi, zi) != 0 || s.fadeAt(x, z) < 0.5f) continue;
+            if (xi < 0 || xi >= ((int) (half * 2)) || Scene3D.vis(w, xi, zi) != 0 || s.fadeAt(x, z) < 0.5f) continue;
             float rad = 0.05f + 0.07f * r.nextFloat();
             light(x, z);
             MeshBuilder rb = s.mb(Scene3D.K_ROCK, z);

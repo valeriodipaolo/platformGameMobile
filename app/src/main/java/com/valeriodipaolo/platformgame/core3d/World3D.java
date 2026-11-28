@@ -11,8 +11,18 @@ import java.util.List;
  */
 public final class World3D {
     public static final int PLAYING = 0, DYING = 1, WON = 2, GAME_OVER = 3;
-    public static final int W = 5;
-    public static final float HALF = W / 2f;
+    /** Larghezza standard del sentiero (corsie) nei livelli 3D; il labirinto ne usa una sua, più ampia. */
+    public static final int W5 = 5;
+    /** Larghezza del sentiero di questo livello (corsie) e sua metà: di solito 5, il labirinto è più largo. */
+    public int W = W5;
+    public float HALF = W5 / 2f;
+    public static final float HALF5 = W5 / 2f;
+
+    /** Corsia della x (sentiero standard largo cinque). */
+    public static int xi5(float x) { return (int) Math.floor(x + HALF5); }
+
+    /** Imposta la larghezza del sentiero: va fatto prima di allocare le caselle del livello. */
+    public void setWidth(int w) { W = w; HALF = w / 2f; }
     public static final int PIT = -99;
     public static final float R = 0.3f, PLAYER_H = 1.25f;
     /** Animazioni scattanti: dopo il salto il robot torna a terra più in fretta. */
@@ -263,7 +273,7 @@ public final class World3D {
         return h;
     }
 
-    static int xi(float x) { return (int) Math.floor(x + HALF); }
+    public int xi(float x) { return (int) Math.floor(x + HALF); }
     static int zi(float z) { return (int) Math.floor(z); }
 
     /**

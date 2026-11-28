@@ -8,7 +8,7 @@ package com.valeriodipaolo.platformgame.core3d;
 public final class Levels3B {
     private Levels3B() {}
 
-    private static final int W = World3D.W;
+    private static final int W = World3D.W5;
 
     public static void build(World3D w, int id) {
         int len = id == 14 ? 300 : id == 16 ? 316 : id == 18 ? 324 : id == 20 ? 336 : id == 22 ? 332 : 352;
@@ -319,7 +319,7 @@ public final class Levels3B {
     }
 
     // ------------------------------------------------------------------ attrezzi
-    static void set(World3D w, int x, int z, int h) { w.height[z * W + x] = h; }
+    static void set(World3D w, int x, int z, int h) { w.height[z * w.W + x] = h; }
 
     static void pit(World3D w, int z0, int z1, int x0, int x1) {
         for (int z = z0; z <= z1; z++) for (int x = x0; x <= x1; x++) set(w, x, z, World3D.PIT);
@@ -333,7 +333,7 @@ public final class Levels3B {
 
     static void wall(World3D w, int z, int gap) { for (int x = 0; x < W; x++) set(w, x, z, x == gap ? 0 : 1); }
 
-    static void crate(World3D w, int x, int z) { w.crate[z * W + x] = true; }
+    static void crate(World3D w, int x, int z) { w.crate[z * w.W + x] = true; }
 
     static void gem(World3D w, float cx, float y, float z) { w.gemsList.add(new float[] {cx, y, z}); }
 
@@ -353,12 +353,12 @@ public final class Levels3B {
     }
 
     static void padRow(World3D w, int z, int c0, int c1) {
-        for (int c = c0; c <= c1; c++) w.springs.add(new float[] {c - World3D.HALF + 0.5f, z + 0.5f});
+        for (int c = c0; c <= c1; c++) w.springs.add(new float[] {c - w.HALF + 0.5f, z + 0.5f});
     }
 
-    static void thorn(World3D w, int xi, int z) { w.thorns.add(new float[] {xi - World3D.HALF + 0.5f, z + 0.5f}); }
+    static void thorn(World3D w, int xi, int z) { w.thorns.add(new float[] {xi - w.HALF + 0.5f, z + 0.5f}); }
 
-    static void jet(World3D w, int xi, int z, float period, float phase) { w.jets.add(new float[] {xi - World3D.HALF + 0.5f, z + 0.5f, period, phase}); }
+    static void jet(World3D w, int xi, int z, float period, float phase) { w.jets.add(new float[] {xi - w.HALF + 0.5f, z + 0.5f, period, phase}); }
 
     static void log(World3D w, int z, float period, float phase) {
         pit(w, z, z, 4, 4);

@@ -8,7 +8,7 @@ package com.valeriodipaolo.platformgame.core3d;
 public final class LevelEight {
     private LevelEight() {}
 
-    private static final int W = World3D.W;
+    private static final int W = World3D.W5;
 
     public static void build(World3D w) {
         int len = 178;
@@ -108,7 +108,7 @@ public final class LevelEight {
 
     /** Getto di fiamma nella casella (x, z): acceso il 40% del periodo, con un breve avviso prima. */
     private static void jet(World3D w, int xi, int z, float period, float phase) {
-        w.jets.add(new float[] {xi - World3D.HALF + 0.5f, z + 0.5f, period, phase});
+        w.jets.add(new float[] {xi - World3D.HALF5 + 0.5f, z + 0.5f, period, phase});
     }
 
     /** Tronco in fiamme che esce da una pila di legna a sinistra, rotola sul sentiero e cade nella lava a destra (fossa nella casella 4 della riga). */

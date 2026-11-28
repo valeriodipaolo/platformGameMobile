@@ -13,9 +13,12 @@ import java.util.Random;
  * </ul>
  */
 final class DryDecor {
+    /** Metà larghezza del sentiero del livello che si sta costruendo (la imposta Scene3D). */
+    static float half = World3D.HALF5;
+
     private DryDecor() {}
 
-    private static final float H = World3D.HALF;
+    private static final float H = half;
 
     // ------------------------------------------------------------------ deserto
 

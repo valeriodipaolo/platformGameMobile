@@ -9,7 +9,7 @@ package com.valeriodipaolo.platformgame.core3d;
 public final class LevelTenBees {
     private LevelTenBees() {}
 
-    private static final int W = World3D.W;
+    private static final int W = World3D.W5;
 
     /** Zero della parte: tutte le quote z dei metodi sotto sono relative a questo valore. */
     private static int base;
@@ -81,13 +81,13 @@ public final class LevelTenBees {
 
     /** Fila di fiori a molla su tutta la larghezza alla riga z. */
     private static void padRow(World3D w, int z) {
-        for (int c = 0; c < W; c++) w.springs.add(new float[] {c - World3D.HALF + 0.5f, base + z + 0.5f});
+        for (int c = 0; c < W; c++) w.springs.add(new float[] {c - World3D.HALF5 + 0.5f, base + z + 0.5f});
     }
 
     /** Due cespugli di rovi nelle colonne ca e cb alla riga z. */
     private static void thornRow(World3D w, int z, int ca, int cb) {
-        w.thorns.add(new float[] {ca - World3D.HALF + 0.5f, base + z + 0.5f});
-        w.thorns.add(new float[] {cb - World3D.HALF + 0.5f, base + z + 0.5f});
+        w.thorns.add(new float[] {ca - World3D.HALF5 + 0.5f, base + z + 0.5f});
+        w.thorns.add(new float[] {cb - World3D.HALF5 + 0.5f, base + z + 0.5f});
     }
 
     /** Gemme sulla traiettoria di un rimbalzo dai fiori alla riga z: alte, mai sull'acqua a pelo. */

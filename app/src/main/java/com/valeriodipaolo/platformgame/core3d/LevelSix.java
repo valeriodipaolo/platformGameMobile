@@ -7,7 +7,7 @@ package com.valeriodipaolo.platformgame.core3d;
 public final class LevelSix {
     private LevelSix() {}
 
-    private static final int W = World3D.W;
+    private static final int W = World3D.W5;
 
     public static void build(World3D w) {
         int len = 176;

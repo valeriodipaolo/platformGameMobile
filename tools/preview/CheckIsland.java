@@ -18,7 +18,7 @@ public class CheckIsland {
         return w;
     }
 
-    static int k(int col, int z) { return z * World3D.W + col; }
+    static int k(int col, int z) { return z * World3D.W5 + col; }
 
     public static void main(String[] a) {
         // cassa a molla davanti al muro (35, z 33): ci si sale e si vola oltre il muro alto tre blocchi
@@ -116,10 +116,10 @@ public class CheckIsland {
                 if (cw.crateKind[kk] == World3D.C_STEEL && steel < 0) steel = kk;
             }
             ok(wood >= 0 && steel >= 0, "nel livello 2 ci sono casse di legno e rinforzate");
-            cw.px = wood % World3D.W - World3D.HALF + 0.5f; cw.pz = wood / World3D.W + 0.5f; cw.py = 2.5f; cw.vy = 0; cw.invuln = 99;
+            cw.px = wood % World3D.W5 - World3D.HALF5 + 0.5f; cw.pz = wood / World3D.W5 + 0.5f; cw.py = 2.5f; cw.vy = 0; cw.invuln = 99;
             run(cw, 0.6f, 0, 0, false);
             ok(!cw.crate[wood], "atterrando sopra una cassa di legno la si rompe");
-            cw.px = steel % World3D.W - World3D.HALF + 0.5f; cw.pz = steel / World3D.W + 0.5f; cw.py = 2.5f; cw.vy = 0;
+            cw.px = steel % World3D.W5 - World3D.HALF5 + 0.5f; cw.pz = steel / World3D.W5 + 0.5f; cw.py = 2.5f; cw.vy = 0;
             run(cw, 0.6f, 0, 0, false);
             ok(cw.crate[steel] && cw.py > 0.9f, "sopra la cassa rinforzata ci si sta in piedi: non si rompe");
             run(cw, 1.0f, 0, 0, false);

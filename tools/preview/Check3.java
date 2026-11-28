@@ -49,11 +49,11 @@ public class Check3 {
                 float floor = e.floor, hw = 0.3f;
                 for (float dx = -hw; dx <= hw && !clip; dx += hw)
                     for (float dz = -hw; dz <= hw; dz += hw) {
-                        int h = w.cell((int) Math.floor(e.x + dx + World3D.HALF), (int) Math.floor(e.z + dz));
+                        int h = w.cell((int) Math.floor(e.x + dx + World3D.HALF5), (int) Math.floor(e.z + dz));
                         float feet = e.type == Enemy3.CROW ? e.y - 0.1f : floor;
                         if (h == 99 || (h != World3D.PIT && h > feet + 0.05f)) { clip = true; break; }
                     }
-                int hc = w.cell((int) Math.floor(e.x + World3D.HALF), (int) Math.floor(e.z));
+                int hc = w.cell((int) Math.floor(e.x + World3D.HALF5), (int) Math.floor(e.z));
                 if (e.type != Enemy3.CROW && (hc == World3D.PIT || hc < e.floor - 0.05f)) clip = true;
             }
             ok(!clip, id + " non attraversa blocchi, casse o burroni");
@@ -70,10 +70,10 @@ public class Check3 {
             float jx = 0, jy = 1;
             boolean spin = false;
             if (w.state == World3D.PLAYING) {
-                int zi = (int) Math.floor(w.pz), xi = (int) Math.floor(w.px + World3D.HALF);
+                int zi = (int) Math.floor(w.pz), xi = (int) Math.floor(w.px + World3D.HALF5);
                 // colonna migliore: quella col percorso libero più lungo davanti, a parità la più vicina
                 int best = xi; float bestScore = -1e9f;
-                for (int c = 0; c < World3D.W; c++) {
+                for (int c = 0; c < World3D.W5; c++) {
                     int free = 0;
                     for (int k = 1; k <= 7; k++) { int h = w.cell(c, zi + k); if (h == World3D.PIT) break; free++; }
                     boolean reachable = true;
@@ -81,7 +81,7 @@ public class Check3 {
                     float sc = free * 2 - Math.abs(c - xi) * 1.1f - Math.abs(c - 2) * 0.2f - (reachable ? 0 : 100);
                     if (sc > bestScore) { bestScore = sc; best = c; }
                 }
-                float targetX = best - World3D.HALF + 0.5f;
+                float targetX = best - World3D.HALF5 + 0.5f;
                 jx = Math.max(-1, Math.min(1, (targetX - w.px) * 2.5f));
                 boolean aligned = Math.abs(targetX - w.px) < 0.35f;
                 int here = w.cell(xi, zi) == World3D.PIT ? 0 : w.cell(xi, zi);
@@ -95,7 +95,7 @@ public class Check3 {
                     if (!e.dead && !e.flung && e.flatTime <= 0 && Math.abs(e.z - w.pz) < 2.2f && Math.abs(e.x - w.px) < 2.2f && Math.abs(e.y - w.py) < 1.2f) spin = true;
                 }
                 for (int k = 0; k <= 1; k++) for (int c = xi - 1; c <= xi + 1; c++) {
-                    if (c >= 0 && c < World3D.W && zi + k < w.length && w.crate[(zi + k) * World3D.W + c]) spin = true;
+                    if (c >= 0 && c < World3D.W5 && zi + k < w.length && w.crate[(zi + k) * World3D.W5 + c]) spin = true;
                 }
             }
             boolean j = jump && !(w.onGround && held);
@@ -126,7 +126,7 @@ public class Check3 {
         World3D w = fresh();
         run(w, 0.3f, 0, 0, false, false);
         run(w, 0.5f, 1, 0, false, false);
-        ok(w.px > 1.5f && w.px <= World3D.HALF - World3D.R_WALL + 0.01f, String.format("joystick a destra: va a destra e si ferma al bordo (x=%.2f)", w.px));
+        ok(w.px > 1.5f && w.px <= World3D.HALF5 - World3D.R_WALL + 0.01f, String.format("joystick a destra: va a destra e si ferma al bordo (x=%.2f)", w.px));
         float z0 = w.pz;
         run(w, 0.5f, 0, 1, false, false);
         ok(w.pz > z0 + 2.5f, "joystick in avanti: avanza nel corridoio");
@@ -176,10 +176,10 @@ public class Check3 {
         w = fresh();
         w.px = 0; w.pz = 23.5f;
         run(w, 0.6f, 0, 1, false, false);
-        ok(w.pz < 25 - World3D.R_WALL + 0.01f && w.crate[25 * World3D.W + 2], "la cassa ferma il robot");
+        ok(w.pz < 25 - World3D.R_WALL + 0.01f && w.crate[25 * World3D.W5 + 2], "la cassa ferma il robot");
         int g0 = w.gems;
         run(w, 0.3f, 0, 1, false, true);
-        ok(!w.crate[25 * World3D.W + 2] && w.gems == g0 + 1, "la giravolta rompe la cassa e dà un pezzo di gemma");
+        ok(!w.crate[25 * World3D.W5 + 2] && w.gems == g0 + 1, "la giravolta rompe la cassa e dà un pezzo di gemma");
 
         // giravolta su un nemico e planata
         w = fresh();
@@ -210,7 +210,7 @@ public class Check3 {
         int crates = 0; for (boolean c : w.crate) if (c) crates++;
         ok(w.gemTotal == w.gemsList.size() + crates && crates > 0, "totale gemme = pezzi sparsi + casse: " + w.gemTotal);
         for (float[] g : w.gemsList) {
-            int cx = (int) Math.floor(g[0] + World3D.HALF), cz = (int) Math.floor(g[2]);
+            int cx = (int) Math.floor(g[0] + World3D.HALF5), cz = (int) Math.floor(g[2]);
             int h = w.cell(cx, cz);
             boolean overPit = h == World3D.PIT;
             float clearance = g[1] - (overPit ? 0 : h);

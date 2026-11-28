@@ -14,7 +14,7 @@ package com.valeriodipaolo.platformgame.core3d;
 final class Coins3D {
     private Coins3D() {}
 
-    private static final int W = World3D.W;
+    private static final int W = World3D.W5;
 
     static void place(World3D w) {
         switch (w.levelNo) {
@@ -56,15 +56,15 @@ final class Coins3D {
         w.height[(z - 1) * W + lane] = 3;
         w.height[(z + 1) * W + lane] = 3;
         w.height[z * W + in] = 3;
-        w.enemies.removeIf(e -> Math.abs(e.z - z - 0.5f) < 1.6f && World3D.xi(e.x) == lane);
-        w.gemsList.removeIf(g -> Math.abs(g[2] - z - 0.5f) < 1.6f && (World3D.xi(g[0]) == lane || World3D.xi(g[0]) == in));
-        w.coin = new float[] {lane - World3D.HALF + 0.5f, 0.6f, z + 0.5f};
+        w.enemies.removeIf(e -> Math.abs(e.z - z - 0.5f) < 1.6f && World3D.xi5(e.x) == lane);
+        w.gemsList.removeIf(g -> Math.abs(g[2] - z - 0.5f) < 1.6f && (World3D.xi5(g[0]) == lane || World3D.xi5(g[0]) == in));
+        w.coin = new float[] {lane - World3D.HALF5 + 0.5f, 0.6f, z + 0.5f};
     }
 
     /** Sospeso dy sopra la cima della colonna (corsia, z). */
     static void sky(World3D w, int lane, int z, float dy) {
         int h = Math.max(0, w.height[z * W + lane]);
-        w.coin = new float[] {lane - World3D.HALF + 0.5f, h + dy, z + 0.5f};
+        w.coin = new float[] {lane - World3D.HALF5 + 0.5f, h + dy, z + 0.5f};
     }
 
     /** La cassa più vicina alla riga z contiene il gettone al posto della gemma. */

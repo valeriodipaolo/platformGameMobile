@@ -9,7 +9,7 @@ package com.valeriodipaolo.platformgame.core3d;
 public final class LevelTwelve {
     private LevelTwelve() {}
 
-    private static final int W = World3D.W;
+    private static final int W = World3D.W5;
 
     public static void build(World3D w) {
         int len = 192;
@@ -108,7 +108,7 @@ public final class LevelTwelve {
     }
 
     private static void padRow(World3D w, int z, int c0, int c1) {
-        for (int c = c0; c <= c1; c++) w.springs.add(new float[] {c - World3D.HALF + 0.5f, z + 0.5f});
+        for (int c = c0; c <= c1; c++) w.springs.add(new float[] {c - World3D.HALF5 + 0.5f, z + 0.5f});
     }
 
     /** Gemme sulla traiettoria misurata di un rimbalzo dalle nuvole a molla alla riga z. */

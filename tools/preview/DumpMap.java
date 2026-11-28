@@ -10,9 +10,9 @@ public class DumpMap {
             System.out.println("=== livello " + n + " lunghezza " + w.length + " gemme " + w.gemsList.size() + " nemici " + w.enemies.size());
             for (int z = 0; z < w.length; z++) {
                 StringBuilder sb = new StringBuilder();
-                for (int x = 0; x < World3D.W; x++) {
+                for (int x = 0; x < World3D.W5; x++) {
                     int h = w.cell(x, z);
-                    sb.append(h == World3D.PIT ? 'P' : w.crate[z * World3D.W + x] ? 'c' : (char) ('0' + h));
+                    sb.append(h == World3D.PIT ? 'P' : w.crate[z * World3D.W5 + x] ? 'c' : (char) ('0' + h));
                 }
                 int g = 0; for (float[] q : w.gemsList) if ((int) Math.floor(q[2]) == z) g++;
                 int e = 0; for (Enemy3 q : w.enemies) if ((int) Math.floor(q.z) == z) e++;

@@ -10,7 +10,7 @@ import static com.valeriodipaolo.platformgame.core3d.Levels3B.*;
 public final class Levels3C {
     private Levels3C() {}
 
-    private static final int W = World3D.W;
+    private static final int W = World3D.W5;
 
     /** Aspetto (tema 3D) di ciascun livello. */
     public static int theme(int id) {

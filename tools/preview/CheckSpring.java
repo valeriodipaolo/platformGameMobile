@@ -199,7 +199,7 @@ public class CheckSpring {
         ok(lives0 - b.lives <= 2, "al massimo 2 morti del robot sul livello " + levelNo + ": " + (lives0 - b.lives));
     }
 
-    static int xi(float x) { return (int) Math.floor(x + World3D.HALF); }
+    static int xi(float x) { return (int) Math.floor(x + World3D.HALF5); }
     static int zi(float z) { return (int) Math.floor(z); }
 
     static void placeAt(World3D w, float x, float z) {

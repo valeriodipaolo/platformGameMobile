@@ -9,7 +9,7 @@ package com.valeriodipaolo.platformgame.core3d;
 public final class LevelTen {
     private LevelTen() {}
 
-    private static final int W = World3D.W;
+    private static final int W = World3D.W5;
 
     public static void build(World3D w) {
         int len = 176 + 172;                       // il giardino (fino al ciliegio con il nido) e subito dopo la fuga dalle api
@@ -113,12 +113,12 @@ public final class LevelTen {
 
     /** Fiore a molla al centro della casella (xi, z). */
     private static void spring(World3D w, int xi, int z) {
-        w.springs.add(new float[] {xi - World3D.HALF + 0.5f, z + 0.5f});
+        w.springs.add(new float[] {xi - World3D.HALF5 + 0.5f, z + 0.5f});
     }
 
     /** Cespuglio di rovi al centro della casella (xi, z). */
     private static void thorn(World3D w, int xi, int z) {
-        w.thorns.add(new float[] {xi - World3D.HALF + 0.5f, z + 0.5f});
+        w.thorns.add(new float[] {xi - World3D.HALF5 + 0.5f, z + 0.5f});
     }
 
     private static void set(World3D w, int x, int z, int h) {

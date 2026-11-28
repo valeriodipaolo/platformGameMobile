@@ -168,12 +168,12 @@ public final class Scene3D {
 
     /** Occlusione ambientale ai vertici del prato: più scuro accanto ai blocchi e ai burroni. */
     private static float aoAt(World3D w, float x, float z) {
-        int cx = (int) Math.floor(x + World3D.HALF + 1e-3f), cz = (int) Math.floor(z + 1e-3f);
+        int cx = (int) Math.floor(x + w.HALF + 1e-3f), cz = (int) Math.floor(z + 1e-3f);
         float ao = 1f;
         for (int dx = -1; dx <= 0; dx++) {
             for (int dz = -1; dz <= 0; dz++) {
                 int xi = cx + dx, zi = cz + dz;
-                if (xi < 0 || xi >= World3D.W) continue;
+                if (xi < 0 || xi >= w.W) continue;
                 int h = vis(w, xi, zi);
                 if (h == World3D.PIT) ao -= 0.10f;
                 else if (h > 0) ao -= 0.13f * Math.min(h, 2);
@@ -199,19 +199,19 @@ public final class Scene3D {
 
     /** Quanto il prato del sentiero può ondulare in ogni punto: 0 accanto a burroni e blocchi, 1 in campo aperto. */
     private void buildFade(World3D w, int z0, int z1) {
-        int nx = World3D.W * 2 + 1;
+        int nx = W * 2 + 1;
         fadeZ0 = z0;
         fadeNz = (z1 - z0) * 2 + 1;
         fadeG = new float[nx * fadeNz];
         for (int iz = 0; iz < fadeNz; iz++) {
             for (int ix = 0; ix < nx; ix++) {
-                float x = -World3D.HALF + ix * 0.5f, z = z0 + iz * 0.5f, best = 9f;
-                int cx = (int) Math.floor(x + World3D.HALF), cz = (int) Math.floor(z);
+                float x = -HALF + ix * 0.5f, z = z0 + iz * 0.5f, best = 9f;
+                int cx = (int) Math.floor(x + HALF), cz = (int) Math.floor(z);
                 for (int xi = cx - 2; xi <= cx + 2; xi++) {
-                    if (xi < 0 || xi >= World3D.W) continue;
+                    if (xi < 0 || xi >= W) continue;
                     for (int zi = cz - 2; zi <= cz + 2; zi++) {
                         if (vis(w, xi, zi) == 0) continue;
-                        float x0 = xi - World3D.HALF;
+                        float x0 = xi - HALF;
                         float dx = Math.max(0, Math.max(x0 - x, x - (x0 + 1))), dz = Math.max(0, Math.max(zi - z, z - (zi + 1)));
                         best = Math.min(best, (float) Math.sqrt(dx * dx + dz * dz));
                     }
@@ -223,8 +223,8 @@ public final class Scene3D {
     }
 
     float fadeAt(float x, float z) {
-        int nx = World3D.W * 2 + 1;
-        float gx = (Math.max(-World3D.HALF, Math.min(World3D.HALF, x)) + World3D.HALF) * 2f;
+        int nx = W * 2 + 1;
+        float gx = (Math.max(-HALF, Math.min(HALF, x)) + HALF) * 2f;
         float gz = Math.max(0, Math.min(fadeNz - 1.001f, (z - fadeZ0) * 2f));
         int ix = Math.min(nx - 2, (int) gx), iz = (int) gz;
         float fx = gx - ix, fz = gz - iz;
@@ -266,14 +266,14 @@ public final class Scene3D {
      */
     float edgeField(float x, float z) {
         if (heaven) return 2f;                                             // in cielo i bordi restano quelli delle nuvole
-        int cx = (int) Math.floor(x + World3D.HALF), cz = (int) Math.floor(z);
-        cx = Math.max(-1, Math.min(World3D.W, cx));
+        int cx = (int) Math.floor(x + HALF), cz = (int) Math.floor(z);
+        cx = Math.max(-1, Math.min(W, cx));
         float best = 2f;
         for (int xi = cx - 2; xi <= cx + 2; xi++) {
-            if (xi < 0 || xi >= World3D.W) continue;
+            if (xi < 0 || xi >= W) continue;
             for (int zi = cz - 2; zi <= cz + 2; zi++) {
                 if (vis(lvl, xi, zi) != World3D.PIT) continue;
-                float x0 = xi - World3D.HALF;
+                float x0 = xi - HALF;
                 float dx = Math.max(0, Math.max(x0 - x, x - (x0 + 1))), dz = Math.max(0, Math.max(zi - z, z - (zi + 1)));
                 best = Math.min(best, (float) Math.sqrt(dx * dx + dz * dz));
             }
@@ -281,11 +281,11 @@ public final class Scene3D {
         if (best >= 2f) return best;
         float j = jag(x, z);
         // passerelle strette (vuoto da due lati opposti): il bordo resta quasi quello vero, se no la passerella sparirebbe
-        int gx = (int) Math.floor(x + World3D.HALF);
-        if (gx >= 0 && gx < World3D.W && vis(lvl, gx, cz) != World3D.PIT) {
-            boolean narrow = (gx > 0 && gx < World3D.W - 1 && vis(lvl, gx - 1, cz) == World3D.PIT && vis(lvl, gx + 1, cz) == World3D.PIT)
+        int gx = (int) Math.floor(x + HALF);
+        if (gx >= 0 && gx < W && vis(lvl, gx, cz) != World3D.PIT) {
+            boolean narrow = (gx > 0 && gx < W - 1 && vis(lvl, gx - 1, cz) == World3D.PIT && vis(lvl, gx + 1, cz) == World3D.PIT)
                     || (vis(lvl, gx, cz - 1) == World3D.PIT && vis(lvl, gx, cz + 1) == World3D.PIT)
-                    || ((gx == 0 || gx == World3D.W - 1) && vis(lvl, gx == 0 ? 1 : gx - 1, cz) == World3D.PIT);
+                    || ((gx == 0 || gx == W - 1) && vis(lvl, gx == 0 ? 1 : gx - 1, cz) == World3D.PIT);
             if (narrow) j = Math.min(j, 0.1f);
         }
         return best - j;
@@ -298,13 +298,13 @@ public final class Scene3D {
         k = k * k * (3 - 2 * k);
         // dove si salta (in mezzo al corridoio) il bordo resta vicino a quello vero; verso i lati il burrone si allarga e si
         // sfrangia molto, fuori dal corridoio diventa una spaccatura irregolare che entra nel prato
-        float e = Math.max(0f, Math.min(1f, (Math.abs(x) - (World3D.HALF - 1.3f)) / 1.3f));
-        float amp = 0.45f + 0.75f * e + (Math.abs(x) > World3D.HALF ? 0.35f : 0f);
+        float e = Math.max(0f, Math.min(1f, (Math.abs(x) - (HALF - 1.3f)) / 1.3f));
+        float amp = 0.45f + 0.75f * e + (Math.abs(x) > HALF ? 0.35f : 0f);
         return 0.03f + amp * k + 0.25f * e;
     }
 
     private float groundBase(float x, float z) {
-        float d = Math.abs(x) - World3D.HALF, y = bumpAt(x, z);
+        float d = Math.abs(x) - HALF, y = bumpAt(x, z);
         if (d <= 0) return y;
         if (heaven) return y - 4.5f * sm(d / 0.9f) + 0.7f * (vnoise(x * 0.09f + 3, z * 0.09f, 31) - 0.5f) * sm(d / 5f);
         if (dry == 24) return y + 7.5f * sm((d - 1.6f) / 2.6f) + (1.2f * (vnoise(x * 0.4f, z * 0.3f, 41) - 0.5f) + 0.7f * (vnoise(x * 1.4f, z * 1.1f, 43) - 0.5f) + 0.25f * (vnoise(x * 3.7f, z * 3.1f, 47) - 0.5f)) * sm(d / 2f);     // la gola della miniera: pareti a picco
@@ -342,7 +342,7 @@ public final class Scene3D {
                 for (float z = z0; z < z1; z += (autumn && row < 2 ? 3.3f + row * 0.6f : 2.1f + row * 0.5f)) {
                     Tree t = new Tree();
                     t.row = row;
-                    t.x = side * (World3D.HALF + (lvl.theme == 4 || lvl.theme >= 10 ? 4.4f : 3.0f) + row * 2.6f + r.nextFloat() * 2.0f);
+                    t.x = side * (HALF + (lvl.theme == 4 || lvl.theme >= 10 ? 4.4f : 3.0f) + row * 2.6f + r.nextFloat() * 2.0f);
                     t.z = z + r.nextFloat() * 1.8f;
                     t.h = 5.0f + r.nextFloat() * 4.0f + row * 0.5f;
                     t.rad = t.h * 0.25f * (0.85f + 0.3f * r.nextFloat());
@@ -358,9 +358,13 @@ public final class Scene3D {
         });
     }
 
+    private int W = World3D.W5;
+    private float HALF = World3D.W5 / 2f;
+
     private void build(World3D w) {
         builtFor = w.length;
         lvl = w;
+        W = w.W; HALF = w.HALF; Decor.half = HALF; DryDecor.half = HALF;
         int[] standing = null;                      // le caselle che il masso può abbattere non vanno nel terreno fisso: si disegnano a parte
         if (w.breakH != null) {
             standing = new int[w.height.length];
@@ -412,9 +416,9 @@ public final class Scene3D {
         int[] order = {0, 1, 2, 0, 2, 3};
         // ---- corridoio: prato ondulato a quadrati di mezzo metro, pietra e pareti di terra
         for (int z = z0; z < z1; z++) {
-            for (int x = 0; x < World3D.W; x++) {
+            for (int x = 0; x < W; x++) {
                 int h = vis(w, x, z);
-                float fx = x - World3D.HALF;
+                float fx = x - HALF;
                 if (h == World3D.PIT) continue;
                 if (w.isRamp(x, z)) { rampCell(w, x, z, fx); continue; }
                 if (h == 0) {
@@ -422,7 +426,7 @@ public final class Scene3D {
                     boolean nearPit = false;
                     if (lip > 0) {
                         for (int ax = x - 2; ax <= x + 2; ax++) for (int az = z - 2; az <= z + 2; az++) {
-                            if (ax >= 0 && ax < World3D.W && vis(w, ax, az) == World3D.PIT) nearPit = true;
+                            if (ax >= 0 && ax < W && vis(w, ax, az) == World3D.PIT) nearPit = true;
                         }
                     }
                     if (nearPit) jaggedCell(w, g, fx, z);
@@ -434,7 +438,7 @@ public final class Scene3D {
                                 float qx = fx + sx * e, qz = z + sz * e;
                                 float[][] c = {{qx, qz}, {qx + e, qz}, {qx + e, qz + e}, {qx, qz + e}};
                                 for (int k : order) {
-                                    float ex = Math.abs(c[k][0]) / World3D.HALF;
+                                    float ex = Math.abs(c[k][0]) / HALF;
                                     float t = (1.08f - 0.10f * ex * ex) * aoAt(w, c[k][0], c[k][1]);
                                     ground(g, c[k][0], c[k][1], c[k][0] * 0.5f, c[k][1] * 0.5f, t, t, t);
                                 }
@@ -455,11 +459,11 @@ public final class Scene3D {
                     s.box(fx + 0.5f, -0.2f, z + 0.5f, 0.94f, 0.7f, 0.94f);
                     for (int k = 0; k < h; k++) {
                         // masso sepolto: coperto sopra e su tutti e quattro i lati, non si vede mai (nelle torri alte sono la maggior parte)
-                        if (k + 1 < h && x > 0 && x + 1 < World3D.W && vis(w, x - 1, z) > k && vis(w, x + 1, z) > k
+                        if (k + 1 < h && x > 0 && x + 1 < W && vis(w, x - 1, z) > k && vis(w, x + 1, z) > k
                                 && z > 0 && vis(w, x, z - 1) > k && vis(w, x, z + 1) > k) continue;
                         s.colorf(0.96f + 0.08f * hash(x, z, k), 0.96f + 0.06f * hash(x, z, k + 7), 0.96f);
                         int faces = 63 & ~8;                              // la faccia di sotto poggia sempre su qualcosa
-                        if (x + 1 < World3D.W && vis(w, x + 1, z) > k) faces &= ~1;
+                        if (x + 1 < W && vis(w, x + 1, z) > k) faces &= ~1;
                         if (x > 0 && vis(w, x - 1, z) > k) faces &= ~2;
                         if (k + 1 < h) faces &= ~4;
                         if (vis(w, x, z + 1) > k) faces &= ~16;
@@ -472,7 +476,7 @@ public final class Scene3D {
                             // giunti tra le pietre: pietra in ombra, non nero (con le pietre irregolari se ne vedono molti)
                             if (heaven) s.colorf(0.78f, 0.78f, 0.8f); else s.colorf(0.58f, 0.55f, 0.5f);
                             s.box(fx + 0.5f, k + 0.5f, z + 0.5f, 0.8f, 0.8f, 0.8f);
-                            if (x + 1 < World3D.W && vis(w, x + 1, z) > k) s.box(fx + 1f, k + 0.5f, z + 0.5f, 0.42f, 0.8f, 0.8f);
+                            if (x + 1 < W && vis(w, x + 1, z) > k) s.box(fx + 1f, k + 0.5f, z + 0.5f, 0.42f, 0.8f, 0.8f);
                             if (vis(w, x, z + 1) > k) s.box(fx + 0.5f, k + 0.5f, z + 1f, 0.8f, 0.8f, 0.42f);
                             if (k + 1 < h) {
                                 s.box(fx + 0.5f, k + 1f, z + 0.5f, 0.8f, 0.42f, 0.8f);
@@ -486,24 +490,24 @@ public final class Scene3D {
                 if (vis(w, x, z - 1) == World3D.PIT) wallZ(d, fx, z, 1);
                 if (vis(w, x, z + 1) == World3D.PIT) wallZ(d, fx, z + 1, -1);
                 if (x > 0 && vis(w, x - 1, z) == World3D.PIT) wallX(d, fx, z, 1);
-                if (x < World3D.W - 1 && vis(w, x + 1, z) == World3D.PIT) wallX(d, fx + 1, z, -1);
+                if (x < W - 1 && vis(w, x + 1, z) == World3D.PIT) wallX(d, fx + 1, z, -1);
             }
             MeshBuilder d = mb(K_DIRT, z);
-            if (heaven) wallX(d, -World3D.HALF, z, 1);                 // altrove la parete segue il bordo frastagliato
-            if (heaven) wallX(d, World3D.HALF, z, -1);
+            if (heaven) wallX(d, -HALF, z, 1);                 // altrove la parete segue il bordo frastagliato
+            if (heaven) wallX(d, HALF, z, -1);
         }
 
         b = fire ? new MeshBuilder().color(255, 96, 22) : new MeshBuilder().color(10, 18, 14);   // fondo dei burroni (lava nell'incendio)
         // più largo del corridoio: il vuoto frastagliato entra nei lati; nei livelli bui (miniera, notte) arriva fin sotto le pareti,
         // così da una fessura tra due superfici si vede il fondo scuro e non il cielo chiaro
-        float fw = dry == 24 || isle == 18 ? 30f : World3D.HALF + 1.4f;
+        float fw = dry == 24 || isle == 18 ? 30f : HALF + 1.4f;
         b.quad(-fw, -PIT_DEPTH, z0, fw, -PIT_DEPTH, z0, fw, -PIT_DEPTH, z1, -fw, -PIT_DEPTH, z1,
                0, 1, 0, 0.5f, 0.5f, 0.5f, 0.5f);
         pitFloor = b.build(-1, false, true);
         if (heaven) {                                              // sotto le nuvole: un mare di nuvole lontano
             float zl = (z1 - z0) / 6f;
             b = new MeshBuilder();
-            b.quad(-World3D.HALF, -PIT_DEPTH, z0, World3D.HALF, -PIT_DEPTH, z0, World3D.HALF, -PIT_DEPTH, z1, -World3D.HALF, -PIT_DEPTH, z1, 0, 1, 0, 0, 0, 1.2f, zl);
+            b.quad(-HALF, -PIT_DEPTH, z0, HALF, -PIT_DEPTH, z0, HALF, -PIT_DEPTH, z1, -HALF, -PIT_DEPTH, z1, 0, 1, 0, 0, 0, 1.2f, zl);
             pitFloor = b.build(Img.R3H_SEA, false, true);
             b = new MeshBuilder();                                 // il mare di nuvole fino all'orizzonte
             b.quad(-420, -PIT_DEPTH + 0.4f, z0 - 30, 420, -PIT_DEPTH + 0.4f, z0 - 30, 420, -PIT_DEPTH + 0.4f, z1 + 330, -420, -PIT_DEPTH + 0.4f, z1 + 330,
@@ -513,11 +517,11 @@ public final class Scene3D {
         if (spring || jungle) {                                    // nei burroni scorre un fiume: due piani d'acqua, quello sopra trasparente e mosso
             float wy = -0.75f, zl = (z1 - z0) / 3f;
             b = new MeshBuilder();
-            float ww = World3D.HALF + 1.4f;
+            float ww = HALF + 1.4f;
             b.quad(-ww, wy, z0, ww, wy, z0, ww, wy, z1, -ww, wy, z1, 0, 1, 0, 0, 0, 2.2f, zl);
             pitFloor = b.build(jungle ? Img.R3J_WATER : Img.R3D_WATER, false, true);
             b = new MeshBuilder();
-            b.quad(-World3D.HALF, 0, z0, World3D.HALF, 0, z0, World3D.HALF, 0, z1, -World3D.HALF, 0, z1, 0, 1, 0, 0.3f, 0.2f, 2.0f, zl * 1.3f);
+            b.quad(-HALF, 0, z0, HALF, 0, z0, HALF, 0, z1, -HALF, 0, z1, 0, 1, 0, 0.3f, 0.2f, 2.0f, zl * 1.3f);
             pitWater = b.build(jungle ? Img.R3J_WATER : Img.R3D_WATER, true, true);
         }
 
@@ -530,16 +534,16 @@ public final class Scene3D {
             for (int side = -1; side <= 1; side += 2) {
                 boolean pitNear = false;
                 for (int dz = -2; dz <= 2 && !heaven; dz++)
-                    for (int xi = 0; xi < 2; xi++) if (vis(w, side < 0 ? xi : World3D.W - 1 - xi, z + dz) == World3D.PIT) pitNear = true;
+                    for (int xi = 0; xi < 2; xi++) if (vis(w, side < 0 ? xi : W - 1 - xi, z + dz) == World3D.PIT) pitNear = true;
                 for (int k = 0; k + 1 < D.length; k++) {
                     boolean grassy = D[k + 1] <= SEAM + 0.01f;
                     MeshBuilder g = mb(grassy ? K_BANK : K_FOREST, z);
                     if (pitNear && D[k] < 2.4f && grassy) {                 // il burrone entra un po' nel prato: niente parete dritta
                         final float sd = side;
-                        clipGrid(g, side * (World3D.HALF + D[k]), side * (World3D.HALF + D[k + 1]), z, z + 1,
+                        clipGrid(g, side * (HALF + D[k]), side * (HALF + D[k + 1]), z, z + 1,
                                 Math.max(2, Math.round((D[k + 1] - D[k]) * 8)), 8, z, new Shade() {
                             public void vert(MeshBuilder g, float x, float zz) {
-                                float d = Math.abs(x) - World3D.HALF, t = d / SEAM, bs = (0.98f - 0.13f * t) * (1f - 0.7f * lipDrop(x, zz) / lip * 0.45f);
+                                float d = Math.abs(x) - HALF, t = d / SEAM, bs = (0.98f - 0.13f * t) * (1f - 0.7f * lipDrop(x, zz) / lip * 0.45f);
                                 ground(g, x, zz, x * 0.5f, zz * 0.5f, bs * (1 + (seamG[0] - 1) * t), bs * (1 + (seamG[1] - 1) * t), bs * (1 + (seamG[2] - 1) * t));
                             }
                         });
@@ -559,7 +563,7 @@ public final class Scene3D {
                             {D[0], z + 0.5f}, {D[1], z + 1}, {D[0], z + 1}}
                             : new float[][] {{D[k], z}, {D[k + 1], z}, {D[k + 1], z + 1}, {D[k], z}, {D[k + 1], z + 1}, {D[k], z + 1}};
                     for (int q = 0; q < c.length; q++) {
-                        float d = c[q][0], x = side * (World3D.HALF + d), zz = c[q][1];
+                        float d = c[q][0], x = side * (HALF + d), zz = c[q][1];
                         if (grassy) {
                             float t = d / SEAM, bs = 0.98f - 0.13f * t;
                             ground(g, x, zz, x * 0.5f, zz * 0.5f, bs * (1 + (seamG[0] - 1) * t), bs * (1 + (seamG[1] - 1) * t), bs * (1 + (seamG[2] - 1) * t));
@@ -575,10 +579,10 @@ public final class Scene3D {
         // gonna scura sotto il bordo del corridoio: se tra il prato del sentiero e quello dei lati resta una fessura di un pixel,
         // si vede questa e non il cielo
         if (!heaven) for (int z = z0; z < z1; z++) for (int side = -1; side <= 1; side += 2) {
-            int edge = side < 0 ? 0 : World3D.W - 1;
+            int edge = side < 0 ? 0 : W - 1;
             if (vis(w, edge, z) == World3D.PIT || vis(w, edge, z - 1) == World3D.PIT || vis(w, edge, z + 1) == World3D.PIT) continue;
             MeshBuilder g = mb(K_BANK, z);
-            float x = side * World3D.HALF;
+            float x = side * HALF;
             g.colorf(0.05f, 0.045f, 0.04f);
             for (int h = 0; h < 2; h++) {
                 float za = z + h * 0.5f, zb = za + 0.5f, ya = groundAt(x, za), yb = groundAt(x, zb);
@@ -642,7 +646,7 @@ public final class Scene3D {
         s.quad(fx, y0, z, fx + 1, y0, z, fx + 1, y1, z + 1, fx, y1, z + 1, 0, ny, nz, 0, 0, 0.5f, 0.5f);
         s.colorf(0.85f, 0.82f, 0.78f);
         if (x == 0) s.quad(fx, -0.6f, z + 1, fx, -0.6f, z, fx, y0, z, fx, y1, z + 1, -1, 0, 0, z * 0.5f, -0.3f, (z + 1) * 0.5f, y1 * 0.5f);
-        if (x == World3D.W - 1) s.quad(fx + 1, -0.6f, z, fx + 1, -0.6f, z + 1, fx + 1, y1, z + 1, fx + 1, y0, z, 1, 0, 0, z * 0.5f, -0.3f, (z + 1) * 0.5f, y1 * 0.5f);
+        if (x == W - 1) s.quad(fx + 1, -0.6f, z, fx + 1, -0.6f, z + 1, fx + 1, y1, z + 1, fx + 1, y0, z, 1, 0, 0, z * 0.5f, -0.3f, (z + 1) * 0.5f, y1 * 0.5f);
         if (z > 0 && vis(w, x, z - 1) == World3D.PIT) s.quad(fx, -3f, z, fx + 1, -3f, z, fx + 1, y0, z, fx, y0, z, 0, 0, -1, fx * 0.5f, -1.5f, (fx + 1) * 0.5f, y0 * 0.5f);
         if (vis(w, x, z + 1) == World3D.PIT) s.quad(fx + 1, -3f, z + 1, fx, -3f, z + 1, fx, y1, z + 1, fx + 1, y1, z + 1, 0, 0, 1, fx * 0.5f, -1.5f, (fx + 1) * 0.5f, y1 * 0.5f);
     }
@@ -682,13 +686,13 @@ public final class Scene3D {
     private void drawBreakables(World3D w, Gfx3D g) {
         if (breakCols == null) return;
         int z0 = Math.max(0, (int) nearZ - 1), z1 = Math.min(w.length - 1, (int) farZ + 1);
-        for (int z = z0; z <= z1; z++) for (int x = 0; x < World3D.W; x++) {
-            int i = z * World3D.W + x;
+        for (int z = z0; z <= z1; z++) for (int x = 0; x < W; x++) {
+            int i = z * W + x;
             if (w.breakH[i] == 0) continue;
             int f = w.breakFloor[i], h = w.height[i] - f;
             if (h <= 0) continue;
             Mat4.setIdentity(m);
-            Mat4.translate(m, x - World3D.HALF + 0.5f, f, z + 0.5f);
+            Mat4.translate(m, x - HALF + 0.5f, f, z + 0.5f);
             g.draw(breakCols[Math.min(6, h)], m, 1, 1, 1, 1, 0);
         }
         for (float[] d : w.debris) {
@@ -705,7 +709,7 @@ public final class Scene3D {
     /** Tratto di sentiero battuto sopra una casella di prato: quattro strisce per lato, appoggiate al terreno. */
     private void trailCell(World3D w, int x, int z) {
         if (heaven || dry != 0) return;
-        float fx = x - World3D.HALF;
+        float fx = x - HALF;
         MeshBuilder t = mb(K_TRAIL, z);
         float[] tint = spring ? new float[] {1.0f, 0.97f, 0.9f} : fire ? new float[] {0.75f, 0.6f, 0.5f} : aurora ? new float[] {1.25f, 1.7f, 2.75f} : autumn ? new float[] {0.92f, 0.82f, 0.74f} : new float[] {1f, 0.96f, 0.9f};
         int[] order = {0, 1, 2, 0, 2, 3};
@@ -745,8 +749,8 @@ public final class Scene3D {
         for (float[] m : w.mazes) {
             for (int z = (int) m[0]; z < (int) m[1]; z++) {
                 MeshBuilder s = mb(K_STONE, z);
-                for (int side = -1; side <= World3D.W; side += World3D.W + 1) {
-                    float fx = side - World3D.HALF;
+                for (int side = -1; side <= W; side += W + 1) {
+                    float fx = side - HALF;
                     for (int k = 0; k < Levels3C.MAZE_H; k++) {
                         s.colorf(0.96f + 0.08f * hash(side + 9, z, k), 0.96f + 0.06f * hash(side + 9, z, k + 7), 0.96f);
                         int faces = 63 & ~8;
@@ -771,7 +775,7 @@ public final class Scene3D {
         for (float z = z0; z < z1; z += 1.5f) {                       // pancia della lastra: bolle sotto ai due bordi e sotto ai ponti
             for (int side = -1; side <= 1; side += 2) {
                 float rad = 0.9f + 0.7f * r.nextFloat();
-                float px = side * (World3D.HALF - 0.3f + 0.5f * r.nextFloat()), pz = z + r.nextFloat();
+                float px = side * (HALF - 0.3f + 0.5f * r.nextFloat()), pz = z + r.nextFloat();
                 MeshBuilder p = mb(K_PROP, (int) pz);
                 lightAt(px, pz, 1f);
                 float sh = 0.9f + 0.1f * r.nextFloat();
@@ -782,9 +786,9 @@ public final class Scene3D {
         for (int side = -1; side <= 1; side += 2) {
             for (float z = z0; z < z1; z += 0.9f) {                    // orlo di bolle lungo il bordo del sentiero, dove non c'è il vuoto
                 int zi = (int) Math.floor(z);
-                if (vis(w, side < 0 ? 0 : World3D.W - 1, zi) == World3D.PIT) continue;
+                if (vis(w, side < 0 ? 0 : W - 1, zi) == World3D.PIT) continue;
                 float rad = 0.4f + 0.25f * r.nextFloat();
-                float px = side * (World3D.HALF + 0.02f), pz = z + 0.4f * r.nextFloat();
+                float px = side * (HALF + 0.02f), pz = z + 0.4f * r.nextFloat();
                 float py = groundAt(px, pz) - 0.12f + rad * 0.2f;
                 MeshBuilder p = mb(K_PROP, zi);
                 lightAt(px, pz, 1f);
@@ -793,7 +797,7 @@ public final class Scene3D {
             }
             for (float z = z0; z < z1; z += 7f + 6f * r.nextFloat()) {  // nuvole lontane, tanti metri più in basso
                 float rad = 5f + 8f * r.nextFloat();
-                float px = side * (World3D.HALF + 14f + 70f * r.nextFloat() * r.nextFloat()), pz = z + 4f * r.nextFloat();
+                float px = side * (HALF + 14f + 70f * r.nextFloat() * r.nextFloat()), pz = z + 4f * r.nextFloat();
                 MeshBuilder p = mb(K_PROP, (int) pz);
                 p.colorf(0.96f, 0.98f, 1f);
                 p.ellipsoid(px, -22f - 40f * r.nextFloat(), pz, rad * 1.5f, rad * 0.55f, rad, 12, 8);
@@ -803,7 +807,7 @@ public final class Scene3D {
 
     /** In cima ai massi del percorso: neve nel livello dell'aurora, altrimenti ciuffi d'erba corta e muschio. */
     private void blockTop(World3D w, int x, int z, int h) {
-        float fx = x - World3D.HALF;
+        float fx = x - HALF;
         Random r = new Random(x * 131 + z * 17);
         if (aurora || heaven) {
             MeshBuilder p = mb(K_PROP, z);
@@ -821,7 +825,7 @@ public final class Scene3D {
         int[][] nb = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
         for (int[] d : nb) {
             int ax = x + d[0], az = z + d[1];
-            if (ax < 0 || ax >= World3D.W || vis(w, ax, az) != 0) continue;
+            if (ax < 0 || ax >= W || vis(w, ax, az) != 0) continue;
             for (int k = 0; k < 2; k++) {
                 float o = 0.15f + 0.7f * r.nextFloat();
                 float tx = fx + 0.5f + d[0] * 0.56f + (d[0] == 0 ? o - 0.5f : 0), tz = z + 0.5f + d[1] * 0.56f + (d[1] == 0 ? o - 0.5f : 0);
@@ -1178,12 +1182,12 @@ public final class Scene3D {
         Random r = new Random(21);
         // erba bassa e fitta su tutto il sentiero (tranne vicino a burroni e blocchi), con qualche fiore
         for (float z = 0; z < w.length; z += 0.4f) {
-            for (float xx = -World3D.HALF; xx < World3D.HALF; xx += 0.4f) {
+            for (float xx = -HALF; xx < HALF; xx += 0.4f) {
                 float x = xx + r.nextFloat() * 0.4f, zz = z + r.nextFloat() * 0.4f;
-                int xi = (int) Math.floor(x + World3D.HALF), zi = (int) Math.floor(zz);
-                if (xi < 0 || xi >= World3D.W || vis(w, xi, zi) != 0 || fadeAt(x, zz) < 0.36f) continue;
+                int xi = (int) Math.floor(x + HALF), zi = (int) Math.floor(zz);
+                if (xi < 0 || xi >= W || vis(w, xi, zi) != 0 || fadeAt(x, zz) < 0.36f) continue;
                 if (Math.abs(x - trailX(zz)) < TRAIL_HW * (0.5f + 0.35f * r.nextFloat())) continue;
-                float e = Math.abs(x) / World3D.HALF;
+                float e = Math.abs(x) / HALF;
                 float size = 0.22f + 0.14f * r.nextFloat() + 0.2f * e * e * r.nextFloat();
                 tuft(K_TUFT, x, groundAt(x, zz), zz, size, 3, 0.35f, r);
                 if (r.nextFloat() < 0.07f) tuft(K_FLOWER, x, groundAt(x, zz), zz, 0.26f + 0.12f * r.nextFloat(), 3, 0.12f, r);
@@ -1194,7 +1198,7 @@ public final class Scene3D {
             for (float z = z0; z < z1; z += 0.34f + r.nextFloat() * 0.25f) {
                 for (int k = 0; k < 4; k++) {
                     float d = 0.02f + (float) Math.pow(r.nextFloat(), 1.9f) * 10f;
-                    float x = side * (World3D.HALF + d), y = groundAt(x, z), q = r.nextFloat();
+                    float x = side * (HALF + d), y = groundAt(x, z), q = r.nextFloat();
                     boolean patch = vnoise(x * 0.45f + 9, z * 0.45f, 41) > 0.6f;
                     if (patch && q < 0.55f) tuft(K_FLOWER, x, y, z, 0.38f + r.nextFloat() * 0.3f, 3, 0.15f, r);
                     else if (d > 0.9f && q < 0.2f) fern(x, y, z, 0.5f + r.nextFloat() * 0.5f, r);
@@ -1203,7 +1207,7 @@ public final class Scene3D {
             }
             // abeti giovani
             for (float z = z0; z < z1; z += 3.5f + r.nextFloat() * 5f) {
-                float d = 1.4f + r.nextFloat() * 3.2f, x = side * (World3D.HALF + d), h = 1.0f + r.nextFloat() * 1.6f;
+                float d = 1.4f + r.nextFloat() * 3.2f, x = side * (HALF + d), h = 1.0f + r.nextFloat() * 1.6f;
                 if (jungle) palm(x, groundAt(x, z) - 0.05f, z, h * 1.6f + 1.4f, r);
                 else if (autumn) broadleaf(x, groundAt(x, z) - 0.05f, z, h + 0.6f, h * 0.35f, 0.95f + 0.2f * r.nextFloat(), 3, r);
                 else fir(x, groundAt(x, z) - 0.05f, z, h, h * 0.3f, 0.95f + 0.2f * r.nextFloat(), false, r);
@@ -1213,7 +1217,7 @@ public final class Scene3D {
                 float d = 0.3f + r.nextFloat() * 3.5f, rad = 0.3f + r.nextFloat() * 0.5f;
                 float rx = rad * 1.25f, ry = rad * 1.0f, rz = rad * 1.1f;
                 d = Math.max(d, rx * 1.32f + 0.08f);                   // il masso (con le sue gobbe) resta fuori dal sentiero percorribile
-                float x = side * (World3D.HALF + d);
+                float x = side * (HALF + d);
                 float low = meshAt(x, z);
                 for (int k = 0; k < 14; k++) {
                     double a = k * Math.PI / 6;
@@ -1234,15 +1238,15 @@ public final class Scene3D {
     /** Altezza della superficie realmente disegnata ai lati del sentiero (interpolazione della maglia), non quella teorica. */
     float meshAt(float x, float z) {
         if (lip > 0 && edgeField(x, z) < 0.05f) return groundAt(x, z) - pitD;   // nel vuoto frastagliato: la decorazione finisce giù, invisibile
-        float d = Math.abs(x) - World3D.HALF;
+        float d = Math.abs(x) - HALF;
         if (d <= 0) return groundAt(x, z);
         float sg = Math.signum(x);
         int k = 0;
         while (k + 2 < SIDE_D.length && d >= SIDE_D[k + 1]) k++;
         float d0 = SIDE_D[k], d1 = SIDE_D[k + 1], fz0 = (float) Math.floor(z);
         float tx = Math.max(0, Math.min(1, (d - d0) / (d1 - d0))), tz = z - fz0;
-        float a = groundAt(sg * (World3D.HALF + d0), fz0), b = groundAt(sg * (World3D.HALF + d1), fz0);
-        float c = groundAt(sg * (World3D.HALF + d1), fz0 + 1), e = groundAt(sg * (World3D.HALF + d0), fz0 + 1);
+        float a = groundAt(sg * (HALF + d0), fz0), b = groundAt(sg * (HALF + d1), fz0);
+        float c = groundAt(sg * (HALF + d1), fz0 + 1), e = groundAt(sg * (HALF + d0), fz0 + 1);
         float bil = (a + (b - a) * tx) * (1 - tz) + (e + (c - e) * tx) * tz;
         return Math.min(bil, Math.min(Math.min(a, b), Math.min(c, e)) + 0.5f * (bil - Math.min(Math.min(a, b), Math.min(c, e))));
     }
@@ -1251,7 +1255,7 @@ public final class Scene3D {
         Random r = new Random(33);
         for (float z = z0; z < z1; z += 5f + r.nextFloat() * 5f) {
             MeshBuilder b = mb(K_RAY, z);
-            float x = (r.nextFloat() < 0.5f ? -1 : 1) * (World3D.HALF - 1f + r.nextFloat() * 6.5f);
+            float x = (r.nextFloat() < 0.5f ? -1 : 1) * (HALF - 1f + r.nextFloat() * 6.5f);
             float H = 9f + r.nextFloat() * 3f, t = H / Gfx3D.LY;
             float tx = x, ty = H, tz = z;
             float bx = x - Gfx3D.LX * t, bz = z - Gfx3D.LZ * t;
@@ -1265,12 +1269,12 @@ public final class Scene3D {
     /** Altezza da disegnare: prima dell'inizio e dopo la fine il prato continua. */
     static int vis(World3D w, int x, int z) {
         if (z < 0 || z >= w.length) return 0;
-        return w.height[z * World3D.W + x];
+        return w.height[z * w.W + x];
     }
 
     /** Vertice del sottobosco ai lati (oltre la cucitura con il prato): a distanza d dal bordo del sentiero. */
     private void forestVert(MeshBuilder g, int side, float d, float zz, float[] seamF) {
-        float x = side * (World3D.HALF + d);
+        float x = side * (HALF + d);
         float t = Math.min(1f, (d - SEAM) / 4f), bs = 0.85f - 0.15f * t;
         ground(g, x, zz, x * 0.34f, zz * 0.34f, bs * (seamF[0] + (1 - seamF[0]) * t), bs * (seamF[1] + (1 - seamF[1]) * t), bs * (seamF[2] + (1 - seamF[2]) * t));
     }
@@ -1296,7 +1300,7 @@ public final class Scene3D {
     private void jaggedCell(final World3D w, MeshBuilder g, float fx, int z) {
         clipGrid(g, fx, fx + 1, z, z + 1, 8, 8, z, new Shade() {
             public void vert(MeshBuilder g, float x, float zz) {
-                float ex = Math.abs(x) / World3D.HALF;
+                float ex = Math.abs(x) / HALF;
                 float t = (1.08f - 0.10f * ex * ex) * aoAt(w, x, zz) * (1f - 0.7f * lipDrop(x, zz) / lip * 0.45f);
                 ground(g, x, zz, x * 0.5f, zz * 0.5f, t, t, t);
             }
@@ -1621,7 +1625,7 @@ public final class Scene3D {
         // portone del traguardo: una muraglia di pietre irregolari altissima (la cima non si vede) e larga oltre il bosco,
         // l'arco del portone, e dietro i battenti un corridoio buio che finisce in una luce bianca: oltre non si vede nulla
         b = new MeshBuilder();
-        gateY = Math.max(0, lvl.flagZ >= 0 && lvl.flagZ < lvl.length ? lvl.height[lvl.flagZ * World3D.W + 2] : 0);   // il portone poggia sul pavimento davanti
+        gateY = Math.max(0, lvl.flagZ >= 0 && lvl.flagZ < lvl.length ? lvl.height[lvl.flagZ * W + 2] : 0);   // il portone poggia sul pavimento davanti
         {
             final float gy = gateY;
             java.util.Random rg = new java.util.Random(77);
@@ -1874,11 +1878,11 @@ public final class Scene3D {
 
         float near = nearZ, far = farZ;      // gli oggetti tra la camera e il robot finirebbero enormi in primo piano
         for (int z = Math.max(0, (int) near); z < Math.min(w.length, (int) far); z++) {
-            for (int x = 0; x < World3D.W; x++) {
-                if (!w.crate[z * World3D.W + x]) continue;
+            for (int x = 0; x < W; x++) {
+                if (!w.crate[z * W + x]) continue;
                 Mat4.setIdentity(m);
-                Mat4.translate(m, x - World3D.HALF + 0.5f, bumpAt(x - World3D.HALF + 0.5f, z + 0.5f) - 0.03f, z + 0.5f);
-                if (w.crateKind != null) { drawIslandCrate(w, g, z * World3D.W + x); continue; }
+                Mat4.translate(m, x - HALF + 0.5f, bumpAt(x - HALF + 0.5f, z + 0.5f) - 0.03f, z + 0.5f);
+                if (w.crateKind != null) { drawIslandCrate(w, g, z * W + x); continue; }
                 g.draw(crate, m, 1, 1, 1, 1, fire ? 0.3f : spring || heaven ? 0.1f : autumn ? 0 : aurora ? 0.12f : 0.15f);
                 if (crateStar != null) g.draw(crateStar, m, 1, 1, 1, 1, 0.92f);
             }
@@ -2538,7 +2542,7 @@ public final class Scene3D {
 
     /** Un raggio laser lungo len centrato in (x, y, z): anima, alone e foschia, con un leggero tremolio. */
     private void laser(Gfx3D g, float x, float y, float z, float len, float on, float fl) {
-        float sx = len / (World3D.W + 0.2f);
+        float sx = len / (W + 0.2f);
         Mat4.setIdentity(m); Mat4.translate(m, x, y, z); Mat4.scale(m, sx, 1, 1);
         g.draw(laserHalo, m, 1, 1, 1, 0.16f * on * fl, 1);
         Mat4.setIdentity(m); Mat4.translate(m, x, y, z); Mat4.scale(m, sx, fl, fl);
@@ -2552,7 +2556,7 @@ public final class Scene3D {
             float z = c[1] + 0.5f;
             if (z < nearZ || z > farZ + (back ? 0 : 4)) continue;
             float floor = w.floorAt((int) c[0], (int) c[1]), bot = floor + World3D.crusherBottom(c, w.time), warn = World3D.crusherWarn(c, w.time);
-            float x = c[0] - World3D.HALF + 0.5f + 0.03f * warn * (float) Math.sin(w.time * 60f);
+            float x = c[0] - HALF + 0.5f + 0.03f * warn * (float) Math.sin(w.time * 60f);
             Mat4.setIdentity(m);
             Mat4.translate(m, x, bot, z);
             g.draw(crusherBlock, m, 1, 1, 1, 1, 0.05f + 0.25f * warn);
@@ -2570,7 +2574,7 @@ public final class Scene3D {
                 Mat4.translate(m, 0, beam, z);
                 g.draw(crusherBeam, m, 1, 1, 1, 1, 0);
                 for (int sd = -1; sd <= 1; sd += 2) {
-                    float px = sd * 2.85f, gy = w.floorAt(sd < 0 ? 0 : World3D.W - 1, (int) c[1]);
+                    float px = sd * 2.85f, gy = w.floorAt(sd < 0 ? 0 : W - 1, (int) c[1]);
                     Mat4.setIdentity(m);
                     Mat4.translate(m, px, gy - 0.2f, z);
                     Mat4.scale(m, 1, beam + 0.55f - gy, 1);
@@ -2589,7 +2593,7 @@ public final class Scene3D {
             float sink = World3D.raftSink(r, w.time);
             if (sink >= 0.999f) continue;
             Mat4.setIdentity(m);
-            Mat4.translate(m, r[0] - World3D.HALF + 0.5f, -0.18f - 0.9f * sink + 0.04f * (float) Math.sin(w.time * 2f + z), z);
+            Mat4.translate(m, r[0] - HALF + 0.5f, -0.18f - 0.9f * sink + 0.04f * (float) Math.sin(w.time * 2f + z), z);
             Mat4.rotateZ(m, 0.04f * (float) Math.sin(w.time * 1.6f + z * 0.7f) + (r[2] >= 0 ? 0.1f * (float) Math.sin(w.time * 30f) * (1 - sink) : 0));
             g.draw(raftMesh, m, 1, 1, 1, 1, isle == 18 ? 0.25f : 0);
         }
@@ -2701,7 +2705,7 @@ public final class Scene3D {
      * casse, vagoncini abbandonati, vene di cristalli che brillano.
      */
     private void buildMine(World3D w, int z0, int z1, Random r) {
-        float hx = World3D.HALF + 0.15f;
+        float hx = HALF + 0.15f;
         for (int z = z0 + ((2 - z0) % 7 + 7) % 7; z < z1; z += 7) {
             lightAt(0, z, 1f);
             float k = 0.9f;
@@ -2738,7 +2742,7 @@ public final class Scene3D {
         }
         // pareti: massi sporgenti a varie altezze, che rompono le superfici lisce della roccia
         for (int side = -1; side <= 1; side += 2) for (float z = z0 + r.nextFloat(); z < z1; z += 1.4f + 2f * r.nextFloat()) {
-            float d = 1.2f + 3.2f * r.nextFloat(), x = side * (World3D.HALF + d), y = groundAt(x, z) - 0.35f;
+            float d = 1.2f + 3.2f * r.nextFloat(), x = side * (HALF + d), y = groundAt(x, z) - 0.35f;
             lightAt(x, z, 1f);
             MeshBuilder rk = mb(K_ROCK, z);
             float sh = 1.2f + 0.4f * r.nextFloat();
@@ -2748,7 +2752,7 @@ public final class Scene3D {
         }
         // vene di cristalli e di minerale nelle pareti
         for (int side = -1; side <= 1; side += 2) for (float z = z0 + r.nextFloat() * 6f; z < z1; z += 5f + 9f * r.nextFloat()) {
-            float x = side * (World3D.HALF + 1.4f + r.nextFloat() * 1.5f), y = groundAt(x, z) + 0.3f + r.nextFloat() * 1.5f;
+            float x = side * (HALF + 1.4f + r.nextFloat() * 1.5f), y = groundAt(x, z) + 0.3f + r.nextFloat() * 1.5f;
             MeshBuilder gl = mb(K_GLOW, z);
             boolean gold = r.nextFloat() < 0.3f;
             int nc = 3 + r.nextInt(4);
@@ -2762,7 +2766,7 @@ public final class Scene3D {
         // corsie esterne: pietrisco, travi accatastate, barili, casse e qualche vagoncino abbandonato
         // fuori dalle corsie, oltre i ritti delle armature: il carrello (largo fino a 1,55 m dal centro) non li sfiora mai
         for (int side = -1; side <= 1; side += 2) for (float z = z0 + r.nextFloat() * 4f; z < z1; z += 2.5f + 5f * r.nextFloat()) {
-            float x = side * (World3D.HALF + 0.5f + 0.35f * r.nextFloat());
+            float x = side * (HALF + 0.5f + 0.35f * r.nextFloat());
             float fz = ((z - 2f) % 7f + 7f) % 7f;
             if (Math.min(fz, 7f - fz) < 1.5f) continue;                  // lontano dai ritti delle armature
             float y = groundAt(x, z);
@@ -2797,7 +2801,7 @@ public final class Scene3D {
                 p.colorf(1, 1, 1);
                 float[] tm = new float[16];
                 Mat4.setIdentity(tm);
-                Mat4.translate(tm, side * (World3D.HALF + 0.75f), y - 0.3f, z);
+                Mat4.translate(tm, side * (HALF + 0.75f), y - 0.3f, z);
                 Mat4.rotateY(tm, 0.12f * side);
                 Mat4.rotateZ(tm, 0.1f * side);
                 p.append(cart, tm, 0.9f * Math.max(0.35f, lt[0]));
@@ -2810,11 +2814,11 @@ public final class Scene3D {
     private void buildRails(World3D w, int z0, int z1, Random r) {
         for (float[] c : w.carts) {
             for (int z = Math.max(z0, (int) c[0]); z < Math.min(z1, (int) c[1]); z++) for (int x = 1; x <= 3; x++) {
-                boolean hole = w.height[z * World3D.W + x] == World3D.PIT;
-                float cx = x - World3D.HALF + 0.5f;
+                boolean hole = w.height[z * W + x] == World3D.PIT;
+                float cx = x - HALF + 0.5f;
                 lightAt(cx, z, 1f);
                 if (hole) {                                             // binario spezzato: un moncone di rotaia storta sul bordo
-                    if (w.height[(z - 1) * World3D.W + x] != World3D.PIT) {
+                    if (w.height[(z - 1) * W + x] != World3D.PIT) {
                         MeshBuilder p = mb(K_PROP, z);
                         p.colorf(0.4f * lt[0], 0.36f * lt[1], 0.34f * lt[2]);
                         beam(p, cx - 0.25f, 0.1f, z, cx - 0.35f, -0.5f, z + 0.5f, 0.03f);
@@ -2874,7 +2878,7 @@ public final class Scene3D {
         Random r = new Random(4242 + dry);
         for (int side = -1; side <= 1; side += 2) {
             for (float z = z0; z < z1; z += 1.5f + 2.5f * r.nextFloat()) {
-                float d = 0.6f + 9f * r.nextFloat() * r.nextFloat(), x = side * (World3D.HALF + d), y = groundAt(x, z);
+                float d = 0.6f + 9f * r.nextFloat() * r.nextFloat(), x = side * (HALF + d), y = groundAt(x, z);
                 lightAt(x, z, 1f);
                 if (dry == 20 || dry == 22) {
                     continue;                                            // deserto e fabbrica: arredo dedicato più sotto
@@ -2892,9 +2896,9 @@ public final class Scene3D {
         if (dry == 22) buildFactory(w, z0, z1, r);
         if (dry == 24) buildMine(w, z0, z1, r);
         else for (float[] c : w.carts) {                               // binari semplici (negli altri mondi)
-            for (int z = Math.max(z0, (int) c[0]); z < Math.min(z1, (int) c[1]); z++) for (int x = 0; x < World3D.W; x++) {
-                if (w.height[z * World3D.W + x] == World3D.PIT) continue;
-                float cx = x - World3D.HALF + 0.5f, y = Math.max(0, w.height[z * World3D.W + x]);
+            for (int z = Math.max(z0, (int) c[0]); z < Math.min(z1, (int) c[1]); z++) for (int x = 0; x < W; x++) {
+                if (w.height[z * W + x] == World3D.PIT) continue;
+                float cx = x - HALF + 0.5f, y = Math.max(0, w.height[z * W + x]);
                 MeshBuilder p = mb(K_PROP, z);
                 p.colorf(0.42f, 0.28f, 0.16f);
                 p.box(cx, y + 0.03f, z + 0.5f, 0.8f, 0.06f, 0.16f);
@@ -2915,7 +2919,7 @@ public final class Scene3D {
         b.quad(-0.28f, 0.04f, -0.08f, 0f, 0.04f, 0.14f, 0.28f, 0.04f, -0.08f, 0f, 0.04f, 0.02f, 0, 1, 0, 0, 0, 1, 1);
         chevron = b.build(-1, false, true);
         // raggio laser: un'anima sottile quasi bianca, un alone rosso e una foschia larga e tenue (tre tubi lungo x, trasparenti)
-        float bl = World3D.W + 0.2f;
+        float bl = W + 0.2f;
         float[][] axis = {{-bl / 2, 0, 0}, {0, 0, 0}, {bl / 2, 0, 0}};
         b = new MeshBuilder();
         FoeModels.tube(b, axis, new float[] {0.014f, 0.014f, 0.014f}, 8, FoeModels.flat(new float[] {1f, 0.92f, 0.9f}));
@@ -2995,10 +2999,10 @@ public final class Scene3D {
                 g.draw(dustMote, m, 0.45f, 0.44f, 0.43f, 0.55f * (1f - u), 0.1f);
             }
         }
-        if (w.belt != null) for (int z = z0; z <= Math.min(z1, (int) w.pz + 45); z++) for (int x = 0; x < World3D.W; x++) {
-            int d = w.belt[z * World3D.W + x];
+        if (w.belt != null) for (int z = z0; z <= Math.min(z1, (int) w.pz + 45); z++) for (int x = 0; x < W; x++) {
+            int d = w.belt[z * W + x];
             if (d == 0) continue;
-            float cx = x - World3D.HALF + 0.5f, y = Math.max(0, w.height[z * World3D.W + x]);
+            float cx = x - HALF + 0.5f, y = Math.max(0, w.height[z * W + x]);
             float ang = d == 1 ? 1.5708f : d == 2 ? -1.5708f : d == 3 ? 0f : 3.1416f;
             Mat4.setIdentity(m);
             Mat4.translate(m, cx, y, z + 0.5f);
@@ -3013,10 +3017,10 @@ public final class Scene3D {
                 g.draw(chevron, m, 1, 1, 1, 1, 0.6f);
             }
         }
-        if (w.quick != null) for (int z = z0; z <= Math.min(z1, (int) w.pz + 45); z++) for (int x = 0; x < World3D.W; x++) {
-            if (!w.quick[z * World3D.W + x]) continue;
+        if (w.quick != null) for (int z = z0; z <= Math.min(z1, (int) w.pz + 45); z++) for (int x = 0; x < W; x++) {
+            if (!w.quick[z * W + x]) continue;
             Mat4.setIdentity(m);
-            Mat4.translate(m, x - World3D.HALF + 0.5f, 0.03f, z + 0.5f);
+            Mat4.translate(m, x - HALF + 0.5f, 0.03f, z + 0.5f);
             Mat4.rotateY(m, ((x + z) % 4) * 1.5708f + w.time * 0.35f);               // la sabbia mobile gira lenta su se stessa
             float pul = 1.06f + 0.02f * (float) Math.sin(w.time * 2f + x + z);
             Mat4.scale(m, pul, 1, pul);
@@ -3025,11 +3029,11 @@ public final class Scene3D {
         for (float[] l : w.lasers) {
             float z = l[0] + 0.5f;
             if (z < nearZ || z > farZ) continue;
-            float base = Math.max(0, w.height[(int) l[0] * World3D.W + 2]);
+            float base = Math.max(0, w.height[(int) l[0] * W + 2]);
             float on = World3D.laserOn(l, w.time);
             for (int sd = -1; sd <= 1; sd += 2) {
                 Mat4.setIdentity(m);
-                Mat4.translate(m, sd * (World3D.HALF + 0.2f), base, z);
+                Mat4.translate(m, sd * (HALF + 0.2f), base, z);
                 if (sd > 0) Mat4.rotateY(m, (float) Math.PI);                // le finestrelle guardano il sentiero
                 g.draw(laserPost, m, 1, 1, 1, 1, 0.04f);
                 g.draw(laserLens, m, 1, 1, 1, 1, 0.25f + 0.75f * on);
@@ -3039,11 +3043,11 @@ public final class Scene3D {
             for (int k = 0; k < 2; k++) {                                // due raggi, alle ginocchia e alla vita
                 float y = base + 0.3f + k * 0.3f;
                 if (l[3] >= 0) {                                         // varco spento: il raggio è spezzato in due
-                    float gx = l[3] - World3D.HALF + 0.5f;
-                    float left = gx - 0.5f + World3D.HALF + 0.1f, right = World3D.HALF + 0.1f - (gx + 0.5f);
-                    if (left > 0.05f) laser(g, -World3D.HALF - 0.1f + left / 2, y, z, left, on, fl);
-                    if (right > 0.05f) laser(g, World3D.HALF + 0.1f - right / 2, y, z, right, on, fl);
-                } else laser(g, 0, y, z, World3D.W + 0.2f, on, fl);
+                    float gx = l[3] - HALF + 0.5f;
+                    float left = gx - 0.5f + HALF + 0.1f, right = HALF + 0.1f - (gx + 0.5f);
+                    if (left > 0.05f) laser(g, -HALF - 0.1f + left / 2, y, z, left, on, fl);
+                    if (right > 0.05f) laser(g, HALF + 0.1f - right / 2, y, z, right, on, fl);
+                } else laser(g, 0, y, z, W + 0.2f, on, fl);
             }
         }
         if (dry == 20) for (float[] t : w.thorns) {                    // nel deserto le spine sono cactus

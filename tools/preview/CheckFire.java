@@ -100,8 +100,8 @@ public class CheckFire {
                     boolean blocked = false;
                     for (int k = 1; k < 40 && !blocked; k++) {
                         float t = k / 40f, x = cx + (gm[0] - cx) * t, y = cy + (gm[1] - cy) * t, z = cz + (gm[2] - cz) * t;
-                        int xi = (int) Math.floor(x + World3D.HALF), zi = (int) Math.floor(z);
-                        if (zi < 0 || zi >= v.length || xi < 0 || xi >= World3D.W) continue;
+                        int xi = (int) Math.floor(x + World3D.HALF5), zi = (int) Math.floor(z);
+                        if (zi < 0 || zi >= v.length || xi < 0 || xi >= World3D.W5) continue;
                         if (v.cell(xi, zi) != World3D.PIT && v.cell(xi, zi) > y) blocked = true;
                     }
                     if (!blocked) seen = true;

@@ -5,7 +5,9 @@ import com.valeriodipaolo.platformgame.core3d.*;
 public class Check3B {
     static int fails;
     static void ok(boolean c, String m) { System.out.println((c ? "OK   " : "FALLITO ") + m); if (!c) fails++; }
-    static int xi(float x) { return (int) Math.floor(x + World3D.HALF); }
+    static int W = World3D.W5;
+    static float HALF = World3D.HALF5;
+    static int xi(float x) { return (int) Math.floor(x + HALF); }
     static int zi(float z) { return (int) Math.floor(z); }
 
     static int base; static boolean rel;
@@ -15,8 +17,8 @@ public class Check3B {
         if (h == 99) return true;
         if (h == World3D.PIT) return false;
         if (h - base >= 1) return true;
-        if (rel && w.quickAt(c - World3D.HALF + 0.5f, z + 0.5f)) return true;      // le sabbie mobili si evitano, se si può
-        if (w.crate[z * World3D.W + c]) return true;
+        if (rel && w.quickAt(c - HALF + 0.5f, z + 0.5f)) return true;      // le sabbie mobili si evitano, se si può
+        if (w.crate[z * W + c]) return true;
         for (float[] t : w.thorns) if (xi(t[0]) == c && zi(t[1]) == z) return true;
         return false;
     }
@@ -46,7 +48,7 @@ public class Check3B {
         float[] m = null;
         for (float[] q : b.mazes) if (b.pz >= q[0] - 0.5f && b.pz < q[1]) m = q;
         if (m == null) return null;
-        int z0 = (int) m[0] - 1, z1 = (int) m[1], W = World3D.W, sx = xi(b.px), sz = zi(b.pz);
+        int z0 = (int) m[0] - 1, z1 = (int) m[1], sx = xi(b.px), sz = zi(b.pz);
         int n = (z1 - z0 + 1) * W;
         int[] prev = new int[n];
         java.util.Arrays.fill(prev, -2);
@@ -72,13 +74,14 @@ public class Check3B {
         if (goal < 0) return null;
         int step = goal;
         while (prev[step] != s && prev[step] >= 0) step = prev[step];
-        if (step == s) return new float[] {sx - World3D.HALF + 0.5f, z1 + 1f};
-        return new float[] {step % W - World3D.HALF + 0.5f, step / W + z0 + 0.5f};
+        if (step == s) return new float[] {sx - HALF + 0.5f, z1 + 1f};
+        return new float[] {step % W - HALF + 0.5f, step / W + z0 + 0.5f};
     }
 
     static void run(int id) {
         rel = id > 24;            // la terza serie ha piani rialzati: gli ostacoli si misurano rispetto al piano su cui si corre
         World3D b = new World3D(new MemorySave(), id);
+        W = b.W; HALF = b.HALF;
         int lives0 = b.lives;
         float stuck = 0, lastZ = b.pz, lastX = b.px, jt = 0, time = 0;
         mazeTime = 0;
@@ -89,18 +92,18 @@ public class Check3B {
             if (b.state == World3D.PLAYING) {
                 int bh = b.cell(xi(b.px), zi(b.pz)); base = bh == World3D.PIT || !rel ? 0 : bh;
                 int best = cur; float bs = -1e9f;
-                for (int c = 0; c < World3D.W; c++) {
+                for (int c = 0; c < W; c++) {
                     float fr = freeRun(b, c, b.pz);
                     float s = fr - 0.4f * Math.abs(c - cur) + (c == cur ? 0.6f : 0);
                     // un fiore a molla davanti attira (molto, se davanti c'è un muro alto da bordo a bordo)
                     for (float[] q : b.springs) if (xi(q[0]) == c && q[1] - b.pz > 0 && q[1] - b.pz < 8) s += fr < 10 ? 2f : 0.3f;
                     // una cassa a molla davanti attira: è l'unico modo di passare un muro alto o un fiume largo
-                    if (b.crateKind != null) for (int z = zi(b.pz) + 1; z <= zi(b.pz) + 6 && z < b.length; z++) if (b.crate[z * World3D.W + c] && b.crateKind[z * World3D.W + c] == World3D.C_BOUNCE) s += 6f;
+                    if (b.crateKind != null) for (int z = zi(b.pz) + 1; z <= zi(b.pz) + 6 && z < b.length; z++) if (b.crate[z * W + c] && b.crateKind[z * W + c] == World3D.C_BOUNCE) s += 6f;
                     if (s > bs) { bs = s; best = c; }
                 }
                 cur = best;
             }
-            float tx = cur - World3D.HALF + 0.5f;
+            float tx = cur - HALF + 0.5f;
             float jx = Math.max(-1f, Math.min(1f, (tx - b.px) * 2.5f));
             float[] mw = b.state == World3D.PLAYING ? mazeStep(b) : null;     // nel labirinto: la strada più breve verso l'uscita
             if (mw != null) {
@@ -124,11 +127,11 @@ public class Check3B {
                 float ahead = b.topAt(b.px, b.pz + 0.65f);
                 boolean step = ahead > b.py + 0.3f && ahead <= b.py + 1.7f;
                 if (b.onGround && (pit || thorn || step) && !pad && jt <= 0) { int pl = pit ? pitRun(b, xi(b.px), zi(b.pz + 0.45f)) : 9; jt = pit && pl <= 1 ? 0.2f : pit && pl <= 2 ? (rel ? 0.12f : 0.33f) : 0.6f;
-                    if (rel && step && !pit && b.crateKind != null && b.crate[Math.min(b.length - 1, zi(b.pz + 0.95f)) * World3D.W + xi(b.px)]) jt = 0.15f; }
+                    if (rel && step && !pit && b.crateKind != null && b.crate[Math.min(b.length - 1, zi(b.pz + 0.95f)) * W + xi(b.px)]) jt = 0.15f; }
                 if (jt > 0) { jump = true; jt -= 1f / 60f; }
             }
             float fwd = 1f;                                  // davanti a una cassa a molla rallenta, per atterrarci sopra
-            if (rel && b.crateKind != null) for (int z = zi(b.pz); z <= zi(b.pz) + 2 && z < b.length; z++) { int k = z * World3D.W + xi(b.px); if (k >= 0 && k < b.crate.length && b.crate[k] && b.crateKind[k] == World3D.C_BOUNCE && b.time - b.crateT[k] > 0.5f) fwd = 0.3f; }
+            if (rel && b.crateKind != null) for (int z = zi(b.pz); z <= zi(b.pz) + 2 && z < b.length; z++) { int k = z * W + xi(b.px); if (k >= 0 && k < b.crate.length && b.crate[k] && b.crateKind[k] == World3D.C_BOUNCE && b.time - b.crateT[k] > 0.5f) fwd = 0.3f; }
             // in volo, in discesa sopra un isolotto che finisce subito: frena per atterrarci (come farebbe un giocatore)
             if (!rel && !b.onGround && b.vy < 0 && b.cell(xi(b.px), zi(b.pz)) != World3D.PIT && b.cell(xi(b.px), zi(b.pz + 1.2f)) == World3D.PIT
                     && b.py - Math.max(0, b.topAt(b.px, b.pz)) < 2.5f) fwd = 0f;
