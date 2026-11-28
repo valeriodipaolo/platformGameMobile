@@ -266,6 +266,27 @@ public final class World3D {
     static int xi(float x) { return (int) Math.floor(x + HALF); }
     static int zi(float z) { return (int) Math.floor(z); }
 
+    /**
+     * Buca di una casella chiusa tutt'intorno (come la nicchia del gettone): l'impronta dei piedi è più larga della buca, quindi
+     * camminandoci sopra si resterebbe appoggiati ai bordi. Se il centro del robot è sopra la buca, lo si accompagna verso il suo
+     * centro e ci cade dentro. Solo per buche con il fondo (non i burroni) circondate su tutti i lati da bordi alti almeno quanto
+     * i piedi: così non si scivola dai gradini né giù dal ciglio dei burroni.
+     */
+    private void pocket(float dt) {
+        int cx = xi(px), cz = zi(pz);
+        if (cx < 0 || cx >= W || cz < 1 || cz >= length - 1) return;
+        int h = cell(cx, cz);
+        if (h == PIT || h >= 99 || isRamp(cx, cz) || h > py - 0.9f) return;
+        int[][] nb = {{cx - 1, cz}, {cx + 1, cz}, {cx, cz - 1}, {cx, cz + 1}};
+        for (int[] n : nb) {
+            int hn = n[0] < 0 || n[0] >= W ? 99 : cell(n[0], n[1]);
+            if (hn == PIT || hn < py - 0.05f) return;
+        }
+        float tx = cx - HALF + 0.5f, tz = cz + 0.5f, step = 6f * dt;
+        px += Math.max(-step, Math.min(step, tx - px));
+        pz += Math.max(-step, Math.min(step, tz - pz));
+    }
+
     /** Quota della rampa al punto z (fuori dalla rampa: la quota del suo estremo più vicino). */
     public float rampY(float z) {
         float u = (z - rampZ0) / (rampZ1 - rampZ0);
@@ -763,6 +784,7 @@ public final class World3D {
             onGround = true;
         }
         if (g > -500f) groundY = g;
+        if (onGround && !cart) pocket(dt);
         if (!onGround && quick != null) sinkT = Math.max(0, sinkT - dt * 3f);
         if (springBoost > 0) springBoost -= dt;
         if (bounceBoost > 0) bounceBoost -= dt;
